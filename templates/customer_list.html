@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ข้อมูลลูกค้าทั้งหมด</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 10px;
+    }
+    .menu-bar {
+      display: flex;
+      justify-content: space-around;
+      background-color: white;
+      padding: 10px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .menu-bar a {
+      text-decoration: none;
+      font-weight: bold;
+      color: teal;
+    }
+    .search-container {
+      max-width: 95%;
+      margin: 0 auto 20px auto;
+      background-color: white;
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+    .search-container label {
+      font-weight: bold;
+      font-size: 18px;
+      display: block;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .search-container input {
+      width: 100%;
+      padding: 10px 40px 10px 40px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 30px;
+      background-color: #f1f1f1;
+      background-image: url('https://cdn-icons-png.flaticon.com/512/622/622669.png');
+      background-size: 18px;
+      background-repeat: no-repeat;
+      background-position: 12px center;
+      box-sizing: border-box;
+    }
+    table {
+      width: 95%;
+      margin: 20px auto;
+      border-collapse: collapse;
+      background-color: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    th, td {
+      border: 1px solid #eee;
+      padding: 10px;
+      text-align: left;
+      font-size: 14px;
+      vertical-align: top;
+    }
+    th {
+      background-color: #e0f7fa;
+      color: #00796b;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    tr:hover {
+      background-color: #e0f2f1;
+    }
+    .details {
+      display: none;
+      background-color: #f1f1f1;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    .details ul {
+      padding-left: 20px;
+      margin: 0;
+    }
+    .show-btn {
+      padding: 5px 10px;
+      background-color: #0288d1;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    #export-btn {
+      display: block;
+      margin: 20px auto;
+      background-color: #4caf50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="menu-bar">
+    <a href="{{ url_for('dashboard') }}">หน้าแรก</a>
+    <a href="{{ url_for('sale_summary') }}">1. สรุปยอดขายประจำวัน</a>
+    <a href="{{ url_for('record_sales') }}">2. บันทึกยอดขายประจำวัน</a>
+    <a href="{{ url_for('record_customer') }}">3. บันทึกข้อมูลลูกค้า</a>
+    <a href="{{ url_for('customer_list') }}">4. ข้อมูลลูกค้าทั้งหมด</a>
+  </div>
+
+  <div class="search-container">
+    <label for="searchInput">ค้นหา ชื่อ / เบอร์ / OPD</label>
+    <input type="text" id="searchInput" placeholder="พิมพ์คำค้น...">
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th onclick="sortTable(0)">ลำดับ ⬍</th>
+        <th onclick="sortTable(1)">เลข OPD ⬍</th>
+        <th onclick="sortTable(2)">ชื่อลูกค้า ⬍</th>
+        <th onclick="sortTable(3)">เบอร์โทร ⬍</th>
+        <th onclick="sortTable(4)">วันล่าสุดที่ซื้อ ⬍</th>
+        <th onclick="sortTable(5)">ยอดรวม (บาท) ⬍</th>
+        <th onclick="sortTable(6)">ไม่มาคลินิก (วัน) ⬍</th>
+        <th>ดูข้อมูล</th>
+      </tr>
+    </thead>
+    <tbody id="customer-table-body"></tbody>
+  </table>
+
+  <button id="export-btn">🧾 Export รายชื่อลูกค้าเป็น Excel</button>
+
+  <script>
+   fetch("/api/sales")
+    .then(res => res.json())
+    .then(records => {
+      const customerMap = {};
+      records.forEach(rec => {
+        const key = `${rec.name}|${rec.phone}`;
+        if (!customerMap[key]) {
+          customerMap[key] = {
+            name: rec.name,
+            phone: rec.phone || '-',
+            opd: rec.opd || '',
+            total: 0,
+            lastDate: rec.date,
+            history: []
+          };
+        }
+        customerMap[key].total += parseFloat(rec.amount) || 0;
+        customerMap[key].history.push({
+          date: rec.date,
+          items: rec.items,
+          amount: rec.amount,
+          payment: rec.payment,
+          note: rec.note
+        });
+        if (rec.date > customerMap[key].lastDate) {
+          customerMap[key].lastDate = rec.date;
+        }
+      });
+
+      const customers = Object.values(customerMap).sort((a, b) => parseInt(a.opd) - parseInt(b.opd));
+      const tableBody = document.getElementById('customer-table-body');
+
+      customers.forEach((c, i) => {
+        const row = document.createElement('tr');
+        const detailsId = `details-${i}`;
+        const daysAbsent = calcDaysAbsent(c.lastDate);
+        row.innerHTML = `
+          <td>${i + 1}</td>
+          <td>${c.opd}</td>
+          <td>${c.name}</td>
+          <td>${c.phone}</td>
+          <td>${formatDate(c.lastDate)}</td>
+          <td>${c.total.toLocaleString()}</td>
+          <td>${daysAbsent}</td>
+          <td><button class="show-btn" onclick="toggleDetails('${detailsId}')">ดูรายละเอียด</button></td>
+        `;
+        tableBody.appendChild(row);
+
+        const detailsRow = document.createElement('tr');
+        const detailCell = document.createElement('td');
+        detailCell.colSpan = 8;
+        detailCell.innerHTML = `
+          <div class="details" id="${detailsId}">
+            ${generateHistoryHTML(c.history, c.name)}
+          </div>
+        `;
+        detailsRow.appendChild(detailCell);
+        tableBody.appendChild(detailsRow);
+      });
+
+      // Enable export
+      document.getElementById('export-btn').addEventListener('click', () => {
+        const data = customers.map(c => ({
+          ชื่อ: c.name,
+          OPD: c.opd,
+          เบอร์โทร: c.phone,
+          'วันล่าสุดที่ซื้อ': formatDate(c.lastDate),
+          'ยอดรวม (บาท)': c.total
+        }));
+        const sheet = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, sheet, 'ลูกค้าทั้งหมด');
+        XLSX.writeFile(wb, 'รายชื่อลูกค้าทั้งหมด.xlsx');
+      });
+    })
+    .catch(err => {
+      console.error("❌ โหลดข้อมูลลูกค้าจาก Supabase ไม่สำเร็จ:", err);
+      alert("เกิดข้อผิดพลาดในการโหลดข้อมูลลูกค้า");
+    });
+
+  function toggleDetails(id) {
+    const el = document.getElementById(id);
+    const row = el.closest('tr');
+    el.style.display = 'block';
+    row.style.display = '';
+  }
+
+  function generateHistoryHTML(history, customerName) {
+    const grouped = {};
+    const itemSummary = {};
+    const itemTotal = {};
+    let grandTotal = 0;
+
+    history.forEach(h => {
+      if (!grouped[h.date]) grouped[h.date] = [];
+      grouped[h.date].push(h);
+      grandTotal += parseFloat(h.amount) || 0;
+
+      (h.items || []).forEach(itemStr => {
+        const match = itemStr.match(/^(.*?) ?(?:\((.*?)\))? - (\d+) ชิ้น x (\d+)/);
+        if (match) {
+          const sub = match[2] || match[1];
+          const qty = parseInt(match[3]);
+          const price = parseInt(match[4]);
+          itemSummary[sub] = (itemSummary[sub] || 0) + qty;
+          itemTotal[sub] = (itemTotal[sub] || 0) + qty * price;
+        }
+      });
+    });
+
+    const dailyHTML = Object.entries(grouped).sort(([d1], [d2]) => new Date(d2) - new Date(d1)).map(([date, list]) => {
+      const itemsHTML = list.map(h => `
+        <ul>
+          ${h.items.map(item => `<li>${item}</li>`).join('')}
+          <li><strong>ยอด:</strong> ${h.amount} บาท (${h.payment})</li>
+          ${h.note ? `<li><em>📝 ${h.note}</em></li>` : ''}
+        </ul>
+      `).join('');
+      return `<strong>📅 ${formatDate(date)}</strong>${itemsHTML}`;
+    }).join('<hr>');
+
+    const summaryHTML = Object.entries(itemSummary)
+      .map(([sub]) => `• ${sub} — ${itemSummary[sub]} ชิ้น = ${itemTotal[sub].toLocaleString()} บาท`)
+      .join('<br>');
+
+    return `
+      <div class="detail-capture">
+        ${dailyHTML}
+        <hr>
+        <strong>📦 สรุปการซื้อทั้งหมด:</strong><br>
+        ${summaryHTML}<br><br>
+        <strong>💰 รวมทั้งหมด:</strong> ${grandTotal.toLocaleString()} บาท
+      </div>
+      <br>
+      <button onclick="downloadCustomerImage(this, '${customerName}')" class="show-btn">📸 บันทึกเป็นรูป (JPEG)</button>
+    `;
+  }
+
+  function formatDate(d) {
+    if (!d) return '';
+    const [y, m, day] = d.split('-');
+    return `${day}/${m}/${y.slice(-2)}`;
+  }
+
+  function downloadCustomerImage(button, customerName) {
+    const container = button.previousElementSibling;
+    html2canvas(container).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `${customerName}-details.jpeg`;
+      link.href = canvas.toDataURL("image/jpeg");
+      link.click();
+    });
+  }
+
+  document.getElementById('searchInput').addEventListener('input', function () {
+    const val = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#customer-table-body tr');
+    for (let i = 0; i < rows.length; i += 2) {
+      const row = rows[i];
+      const detailRow = rows[i + 1];
+      const name = row.children[2].textContent.toLowerCase();
+      const phone = row.children[3].textContent.toLowerCase();
+      const opd = row.children[1].textContent.toLowerCase();
+      const matched = name.includes(val) || phone.includes(val) || opd.includes(val);
+      row.style.display = matched ? '' : 'none';
+      detailRow.style.display = 'none';
+    }
+  });
+
+  let sortState = {};
+  function sortTable(colIndex) {
+    const tbody = document.getElementById("customer-table-body");
+    const rows = Array.from(tbody.rows).filter((_, i) => i % 2 === 0);
+    const detailRows = Array.from(tbody.rows).filter((_, i) => i % 2 !== 0);
+
+    const key = `col-${colIndex}`;
+    sortState[key] = !sortState[key];
+    const direction = sortState[key] ? 1 : -1;
+
+    const sorted = rows.map((row, i) => ({
+      row,
+      detailRow: detailRows[i],
+      value: row.cells[colIndex].textContent.trim().replace(/[^\u0E00-\u0E7F\w\s.-]/g, '')
+    })).sort((a, b) => {
+      const aVal = isNaN(a.value) ? a.value.toLowerCase() : parseFloat(a.value);
+      const bVal = isNaN(b.value) ? b.value.toLowerCase() : parseFloat(b.value);
+      return (aVal > bVal ? 1 : aVal < bVal ? -1 : 0) * direction;
+    });
+
+    tbody.innerHTML = '';
+    sorted.forEach(({ row, detailRow }) => {
+      tbody.appendChild(row);
+      tbody.appendChild(detailRow);
+    });
+  }
+
+  function calcDaysAbsent(lastDateStr) {
+    const today = new Date();
+    const lastDate = new Date(lastDateStr);
+    const diffTime = today - lastDate;
+    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  }
+  </script>
+</body>
+</html>

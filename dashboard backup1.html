@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>แดชบอร์ด</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Prompt', 'Segoe UI', sans-serif;
+      margin: 0;
+      background-color: white;
+      padding: 10px;
+    }
+    .menu-bar {
+      display: flex;
+      justify-content: space-around;
+      background-color: white;
+      padding: 10px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .menu-bar a {
+      text-decoration: none;
+      font-weight: bold;
+      color: teal;
+    }
+
+    .month-nav {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .month-nav button {
+      background-color: #009688;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      font-size: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .month-nav button:hover {
+      background-color: #00796b;
+    }
+
+    #mainTitle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: #e0f2f1;
+      border-radius: 16px;
+      padding: 20px 30px;
+      margin: 0 auto 30px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      max-width: fit-content;
+      text-align: center;
+    }
+    #mainTitle .month {
+      font-size: 26px;
+      font-weight: 600;
+      color: #004d40;
+    }
+    #mainTitle .total {
+      font-size: 18px;
+      color: #009688;
+      margin-top: 6px;
+    }
+
+    .top10-box {
+      max-width: 1200px;
+      margin: 0 auto 20px;
+      background: #fff;
+      padding: 15px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .top10-box h3 {
+      margin-top: 0;
+      color: teal;
+      font-size: 18px;
+      text-align: center;
+    }
+    .top10-box ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    .top10-box li {
+      margin-bottom: 6px;
+      padding: 4px 0;
+      border-bottom: 1px dashed #ddd;
+    }
+    .top10-box li span.name {
+      font-weight: 600;
+      color: #333;
+    }
+    .top10-box li span.date {
+      font-size: 13px;
+      color: #999;
+      margin-left: 6px;
+    }
+    .top10-box li span.amount {
+      float: right;
+      color: #009688;
+      font-weight: 600;
+    }
+
+    .chart-summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto 20px;
+      flex-wrap: wrap;
+    }
+
+    .chart-container {
+      flex: 1;
+      background: #fff;
+      padding: 15px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 300px !important;
+    }
+
+    .summary-list {
+      flex: 1;
+      background: #fff;
+      padding: 15px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      font-size: 14px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    .summary-group ul {
+      list-style: none;
+      padding-left: 20px;
+      margin: 5px 0 10px;
+    }
+    .summary-group li {
+      margin-bottom: 4px;
+    }
+    .summary-group strong {
+      color: #00796b;
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    @media (max-width: 768px) {
+      .chart-summary-row {
+        flex-direction: column;
+      }
+      .summary-list {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="menu-bar">
+    <a href="{{ url_for('dashboard') }}">หน้าแรก</a>
+  <a href="{{ url_for('sale_summary') }}">1. สรุปยอดขายประจำวัน</a>
+  <a href="{{ url_for('record_sales') }}">2. บันทึกยอดขายประจำวัน</a>
+  <a href="{{ url_for('record_customer') }}">3. บันทึกข้อมูลลูกค้า</a>
+  <a href="{{ url_for('customer_list') }}">4. ข้อมูลลูกค้าทั้งหมด</a>
+</div>
+
+  <div class="month-nav">
+    <button onclick="changeMonth(-1)">← เดือนก่อนหน้า</button>
+    <button onclick="changeMonth(1)">เดือนถัดไป →</button>
+  </div>
+
+  <div id="mainTitle">
+    <div class="month"></div>
+    <div class="total"></div>
+  </div>
+
+  <div class="top10-box">
+    <h3>Top 10 ลูกค้าใช้จ่ายสูงสุด</h3>
+    <ul id="top10List"></ul>
+    <p id="totalCustomer" style="text-align:center; margin-top: 10px; font-weight: bold; color: teal;"></p>
+  </div>
+
+  <div class="chart-summary-row">
+    <div class="chart-container">
+      <canvas id="summaryChart"></canvas>
+    </div>
+    <div class="summary-list" id="summaryList"></div>
+  </div>
+
+  <script>
+    const categoryMap = {
+    "โบทอค": ["Aestox 50 u", "Aestox 100 u", "Allergan 50 u", "Allergan 100 u"],
+    "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q ระบุสีด้วย", "Restylane ระบุสีด้วย"],
+    "งานผิว": ["Meso Chanel", "P - Cell", "Aquatic", "Hestina", "Exosome", "Rejuran", "Belotero Revive", "Sculptra", "Juvelook", "Aesthefill"],
+    "ดริปผิว": ["Snow White", "Super Aurawhite", "Vitamin Mix", "Brain Booster", "Energy Booster"],
+    "ทรีทเม้นท์": ["ทรีทเมนต์หน้าใส", "ทรีทเมนต์สิว", "ทรีทเมนต์ฝ้า"],
+    "Fat/Hifu": ["Bromi", "Sisi", "HIFU", "HIFU แถม"],
+    "อื่นๆ": ["ยาฉีดสลายฝ้า", "ครีมทาฝ้า", "ยาทานฝ้า", "ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen", "จ่ายเงิน/จองสินค้า"]
+  };
+
+  let viewingDate = new Date();
+  let chartInstance = null;
+
+  function changeMonth(delta) {
+    viewingDate.setMonth(viewingDate.getMonth() + delta);
+    fetchDataAndUpdate();
+  }
+
+  function fetchDataAndUpdate() {
+    fetch("/api/sales")
+      .then(res => res.json())
+      .then(records => updateDashboard(records))
+      .catch(err => {
+        console.error("❌ โหลดข้อมูลจาก Supabase ไม่สำเร็จ:", err);
+        alert("เกิดข้อผิดพลาดในการโหลดข้อมูลยอดขาย");
+      });
+  }
+
+  function updateDashboard(records) {
+    const monthName = viewingDate.toLocaleString('th-TH', { month: 'long' });
+    const yearBE = viewingDate.getFullYear() + 543;
+    const prefix = viewingDate.toISOString().slice(0, 7);
+
+    document.querySelector('#mainTitle .month').textContent = `${monthName} ${yearBE}`;
+
+    let totalSales = 0;
+    const categoryCounts = {};
+    const categoryDetails = {};
+    const customerMap = {};
+
+    records.forEach(r => {
+      if (!r.date.startsWith(prefix)) return;
+
+      const key = `${r.name}|${r.phone}`;
+      if (!customerMap[key]) {
+        customerMap[key] = { name: r.name, phone: r.phone, date: r.date, amount: 0 };
+      }
+      customerMap[key].amount += parseFloat(r.amount || 0);
+      customerMap[key].date = r.date > customerMap[key].date ? r.date : customerMap[key].date;
+
+      totalSales += parseFloat(r.amount || 0);
+
+      (r.items || []).forEach(item => {
+        const match = item.match(/\((.*?)\)/);
+        const subItem = match ? match[1] : item;
+        const qtyMatch = item.match(/- (\d+) ชิ้น x (\d+)/);
+        const qty = qtyMatch ? parseInt(qtyMatch[1]) : 0;
+        const price = qtyMatch ? parseInt(qtyMatch[2]) : 0;
+        const total = qty * price;
+
+        let category = "อื่นๆ";
+        for (const [cat, subs] of Object.entries(categoryMap)) {
+          if (subs.some(sub => subItem.includes(sub))) {
+            category = cat;
+            break;
+          }
+        }
+
+        if (!categoryCounts[category]) categoryCounts[category] = 0;
+        if (!categoryDetails[category]) categoryDetails[category] = {};
+
+        categoryCounts[category] += qty;
+        categoryDetails[category][subItem] = categoryDetails[category][subItem] || { qty: 0, total: 0 };
+        categoryDetails[category][subItem].qty += qty;
+        categoryDetails[category][subItem].total += total;
+      });
+    });
+
+    document.querySelector('#mainTitle .total').innerHTML = `💰 ยอดขายรวม ${totalSales.toLocaleString()} บาท`;
+
+    const sortedEntries = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
+    const labels = sortedEntries.map(([cat]) => cat);
+    const data = sortedEntries.map(([, qty]) => qty);
+
+    if (chartInstance) chartInstance.destroy();
+    const ctx = document.getElementById('summaryChart');
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: '',
+          data: data,
+          backgroundColor: 'rgba(0, 150, 136, 0.7)',
+          borderRadius: 8,
+          hoverBackgroundColor: 'rgba(0, 150, 136, 1)'
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => `${ctx.raw.toLocaleString()} ชิ้น`
+            }
+          }
+        },
+        scales: {
+          x: { beginAtZero: true, grid: { display: false } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+
+    document.getElementById('summaryList').innerHTML = sortedEntries.map(([cat]) => {
+      const items = Object.entries(categoryDetails[cat] || {})
+        .map(([sub, d]) => `<li>• ${sub} ${d.qty} ชิ้น = ${d.total.toLocaleString()} บาท</li>`).join('');
+      const total = Object.values(categoryDetails[cat] || {}).reduce((s, i) => s + i.total, 0);
+      const sumQty = categoryCounts[cat];
+      return `<div class="summary-group"><strong>${cat}</strong> — รวม ${sumQty} ชิ้น = ${total.toLocaleString()} บาท<ul>${items}</ul></div>`;
+    }).join('');
+
+    const sortedCustomers = Object.values(customerMap)
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 10);
+
+    document.getElementById('top10List').innerHTML = sortedCustomers.map((c) => {
+      const date = new Date(c.date);
+      const formatted = date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+      return `<li><span class="name">${c.name}</span><span class="date"> (${formatted})</span><span class="amount">${c.amount.toLocaleString()} บาท</span></li>`;
+    }).join('');
+
+    document.getElementById('totalCustomer').textContent = `จำนวนลูกค้าที่มาใช้บริการทั้งหมด ${Object.keys(customerMap).length} คน`;
+  }
+
+  fetchDataAndUpdate();
+  </script>
+</body>
+</html>

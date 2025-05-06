@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เข้าสู่ระบบ</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom, #f8e6b3, #eac36e);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .login-box {
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+    }
+
+    .logo {
+      max-width: 130px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+    }
+
+    h2 {
+      margin-bottom: 25px;
+      color: #333;
+    }
+
+    label {
+      float: left;
+      font-weight: bold;
+      margin-bottom: 6px;
+      color: #444;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 18px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+
+    .remember-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: -12px;
+      margin-bottom: 18px;
+      font-size: 14px;
+    }
+
+    .remember-row input[type="checkbox"] {
+      margin-right: 6px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #d4af37;
+      color: #fff;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #b99128;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 20px;
+      top: 9px;
+      cursor: pointer;
+      color: #888;
+      font-size: 13px;
+    }
+
+    .password-container {
+      position: relative;
+    }
+
+    .error {
+      background-color: #ffe0e0;
+      border: 1px solid #e74c3c;
+      color: #c0392b;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+    }
+
+    @media (max-width: 480px) {
+      .login-box {
+        padding: 25px;
+      }
+      h2 {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <img src="{{ url_for('static', filename='logo.jpg') }}" alt="โลโก้" class="logo">
+    <h2>Dr.Palmy Clinic System</h2>
+    {% if error %}
+      <div class="error">{{ error }}</div>
+    {% endif %}
+    <form method="POST">
+      <label for="username">ชื่อผู้ใช้:</label>
+      <input type="text" name="username" id="username" required>
+
+      <label for="password">รหัสผ่าน:</label>
+      <div class="password-container">
+        <input type="password" name="password" id="password" required>
+        <span class="toggle-password" onclick="togglePassword()">แสดง</span>
+      </div>
+
+      <div class="remember-row">
+        <label><input type="checkbox" name="remember"> จดจำฉันไว้</label>
+      </div>
+
+      <button type="submit">เข้าสู่ระบบ</button>
+    </form>
+  </div>
+
+  <script>
+    function togglePassword() {
+      const pw = document.getElementById('password');
+      const toggle = document.querySelector('.toggle-password');
+      if (pw.type === "password") {
+        pw.type = "text";
+        toggle.textContent = "ซ่อน";
+      } else {
+        pw.type = "password";
+        toggle.textContent = "แสดง";
+      }
+    }
+  </script>
+</body>
+</html>

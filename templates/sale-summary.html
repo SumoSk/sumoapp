@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สรุปยอดขายประจำวัน</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background-color: #f7f7f7;
+      padding: 10px;
+    }
+    .menu-bar {
+      display: flex;
+      justify-content: space-around;
+      background-color: white;
+      padding: 10px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .menu-bar a {
+      text-decoration: none;
+      font-weight: bold;
+      color: teal;
+    }
+    h2 {
+      text-align: center;
+      color: teal;
+      font-size: 20px;
+      margin-top: 0;
+    }
+    .container {
+      max-width: 700px;
+      margin: 30px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="menu-bar">
+    <a href="{{ url_for('dashboard') }}">หน้าแรก</a>
+  <a href="{{ url_for('sale_summary') }}">1. สรุปยอดขายประจำเดือน</a>
+  <a href="{{ url_for('record_sales') }}">2. บันทึกยอดขายประจำเดือน</a>
+  <a href="{{ url_for('record_customer') }}">3. บันทึกข้อมูลลูกค้า</a>
+  <a href="{{ url_for('customer_list') }}">4. ข้อมูลลูกค้าทั้งหมด</a>
+</div>
+
+  <div class="container">
+    <h2>สรุปยอดขายประจำเดือน</h2>
+    <div id="reviewSection">กำลังโหลดข้อมูล...</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const subOptionsMap = {
+      "โบทอค": ["Aestox 50 u", "Aestox 100 u", "Allergan 50 u", "Allergan 100 u"],
+      "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q ระบุสีด้วย", "Restylane ระบุสีด้วย"],
+      "Fat/Hifu": ["Bromi", "Sisi", "HIFU", "HIFU แถม"],
+      "งานผิว": ["Meso Chanel", "P - Cell", "Aquatic", "Hestina", "Exosome", "Rejuran", "Belotero Revive", "Sculptra", "Juvelook", "Aesthefill"],
+      "ดริปผิว": ["Snow White", "Super Aurawhite", "Vitamin Mix", "Brain Booster", "Energy Booster"],
+      "อื่นๆ": ["ยาฉีดสลายฝ้า", "ครีมทาฝ้า", "ยาทานฝ้า", "ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen", "จ่ายเงิน/จองสินค้า"],
+      "ทรีทเม้นท์": ["ทรีทเมนต์หน้าใส", "ทรีทเมนต์สิว", "ทรีทเมนต์ฝ้า"]
+    
+    };
+    subOptionsMap["โปรโมชั่น/อีเว้นพิเศษ"] = [...new Set(Object.values(subOptionsMap).flat())];
+    fetch('/api/sales')
+  .then(res => res.json())
+  .then(data => {
+    if (!data || data.length === 0) {
+      document.getElementById('reviewSection').innerHTML = 'ไม่มีข้อมูลยอดขาย';
+      return;
+    }
+
+    // แปลง item จาก JSON string เป็น array ถ้าเป็น string
+    const records = data.map(rec => ({
+      ...rec,
+      items: typeof rec.item === 'string' ? JSON.parse(rec.item) : rec.item
+    }));
+
+    saveAllRecords(records);
+  })
+  .catch(err => {
+    document.getElementById('reviewSection').innerHTML = 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
+    console.error(err);
+  });
+
+
+    function saveAllRecords(records) {
+      const reviewSection = document.getElementById('reviewSection');
+      reviewSection.innerHTML = ''; // clear previous
+
+      const groupedByMonth = {};
+      const chartData = [];
+      const csvData = [['เดือน', 'ยอดรวม (บาท)']];
+
+      records.forEach(rec => {
+        const month = rec.date?.slice(0, 7);
+        if (!groupedByMonth[month]) groupedByMonth[month] = [];
+        groupedByMonth[month].push(rec);
+      });
+
+      const sortedMonths = Object.keys(groupedByMonth).sort((a, b) => new Date(b + '-01') - new Date(a + '-01'));
+
+      sortedMonths.forEach(month => {
+        const recs = groupedByMonth[month];
+        const total = recs.reduce((sum, rec) => sum + (parseFloat(rec.amount) || 0), 0);
+        chartData.push({ month, total });
+        csvData.push([month, total]);
+
+        const itemSummary = {};
+        const itemTotal = {};
+        const promoItemSummary = {};
+const promoItemTotal = {};
+        recs.forEach(rec => {
+          rec.items.forEach(text => {
+  const match = text.match(/^(.*?) ?(?:\((.*?)\))? - (\d+) ชิ้น x (\d+) บาท/);
+  if (match) {
+    const fullName = match[1]; // เช่น "โปรโมชั่น/อีเว้นพิเศษ"
+    const subName = match[2]; // เช่น "Neuramis สีทอง"
+    const qty = parseInt(match[3]);
+    const price = parseInt(match[4]);
+
+    if (fullName === "โปรโมชั่น/อีเว้นพิเศษ") {
+      // แยกเก็บยอดของโปร
+      promoItemSummary[subName] = (promoItemSummary[subName] || 0) + qty;
+      promoItemTotal[subName] = (promoItemTotal[subName] || 0) + (qty * price);
+    } else {
+      // ปกติ
+      const name = subName || fullName;
+      itemSummary[name] = (itemSummary[name] || 0) + qty;
+      itemTotal[name] = (itemTotal[name] || 0) + (qty * price);
+    }
+  }
+});
+        });
+
+        const summaryRow = document.createElement('div');
+        summaryRow.style.textAlign = 'center';
+summaryRow.style.fontSize = '18px';
+summaryRow.style.color = '#0d47a1'; // สีฟ้าเข้ม
+summaryRow.style.padding = '10px 0';
+summaryRow.style.backgroundColor = '#e3f2fd'; // ฟ้าอ่อน
+summaryRow.style.borderRadius = '8px';
+        const [y, m] = month.split('-');
+        const thaiMonthsFull = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+                        "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+const monthIndex = parseInt(m, 10) - 1;
+summaryRow.textContent = `📆 ${thaiMonthsFull[monthIndex]} ${y} — ยอดรวม ${total.toLocaleString()} บาท`;
+
+// เปรียบเทียบยอดขายจนถึงวันที่เดียวกันของเดือนก่อนหน้า
+const today = new Date();
+const todayDate = today.getDate(); // วันที่วันนี้ เช่น 7
+const currentMonth = month;
+const [currYear, currMonthNum] = currentMonth.split('-');
+
+// หาเดือนก่อนหน้า
+const prevMonthDate = new Date(parseInt(currYear), parseInt(currMonthNum) - 2, 1); // -2 เพราะ JS เดือนเริ่มที่ 0
+const prevMonth = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
+
+// รวมยอดของเดือนนี้จนถึงวันที่เท่ากับวันนี้
+const currToDateTotal = recs
+  .filter(rec => {
+    const recDay = parseInt(rec.date?.split('-')[2]);
+    return recDay <= todayDate;
+  })
+  .reduce((sum, rec) => sum + (parseFloat(rec.amount) || 0), 0);
+
+// รวมยอดของเดือนก่อนหน้าจนถึงวันที่เดียวกัน
+const prevRecs = groupedByMonth[prevMonth] || [];
+const prevToDateTotal = prevRecs
+  .filter(rec => {
+    const recDay = parseInt(rec.date?.split('-')[2]);
+    return recDay <= todayDate;
+  })
+  .reduce((sum, rec) => sum + (parseFloat(rec.amount) || 0), 0);
+
+const diff = currToDateTotal - prevToDateTotal;
+const compareText = diff > 0
+  ? `📈 ยอดขายจนถึงวันที่ ${todayDate}: มากกว่าเดือนก่อนหน้า ${diff.toLocaleString()} บาท`
+  : diff < 0
+    ? `📉 ยอดขายจนถึงวันที่ ${todayDate}: น้อยกว่าเดือนก่อนหน้า ${Math.abs(diff).toLocaleString()} บาท`
+    : `📊 ยอดขายจนถึงวันที่ ${todayDate}: เท่ากับเดือนก่อนหน้า`;
+
+const compareDiv = document.createElement('div');
+compareDiv.style.textAlign = 'center';
+compareDiv.style.marginTop = '5px';
+compareDiv.style.fontSize = '15px';
+compareDiv.style.color = diff > 0 ? 'green' : diff < 0 ? 'crimson' : '#555';
+compareDiv.textContent = compareText;
+
+summaryRow.appendChild(compareDiv);
+
+
+
+
+
+        reviewSection.appendChild(summaryRow);
+
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.marginTop = '10px';
+
+        const sortedRecs = recs.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        let tbodyRows = '';
+        let currentDate = '';
+        let subIndex = 1;
+        let dailyTotal = 0;
+
+        sortedRecs.forEach((r, i) => {
+  const itemList = r.items.map(item => `<li>${item}</li>`).join('');
+  const formattedDate = formatDate(r.date);
+
+  if (formattedDate !== currentDate) {
+    if (currentDate !== '') {
+      // ✅ แทรกแถวสรุปยอดขายของวันก่อนหน้า
+      tbodyRows += `
+        <tr style="background-color: #e0f7fa;">
+          <td colspan="5" style="text-align: right; font-weight: bold; padding: 6px;">
+            💵 ${dailyTotal.toLocaleString()} บาท
+          </td>
+        </tr>
+      `;
+    }
+
+    currentDate = formattedDate;
+    subIndex = 1;
+    dailyTotal = 0;
+
+    // ✅ หัววันใหม่
+    tbodyRows += `<tr><td colspan="5" style="background:#eef; font-weight:bold; padding:6px;">📅 วันที่ ${formattedDate}</td></tr>`;
+  }
+
+  const rowTotal = parseFloat(r.amount) || 0;
+  dailyTotal += rowTotal;
+
+  tbodyRows += `
+    <tr>
+      <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">${subIndex++}</td>
+      <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">
+        <div><strong>${r.name}</strong></div>
+        <div style="font-size: 12px; color: #777;">OPD: ${r.opd}</div>
+      </td>
+      <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">${r.phone}</td>
+      <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">
+        <ul style='margin:0; padding-left: 16px;'>${itemList}</ul>
+      </td>
+      <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">
+        ${r.amount} บาท (${r.payment})
+        ${r.note ? `<div style="font-size: 12px; color: #555;">📝 ${r.note}</div>` : ''}
+      </td>
+    </tr>
+  `;
+});
+
+if (currentDate !== '') {
+  tbodyRows += `
+    <tr style="background-color: #e0f7fa;">
+      <td colspan="5" style="text-align: right; font-weight: bold; padding: 6px;">
+        💵 : ${dailyTotal.toLocaleString()} บาท
+      </td>
+    </tr>
+  `;
+}
+        
+
+        table.innerHTML = `
+          <thead>
+            <tr style="background-color: #f0f0f0;">
+              <th style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">ลำดับ</th>
+              <th style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">ชื่อ</th>
+              <th style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">เบอร์</th>
+              <th style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">รายการ</th>
+              <th style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">ยอด</th>
+            </tr>
+          </thead>
+          <tbody>${tbodyRows}</tbody>`;
+        reviewSection.appendChild(table);
+// 🔽 สรุปรายการขายแยกหมวดและรายการย่อย โดยยอดรวมมาจาก rec.amount
+const summaryDiv = document.createElement('div');
+summaryDiv.style.marginTop = '20px';
+summaryDiv.style.padding = '15px';
+summaryDiv.style.backgroundColor = '#f0f0f0';
+summaryDiv.style.border = '1px solid #ccc';
+summaryDiv.style.borderRadius = '10px';
+summaryDiv.style.fontSize = '14px';
+summaryDiv.style.lineHeight = '1.6em';
+
+let summaryHTML = '<h3 style="margin-top: 0; color: #0d47a1;">📦 สรุปรายการขายแยกหมวดหมู่</h3>';
+
+function renderItemSummary(title, qtyMap, totalMap, totalFromRecAmount) {
+  const totalQty = Object.values(qtyMap).reduce((a, b) => a + b, 0);
+  const totalAmount = totalFromRecAmount;
+
+  let html = `<div style="margin-bottom: 10px;"><strong>${title} ${totalQty.toLocaleString()} ชิ้น, รวม ${totalAmount.toLocaleString()} บาท</strong><ul style="padding-left: 20px; margin: 5px 0;">`;
+  Object.keys(qtyMap).sort((a, b) => (totalMap[b] || 0) - (totalMap[a] || 0)).forEach(name => {
+    const qty = qtyMap[name] || 0;
+    const itemTotal = totalMap[name] || 0;
+    html += `<li>${name} — ${qty} ชิ้น, ${itemTotal.toLocaleString()} บาท</li>`;
+  });
+  html += '</ul></div>';
+  return html;
+}
+
+// 🔢 รวมยอดขายจาก rec.amount สำหรับแต่ละหมวด
+const totalNormalAmount = recs
+  .filter(rec => rec.items.some(text => !text.includes("โปรโมชั่น/อีเว้นพิเศษ")))
+  .reduce((sum, rec) => sum + (parseFloat(rec.amount) || 0), 0);
+
+const totalPromoAmount = recs
+  .filter(rec => rec.items.every(text => text.includes("โปรโมชั่น/อีเว้นพิเศษ")))
+  .reduce((sum, rec) => sum + (parseFloat(rec.amount) || 0), 0);
+
+// 🔄 แสดงสรุป
+summaryHTML += renderItemSummary('⭐ สินค้าทั่วไป', itemSummary, itemTotal, totalNormalAmount);
+summaryHTML += renderItemSummary('🎁 โปรโมชั่น', promoItemSummary, promoItemTotal, totalPromoAmount);
+
+summaryDiv.innerHTML = summaryHTML;
+reviewSection.appendChild(summaryDiv);
+
+        
+        
+      });
+
+      const canvasContainer = document.createElement('div');
+      canvasContainer.style.marginTop = '30px';
+      const canvas = document.createElement('canvas');
+      canvas.id = 'salesChart';
+      canvasContainer.appendChild(canvas);
+      reviewSection.appendChild(canvasContainer);
+
+      chartData.sort((a, b) => a.month.localeCompare(b.month));
+
+      new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels: chartData.map(d => {
+            const [year, month] = d.month.split("-");
+            const thMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+            return `${thMonths[parseInt(month) - 1]} ${parseInt(d.total).toLocaleString()} บาท`;
+          }),
+          datasets: [{
+            label: 'ยอดขายรายเดือน',
+            data: chartData.map(d => d.total),
+            backgroundColor: 'rgba(76, 175, 80, 0.6)',
+            hoverBackgroundColor: 'rgba(76, 175, 80, 0.9)',
+            borderRadius: 20,
+            barThickness: 30
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#333',
+              titleFont: { size: 16 },
+              bodyFont: { size: 14 },
+              callbacks: {
+                label: ctx => `💰 ${ctx.raw.toLocaleString()} บาท`
+              }
+            }
+          },
+          scales: {
+            x: { display: false },
+            y: {
+              ticks: { font: { size: 14 }, color: '#333' },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const [year, month, day] = dateStr.split('-');
+      return `${day}/${month}/${year.slice(-2)}`;
+    }
+  </script>
+</body>
+</html>

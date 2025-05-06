@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>บันทึกข้อมูลลูกค้า</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background-color: #f7f7f7;
+      padding: 10px;
+      color: #222;
+    }
+    .menu-bar {
+      display: flex;
+      justify-content: space-around;
+      background-color: white;
+      padding: 10px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .menu-bar a {
+      text-decoration: none;
+      font-weight: bold;
+      color: teal;
+    }
+    .search-container {
+      max-width: 95%;
+      margin: 0 auto 20px auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .search-container label {
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #222;
+      text-align: center;
+      font-size: 20px;
+    }
+    .search-container input {
+      padding: 12px 20px;
+      border: 1px solid #ccc;
+      border-radius: 30px;
+      font-size: 16px;
+      background-color: white;
+      outline: none;
+      background-image: url('https://cdn-icons-png.flaticon.com/512/622/622669.png');
+      background-size: 18px;
+      background-repeat: no-repeat;
+      background-position: 12px center;
+      padding-left: 40px;
+      width: 100%;
+      box-sizing: border-box;
+      color: #222;
+    }
+    #addCustomerBtn {
+      display: block;
+      margin: 0 auto 15px auto;
+      padding: 10px 20px;
+      background-color: #4caf50;
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    table {
+      width: 95%;
+      margin: auto;
+      border-collapse: collapse;
+      background-color: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    th, td {
+      border: 1px solid #eee;
+      padding: 10px;
+      text-align: left;
+      font-size: 14px;
+      color: #222;
+      vertical-align: top;
+    }
+    th {
+      background-color: #e0f7fa;
+      color: #00796b;
+      cursor: pointer;
+    }
+    th .arrow {
+      font-size: 12px;
+      margin-left: 5px;
+      color: #666;
+    }
+    input[readonly] {
+      background-color: transparent;
+      color: #222;
+    }
+    input {
+      width: 100%;
+      padding: 6px;
+      font-size: 14px;
+      border: none;
+      border-bottom: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 5px;
+      margin-right: 5px;
+      padding: 4px 10px;
+      font-size: 12px;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+    }
+    .edit-btn { background-color: #0288d1; }
+    .save-btn { background-color: #4caf50; }
+    .delete-btn { background-color: #e53935; }
+  </style>
+</head>
+<body>
+    <div class="menu-bar">
+        <a href="{{ url_for('dashboard') }}">หน้าแรก</a>
+      <a href="{{ url_for('sale_summary') }}">1. สรุปยอดขายประจำวัน</a>
+      <a href="{{ url_for('record_sales') }}">2. บันทึกยอดขายประจำวัน</a>
+      <a href="{{ url_for('record_customer') }}">3. บันทึกข้อมูลลูกค้า</a>
+      <a href="{{ url_for('customer_list') }}">4. ข้อมูลลูกค้าทั้งหมด</a>
+    </div>
+
+  <div class="search-container">
+    <label for="searchInput">ค้นหาลูกค้า</label>
+    <input type="text" id="searchInput" placeholder="ค้นหาชื่อลูกค้า...">
+  </div>
+
+  <button id="addCustomerBtn">➕ เพิ่มลูกค้าใหม่</button>
+
+  <table>
+    <thead>
+      <tr>
+        <th onclick="sortTable(0, 'opd', this)">OPD <span class="arrow">↕</span></th>
+        <th onclick="sortTable(1, 'name', this)">ชื่อ <span class="arrow">↕</span></th>
+        <th onclick="sortTable(2, 'phone', this)">เบอร์โทร <span class="arrow">↕</span></th>
+        <th onclick="sortTable(3, 'birthMonth', this)">เดือนเกิด <span class="arrow">↕</span></th>
+        <th onclick="sortTable(4, 'vip', this)">VIP <span class="arrow">↕</span></th>
+        <th onclick="sortTable(5, 'note', this)">หมายเหตุ <span class="arrow">↕</span></th>
+        <th>จัดการ</th>
+      </tr>
+    </thead>
+    <tbody id="customerTableBody"></tbody>
+  </table>
+
+  <script>
+    let records = [];
+  let maxOPD = 0;
+
+  fetch("/api/sales")
+    .then(res => res.json())
+    .then(data => {
+      records = data;
+      const customerMap = {};
+      data.forEach(r => {
+        if (!r.opd) return;
+        const opd = parseInt(r.opd);
+        if (!customerMap[opd]) {
+          customerMap[opd] = {
+            name: r.name || '',
+            phone: r.phone || '',
+            birthMonth: r.birthMonth || '',
+            vip: r.vip || '',
+            note: r.note || ''
+          };
+        }
+        if (opd > maxOPD) maxOPD = opd;
+      });
+
+      for (let opd = 1; opd <= maxOPD; opd++) {
+        addRow(opd, customerMap[opd] || undefined);
+      }
+    })
+    .catch(err => {
+      console.error("❌ โหลดข้อมูลลูกค้าจาก Supabase ไม่สำเร็จ:", err);
+    });
+
+  const tableBody = document.getElementById('customerTableBody');
+
+  function createEditableCell(opd, key, value) {
+    const cell = document.createElement('td');
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'flex';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.gap = '6px';
+
+    const input = document.createElement('input');
+    input.value = value;
+    input.readOnly = true;
+    input.dataset.key = key;
+    input.dataset.opd = opd;
+    input.style.backgroundColor = 'transparent';
+    input.style.flex = '1';
+
+    const editBtn = document.createElement('button');
+    editBtn.textContent = 'แก้ไข';
+    editBtn.className = 'edit-btn';
+    editBtn.onclick = () => {
+      input.readOnly = false;
+      input.dataset.original = input.value;
+      input.style.backgroundColor = 'white';
+      editBtn.style.display = 'none';
+      saveBtn.style.display = 'inline-block';
+    };
+
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'บันทึก';
+    saveBtn.className = 'save-btn';
+    saveBtn.style.display = 'none';
+    saveBtn.onclick = () => {
+      const newValue = input.value;
+      const originalValue = input.dataset.original;
+      if (newValue !== originalValue) {
+        if (confirm(`คุณต้องการบันทึกการเปลี่ยนแปลง "${key}" สำหรับ OPD ${opd} ใช่หรือไม่?`)) {
+          fetch("/api/update_customer", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ opd: opd.toString(), field: key, value: newValue })
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.message === "อัปเดตสำเร็จ") {
+                alert(`✅ บันทึก ${key} ของ OPD ${opd} แล้ว`);
+              } else {
+                alert("❌ บันทึกไม่สำเร็จ: " + (data.error || "ไม่ทราบสาเหตุ"));
+              }
+            })
+            .catch(err => {
+              console.error("Error:", err);
+              alert("🚫 เกิดปัญหาในการเชื่อมต่อเซิร์ฟเวอร์");
+            });
+        } else {
+          input.value = originalValue;
+        }
+      }
+      input.readOnly = true;
+      input.style.backgroundColor = 'transparent';
+      editBtn.style.display = 'inline-block';
+      saveBtn.style.display = 'none';
+    };
+
+    wrapper.appendChild(input);
+    wrapper.appendChild(editBtn);
+    wrapper.appendChild(saveBtn);
+    cell.appendChild(wrapper);
+    return cell;
+  }
+
+  function createStaticCell(opd) {
+    const cell = document.createElement('td');
+    const input = document.createElement('input');
+    input.value = opd;
+    input.disabled = true;
+    cell.appendChild(input);
+    return cell;
+  }
+
+  function addRow(opd, data = { name: '', phone: '', birthMonth: '', vip: '', note: '' }) {
+    const row = document.createElement('tr');
+    row.appendChild(createStaticCell(opd));
+    row.appendChild(createEditableCell(opd, 'name', data.name));
+    row.appendChild(createEditableCell(opd, 'phone', data.phone));
+    row.appendChild(createEditableCell(opd, 'birthMonth', data.birthMonth));
+    row.appendChild(createEditableCell(opd, 'vip', data.vip));
+    row.appendChild(createEditableCell(opd, 'note', data.note));
+
+    const actionCell = document.createElement('td');
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = 'ลบ';
+    deleteBtn.className = 'delete-btn';
+    deleteBtn.onclick = () => confirmDelete(opd, deleteBtn);
+    actionCell.appendChild(deleteBtn);
+    row.appendChild(actionCell);
+
+    tableBody.appendChild(row);
+  }
+
+  document.getElementById('addCustomerBtn').addEventListener('click', () => {
+    maxOPD++;
+    addRow(maxOPD);
+  });
+
+  document.getElementById("searchInput").addEventListener("input", function () {
+    const keyword = this.value.toLowerCase();
+    const rows = tableBody.querySelectorAll("tr");
+    rows.forEach(row => {
+      const name = row.children[1].querySelector("input").value.toLowerCase();
+      row.style.display = name.includes(keyword) ? "" : "none";
+    });
+  });
+
+  function confirmDelete(opd, btn) {
+    if (!confirm(`คุณต้องการลบข้อมูล OPD ${opd} ใช่หรือไม่?`)) return;
+    fetch("/api/delete_customer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ opd: opd.toString() })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.message === "ลบสำเร็จ") {
+          alert(`🗑️ ลบข้อมูล OPD ${opd} เรียบร้อยแล้ว`);
+          btn.closest('tr').remove();
+        } else {
+          alert("❌ ลบไม่สำเร็จ: " + (data.error || "ไม่ทราบสาเหตุ"));
+        }
+      })
+      .catch(err => {
+        console.error("Error:", err);
+        alert("🚫 เกิดปัญหาในการเชื่อมต่อเซิร์ฟเวอร์");
+      });
+  }
+
+  let sortState = {};
+  function sortTable(columnIndex, keyName, thElement) {
+    const rows = Array.from(tableBody.querySelectorAll("tr"));
+    const ascending = !sortState[keyName];
+    rows.sort((a, b) => {
+      const aVal = a.children[columnIndex].querySelector("input").value.toLowerCase();
+      const bVal = b.children[columnIndex].querySelector("input").value.toLowerCase();
+      const aNum = parseFloat(aVal);
+      const bNum = parseFloat(bVal);
+      const aIsNum = !isNaN(aNum);
+      const bIsNum = !isNaN(bNum);
+      if (aIsNum && bIsNum) {
+        return ascending ? aNum - bNum : bNum - aNum;
+      } else {
+        return ascending ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+    });
+    tableBody.innerHTML = "";
+    rows.forEach(row => tableBody.appendChild(row));
+    document.querySelectorAll("th .arrow").forEach(el => el.textContent = "↕");
+    thElement.querySelector(".arrow").textContent = ascending ? "🔼" : "🔽";
+    sortState[keyName] = ascending;
+  }
+  </script>
+</body>
+</html>
