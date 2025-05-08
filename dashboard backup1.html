@@ -262,13 +262,9 @@
         const price = qtyMatch ? parseInt(qtyMatch[2]) : 0;
         const total = qty * price;
 
-        let category = "อื่นๆ";
-        for (const [cat, subs] of Object.entries(categoryMap)) {
-          if (subs.some(sub => subItem.includes(sub))) {
-            category = cat;
-            break;
-          }
-        }
+        // ดึงชื่อหมวดจากข้อความด้านหน้า เช่น "โปรโมชั่น/อีเว้นพิเศษ (HIFU) - 1 ชิ้น x 0"
+const categoryMatch = item.match(/^(.+?) ?\(/);
+const category = categoryMatch ? categoryMatch[1].trim() : "อื่นๆ";
 
         if (!categoryCounts[category]) categoryCounts[category] = 0;
         if (!categoryDetails[category]) categoryDetails[category] = {};
