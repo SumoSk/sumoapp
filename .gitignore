@@ -1,0 +1,12 @@
+# Ignore environment variable file
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+
+# VS Code settings (ถ้าใช้)
+.vscode/
+
+# OS system files
+.DS_Store

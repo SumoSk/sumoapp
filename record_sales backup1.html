@@ -122,7 +122,26 @@
 </div>
   <div class="container">
     <h2>บันทึกยอดขายประจำวัน</h2>
+    <button class="add-button" onclick="startEditExisting()">✏️ แก้ไขเดิม</button>
+    <div id="editSection" style="display:none; margin-top:20px;">
+      <label>กรอกเลข OPD เพื่อแก้ไข:</label>
+      <input type="text" id="editOPD" placeholder="กรอก OPD">
+      <button type="button" class="save-all-btn" style="background-color: teal;" onclick="loadDatesByOPD()">ค้นหา</button>
+      <div id="editDateButtons" style="margin-top: 20px;"></div>
+      <div id="editRecordList" style="margin-top: 20px;"></div>
+    </div>
+
+
     <form id="saleForm">
+      <div id="editSection" style="display:none; margin-top:20px;">
+        <label>ค้นหาเพื่อแก้ไข:</label>
+        <div class="flex-row">
+          <input type="text" id="editOPD" placeholder="กรอก OPD">
+          
+        </div>
+       
+      </div>
+      
       <label for="date">1. วันที่</label>
       <input type="date" id="date" name="date">
 
@@ -183,27 +202,74 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script>
-    let records = [];
 
-fetch("/api/sales")
-  .then(res => res.json())
-  .then(data => {
-    records = data;
-    renderReviewSection();  // เรียกแสดงข้อมูลหลังโหลดเสร็จ
-  })
-  .catch(err => {
-    console.error("🚫 โหลดข้อมูลจาก Supabase ไม่สำเร็จ:", err);
-  });
-  const subOptionsMap = {
+
+
+
+
+    let records = [];
+    function startEditExisting() {
+  document.getElementById('editSection').style.display = 'block';
+}
+
+function loadDatesByOPD() {
+  const opd = document.getElementById('editOPD').value.trim();
+  if (!opd) return alert("กรุณากรอก OPD");
+
+  fetch("/api/sales")
+    .then(res => res.json())
+    .then(data => {
+      const filtered = data.filter(r => r.opd === opd);
+      if (filtered.length === 0) return alert("ไม่พบข้อมูล OPD นี้");
+
+      const dates = [...new Set(filtered.map(r => r.date.slice(0, 10)))];
+      const buttons = dates.map(d => `<button onclick="showEditList('${d}')" style="margin:5px">${formatDate(d)}</button>`).join('');
+      document.getElementById('editDateButtons').innerHTML = `📅 วันที่ทั้งหมด:<br>${buttons}`;
+      window.editDataByOPD = filtered;
+    });
+}
+
+function showEditList(date) {
+  const records = window.editDataByOPD.filter(r => r.date.slice(0, 10) === date);
+  const html = records.map((r, i) => `
+    <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 8px; border-radius: 8px;">
+      <strong>${r.name}</strong> (${r.phone})<br>
+      ยอด: ${r.amount} บาท / ${r.payment}
+      <button onclick="editSelectedRecord(${i})">✏️</button>
+    </div>
+  `).join('');
+  document.getElementById('editRecordList').innerHTML = `<h4>รายการวันที่ ${formatDate(date)}:</h4>` + html;
+}
+
+function editSelectedRecord(index) {
+  const rec = window.editDataByOPD[index];
+  if (!rec) return;
+  records = [rec];
+  editRecord(0);
+}
+
+const subOptionsMap = {
   "โบทอค": ["Aestox 50 u", "Aestox 100 u", "Allergan 50 u", "Allergan 100 u", "เฉพาะจุด", "แบ่งไว้แล้ว"],
   "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q ระบุสีด้วย", "Restylane ระบุสีด้วย"],
   "Fat/Hifu": ["Bromi", "Sisi", "HIFU", "HIFU แถม"],
-  "งานผิว": ["Meso Chanel", "P - Cell", "Aquatic", "Hestina", "Exosome", "Rejuran", "Belotero Revive", "Sculptra", "Juvelook", "Aesthefill"],
+  "งานผิว": [
+    "Meso Chanel", "P - Cell", "Aquatic", "Hestina", "Exosome", "Rejuran", 
+    "Belotero Revive", "Sculptra", "Juvelook", "Aesthefill", 
+    "PRP", "Mesowink", "สะกิดหน้าใส", "Alphaarbutin", "Transamine"
+  ],
   "ดริปผิว": ["Snow White", "Super Aurawhite", "Vitamin Mix", "Brain Booster", "Energy Booster"],
-  "อื่นๆ": ["ยาฉีดสลายฝ้า", "ครีมทาฝ้า", "ยาทานฝ้า", "ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen", "จ่ายเงิน/จองสินค้า"],
-  "ทรีทเม้นท์": ["ทรีทเมนต์หน้าใส", "ทรีทเมนต์สิว", "ทรีทเมนต์ฝ้า"],
-  "โปรโมชั่น/อีเว้นพิเศษ": []  // <<< เพิ่มบรรทัดนี้เข้าไป
+  "ทรีทเม้นท์": [
+    "ทรีทเมนต์หน้าใส", "ทรีทเมนต์สิว", "ทรีทเมนต์ฝ้า", 
+    "ผลักวิตามิน", "ปั่น RF", "กดสิว", "subcisionสิว"
+  ],
+  "อื่นๆ": [
+    "ยาฉีดสลายฝ้า", "ครีมทาฝ้า", "ยาทานฝ้า", 
+    "ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen", 
+    "จ่ายเงิน/จองสินค้า", "สลายฟิลเลอร์", "PRPผม", "จี้ไฝ"
+  ],
+  "โปรโมชั่น/อีเว้นพิเศษ": []
 };
+
   
 function updateSubOptions(itemSelect, subSelect) {
   const selected = itemSelect.value;
@@ -429,33 +495,36 @@ group.forEach(r => {
 
 
 function saveAllRecords() {
-  if (!confirm('✨ ชัวนะ? บันทึกแล้วไปต่อได้เลย! 💪😄')) {
-    return;
+  if (!confirm('✨ ชัวนะ? บันทึกแล้วไปต่อได้เลย! 💪😄')) return;
+
+  const editOPD = document.getElementById('editOPD')?.value?.trim();
+  const editDate = document.getElementById('date')?.value;
+
+  const payload = [...records];
+
+  // ถ้าเป็นโหมดแก้ไข ให้ส่ง delete_before ด้วย
+  if (editOPD && editDate) {
+    payload.unshift({ delete_before: true, opd: editOPD, date: editDate });
   }
 
-  console.log('Saving all records:', records);
-  
   fetch("/api/save_sales", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(records)
+    body: JSON.stringify(payload)
   })
-    .then(res => res.json())
-    .then(data => {
-      if (data.message === "บันทึกสำเร็จ") {
-        console.log("✅ ส่งเข้า Supabase แล้ว");
-        // 👉 เปลี่ยนหน้าไปยัง sale_summary หลังบันทึกสำเร็จ
-        window.location.href = "/sale_summary";
-      } else {
-        console.warn("❌ ส่งเข้า Supabase ไม่สำเร็จ:", data.error || "ไม่ทราบสาเหตุ");
-        alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่");
-      }
-    })
-    .catch(err => {
-      console.error("🚫 เกิดปัญหาขณะเชื่อมต่อ Supabase:", err);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบเครือข่าย");
-    });
+  .then(res => res.json())
+  .then(data => {
+    if (data.message === "บันทึกสำเร็จ") {
+      window.location.href = "/sale_summary";
+    } else {
+      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่");
+    }
+  })
+  .catch(err => {
+    alert("เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบเครือข่าย");
+  });
 }
+
 
 
 
@@ -483,6 +552,43 @@ function saveAllRecords() {
     document.getElementById('name').value = match.name;
     document.getElementById('phone').value = match.phone;
   }
+}
+function startEditExisting() {
+  document.getElementById('editSection').style.display = 'block';
+}
+
+function loadRecordForEdit() {
+  const opd = document.getElementById('editOPD').value.trim();
+  const date = document.getElementById('editDate').value;
+
+  if (!opd || !date) {
+    alert("กรุณากรอก OPD และวันที่ให้ครบ");
+    return;
+  }
+
+  fetch("/api/sales")
+    .then(res => res.json())
+    .then(data => {
+      const match = data.find(r =>
+        r.opd?.trim() === opd &&
+        (r.date?.slice(0, 10) === date)
+      );
+
+      if (!match) {
+        alert("ไม่พบข้อมูลที่ต้องการแก้ไข");
+        console.log("🔍 ไม่มี match:", { opd, date, data });
+        return;
+      }
+
+      records = [];       // ล้างข้อมูลเก่า
+      records.push(match); // เพิ่มข้อมูลที่โหลดมาใหม่
+
+      editRecord(0);       // นำมาใส่ในฟอร์ม
+    })
+    .catch(err => {
+      console.error("🚫 โหลดข้อมูลเพื่อแก้ไขไม่สำเร็จ:", err);
+      alert("มีข้อผิดพลาดในการโหลดข้อมูล");
+    });
 }
 
     function editRecord(index) {
@@ -537,6 +643,53 @@ function saveAllRecords() {
       
     }
   
+    function deleteRecordFromSupabase(id) {
+  if (!confirm("❌ ลบรายการนี้จริงหรือไม่?")) return;
+
+  fetch("/api/delete_sales_record", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.message === "ลบสำเร็จ") {
+      alert("✅ ลบสำเร็จ");
+      location.reload();  // รีโหลดหน้าเพื่อให้รายการหายไป
+    } else {
+      alert("❌ ลบไม่สำเร็จ: " + data.error);
+    }
+  })
+  .catch(err => {
+    alert("เกิดข้อผิดพลาดในการลบ");
+    console.error(err);
+  });
+}
+function autoFillByOPD() {
+  const opd = document.getElementById('opd').value.trim();
+  if (opd.length < 4) return; // ป้องกันเติมเองก่อนกรอกครบ
+
+  fetch("/api/sales")
+    .then(res => res.json())
+    .then(data => {
+      const match = data.find(rec =>
+        String(rec.opd).trim() === String(opd) &&
+        rec.name && rec.phone
+      );
+
+      if (match) {
+        document.getElementById('name').value = match.name;
+        document.getElementById('phone').value = match.phone;
+      }
+    })
+    .catch(err => {
+      console.error("❌ โหลดข้อมูลไม่สำเร็จ:", err);
+    });
+}
+
+
+
+
 </script>
 </body>
 </html>
