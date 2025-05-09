@@ -92,7 +92,6 @@ def api_sales():
         return jsonify(data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 @app.route('/api/save_sales', methods=['POST'])
 def save_sales():
     data = request.get_json()
@@ -100,38 +99,84 @@ def save_sales():
 
     inserted_count = 0
     try:
+        # 🔄 ถ้ามี delete ก่อน (กรณีแก้ไข)
         if data and data[0].get('delete_before'):
             delete_opd = data[0].get('opd')
             delete_date = data[0].get('date')
             print(f"🧽 ลบข้อมูลเดิม opd={delete_opd}, date={delete_date}")
-            supabase.table("sales_records").delete().match({"opd": delete_opd, "date": delete_date}).execute()
+            supabase.table("sales_records").delete().match({
+                "opd": delete_opd,
+                "date": delete_date
+            }).execute()
             data = data[1:]
 
         for i, rec in enumerate(data):
             print(f"🔍 กำลังบันทึกรายการที่ {i+1}: {rec}")
+
+            # ✳️ เตรียม opd 4 หลัก
+            opd_4digit = rec.get('opd', '').zfill(4)
+
+            # 🟡 อัปเดตหรือเพิ่มใน customers
+            if opd_4digit and rec.get('name'):
+                customer_data = {
+                    "opd": opd_4digit,
+                    "name": rec.get('name', ''),
+                    "phone": rec.get('phone', ''),
+                    "birthMonth": rec.get('birthMonth', ''),
+                    "vip": rec.get('vip', ''),
+                    "note": rec.get('note', '')
+                }
+                supabase.table("customers").upsert(customer_data, on_conflict=["opd"]).execute()
+
+            # 🔵 บันทึกใน sales_records
             rec['item'] = json.dumps(rec.get('items', []))
             rec.pop('items', None)
             rec.pop('id', None)
+            rec['opd'] = opd_4digit  # บังคับให้ใช้ opd 4 หลัก
+
             response = supabase.table("sales_records").insert(rec).execute()
             print("✅ บันทึกสำเร็จ:", response)
             inserted_count += 1
 
         return jsonify({"message": "บันทึกสำเร็จ", "inserted": inserted_count})
+
     except Exception as e:
         print("❌ ERROR เกิดขึ้นขณะบันทึก:", e)
         return jsonify({"error": str(e)}), 500
 
+    
+@app.route('/api/customers')
+def api_customers():
+    try:
+        response = supabase.table("customers").select("*").execute()
+        return jsonify(response.data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route('/api/update_customer', methods=['POST'])
 def update_customer():
     data = request.json
-    opd = data.get('opd')
+    opd = str(data.get('opd')).strip()
     field = data.get('field')
     value = data.get('value')
+
+    print(f"🧾 กำลังอัปเดต opd = '{opd}' field = '{field}' value = '{value}'")
+
     try:
-        supabase.table("sales_records").update({field: value}).eq("opd", opd).execute()
-        return jsonify({"message": "อัปเดตสำเร็จ"})
+        # ✅ แก้ตรงนี้ให้ใช้ customers
+        res = supabase.table("customers").update({field: value}).eq("opd", opd).execute()
+        print("🔍 UPDATE RESULT:", res)
+        return jsonify({
+            "message": "อัปเดตสำเร็จ",
+            "debug": res.data
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+
+
 
 @app.route('/api/delete_customer', methods=['POST'])
 def delete_customer():

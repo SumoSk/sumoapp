@@ -202,6 +202,20 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script>
+let customerMap = {};
+
+fetch("/api/customers")
+  .then(res => res.json())
+  .then(data => {
+    data.forEach(c => {
+      if (c.opd) {
+        customerMap[c.opd] = {
+          name: c.name || "",
+          phone: c.phone || ""
+        };
+      }
+    });
+  });
 
 
 
@@ -541,18 +555,7 @@ function saveAllRecords() {
         
       }
     }
-    function autoFillByOPD() {
-  const opdValue = document.getElementById('opd').value.trim();
-  const allRecords = records;
-
-
-  const match = allRecords.find(rec => rec.opd === opdValue && rec.name && rec.phone);
-  
-  if (match) {
-    document.getElementById('name').value = match.name;
-    document.getElementById('phone').value = match.phone;
-  }
-}
+    
 function startEditExisting() {
   document.getElementById('editSection').style.display = 'block';
 }
@@ -665,26 +668,15 @@ function loadRecordForEdit() {
     console.error(err);
   });
 }
+
 function autoFillByOPD() {
-  const opd = document.getElementById('opd').value.trim();
-  if (opd.length < 4) return; // ป้องกันเติมเองก่อนกรอกครบ
-
-  fetch("/api/sales")
-    .then(res => res.json())
-    .then(data => {
-      const match = data.find(rec =>
-        String(rec.opd).trim() === String(opd) &&
-        rec.name && rec.phone
-      );
-
-      if (match) {
-        document.getElementById('name').value = match.name;
-        document.getElementById('phone').value = match.phone;
-      }
-    })
-    .catch(err => {
-      console.error("❌ โหลดข้อมูลไม่สำเร็จ:", err);
-    });
+  const opd = document.getElementById('opd').value.trim().padStart(4, '0');
+  if (!opd) return;
+  const customer = customerMap[opd];
+  if (customer) {
+    document.getElementById('name').value = customer.name;
+    document.getElementById('phone').value = customer.phone;
+  }
 }
 
 
