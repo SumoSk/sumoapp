@@ -207,7 +207,8 @@ summaryRow.appendChild(compareDiv);
         table.style.borderCollapse = 'collapse';
         table.style.marginTop = '10px';
 
-        const sortedRecs = recs.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+        const sortedRecs = recs.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+
 
         let tbodyRows = '';
         let currentDate = '';
@@ -338,46 +339,7 @@ reviewSection.appendChild(summaryDiv);
 
       chartData.sort((a, b) => a.month.localeCompare(b.month));
 
-      new Chart(canvas, {
-        type: 'bar',
-        data: {
-          labels: chartData.map(d => {
-            const [year, month] = d.month.split("-");
-            const thMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-            return `${thMonths[parseInt(month) - 1]} ${parseInt(d.total).toLocaleString()} บาท`;
-          }),
-          datasets: [{
-            label: 'ยอดขายรายเดือน',
-            data: chartData.map(d => d.total),
-            backgroundColor: 'rgba(76, 175, 80, 0.6)',
-            hoverBackgroundColor: 'rgba(76, 175, 80, 0.9)',
-            borderRadius: 20,
-            barThickness: 30
-          }]
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: '#333',
-              titleFont: { size: 16 },
-              bodyFont: { size: 14 },
-              callbacks: {
-                label: ctx => `💰 ${ctx.raw.toLocaleString()} บาท`
-              }
-            }
-          },
-          scales: {
-            x: { display: false },
-            y: {
-              ticks: { font: { size: 14 }, color: '#333' },
-              grid: { display: false }
-            }
-          }
-        }
-      });
+      
     }
 
     function formatDate(dateStr) {
