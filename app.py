@@ -14,8 +14,8 @@ app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 
 # Supabase config
-url = "https://wggtpayglmqvneyrxons.supabase.co"
-key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndnZ3RwYXlnbG1xdm5leXJ4b25zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyODExNzcsImV4cCI6MjA2MTg1NzE3N30.IcdBWo9Hpj6_dbF9ScsrqMYiEdf1_cmdavMaHJDU-JM"
+url = os.getenv("SUPABASE_URL")
+key = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
 @app.route('/', methods=['GET', 'POST'])
