@@ -22,12 +22,14 @@ supabase: Client = create_client(url, key)
 def login():
     error = None
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form['username'].strip()
+        password = request.form['password'].strip()
 
         try:
             result = supabase.table("users").select("*").eq("username", username).single().execute()
+            print("📦 Result:", result)
             user = result.data
+            print("📦 User data:", user)
 
             if user:
                 if user['password_hash'] == password:
