@@ -191,11 +191,18 @@ def delete_customer():
 @app.route('/api/add_customer', methods=['POST'])
 def add_customer():
     data = request.json
+    opd = str(data.get("opd", "")).zfill(4)
+
     try:
+        check = supabase.table("customers").select("*").eq("opd", opd).execute()
+        if check.data:
+            return jsonify({"error": "มี OPD นี้อยู่แล้ว"}), 400
+
         supabase.table("customers").insert(data).execute()
         return jsonify({"message": "เพิ่มลูกค้าสำเร็จ"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/logout')
 def logout():

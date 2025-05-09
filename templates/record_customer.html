@@ -137,6 +137,17 @@
 
   <button id="addCustomerBtn">➕ เพิ่มลูกค้าใหม่</button>
 
+<div id="customerForm" style="display:none; max-width: 400px; margin: 20px auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+  <h3 style="margin-top: 0;">➕ เพิ่มลูกค้าใหม่</h3>
+  <input type="text" id="new_opd" placeholder="เลข OPD (4 หลัก)" style="margin-bottom: 10px;">
+  <input type="text" id="new_name" placeholder="ชื่อ" style="margin-bottom: 10px;">
+  <input type="text" id="new_phone" placeholder="เบอร์โทร" style="margin-bottom: 10px;">
+  <input type="text" id="new_birthMonth" placeholder="เดือนเกิด" style="margin-bottom: 10px;">
+  <input type="text" id="new_vip" placeholder="VIP" style="margin-bottom: 10px;">
+  <input type="text" id="new_note" placeholder="หมายเหตุ" style="margin-bottom: 10px;">
+  <button onclick="submitNewCustomer()" class="save-btn" style="width: 100%;">✅ บันทึกลูกค้า</button>
+</div>
+
   <table>
     <thead>
       <tr>
@@ -153,6 +164,55 @@
   </table>
 
   <script>
+    document.getElementById('addCustomerBtn').addEventListener('click', () => {
+  document.getElementById('customerForm').style.display = 'block';
+});
+
+function submitNewCustomer() {
+  const opd = document.getElementById("new_opd").value.trim().padStart(4, '0');
+  const name = document.getElementById("new_name").value.trim();
+  const phone = document.getElementById("new_phone").value.trim();
+  const birthMonth = document.getElementById("new_birthMonth").value.trim();
+  const vip = document.getElementById("new_vip").value.trim();
+  const note = document.getElementById("new_note").value.trim();
+
+  if (!opd) return alert("❗ ต้องกรอกเลข OPD");
+
+  // ตรวจสอบซ้ำ
+  fetch("/api/customers")
+    .then(res => res.json())
+    .then(data => {
+      const exists = data.some(c => String(c.opd).padStart(4, '0') === opd);
+      if (exists) return alert("🚫 มี OPD นี้อยู่ในระบบแล้ว");
+
+      const payload = { opd, name, phone, birthMonth, vip, note };
+      return fetch("/api/add_customer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.message) {
+        alert("✅ เพิ่มลูกค้าสำเร็จ");
+
+        // 🧹 เคลียร์ช่องกรอกทุกช่องในฟอร์ม
+        document.querySelectorAll("#customerForm input").forEach(input => input.value = "");
+
+        // 🔄 โหลดหน้าใหม่เพื่อแสดงลูกค้า
+        location.reload();
+      } else {
+        alert("❌ เพิ่มไม่สำเร็จ: " + (data?.error || "ไม่ทราบสาเหตุ"));
+      }
+    })
+    .catch(err => {
+      console.error("❌ ERROR:", err);
+      alert("⚠️ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์");
+    });
+}
+
+
   let records = [];
   let maxOPD = "0000";
 
@@ -285,11 +345,7 @@
     tableBody.appendChild(row);
   }
 
-  document.getElementById('addCustomerBtn').addEventListener('click', () => {
-    const nextOPD = String(parseInt(maxOPD) + 1).padStart(4, '0');
-    maxOPD = nextOPD;
-    addRow(nextOPD);
-  });
+  
 
   document.getElementById("searchInput").addEventListener("input", function () {
     const keyword = this.value.toLowerCase();
@@ -346,5 +402,7 @@
     sortState[keyName] = ascending;
   }
 </script>
+
+
 </body>
 </html>
