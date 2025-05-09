@@ -247,3 +247,19 @@ def cleanup_duplicates():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+@app.route('/api/oldsaledata')
+def api_oldsaledata():
+    try:
+        response = supabase.table("oldsaledata").select("*").execute()
+        return jsonify(response.data)
+    except Exception as e:
+        print("❌ ERROR loading oldsaledata:", e)
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/oldsaledata')
+def oldsaledata():
+    if 'username' in session:
+        return render_template('oldsaledata.html')
+    return redirect(url_for('login'))
