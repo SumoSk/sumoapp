@@ -6,7 +6,7 @@
   <title>บันทึกข้อมูลลูกค้า</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Prompt', 'Segoe UI', sans-serif;
       margin: 0;
       background-color: #f7f7f7;
       padding: 10px;
@@ -124,7 +124,7 @@
 <body>
     <div class="menu-bar">
         <a href="{{ url_for('dashboard') }}">หน้าแรก</a>
-      <a href="{{ url_for('sale_summary') }}">1. สรุปยอดขายประจำวัน</a>
+      <a href="{{ url_for('sale_summary') }}">1. สรุปยอดขายประจำเดือน</a>
       <a href="{{ url_for('record_sales') }}">2. บันทึกยอดขายประจำวัน</a>
       <a href="{{ url_for('record_customer') }}">3. บันทึกข้อมูลลูกค้า</a>
       <a href="{{ url_for('customer_list') }}">4. ข้อมูลลูกค้าทั้งหมด</a>
@@ -235,7 +235,15 @@ function formatThaiShortDate(dateStr) {
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   return diffDays >= 0 ? diffDays : '-';
 }
+document.getElementById('searchInput').addEventListener('input', function () {
+    const keyword = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#oldsale-body tr');
 
+    rows.forEach(row => {
+      const text = row.textContent.toLowerCase();
+      row.style.display = text.includes(keyword) ? '' : 'none';
+    });
+  });
 
   </script>
 </body>
