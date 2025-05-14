@@ -187,12 +187,15 @@
   <div id="mainTitle">
     <div class="month"></div>
     <div class="total"></div>
+    <div class="compare" style="font-size: 13px; margin-top: 6px;"></div>
   </div>
 
   <div class="top10-box">
     <h3>Top 10 ลูกค้าใช้จ่ายสูงสุด</h3>
     <ul id="top10List"></ul>
-    <p id="totalCustomer" style="text-align:center; margin-top: 10px; font-weight: bold; color: teal;"></p>
+    <p id="totalCustomer" onclick="toggleCustomerList()" style="text-align:center; margin-top: 10px; font-weight: bold; color: teal; cursor: pointer;"></p>
+<ul id="allCustomerList" style="display:none; padding-top: 10px;"></ul>
+
   </div>
 
   <div class="chart-summary-row">
@@ -239,45 +242,112 @@
     document.querySelector('#mainTitle .month').textContent = `${monthName} ${yearBE}`;
 
     let totalSales = 0;
+    let lastMonthSales = 0;
+    let toDateSales = 0;
+    let toDateLastMonthSales = 0;
+
+
+// กำหนดวันที่วันนี้จริง (เพื่อใช้เป็น reference)
+const today = new Date();
+const todayRealDate = today.getDate();
+
+// เอาวันที่เดียวกันของเดือนที่กำลังดู
+const viewingDay = Math.min(todayRealDate, daysInMonth(viewingDate.getFullYear(), viewingDate.getMonth() + 1));
+const todayDate = viewingDay;
+
+
+
+
+const currentPrefix = viewingDate.toISOString().slice(0, 7);
+const lastMonthDate = new Date(viewingDate);
+lastMonthDate.setMonth(viewingDate.getMonth() - 1);
+const lastPrefix = lastMonthDate.toISOString().slice(0, 7);
     const categoryCounts = {};
     const categoryDetails = {};
     const customerMap = {};
 
-    records.forEach(r => {
-      if (!r.date.startsWith(prefix)) return;
+    // ✅ รอบที่ 1: คำนวณยอดขายรวมของเดือนปัจจุบันและเดือนก่อนหน้า
+records.forEach(r => {
+  const amount = parseFloat(r.amount || 0);
+  if (r.date.startsWith(currentPrefix)) {
+  totalSales += amount;
 
-      const key = `${r.name}|${r.phone}`;
-      if (!customerMap[key]) {
-        customerMap[key] = { name: r.name, phone: r.phone, date: r.date, amount: 0 };
-      }
-      customerMap[key].amount += parseFloat(r.amount || 0);
-      customerMap[key].date = r.date > customerMap[key].date ? r.date : customerMap[key].date;
+  const recDay = parseInt(r.date.split("-")[2]);
+  if (recDay <= todayDate) {
+    toDateSales += amount;
+  }
+}
 
-      totalSales += parseFloat(r.amount || 0);
+if (r.date.startsWith(lastPrefix)) {
+  lastMonthSales += amount;
 
-      (r.items || []).forEach(item => {
-        const match = item.match(/\((.*?)\)/);
-        const subItem = match ? match[1] : item;
-        const qtyMatch = item.match(/- (\d+) ชิ้น x (\d+)/);
-        const qty = qtyMatch ? parseInt(qtyMatch[1]) : 0;
-        const price = qtyMatch ? parseInt(qtyMatch[2]) : 0;
-        const total = qty * price;
+  const recDay = parseInt(r.date.split("-")[2]);
+  if (recDay <= todayDate) {
+    toDateLastMonthSales += amount;
+  }
+}
+  
+});
 
-        // ดึงชื่อหมวดจากข้อความด้านหน้า เช่น "โปรโมชั่น/อีเว้นพิเศษ (HIFU) - 1 ชิ้น x 0"
-const categoryMatch = item.match(/^(.+?) ?\(/);
-const category = categoryMatch ? categoryMatch[1].trim() : "อื่นๆ";
+// ✅ รอบที่ 2: ประมวลผลเฉพาะเดือนที่กำลังแสดงผล
+records
+  .filter(r => r.date.startsWith(prefix))
+  .forEach(r => {
+    const key = `${r.name}|${r.phone}`;
+    if (!customerMap[key]) {
+      customerMap[key] = { name: r.name, phone: r.phone, date: r.date, amount: 0 };
+    }
+    customerMap[key].amount += parseFloat(r.amount || 0);
+    customerMap[key].date = r.date > customerMap[key].date ? r.date : customerMap[key].date;
 
-        if (!categoryCounts[category]) categoryCounts[category] = 0;
-        if (!categoryDetails[category]) categoryDetails[category] = {};
+    (r.items || []).forEach(item => {
+      const match = item.match(/\((.*?)\)/);
+      const subItem = match ? match[1] : item;
+      const qtyMatch = item.match(/- (\d+) ชิ้น x (\d+)/);
+      const qty = qtyMatch ? parseInt(qtyMatch[1]) : 0;
+      const price = qtyMatch ? parseInt(qtyMatch[2]) : 0;
+      const total = qty * price;
 
-        categoryCounts[category] += qty;
-        categoryDetails[category][subItem] = categoryDetails[category][subItem] || { qty: 0, total: 0 };
-        categoryDetails[category][subItem].qty += qty;
-        categoryDetails[category][subItem].total += total;
-      });
+      const categoryMatch = item.match(/^(.+?) ?\(/);
+      const category = categoryMatch ? categoryMatch[1].trim() : "อื่นๆ";
+
+      if (!categoryCounts[category]) categoryCounts[category] = 0;
+      if (!categoryDetails[category]) categoryDetails[category] = {};
+
+      categoryCounts[category] += qty;
+      categoryDetails[category][subItem] = categoryDetails[category][subItem] || { qty: 0, total: 0 };
+      categoryDetails[category][subItem].qty += qty;
+      categoryDetails[category][subItem].total += total;
     });
+  });
+
 
     document.querySelector('#mainTitle .total').innerHTML = `💰 ยอดขายรวม ${totalSales.toLocaleString()} บาท`;
+
+
+
+const compareEl = document.querySelector('#mainTitle .compare');
+
+let diff = totalSales - lastMonthSales;
+let text = diff > 0
+  ? `<span style="color: green;">+${diff.toLocaleString()} บาท จากเดือนก่อน</span>`
+  : diff < 0
+    ? `<span style="color: red;">-${Math.abs(diff).toLocaleString()} บาท จากเดือนก่อน</span>`
+    : `<span style="color: gray;">ยอดเท่าเดิมกับเดือนก่อน</span>`;
+
+diff = toDateSales - toDateLastMonthSales;
+let text2 = diff > 0
+  ? `<span style="color: green;">📆 จนถึงวันที่ ${todayDate}: +${diff.toLocaleString()} บาท จากเดือนก่อน</span>`
+  : diff < 0
+    ? `<span style="color: red;">📆 จนถึงวันที่ ${todayDate}: -${Math.abs(diff).toLocaleString()} บาท จากเดือนก่อน</span>`
+    : `<span style="color: gray;">📆 จนถึงวันที่ ${todayDate}: ยอดเท่าเดิมกับเดือนก่อน</span>`;
+
+compareEl.innerHTML = `${text}<br>${text2}`;
+
+
+
+
+
 
     const sortedEntries = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
     const labels = sortedEntries.map(([cat]) => cat);
@@ -323,6 +393,8 @@ const category = categoryMatch ? categoryMatch[1].trim() : "อื่นๆ";
       return `<div class="summary-group"><strong>${cat}</strong> — รวม ${sumQty} ชิ้น = ${total.toLocaleString()} บาท<ul>${items}</ul></div>`;
     }).join('');
 
+    fullCustomerList = Object.values(customerMap).sort((a, b) => b.amount - a.amount);
+
     const sortedCustomers = Object.values(customerMap)
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 10);
@@ -333,10 +405,31 @@ const category = categoryMatch ? categoryMatch[1].trim() : "อื่นๆ";
       return `<li><span class="name">${c.name}</span><span class="date"> (${formatted})</span><span class="amount">${c.amount.toLocaleString()} บาท</span></li>`;
     }).join('');
 
-    document.getElementById('totalCustomer').textContent = `จำนวนลูกค้าที่มาใช้บริการทั้งหมด ${Object.keys(customerMap).length} คน`;
+    document.getElementById('totalCustomer').textContent = `จำนวนลูกค้าที่มาใช้บริการทั้งหมด ${Object.keys(customerMap).length} คน (กดดูเพิ่มเติม)`;
   }
 
   fetchDataAndUpdate();
+
+  let fullCustomerList = [];
+
+function toggleCustomerList() {
+  const listEl = document.getElementById("allCustomerList");
+  if (listEl.style.display === "none") {
+    listEl.style.display = "block";
+    listEl.innerHTML = fullCustomerList.slice(10).map((c, i) => {
+      const date = new Date(c.date);
+      const formatted = date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+      return `<li><span class="name">${i + 11}. ${c.name}</span><span class="date"> (${formatted})</span><span class="amount">${c.amount.toLocaleString()} บาท</span></li>`;
+    }).join('');
+  } else {
+    listEl.style.display = "none";
+  }
+}
+function daysInMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+
   </script>
 </body>
 </html>
