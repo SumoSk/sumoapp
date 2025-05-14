@@ -122,14 +122,14 @@
   </style>
 </head>
 <body>
-    <div class="menu-bar">
-        <a href="{{ url_for('dashboard') }}">หน้าแรก</a>
-      <a href="{{ url_for('sale_summary') }}">1. สรุปยอดขายประจำเดือน</a>
-      <a href="{{ url_for('record_sales') }}">2. บันทึกยอดขายประจำวัน</a>
-      <a href="{{ url_for('record_customer') }}">3. บันทึกข้อมูลลูกค้า</a>
-      <a href="{{ url_for('customer_list') }}">4. ข้อมูลลูกค้าทั้งหมด</a>
-      <a href="{{ url_for('oldsaledata') }}">5. ข้อมูลเก่า</a>
-    </div>
+  <div class="menu-bar">
+    <a href="{{ url_for('dashboard') }}">หน้าแรก</a>
+    <a href="{{ url_for('sale_summary') }}">1. สรุปยอดขายประจำเดือน</a>
+    <a href="{{ url_for('record_sales') }}">2. บันทึกยอดขายประจำวัน</a>
+    <a href="{{ url_for('record_customer') }}">3. บันทึกข้อมูลลูกค้า</a>
+    <a href="{{ url_for('customer_list') }}">4. ข้อมูลลูกค้าทั้งหมด</a>
+    <a href="{{ url_for('oldsaledata') }}">5. ข้อมูลเก่า</a>
+  </div>
 
   <div class="search-container">
     <label for="searchInput">ค้นหาลูกค้า</label>
@@ -154,24 +154,30 @@
   </table>
 
   <script>
-
-function formatThaiShortDate(dateStr) {
-  if (!dateStr || typeof dateStr !== 'string') return '-';
-  const parts = dateStr.split("-");
-  if (parts.length !== 3) return '-';
-  const [y, m, d] = parts;
-  return `${d}/${m}/${y.slice(2)}`;  // เช่น 2025-04-30 → 30/04/25
-}
-
+    function formatThaiShortDate(dateStr) {
+      if (!dateStr || typeof dateStr !== 'string') return '-';
+      const parts = dateStr.split("-");
+      if (parts.length !== 3) return '-';
+      const [y, m, d] = parts;
+      return `${d}/${m}/${y.slice(2)}`;
+    }
 
     function getThaiMonth(monthNum) {
-  const months = [
-    "", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-    "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
-  ];
-  const n = parseInt(monthNum);
-  return n >= 1 && n <= 12 ? months[n] : "-";
-}
+      const months = [
+        "", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+        "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+      ];
+      const n = parseInt(monthNum);
+      return n >= 1 && n <= 12 ? months[n] : "-";
+    }
+
+    function parseThaiDate(dateStr) {
+      const parts = dateStr.split('/');
+      if (parts.length !== 3) return new Date(0);
+      const [d, m, y] = parts;
+      const fullYear = parseInt(y) < 50 ? 2000 + parseInt(y) : 1900 + parseInt(y);
+      return new Date(fullYear, parseInt(m) - 1, parseInt(d));
+    }
 
     fetch("/api/oldsaledata")
       .then(res => res.json())
@@ -195,8 +201,6 @@ function formatThaiShortDate(dateStr) {
             <td>${getThaiMonth(row.birth_month)}</td>
             <td>${formatThaiShortDate(row.first_visit_date)}</td>
             <td>${formatThaiShortDate(row.last_visit_date)}</td>
-            
-
           `;
           body.appendChild(tr);
         });
@@ -217,8 +221,16 @@ function formatThaiShortDate(dateStr) {
       const dir = sortState[key] ? 1 : -1;
 
       rows.sort((a, b) => {
-        const valA = a.cells[colIndex].textContent.trim().toLowerCase();
-        const valB = b.cells[colIndex].textContent.trim().toLowerCase();
+        const valA = a.cells[colIndex].textContent.trim();
+        const valB = b.cells[colIndex].textContent.trim();
+
+        // คอลัมน์วันแรก = 7, วันล่าสุด = 8
+        if (colIndex === 7 || colIndex === 8) {
+          const dateA = parseThaiDate(valA);
+          const dateB = parseThaiDate(valB);
+          return (dateA - dateB) * dir;
+        }
+
         const isNum = !isNaN(parseFloat(valA)) && !isNaN(parseFloat(valB));
         return (isNum ? (parseFloat(valA) - parseFloat(valB)) : valA.localeCompare(valB)) * dir;
       });
@@ -228,23 +240,22 @@ function formatThaiShortDate(dateStr) {
     }
 
     function calcDaysAbsent(lastDateStr) {
-  if (!lastDateStr) return '-';
-  const today = new Date();
-  const last = new Date(lastDateStr);
-  const diffTime = today - last;
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays >= 0 ? diffDays : '-';
-}
-document.getElementById('searchInput').addEventListener('input', function () {
-    const keyword = this.value.toLowerCase();
-    const rows = document.querySelectorAll('#oldsale-body tr');
+      if (!lastDateStr) return '-';
+      const today = new Date();
+      const last = new Date(lastDateStr);
+      const diffTime = today - last;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays >= 0 ? diffDays : '-';
+    }
 
-    rows.forEach(row => {
-      const text = row.textContent.toLowerCase();
-      row.style.display = text.includes(keyword) ? '' : 'none';
+    document.getElementById('searchInput').addEventListener('input', function () {
+      const keyword = this.value.toLowerCase();
+      const rows = document.querySelectorAll('#oldsale-body tr');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(keyword) ? '' : 'none';
+      });
     });
-  });
-
   </script>
 </body>
 </html>

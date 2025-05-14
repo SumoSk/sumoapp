@@ -320,30 +320,31 @@
 
   let sortState = {};
   function sortTable(colIndex) {
-    const tbody = document.getElementById("customer-table-body");
-    const rows = Array.from(tbody.rows).filter((_, i) => i % 2 === 0);
-    const detailRows = Array.from(tbody.rows).filter((_, i) => i % 2 !== 0);
+  const tbody = document.getElementById("customer-table-body");
+  const rows = Array.from(tbody.rows).filter((_, i) => i % 2 === 0);
+  const detailRows = Array.from(tbody.rows).filter((_, i) => i % 2 !== 0);
 
-    const key = `col-${colIndex}`;
-    sortState[key] = !sortState[key];
-    const direction = sortState[key] ? 1 : -1;
+  const key = `col-${colIndex}`;
+  sortState[key] = !sortState[key];
+  const direction = sortState[key] ? 1 : -1;
 
-    const sorted = rows.map((row, i) => ({
-      row,
-      detailRow: detailRows[i],
-      value: row.cells[colIndex].textContent.trim().replace(/[^\u0E00-\u0E7F\w\s.-]/g, '')
-    })).sort((a, b) => {
-      const aVal = isNaN(a.value) ? a.value.toLowerCase() : parseFloat(a.value);
-      const bVal = isNaN(b.value) ? b.value.toLowerCase() : parseFloat(b.value);
-      return (aVal > bVal ? 1 : aVal < bVal ? -1 : 0) * direction;
-    });
+  const sorted = rows.map((row, i) => {
+    const cellText = row.cells[colIndex].textContent.trim();
+    const isDateCol = (colIndex === 4);
+    const numericText = cellText.replace(/,/g, '');
+    const value = isDateCol
+      ? parseThaiDate(cellText)
+      : (isNaN(numericText) ? cellText.toLowerCase() : parseFloat(numericText));
+    return { row, detailRow: detailRows[i], value };
+  }).sort((a, b) => (a.value > b.value ? 1 : a.value < b.value ? -1 : 0) * direction);
 
-    tbody.innerHTML = '';
-    sorted.forEach(({ row, detailRow }) => {
-      tbody.appendChild(row);
-      tbody.appendChild(detailRow);
-    });
-  }
+  tbody.innerHTML = '';
+  sorted.forEach(({ row, detailRow }) => {
+    tbody.appendChild(row);
+    tbody.appendChild(detailRow);
+  });
+}
+
 
   function calcDaysAbsent(lastDateStr) {
     const today = new Date();
@@ -351,6 +352,15 @@
     const diffTime = today - lastDate;
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
   }
+
+  // เพิ่ม parseThaiDate สำหรับจัดเรียงวันที่
+    function parseThaiDate(dateStr) {
+      const parts = dateStr.split('/');
+      if (parts.length !== 3) return new Date(0);
+      const [d, m, y] = parts;
+      const fullYear = parseInt(y) < 50 ? 2000 + parseInt(y) : 1900 + parseInt(y);
+      return new Date(fullYear, parseInt(m) - 1, parseInt(d));
+    }
   </script>
 </body>
 </html>
