@@ -2,8 +2,17 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+  <!-- ✅ iOS Home Screen Fullscreen + Icon -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="SumoPalm">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo.jpg') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+
   <title>เข้าสู่ระบบ</title>
+
   <style>
     * {
       box-sizing: border-box;
