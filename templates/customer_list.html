@@ -312,20 +312,40 @@
     });
   }
 
+
+
+
+
   document.getElementById('searchInput').addEventListener('input', function () {
-    const val = this.value.toLowerCase();
-    const rows = document.querySelectorAll('#customer-table-body tr');
-    for (let i = 0; i < rows.length; i += 2) {
-      const row = rows[i];
-      const detailRow = rows[i + 1];
-      const name = row.children[2].textContent.toLowerCase();
-      const phone = row.children[3].textContent.toLowerCase();
-      const opd = row.children[1].textContent.toLowerCase();
-      const matched = name.includes(val) || phone.includes(val) || opd.includes(val);
-      row.style.display = matched ? '' : 'none';
+  const val = this.value.toLowerCase();
+  const rows = document.querySelectorAll('#customer-table-body tr');
+  for (let i = 0; i < rows.length; i += 2) {
+    const row = rows[i];
+    const detailRow = rows[i + 1];
+    const name = row.children[2].textContent.toLowerCase();
+    const phone = row.children[3].textContent.toLowerCase();
+    const opd = row.children[1].textContent.toLowerCase();
+    const matched = name.includes(val) || phone.includes(val) || opd.includes(val);
+
+    if (matched) {
+      row.style.display = '';
+      detailRow.style.display = ''; // 👈 ต้องแสดงแถว detail ด้วย
+      // และซ่อน div ข้างในไว้ก่อน เพื่อป้องกันแสดงออกมาเลย
+      const detailDiv = detailRow.querySelector('.details');
+      if (detailDiv) detailDiv.style.display = 'none';
+    } else {
+      row.style.display = 'none';
       detailRow.style.display = 'none';
     }
-  });
+  }
+});
+
+
+
+
+
+
+
 
   let sortState = {};
   function sortTable(colIndex) {

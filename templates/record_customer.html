@@ -225,7 +225,7 @@ function submitNewCustomer() {
       const customerMap = {};
       data.forEach(r => {
         if (!r.opd) return;
-        const opd = r.opd;
+        const opd = String(r.opd).padStart(4, '0');
         if (!customerMap[opd]) {
           customerMap[opd] = {
             name: r.name || '',
