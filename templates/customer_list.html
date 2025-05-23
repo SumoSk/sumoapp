@@ -113,6 +113,12 @@
       font-weight: bold;
       cursor: pointer;
     }
+    .phone-toggle {
+  padding: 4px 8px;
+  border-radius: 8px;
+  background-color: #e3f2fd;
+  font-weight: bold;
+}
   </style>
 </head>
 <body>
@@ -194,7 +200,10 @@
           <td>${i + 1}</td>
           <td>${c.opd}</td>
           <td>${c.name}</td>
-          <td>${c.phone}</td>
+          <td>
+  <span class="phone-toggle" style="color: #0288d1; cursor: pointer;" data-phone="${c.phone}" onclick="togglePhone(this)">📞</span>
+</td>
+
           <td>${formatDate(c.lastDate)}</td>
           <td>${c.total.toLocaleString()}</td>
           <td>${daysAbsent}</td>
@@ -422,6 +431,16 @@
   });
 
   return Array.from(keywordSet).join(', ');
+}
+
+function togglePhone(el) {
+  if (el.dataset.showing === "true") {
+    el.innerText = "📞";
+    el.dataset.showing = "false";
+  } else {
+    el.innerText = el.dataset.phone;
+    el.dataset.showing = "true";
+  }
 }
 
   </script>
