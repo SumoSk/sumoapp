@@ -113,16 +113,22 @@
       font-weight: bold;
       cursor: pointer;
     }
+    .phone-toggle {
+  padding: 4px 8px;
+  border-radius: 8px;
+  background-color: #e3f2fd;
+  font-weight: bold;
+}
   </style>
 </head>
 <body>
   <div class="menu-bar">
         <a href="{{ url_for('dashboard') }}">หน้าแรก</a>
-      <a href="{{ url_for('sale_summary') }}">1. สรุปยอดขายประจำเดือน</a>
-      <a href="{{ url_for('record_sales') }}">2. บันทึกยอดขายประจำวัน</a>
-      <a href="{{ url_for('record_customer') }}">3. บันทึกข้อมูลลูกค้า</a>
-      <a href="{{ url_for('customer_list') }}">4. ข้อมูลลูกค้าทั้งหมด</a>
-      <a href="{{ url_for('oldsaledata') }}">5. ข้อมูลเก่า</a>
+      <a href="{{ url_for('sale_summary') }}">สรุปยอดขาย</a>
+      <a href="{{ url_for('record_sales') }}">บันทึกยอดขาย</a>
+      <a href="{{ url_for('record_customer') }}">บันทึกข้อมูลลูกค้า</a>
+      <a href="{{ url_for('customer_list') }}">ข้อมูลลูกค้า</a>
+      <a href="{{ url_for('oldsaledata') }}">ข้อมูลเก่า</a>
     </div>
 
   <div class="search-container">
@@ -141,6 +147,7 @@
         <th onclick="sortTable(5)">ยอดรวม (บาท) ⬍</th>
         <th onclick="sortTable(6)">ไม่มาคลินิก (วัน) ⬍</th>
         <th onclick="sortTable(7)">หมายเหตุ ⬍</th>
+        <th onclick="sortTable(8)">รายการเด่นที่เคยซื้อ ⬍</th>
         <th>ดูข้อมูล</th>
       </tr>
     </thead>
@@ -188,15 +195,20 @@
         const row = document.createElement('tr');
         const detailsId = `details-${i}`;
         const daysAbsent = calcDaysAbsent(c.lastDate);
+        const keywords = extractKeywordsFromHistory(c.history); // ✅ ต้องใส่บรรทัดนี้ก่อนใช้
         row.innerHTML = `
           <td>${i + 1}</td>
           <td>${c.opd}</td>
           <td>${c.name}</td>
-          <td>${c.phone}</td>
+          <td>
+  <span class="phone-toggle" style="color: #0288d1; cursor: pointer;" data-phone="${c.phone}" onclick="togglePhone(this)">📞</span>
+</td>
+
           <td>${formatDate(c.lastDate)}</td>
           <td>${c.total.toLocaleString()}</td>
           <td>${daysAbsent}</td>
            <td>${c.note || '-'}</td> <!-- ✅ เพิ่มตรงนี้ -->
+           <td>${keywords || '-'}</td>
           <td><button class="show-btn" onclick="toggleDetails('${detailsId}')">ดูรายละเอียด</button></td>
         `;
         tableBody.appendChild(row);
@@ -309,20 +321,45 @@
     });
   }
 
+
+
+
+
   document.getElementById('searchInput').addEventListener('input', function () {
-    const val = this.value.toLowerCase();
-    const rows = document.querySelectorAll('#customer-table-body tr');
-    for (let i = 0; i < rows.length; i += 2) {
-      const row = rows[i];
-      const detailRow = rows[i + 1];
-      const name = row.children[2].textContent.toLowerCase();
-      const phone = row.children[3].textContent.toLowerCase();
-      const opd = row.children[1].textContent.toLowerCase();
-      const matched = name.includes(val) || phone.includes(val) || opd.includes(val);
-      row.style.display = matched ? '' : 'none';
+  const val = this.value.trim().toLowerCase();
+  const rows = document.querySelectorAll('#customer-table-body tr');
+
+  for (let i = 0; i < rows.length; i += 2) {
+    const row = rows[i];
+    const detailRow = rows[i + 1];
+
+    const opd = (row.children[1]?.textContent || "").toLowerCase();
+    const name = (row.children[2]?.textContent || "").toLowerCase();
+    const phone = (row.children[3]?.textContent || "").toLowerCase();
+    const note = (row.children[7]?.textContent || "").toLowerCase();
+    const keywords = (row.children[8]?.textContent || "").toLowerCase();
+
+    const matched = opd.includes(val) || name.includes(val) || phone.includes(val) || note.includes(val) || keywords.includes(val);
+
+    if (matched) {
+      row.style.display = '';
+      detailRow.style.display = '';
+      const detailDiv = detailRow.querySelector('.details');
+      if (detailDiv) detailDiv.style.display = 'none';
+    } else {
+      row.style.display = 'none';
       detailRow.style.display = 'none';
     }
-  });
+  }
+});
+
+
+
+
+
+
+
+
 
   let sortState = {};
   function sortTable(colIndex) {
@@ -367,6 +404,45 @@
       const fullYear = parseInt(y) < 50 ? 2000 + parseInt(y) : 1900 + parseInt(y);
       return new Date(fullYear, parseInt(m) - 1, parseInt(d));
     }
+    function extractKeywordsFromHistory(history) {
+  const keywordSet = new Set();
+  const commonKeywords = [
+    "Aestox", "Allergan", "เฉพาะจุด", "แบ่งไว้แล้ว",
+    "Neuramis", "E.P.T.Q", "Restylane",
+    "Bromi", "Sisi", "HIFU", "HIFU แถม",
+    "Meso Chanel", "P - Cell", "Aquatic", "Hestina", "Exosome", "Rejuran",
+    "Belotero Revive", "Sculptra", "Juvelook", "Aesthefill", 
+    "PRP", "Mesowink", "สะกิดหน้าใส", "Alphaarbutin", "Transamine",
+    "Snow White", "Super Aurawhite", "Vitamin Mix", "Brain Booster", "Energy Booster",
+    "หน้าใส", "สิว", "ฝ้า", "ผลักวิตามิน", "ปั่น RF", "กดสิว", "subcisionสิว",
+    "ยาฉีดสลายฝ้า", "ครีมทาฝ้า", "ยาทานฝ้า", 
+    "ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen", 
+    "จ่ายเงิน", "จองสินค้า", "สลายฟิลเลอร์", "PRPผม", "จี้ไฝ"
+  ];
+
+  history.forEach(h => {
+    (h.items || []).forEach(itemStr => {
+      commonKeywords.forEach(keyword => {
+        if (itemStr.toLowerCase().includes(keyword.toLowerCase())) {
+          keywordSet.add(keyword);
+        }
+      });
+    });
+  });
+
+  return Array.from(keywordSet).join(', ');
+}
+
+function togglePhone(el) {
+  if (el.dataset.showing === "true") {
+    el.innerText = "📞";
+    el.dataset.showing = "false";
+  } else {
+    el.innerText = el.dataset.phone;
+    el.dataset.showing = "true";
+  }
+}
+
   </script>
 </body>
 </html>

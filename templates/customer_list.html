@@ -7,10 +7,19 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
+    
+
+    td.note-col,
+td.keyword-col {
+  font-size: 12px;        /* ขนาดเล็กลงจากปกติ */
+  color: #444;            /* สีเทาเข้ม อ่านง่าย */
+  line-height: 1.4em;     /* ระยะบรรทัดพอดี */
+}
+    
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f7f7f7;
+  font-family: 'Prompt', 'Segoe UI', sans-serif;
       margin: 0;
+      background-color: #f7f7f7;
       padding: 10px;
     }
     .menu-bar {
@@ -81,13 +90,7 @@
     tr:hover {
       background-color: #e0f2f1;
     }
-    .details {
-      display: none;
-      background-color: #f1f1f1;
-      padding: 10px 15px;
-      border-radius: 8px;
-      margin: 10px 0;
-    }
+ 
     .details ul {
       padding-left: 20px;
       margin: 0;
@@ -119,7 +122,32 @@
   background-color: #e3f2fd;
   font-weight: bold;
 }
+.details {
+  display: flex;
+  justify-content: flex-start;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+}
+.detail-bar {
+  display: inline-block;
+  padding: 1px 1px;
+  margin: 0px 0 0 0;
+  background-color: #e3f2fd;
+  color: #0277bd;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.detail-bar:hover {
+  background-color: #bbdefb;
+}
+
   </style>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="menu-bar">
@@ -140,15 +168,15 @@
     <thead>
       <tr>
         <th onclick="sortTable(0)">ลำดับ ⬍</th>
-        <th onclick="sortTable(1)">เลข OPD ⬍</th>
+        <th onclick="sortTable(1)">OPD ⬍</th>
         <th onclick="sortTable(2)">ชื่อลูกค้า ⬍</th>
         <th onclick="sortTable(3)">เบอร์โทร ⬍</th>
-        <th onclick="sortTable(4)">วันล่าสุดที่ซื้อ ⬍</th>
+        <th onclick="sortTable(4)">วันล่าสุด ⬍</th>
         <th onclick="sortTable(5)">ยอดรวม (บาท) ⬍</th>
-        <th onclick="sortTable(6)">ไม่มาคลินิก (วัน) ⬍</th>
+        <th onclick="sortTable(6)">ไม่มาคลินิก ⬍</th>
         <th onclick="sortTable(7)">หมายเหตุ ⬍</th>
-        <th onclick="sortTable(8)">รายการเด่นที่เคยซื้อ ⬍</th>
-        <th>ดูข้อมูล</th>
+        <th onclick="sortTable(8)">รายการที่เคยซื้อ ⬍</th>
+        
       </tr>
     </thead>
     <tbody id="customer-table-body"></tbody>
@@ -207,22 +235,25 @@
           <td>${formatDate(c.lastDate)}</td>
           <td>${c.total.toLocaleString()}</td>
           <td>${daysAbsent}</td>
-           <td>${c.note || '-'}</td> <!-- ✅ เพิ่มตรงนี้ -->
-           <td>${keywords || '-'}</td>
-          <td><button class="show-btn" onclick="toggleDetails('${detailsId}')">ดูรายละเอียด</button></td>
+           <td class="note-col">${c.note || '-'}</td>
+          <td class="keyword-col">${keywords || '-'}</td>
+          
         `;
         tableBody.appendChild(row);
 
         const detailsRow = document.createElement('tr');
-        const detailCell = document.createElement('td');
-        detailCell.colSpan = 8;
-        detailCell.innerHTML = `
-          <div class="details" id="${detailsId}">
-            ${generateHistoryHTML(c.history, c.name)}
-          </div>
-        `;
-        detailsRow.appendChild(detailCell);
-        tableBody.appendChild(detailsRow);
+const detailCell = document.createElement('td');
+detailCell.colSpan = 9;
+detailCell.innerHTML = `
+  <div class="details" id="${detailsId}">
+    <div class="detail-bar" onclick="toggleDetails('${detailsId}')">📖 ดูรายละเอียดเพิ่มเติม</div>
+    <div class="detail-content" style="display:none; margin-top:10px;">
+      ${generateHistoryHTML(c.history, c.name)}
+    </div>
+  </div>
+`;
+detailsRow.appendChild(detailCell);
+tableBody.appendChild(detailsRow);
       });
 
       // Enable export
@@ -246,12 +277,10 @@
     });
 
   function toggleDetails(id) {
-  const el = document.getElementById(id);
-  if (el.style.display === 'block') {
-    el.style.display = 'none';
-  } else {
-    el.style.display = 'block';
-  }
+  const container = document.getElementById(id);
+  const content = container.querySelector(".detail-content");
+  const isVisible = content.style.display === 'block';
+  content.style.display = isVisible ? 'none' : 'block';
 }
 
   function generateHistoryHTML(history, customerName) {
