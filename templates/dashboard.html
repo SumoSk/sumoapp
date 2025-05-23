@@ -330,9 +330,9 @@ const compareEl = document.querySelector('#mainTitle .compare');
 
 let diff = totalSales - lastMonthSales;
 let text = diff > 0
-  ? `<span style="color: green;">+${diff.toLocaleString()} บาท จากเดือนก่อน</span>`
+  ? `<span style="color: green;">+${diff.toLocaleString()} บาท จากยอดรวมทั้งเดือนก่อน</span>`
   : diff < 0
-    ? `<span style="color: red;">-${Math.abs(diff).toLocaleString()} บาท จากเดือนก่อน</span>`
+    ? `<span style="color: red;">-${Math.abs(diff).toLocaleString()} บาท จากยอดรวมทั้งเดือนก่อน</span>`
     : `<span style="color: gray;">ยอดเท่าเดิมกับเดือนก่อน</span>`;
 
 diff = toDateSales - toDateLastMonthSales;
