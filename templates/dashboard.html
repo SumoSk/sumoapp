@@ -387,11 +387,8 @@ compareEl.innerHTML = `${text}<br>${text2}`;
 
     document.getElementById('summaryList').innerHTML = sortedEntries.map(([cat]) => {
       const items = Object.entries(categoryDetails[cat] || {})
-      
-        .map(([sub, d]) => `<li>• ${sub} ${d.qty} ชิ้น</li>`)
-        .join('');
+        .map(([sub, d]) => `<li>• ${sub} ${d.qty} ชิ้น = ${d.total.toLocaleString()} บาท</li>`).join('');
       const total = Object.values(categoryDetails[cat] || {}).reduce((s, i) => s + i.total, 0);
-
       const sumQty = categoryCounts[cat];
       return `<div class="summary-group"><strong>${cat}</strong> — รวม ${sumQty} ชิ้น = ${total.toLocaleString()} บาท<ul>${items}</ul></div>`;
     }).join('');

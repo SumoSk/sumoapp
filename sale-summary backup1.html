@@ -44,12 +44,13 @@
 
 <body>
   <div class="menu-bar">
-    <a href="{{ url_for('dashboard') }}">หน้าแรก</a>
-  <a href="{{ url_for('sale_summary') }}">1. สรุปยอดขายประจำเดือน</a>
-  <a href="{{ url_for('record_sales') }}">2. บันทึกยอดขายประจำเดือน</a>
-  <a href="{{ url_for('record_customer') }}">3. บันทึกข้อมูลลูกค้า</a>
-  <a href="{{ url_for('customer_list') }}">4. ข้อมูลลูกค้าทั้งหมด</a>
-</div>
+        <a href="{{ url_for('dashboard') }}">หน้าแรก</a>
+      <a href="{{ url_for('sale_summary') }}">1. สรุปยอดขายประจำเดือน</a>
+      <a href="{{ url_for('record_sales') }}">2. บันทึกยอดขายประจำวัน</a>
+      <a href="{{ url_for('record_customer') }}">3. บันทึกข้อมูลลูกค้า</a>
+      <a href="{{ url_for('customer_list') }}">4. ข้อมูลลูกค้าทั้งหมด</a>
+      <a href="{{ url_for('oldsaledata') }}">5. ข้อมูลเก่า</a>
+    </div>
 
   <div class="container">
     <h2>สรุปยอดขายประจำเดือน</h2>
@@ -207,7 +208,8 @@ summaryRow.appendChild(compareDiv);
         table.style.borderCollapse = 'collapse';
         table.style.marginTop = '10px';
 
-        const sortedRecs = recs.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+        const sortedRecs = recs.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+
 
         let tbodyRows = '';
         let currentDate = '';
@@ -215,7 +217,19 @@ summaryRow.appendChild(compareDiv);
         let dailyTotal = 0;
 
         sortedRecs.forEach((r, i) => {
-  const itemList = r.items.map(item => `<li>${item}</li>`).join('');
+  const itemList = r.items.map(item => {
+  const match = item.match(/^(.*?) ?(?:\((.*?)\))? - (\d+) ชิ้น/);
+  if (match) {
+    const main = match[1]; // เช่น โบทอก
+    const sub = match[2];  // เช่น Aestox 100 u
+    const qty = match[3];  // เช่น 1
+    const display = sub ? `${main} (${sub}) - ${qty} ชิ้น` : `${main} - ${qty} ชิ้น`;
+    return `<li>${display}</li>`;
+  } else {
+    return `<li>${item}</li>`; // fallback
+  }
+}).join('');
+
   const formattedDate = formatDate(r.date);
 
   if (formattedDate !== currentDate) {
@@ -248,7 +262,23 @@ summaryRow.appendChild(compareDiv);
         <div><strong>${r.name}</strong></div>
         <div style="font-size: 12px; color: #777;">OPD: ${r.opd}</div>
       </td>
-      <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">${r.phone}</td>
+      <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">
+  <span 
+    class="phone-icon" 
+    style="cursor:pointer; color:#0288d1;" 
+    onclick="
+      if (this.dataset.showing === 'true') {
+        this.innerText = '📞';
+        this.dataset.showing = 'false';
+      } else {
+        this.innerText = '${r.phone}';
+        this.dataset.showing = 'true';
+      }
+    "
+    data-showing="false"
+  >📞</span>
+</td>
+
       <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">
         <ul style='margin:0; padding-left: 16px;'>${itemList}</ul>
       </td>
@@ -338,46 +368,7 @@ reviewSection.appendChild(summaryDiv);
 
       chartData.sort((a, b) => a.month.localeCompare(b.month));
 
-      new Chart(canvas, {
-        type: 'bar',
-        data: {
-          labels: chartData.map(d => {
-            const [year, month] = d.month.split("-");
-            const thMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-            return `${thMonths[parseInt(month) - 1]} ${parseInt(d.total).toLocaleString()} บาท`;
-          }),
-          datasets: [{
-            label: 'ยอดขายรายเดือน',
-            data: chartData.map(d => d.total),
-            backgroundColor: 'rgba(76, 175, 80, 0.6)',
-            hoverBackgroundColor: 'rgba(76, 175, 80, 0.9)',
-            borderRadius: 20,
-            barThickness: 30
-          }]
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: '#333',
-              titleFont: { size: 16 },
-              bodyFont: { size: 14 },
-              callbacks: {
-                label: ctx => `💰 ${ctx.raw.toLocaleString()} บาท`
-              }
-            }
-          },
-          scales: {
-            x: { display: false },
-            y: {
-              ticks: { font: { size: 14 }, color: '#333' },
-              grid: { display: false }
-            }
-          }
-        }
-      });
+      
     }
 
     function formatDate(dateStr) {

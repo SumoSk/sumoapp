@@ -6,7 +6,7 @@
   <title>สรุปยอดขายประจำวัน</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
+  font-family: 'Prompt', 'Segoe UI', sans-serif;
       margin: 0;
       background-color: #f7f7f7;
       padding: 10px;
@@ -32,7 +32,7 @@
       margin-top: 0;
     }
     .container {
-      max-width: 700px;
+      max-width: 1000px;
       margin: 30px auto;
       background: #ffffff;
       border-radius: 12px;
@@ -40,6 +40,8 @@
       box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
   </style>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
+
 </head>
 
 <body>
@@ -217,7 +219,19 @@ summaryRow.appendChild(compareDiv);
         let dailyTotal = 0;
 
         sortedRecs.forEach((r, i) => {
-  const itemList = r.items.map(item => `<li>${item}</li>`).join('');
+  const itemList = r.items.map(item => {
+  const match = item.match(/^(.*?) ?(?:\((.*?)\))? - (\d+) ชิ้น/);
+  if (match) {
+    const main = match[1]; // เช่น โบทอก
+    const sub = match[2];  // เช่น Aestox 100 u
+    const qty = match[3];  // เช่น 1
+    const display = sub ? `${main} (${sub}) - ${qty} ชิ้น` : `${main} - ${qty} ชิ้น`;
+    return `<li>${display}</li>`;
+  } else {
+    return `<li>${item}</li>`; // fallback
+  }
+}).join('');
+
   const formattedDate = formatDate(r.date);
 
   if (formattedDate !== currentDate) {
@@ -250,7 +264,23 @@ summaryRow.appendChild(compareDiv);
         <div><strong>${r.name}</strong></div>
         <div style="font-size: 12px; color: #777;">OPD: ${r.opd}</div>
       </td>
-      <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">${r.phone}</td>
+      <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">
+  <span 
+    class="phone-icon" 
+    style="cursor:pointer; color:#0288d1;" 
+    onclick="
+      if (this.dataset.showing === 'true') {
+        this.innerText = '📞';
+        this.dataset.showing = 'false';
+      } else {
+        this.innerText = '${r.phone}';
+        this.dataset.showing = 'true';
+      }
+    "
+    data-showing="false"
+  >📞</span>
+</td>
+
       <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">
         <ul style='margin:0; padding-left: 16px;'>${itemList}</ul>
       </td>
