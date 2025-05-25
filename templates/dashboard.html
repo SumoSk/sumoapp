@@ -11,6 +11,7 @@
       margin: 0;
       background-color: white;
       padding: 10px;
+       padding-bottom: 120px;
     }
     .menu-bar {
       display: flex;
@@ -166,19 +167,49 @@
         grid-template-columns: 1fr;
       }
     }
+
+    .floating-dock {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  border-radius: 24px;
+  padding: 8px 12px;
+  display: flex;
+  gap: 16px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  z-index: 1000;
+}
+
+.icon-button {
+  width: 72px;
+  height: 72px;
+  padding: 4px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  text-decoration: none;
+}
+
+.icon-button:hover {
+  transform: scale(1.1);
+}
+
+.icon-button img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="menu-bar">
-        <a href="{{ url_for('dashboard') }}">หน้าแรก</a>
-      <a href="{{ url_for('sale_summary') }}">สรุปยอดขาย</a>
-      <a href="{{ url_for('record_sales') }}">บันทึกยอดขาย</a>
-      <a href="{{ url_for('record_customer') }}">บันทึกข้อมูลลูกค้า</a>
-      <a href="{{ url_for('customer_list') }}">ข้อมูลลูกค้า</a>
-      <a href="{{ url_for('oldsaledata') }}">ข้อมูลเก่า</a>
-    </div>
-
+  
   <div class="month-nav">
     <button onclick="changeMonth(-1)">← เดือนก่อนหน้า</button>
     <button onclick="changeMonth(1)">เดือนถัดไป →</button>
@@ -330,9 +361,9 @@ const compareEl = document.querySelector('#mainTitle .compare');
 
 let diff = totalSales - lastMonthSales;
 let text = diff > 0
-  ? `<span style="color: green;">+${diff.toLocaleString()} บาท จากยอดรวมทั้งเดือนก่อน</span>`
+  ? `<span style="color: green;">+${diff.toLocaleString()} บาท จากเดือนก่อน</span>`
   : diff < 0
-    ? `<span style="color: red;">-${Math.abs(diff).toLocaleString()} บาท จากยอดรวมทั้งเดือนก่อน</span>`
+    ? `<span style="color: red;">-${Math.abs(diff).toLocaleString()} บาท จากเดือนก่อน</span>`
     : `<span style="color: gray;">ยอดเท่าเดิมกับเดือนก่อน</span>`;
 
 diff = toDateSales - toDateLastMonthSales;
@@ -431,5 +462,35 @@ function daysInMonth(year, month) {
 
 
   </script>
+  <div class="floating-dock">
+  <a href="{{ url_for('dashboard') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}">
+  </a>
+  <a href="{{ url_for('sale_summary') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}">
+  </a>
+  <a href="{{ url_for('record_sales') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}">
+  </a>
+    <a href="{{ url_for('customer_list') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}">
+  </a>
+  <a href="{{ url_for('record_customer') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}">
+  </a>
+  <a href="{{ url_for('oldsaledata') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}">
+  </a>
+  <a href="#" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_staff.png') }}">
+  </a>
+  <a href="#" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_inventory.png') }}">
+  </a>
+  <a href="#" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_appointments.png') }}">
+  </a>
+</div>
+
 </body>
 </html>
