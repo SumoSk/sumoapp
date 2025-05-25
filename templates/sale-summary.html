@@ -11,28 +11,21 @@
       background-color: #f7f7f7;
       padding: 10px;
     }
-    .menu-bar {
-      display: flex;
-      justify-content: space-around;
-      background-color: white;
-      padding: 10px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-      position: sticky;  /* ✅ ให้ค้างด้านบน */
-  top: 0;
-  z-index: 1000;      /* ✅ ซ้อนอยู่เหนือส่วนอื่น */
-    }
+    
+    
     .search-container {
-      max-width: 95%;
-      margin: 0 auto 20px auto;
-      background-color: white;
-      border-radius: 12px;
-      padding: 15px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-      position: sticky;   /* ✅ ให้ค้างด้านบน */
-  top: 60px;           /* ✅ เว้นจากเมนูด้านบนประมาณ 60px */
-  z-index: 999;        /* ✅ ให้ลอยเหนือเนื้อหา */
+   position: fixed;
+  bottom: 130px; /* ✅ เว้นระยะไม่ให้ชน floating-dock */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 600px;
+  background: rgba(235, 255, 245, 0.6); /* ✅ เขียวอ่อนโปร่ง */
+  backdrop-filter: blur(12px);          /* ✅ เบลอหรูหรา */
+  border-radius: 20px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 999;
     }
     .search-container label {
       font-weight: bold;
@@ -43,16 +36,18 @@
     }
     .search-container input {
       width: 100%;
-      padding: 10px 40px 10px 40px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 30px;
-      background-color: #f1f1f1;
-      background-image: url('https://cdn-icons-png.flaticon.com/512/622/622669.png');
-      background-size: 18px;
-      background-repeat: no-repeat;
-      background-position: 12px center;
-      box-sizing: border-box;
+  padding: 10px 16px 10px 40px;
+  font-size: 16px;
+  border: none;
+  border-radius: 30px;
+  background-color: rgba(255, 255, 255, 0.4); /* ✅ โปร่งนิดๆ */
+  background-image: url('https://cdn-icons-png.flaticon.com/512/622/622669.png');
+  background-size: 18px;
+  background-repeat: no-repeat;
+  background-position: 12px center;
+  box-sizing: border-box;
+  color: #222;
+  outline: none;
     }
     .menu-bar a {
       text-decoration: none;
@@ -73,20 +68,51 @@
       padding: 30px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
+
+    
+    .floating-dock {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(235, 255, 245, 0.6); /* เขียวอ่อนพิเศษ */
+  backdrop-filter: blur(16px);         /* ความเบลอหรูหรา */
+  border-radius: 24px;
+  padding: 8px 12px;
+  display: flex;
+  gap: 16px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  z-index: 1000;
+}
+
+.icon-button {
+  width: 72px;
+  height: 72px;
+  padding: 4px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  text-decoration: none;
+}
+
+.icon-button:hover {
+  transform: scale(1.1);
+}
+
+.icon-button img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
 
 </head>
 
 <body>
-  <div class="menu-bar">
-        <a href="{{ url_for('dashboard') }}">หน้าแรก</a>
-      <a href="{{ url_for('sale_summary') }}">สรุปยอดขาย</a>
-      <a href="{{ url_for('record_sales') }}">บันทึกยอดขาย</a>
-      <a href="{{ url_for('record_customer') }}">บันทึกข้อมูลลูกค้า</a>
-      <a href="{{ url_for('customer_list') }}">ข้อมูลลูกค้า</a>
-      <a href="{{ url_for('oldsaledata') }}">ข้อมูลเก่า</a>
-    </div>
+  
 <div class="search-container">
     
     <input type="text" id="searchInput" placeholder="พิมพ์คำค้น...">
@@ -392,8 +418,17 @@ const totalPromoAmount = recs
 summaryHTML += renderItemSummary('⭐ สินค้าทั่วไป', itemSummary, itemTotal, totalNormalAmount);
 summaryHTML += renderItemSummary('🎁 โปรโมชั่น', promoItemSummary, promoItemTotal, totalPromoAmount);
 
-summaryDiv.innerHTML = summaryHTML;
+summaryDiv.innerHTML = `
+  <button onclick="toggleSummary()" style="margin-bottom:10px; padding:8px 16px; background-color:#43a047; color:white; border:none; border-radius:8px; cursor:pointer;">
+    📦 สรุปรายการขายแยกหมวดหมู่
+  </button>
+  <div id="summaryContent" style="display:none;">
+    ${summaryHTML}
+  </div>
+`;
+
 reviewSection.appendChild(summaryDiv);
+
 
         
         
@@ -429,7 +464,42 @@ reviewSection.appendChild(summaryDiv);
     row.style.display = text.includes(val) ? '' : 'none';
   });
 });
-
+function toggleSummary() {
+  const content = document.getElementById('summaryContent');
+  if (!content) return;
+  content.style.display = content.style.display === 'none' ? 'block' : 'none';
+}
   </script>
+
+
+  <div class="floating-dock">
+  <a href="{{ url_for('dashboard') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}">
+  </a>
+  <a href="{{ url_for('sale_summary') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}">
+  </a>
+  <a href="{{ url_for('record_sales') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}">
+  </a>
+    <a href="{{ url_for('customer_list') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}">
+  </a>
+  <a href="{{ url_for('record_customer') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}">
+  </a>
+  <a href="{{ url_for('oldsaledata') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}">
+  </a>
+  <a href="#" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_staff.png') }}">
+  </a>
+  <a href="#" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_inventory.png') }}">
+  </a>
+  <a href="#" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_appointments.png') }}">
+  </a>
+</div>
 </body>
 </html>

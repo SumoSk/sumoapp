@@ -6,27 +6,13 @@
   <title>บันทึกข้อมูลลูกค้า</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Prompt', 'Segoe UI', sans-serif;
       margin: 0;
-      background-color: #f7f7f7;
-      padding: 10px;
-      color: #222;
-    }
-    .menu-bar {
-      display: flex;
-      justify-content: space-around;
       background-color: white;
       padding: 10px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+       padding-bottom: 120px;
     }
-    .menu-bar a {
-      text-decoration: none;
-      font-weight: bold;
-      color: teal;
-    }
-    .search-container {
+        .search-container {
       max-width: 95%;
       margin: 0 auto 20px auto;
       display: flex;
@@ -119,23 +105,64 @@
     .edit-btn { background-color: #0288d1; }
     .save-btn { background-color: #4caf50; }
     .delete-btn { background-color: #e53935; }
+
+
+    .floating-dock {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  border-radius: 24px;
+  padding: 8px 12px;
+  display: flex;
+  gap: 16px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  z-index: 1000;
+}
+
+.icon-button {
+  width: 72px;
+  height: 72px;
+  padding: 4px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  text-decoration: none;
+}
+
+.icon-button:hover {
+  transform: scale(1.1);
+}
+
+.icon-button img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
   </style>
 </head>
 <body>
-    <div class="menu-bar">
-        <a href="{{ url_for('dashboard') }}">หน้าแรก</a>
-      <a href="{{ url_for('sale_summary') }}">1. สรุปยอดขายประจำวัน</a>
-      <a href="{{ url_for('record_sales') }}">2. บันทึกยอดขายประจำวัน</a>
-      <a href="{{ url_for('record_customer') }}">3. บันทึกข้อมูลลูกค้า</a>
-      <a href="{{ url_for('customer_list') }}">4. ข้อมูลลูกค้าทั้งหมด</a>
-    </div>
-
-  <div class="search-container">
+      <div class="search-container">
     <label for="searchInput">ค้นหาลูกค้า</label>
     <input type="text" id="searchInput" placeholder="ค้นหาชื่อลูกค้า...">
   </div>
 
   <button id="addCustomerBtn">➕ เพิ่มลูกค้าใหม่</button>
+
+<div id="customerForm" style="display:none; max-width: 400px; margin: 20px auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+  <h3 style="margin-top: 0;">➕ เพิ่มลูกค้าใหม่</h3>
+  <input type="text" id="new_opd" placeholder="เลข OPD (4 หลัก)" style="margin-bottom: 10px;">
+  <input type="text" id="new_name" placeholder="ชื่อ" style="margin-bottom: 10px;">
+  <input type="text" id="new_phone" placeholder="เบอร์โทร" style="margin-bottom: 10px;">
+  <input type="text" id="new_birthMonth" placeholder="เดือนเกิด" style="margin-bottom: 10px;">
+  <input type="text" id="new_vip" placeholder="VIP" style="margin-bottom: 10px;">
+  <input type="text" id="new_note" placeholder="หมายเหตุ" style="margin-bottom: 10px;">
+  <button onclick="submitNewCustomer()" class="save-btn" style="width: 100%;">✅ บันทึกลูกค้า</button>
+</div>
 
   <table>
     <thead>
@@ -153,17 +180,67 @@
   </table>
 
   <script>
-    let records = [];
-  let maxOPD = 0;
+    document.getElementById('addCustomerBtn').addEventListener('click', () => {
+  document.getElementById('customerForm').style.display = 'block';
+});
 
-  fetch("/api/sales")
+function submitNewCustomer() {
+  const opd = document.getElementById("new_opd").value.trim().padStart(4, '0');
+  const name = document.getElementById("new_name").value.trim();
+  const phone = document.getElementById("new_phone").value.trim();
+  const birthMonth = document.getElementById("new_birthMonth").value.trim();
+  const vip = document.getElementById("new_vip").value.trim();
+  const note = document.getElementById("new_note").value.trim();
+
+  if (!opd) return alert("❗ ต้องกรอกเลข OPD");
+
+  // ตรวจสอบซ้ำ
+  fetch("/api/customers")
     .then(res => res.json())
     .then(data => {
+      const exists = data.some(c => String(c.opd).padStart(4, '0') === opd);
+      if (exists) return alert("🚫 มี OPD นี้อยู่ในระบบแล้ว");
+
+      const payload = { opd, name, phone, birthMonth, vip, note };
+      return fetch("/api/add_customer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.message) {
+        alert("✅ เพิ่มลูกค้าสำเร็จ");
+
+        // 🧹 เคลียร์ช่องกรอกทุกช่องในฟอร์ม
+        document.querySelectorAll("#customerForm input").forEach(input => input.value = "");
+
+        // 🔄 โหลดหน้าใหม่เพื่อแสดงลูกค้า
+        location.reload();
+      } else {
+        alert("❌ เพิ่มไม่สำเร็จ: " + (data?.error || "ไม่ทราบสาเหตุ"));
+      }
+    })
+    .catch(err => {
+      console.error("❌ ERROR:", err);
+      alert("⚠️ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์");
+    });
+}
+
+
+  let records = [];
+  let maxOPD = "0000";
+
+  fetch("/api/customers")
+    .then(res => res.json())
+    .then(data => {
+      console.log("📦 ข้อมูลที่โหลดได้จาก customers:", data); // ✅ เพิ่มบรรทัดนี้
       records = data;
       const customerMap = {};
       data.forEach(r => {
         if (!r.opd) return;
-        const opd = parseInt(r.opd);
+        const opd = String(r.opd).padStart(4, '0');
         if (!customerMap[opd]) {
           customerMap[opd] = {
             name: r.name || '',
@@ -176,9 +253,9 @@
         if (opd > maxOPD) maxOPD = opd;
       });
 
-      for (let opd = 1; opd <= maxOPD; opd++) {
-        addRow(opd, customerMap[opd] || undefined);
-      }
+      Object.keys(customerMap).sort().forEach(opd => {
+        addRow(opd, customerMap[opd]);
+      });
     })
     .catch(err => {
       console.error("❌ โหลดข้อมูลลูกค้าจาก Supabase ไม่สำเร็จ:", err);
@@ -284,10 +361,7 @@
     tableBody.appendChild(row);
   }
 
-  document.getElementById('addCustomerBtn').addEventListener('click', () => {
-    maxOPD++;
-    addRow(maxOPD);
-  });
+  
 
   document.getElementById("searchInput").addEventListener("input", function () {
     const keyword = this.value.toLowerCase();
@@ -343,6 +417,8 @@
     thElement.querySelector(".arrow").textContent = ascending ? "🔼" : "🔽";
     sortState[keyName] = ascending;
   }
-  </script>
+</script>
+
+
 </body>
 </html>
