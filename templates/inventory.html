@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>คลังเวชภัณฑ์</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+      padding-bottom: 120px;
+    }
+    h2 {
+      text-align: center;
+      color: #00695c;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #e0f2f1;
+      color: #00695c;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    td.name {
+      font-weight: bold;
+      text-align: left;
+    }
+    td input[type="number"] {
+      width: 80px;
+      padding: 4px;
+      font-size: 14px;
+      text-align: center;
+    }
+    .btn-bar {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .btn-bar button {
+      padding: 10px 20px;
+      font-size: 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #00796b;
+      color: white;
+      margin: 0 10px;
+    }
+    .btn-bar button:hover {
+      background: #004d40;
+    }
+    .floating-dock {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgb(235, 255, 245);
+      border-radius: 24px;
+      padding: 8px 12px;
+      display: flex;
+      gap: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      z-index: 1000;
+    }
+    .icon-button {
+      width: 74px;
+      height: 74px;
+      padding: 4px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease;
+      text-decoration: none;
+    }
+    .icon-button:hover {
+      transform: scale(1.1);
+    }
+    .icon-button img {
+      width: 74px;
+      height: 74px;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+<h2>คลังเวชภัณฑ์</h2>
+<table>
+  <thead>
+    <tr id="tableHeader">
+      <th>ชื่อเวชภัณฑ์</th>
+      <!-- วันที่จะถูกเพิ่มแบบไดนามิก -->
+      <th><input type="date" id="inputDate" style="font-size:14px;padding:4px;" /></th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+<div class="btn-bar">
+  <button onclick="submit()">ยืนยันบันทึกทั้งหมด</button>
+</div>
+<script>
+const groupedData = {};
+window.dynamicDates = [];
+
+async function fetchData() {
+  const res = await fetch("/api/inventory");
+  const data = await res.json();
+  const dateSet = new Set();
+  data.forEach(row => {
+    if (!groupedData[row.item_name]) groupedData[row.item_name] = {};
+    groupedData[row.item_name][row.date] = row.quantity;
+    dateSet.add(row.date);
+  });
+  window.dynamicDates = Array.from(dateSet).sort();
+  renderTable();
+}
+
+function renderTable() {
+  const headerRow = document.getElementById("tableHeader");
+  const tbody = document.getElementById("tableBody");
+  headerRow.innerHTML = `<th>ชื่อเวชภัณฑ์</th>` +
+    window.dynamicDates.map(date => `<th>${formatDate(date)}</th>`).join('') +
+    `<th><input type='date' id='inputDate' style='font-size:14px;padding:4px;' /></th>`;
+
+  tbody.innerHTML = "";
+  Object.keys(groupedData).forEach(name => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class='name'>${name}</td>` +
+      window.dynamicDates.map(d => `<td>${groupedData[name][d] ?? "-"}</td>`).join('') +
+      `<td><input type='number' name='${name}'></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "2-digit" });
+}
+
+function submit() {
+  const date = document.getElementById("inputDate").value;
+  if (!date) return alert("กรุณาเลือกวันที่ก่อนบันทึก");
+  if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการบันทึกข้อมูลทั้งหมดนี้?")) return;
+  const payload = [];
+  const inputs = document.querySelectorAll("input[type='number']");
+  inputs.forEach(input => {
+    if (input.value !== '') {
+      payload.push({
+        item_name: input.name,
+        date: date,
+        quantity: parseFloat(input.value)
+      });
+    }
+  });
+  fetch("/api/save_inventory", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(() => {
+    alert("✅ บันทึกสำเร็จ");
+    fetchData();
+  })
+  .catch(err => alert("เกิดข้อผิดพลาด"));
+}
+
+fetchData();
+</script>
+<div class="floating-dock">
+  <a href="{{ url_for('dashboard') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}">
+  </a>
+  <a href="{{ url_for('sale_summary') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}">
+  </a>
+  <a href="{{ url_for('record_sales') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}">
+  </a>
+  <a href="{{ url_for('customer_list') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}">
+  </a>
+  <a href="{{ url_for('record_customer') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}">
+  </a>
+  <a href="{{ url_for('oldsaledata') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}">
+  </a>
+  <a href="#" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_staff.png') }}">
+  </a>
+  <a href="{{ url_for('inventory') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_inventory.png') }}">
+  </a>
+  <a href="#" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_appointments.png') }}">
+  </a>
+</div>
+</body>
+</html>

@@ -263,3 +263,27 @@ def oldsaledata():
     if 'username' in session:
         return render_template('oldsaledata.html')
     return redirect(url_for('login'))
+
+@app.route('/inventory')
+def inventory():
+    if 'username' in session:
+        return render_template('inventory.html')
+    return redirect(url_for('login'))
+
+@app.route("/api/inventory")
+def api_inventory():
+    try:
+        res = supabase.table("inventory").select("*").execute()
+        return jsonify(res.data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/save_inventory", methods=["POST"])
+def api_save_inventory():
+    data = request.json
+    try:
+        # optional: ตรวจสอบว่าไม่มีรายการซ้ำก่อน insert
+        supabase.table("inventory").insert(data).execute()
+        return jsonify({"message": "success"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
