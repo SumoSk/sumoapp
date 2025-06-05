@@ -542,21 +542,30 @@ function saveAllRecords() {
   }
 
   fetch("/api/save_sales", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.message === "บันทึกสำเร็จ") {
-      window.location.href = "/sale_summary";
-    } else {
-      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่");
-    }
-  })
-  .catch(err => {
-    alert("เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบเครือข่าย");
-  });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(payload)
+})
+.then(res => res.json())
+.then(data => {
+  if (data.message === "บันทึกสำเร็จ") {
+    alert("✅ บันทึกเรียบร้อยแล้ว!");
+
+    // 🔄 เคลียร์รายการที่รอ
+    records = [];
+    renderReviewSection();
+
+    // 🔄 รีเซ็ตฟอร์ม
+    document.getElementById('saleForm').reset();
+    document.getElementById('itemList').innerHTML = document.querySelector('.item-row').outerHTML;
+  } else {
+    alert("❌ เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่");
+  }
+})
+.catch(err => {
+  console.error("❌ ERROR:", err);
+  alert("เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบเครือข่าย");
+});
 }
 
 
