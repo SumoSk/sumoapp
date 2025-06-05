@@ -78,20 +78,36 @@ def customer_list():
         return render_template('customer_list.html')
     return redirect(url_for('login'))
 
+
 @app.route('/api/sales')
 def api_sales():
     try:
-        response = supabase.table("sales_records").select("*").execute()
-        data = response.data
-        for r in data:
+        all_data = []
+        start = 0
+        limit = 1000
+
+        while True:
+            response = supabase.table("sales_records").select("*").range(start, start + limit - 1).execute()
+            batch = response.data
+            if not batch:
+                break
+            all_data.extend(batch)
+            if len(batch) < limit:
+                break
+            start += limit
+
+        # ✅ แปลง 'item' เป็น array 'items'
+        for r in all_data:
             if 'item' in r:
                 try:
                     r['items'] = json.loads(r['item'])
                 except:
                     r['items'] = []
-        return jsonify(data)
+        return jsonify(all_data)
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 @app.route('/api/save_sales', methods=['POST'])
 def save_sales():
     data = request.get_json()

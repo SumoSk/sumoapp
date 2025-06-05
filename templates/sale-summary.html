@@ -147,7 +147,7 @@
     // แปลง item จาก JSON string เป็น array ถ้าเป็น string
     const records = data.map(rec => ({
       ...rec,
-      items: typeof rec.item === 'string' ? JSON.parse(rec.item) : rec.item
+      items: typeof rec.items === 'string' ? JSON.parse(rec.items) : rec.items
     }));
 
     saveAllRecords(records);
