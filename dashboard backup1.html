@@ -11,6 +11,7 @@
       margin: 0;
       background-color: white;
       padding: 10px;
+       padding-bottom: 120px;
     }
     .menu-bar {
       display: flex;
@@ -166,19 +167,49 @@
         grid-template-columns: 1fr;
       }
     }
+
+      .floating-dock {
+  position: fixed;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgb(249, 249, 249); /* ขาว */
+
+  border-radius: 24px;
+  padding: 4px 4px;
+  display: flex;
+  gap: 2px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  z-index: 1000;
+}
+
+.icon-button {
+  width: 74px;
+  height: 74px;
+  padding: 4px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  text-decoration: none;
+}
+
+.icon-button:hover {
+  transform: scale(1.1);
+}
+
+.icon-button img {
+  width: 74px;
+  height: 74px;
+  object-fit: contain;
+}
+
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="menu-bar">
-        <a href="{{ url_for('dashboard') }}">หน้าแรก</a>
-      <a href="{{ url_for('sale_summary') }}">1. สรุปยอดขายประจำเดือน</a>
-      <a href="{{ url_for('record_sales') }}">2. บันทึกยอดขายประจำวัน</a>
-      <a href="{{ url_for('record_customer') }}">3. บันทึกข้อมูลลูกค้า</a>
-      <a href="{{ url_for('customer_list') }}">4. ข้อมูลลูกค้าทั้งหมด</a>
-      <a href="{{ url_for('oldsaledata') }}">5. ข้อมูลเก่า</a>
-    </div>
-
+  
   <div class="month-nav">
     <button onclick="changeMonth(-1)">← เดือนก่อนหน้า</button>
     <button onclick="changeMonth(1)">เดือนถัดไป →</button>
@@ -344,6 +375,44 @@ let text2 = diff > 0
 
 compareEl.innerHTML = `${text}<br>${text2}`;
 
+const allDates = records.map(r => r.date).filter(Boolean);
+const latestDate = allDates.sort().reverse()[0];
+
+if (latestDate) {
+  const todayDay = today.getDate();
+  const targetRangeEnd = Math.min(todayDay, 14);
+
+  const groupByMonth = {};
+
+  records.forEach(r => {
+    if (!r.date) return;
+    const [y, m, d] = r.date.split("-");
+    const ym = `${y}-${m}`;
+    const day = parseInt(d);
+    if (day <= targetRangeEnd) {
+      if (!groupByMonth[ym]) groupByMonth[ym] = 0;
+      groupByMonth[ym] += parseFloat(r.amount || 0);
+    }
+  });
+
+  const currentPrefix = viewingDate.toISOString().slice(0, 7);
+  const allMonths = Object.keys(groupByMonth).filter(m => m !== currentPrefix);
+
+  const totalPastMonths = allMonths.reduce((sum, m) => sum + groupByMonth[m], 0);
+  const averagePastMonths = Math.round(totalPastMonths / allMonths.length || 1);
+
+  const currentMonth14Total = groupByMonth[currentPrefix] || 0;
+
+  const compareAvgDiv = document.createElement('div');
+  compareAvgDiv.style.marginTop = '4px';
+  compareAvgDiv.style.color = currentMonth14Total >= averagePastMonths ? 'green' : 'crimson';
+  compareAvgDiv.innerHTML = `📊 ยอดขายวันที่ 1–${targetRangeEnd} ของเดือนนี้: ${currentMonth14Total.toLocaleString()} บาท — ${
+    currentMonth14Total >= averagePastMonths
+      ? `✅ สูงกว่าค่าเฉลี่ยช่วงเดียวกันของเดือนก่อนๆ ${averagePastMonths.toLocaleString()} บาท`
+      : `⚠️ ต่ำกว่าค่าเฉลี่ยช่วงเดียวกันของเดือนก่อนๆ ${averagePastMonths.toLocaleString()} บาท`
+  }`;
+  compareEl.appendChild(compareAvgDiv);
+}
 
 
 
@@ -431,5 +500,35 @@ function daysInMonth(year, month) {
 
 
   </script>
+  <div class="floating-dock">
+  <a href="{{ url_for('dashboard') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}">
+  </a>
+  <a href="{{ url_for('sale_summary') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}">
+  </a>
+  <a href="{{ url_for('record_sales') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}">
+  </a>
+    <a href="{{ url_for('customer_list') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}">
+  </a>
+  <a href="{{ url_for('record_customer') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}">
+  </a>
+  <a href="{{ url_for('oldsaledata') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}">
+  </a>
+  <a href="#" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_staff.png') }}">
+  </a>
+  <a href="{{ url_for('inventory') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_inventory.png') }}">
+  </a>
+  <a href="#" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_appointments.png') }}">
+  </a>
+</div>
+
 </body>
 </html>

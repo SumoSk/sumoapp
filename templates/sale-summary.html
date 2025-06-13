@@ -121,6 +121,10 @@
   <div class="container">
     <h2>สรุปยอดขายประจำเดือน</h2>
     <div id="reviewSection">กำลังโหลดข้อมูล...</div>
+    <div style="text-align:center; margin-top: 10px;">
+  <button onclick="downloadExcel()" style="padding:10px 20px; font-size:14px; background-color:#00796b; color:white; border:none; border-radius:8px; cursor:pointer;">
+    ⬇️ โหลด Excel
+  </button>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -159,6 +163,7 @@
 
 
     function saveAllRecords(records) {
+        window.allSalesRecords = records; // ✅ เพิ่มบรรทัดนี้ไว้บนสุด
       const reviewSection = document.getElementById('reviewSection');
       reviewSection.innerHTML = ''; // clear previous
 
@@ -469,6 +474,37 @@ function toggleSummary() {
   if (!content) return;
   content.style.display = content.style.display === 'none' ? 'block' : 'none';
 }
+
+function downloadExcel() {
+  if (!window.allSalesRecords || window.allSalesRecords.length === 0) {
+    alert("ไม่มีข้อมูลให้ดาวน์โหลด");
+    return;
+  }
+
+  const ws_data = [
+    ["วันที่", "ชื่อ", "เบอร์", "รายการ", "ยอด", "ช่องทางชำระเงิน", "หมายเหตุ"]
+  ];
+
+  window.allSalesRecords.forEach(r => {
+    const items = (r.items || []).join(" | ");
+    ws_data.push([
+      r.date,
+      r.name,
+      r.phone || "",
+      items,
+      r.amount,
+      r.payment || "",
+      r.note || ""
+    ]);
+  });
+
+  const worksheet = XLSX.utils.aoa_to_sheet(ws_data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "ยอดขาย");
+
+  XLSX.writeFile(workbook, "ยอดขาย.xlsx");
+}
+
   </script>
 
 
@@ -501,5 +537,7 @@ function toggleSummary() {
     <img src="{{ url_for('static', filename='icon/icon_appointments.png') }}">
   </a>
 </div>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
 </body>
 </html>
