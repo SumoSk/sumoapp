@@ -375,41 +375,13 @@ let text2 = diff > 0
 
 compareEl.innerHTML = `${text}<br>${text2}`;
 
-// ✅ นับจำนวนวันขายจริง
-const saleDaysSet = new Set();
-records
-  .filter(r => r.date && r.date.startsWith(currentPrefix))
-  .forEach(r => {
-    const day = r.date.split("-")[2];
-    saleDaysSet.add(day);
-  });
-const saleDaysCount = saleDaysSet.size;
-
-const saleDayDiv = document.createElement('div');
-saleDayDiv.style.marginTop = '4px';
-saleDayDiv.style.color = '#666';
-saleDayDiv.textContent = `🗓️ ขายมาแล้วทั้งหมด ${saleDaysCount} วัน (นับเฉพาะวันที่มียอดขาย)`;
-compareEl.appendChild(saleDayDiv);
-
-// ✅ เป้าเดือนนี้ และยอดที่เหลือต้องทำ
-const TARGET = 500000;
-const WORKING_DAYS_PER_MONTH = 15;
-const daysLeft = Math.max(0, WORKING_DAYS_PER_MONTH - saleDaysCount);
-const remainingTarget = Math.max(0, TARGET - totalSales);
-const avgRequired = daysLeft > 0 ? Math.ceil(remainingTarget / daysLeft) : 0;
-
-const targetDiv = document.createElement('div');
-targetDiv.style.marginTop = '4px';
-targetDiv.style.color = remainingTarget > 0 ? '#d32f2f' : 'green';
-targetDiv.innerHTML = `🎯 เป้า ${TARGET.toLocaleString()} บาท / ${WORKING_DAYS_PER_MONTH} วัน = ต้องทำวันละ <b>${avgRequired.toLocaleString()}</b> บาท (เหลือ ${daysLeft} วัน)`;
-compareEl.appendChild(targetDiv);
-
 const allDates = records.map(r => r.date).filter(Boolean);
 const latestDate = allDates.sort().reverse()[0];
 
 if (latestDate) {
   const todayDay = today.getDate();
-  const targetRangeEnd = Math.min(todayDay, 14);
+  const viewingDay = Math.min(today.getDate(), daysInMonth(viewingDate.getFullYear(), viewingDate.getMonth() + 1));
+const targetRangeEnd = viewingDay;
 
   const groupByMonth = {};
 
