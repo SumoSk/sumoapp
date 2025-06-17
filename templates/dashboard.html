@@ -407,10 +407,10 @@ const targetRangeEnd = viewingDay;
   const compareAvgDiv = document.createElement('div');
   compareAvgDiv.style.marginTop = '4px';
   compareAvgDiv.style.color = currentMonth14Total >= averagePastMonths ? 'green' : 'crimson';
-  compareAvgDiv.innerHTML = `📊 ยอดขายวันที่ 1–${targetRangeEnd} ของเดือนนี้: ${currentMonth14Total.toLocaleString()} บาท — ${
+  compareAvgDiv.innerHTML = `📊 วันที่ 1–${targetRangeEnd} คือ: ${currentMonth14Total.toLocaleString()} บาท — ${
     currentMonth14Total >= averagePastMonths
-      ? `✅ สูงกว่าค่าเฉลี่ยช่วงเดียวกันของเดือนก่อนๆ ${averagePastMonths.toLocaleString()} บาท`
-      : `⚠️ ต่ำกว่าค่าเฉลี่ยช่วงเดียวกันของเดือนก่อนๆ ${averagePastMonths.toLocaleString()} บาท`
+      ? `✅ สูงกว่าค่าเฉลี่ยเดือนก่อนๆ ${averagePastMonths.toLocaleString()} บาท`
+      : `⚠️ ต่ำกว่าค่าเฉลี่ยเดือนก่อนๆ ${averagePastMonths.toLocaleString()} บาท`
   }`;
   compareEl.appendChild(compareAvgDiv);
 }
