@@ -209,7 +209,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  
+  <div id="customer-modal" style="display:none;position:fixed;inset:0;background-color:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
+  <div style="background:white;padding:20px;border-radius:16px;width:90%;max-width:400px;max-height:90vh;overflow:auto;position:relative; font-size:13.5px;">
+
+    <button onclick="closeCustomerModal()" style="position:absolute;top:10px;right:14px;font-size:20px;border:none;background:none;cursor:pointer;">&times;</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
   <div class="month-nav">
     <button onclick="changeMonth(-1)">← เดือนก่อนหน้า</button>
     <button onclick="changeMonth(1)">เดือนถัดไป →</button>
@@ -254,6 +261,17 @@
     viewingDate.setMonth(viewingDate.getMonth() + delta);
     fetchDataAndUpdate();
   }
+
+  function fetchAllCustomerRecords() {
+  fetch("/api/sales")  // ใช้ endpoint เดิม
+    .then(res => res.json())
+    .then(records => {
+      allCustomerRecords = records;
+    })
+    .catch(err => {
+      console.error("❌ โหลดข้อมูลทั้งหมดไม่สำเร็จ:", err);
+    });
+}
 
   function fetchDataAndUpdate() {
     fetch("/api/sales")
@@ -326,7 +344,13 @@ records
   .forEach(r => {
     const key = `${r.name}|${r.phone}`;
     if (!customerMap[key]) {
-      customerMap[key] = { name: r.name, phone: r.phone, date: r.date, amount: 0 };
+      customerMap[key] = {
+  name: r.name,
+  phone: r.phone,
+  opd: r.opd || '-',      // ✅ เพิ่มบรรทัดนี้
+  date: r.date,
+  amount: 0
+};
     }
     customerMap[key].amount += parseFloat(r.amount || 0);
     customerMap[key].date = r.date > customerMap[key].date ? r.date : customerMap[key].date;
@@ -472,15 +496,18 @@ const targetRangeEnd = viewingDay;
     document.getElementById('top10List').innerHTML = sortedCustomers.map((c) => {
       const date = new Date(c.date);
       const formatted = date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
-      return `<li><span class="name">${c.name}</span><span class="date"> (${formatted})</span><span class="amount">${c.amount.toLocaleString()} บาท</span></li>`;
+      return `<li><span class="name" style="cursor:pointer;color:#333;" onclick="openCustomerModal('${c.name}')">${c.name}</span><span class="date"> (${formatted})</span><span class="amount">${c.amount.toLocaleString()} บาท</span></li>`;
+
     }).join('');
 
     document.getElementById('totalCustomer').textContent = `จำนวนลูกค้าที่มาใช้บริการทั้งหมด ${Object.keys(customerMap).length} คน (กดดูเพิ่มเติม)`;
   }
 
   fetchDataAndUpdate();
+fetchAllCustomerRecords();
 
   let fullCustomerList = [];
+let allCustomerRecords = [];
 
 function toggleCustomerList() {
   const listEl = document.getElementById("allCustomerList");
@@ -489,7 +516,7 @@ function toggleCustomerList() {
     listEl.innerHTML = fullCustomerList.slice(10).map((c, i) => {
       const date = new Date(c.date);
       const formatted = date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
-      return `<li><span class="name">${i + 11}. ${c.name}</span><span class="date"> (${formatted})</span><span class="amount">${c.amount.toLocaleString()} บาท</span></li>`;
+      return `<li><span class="name" style="cursor:pointer;color:#333;" onclick="openCustomerModal('${c.name}')">${i + 11}. ${c.name}</span><span class="date"> (${formatted})</span><span class="amount">${c.amount.toLocaleString()} บาท</span></li>`;
     }).join('');
   } else {
     listEl.style.display = "none";
@@ -497,6 +524,91 @@ function toggleCustomerList() {
 }
 function daysInMonth(year, month) {
   return new Date(year, month, 0).getDate();
+}
+
+
+function closeCustomerModal() {
+  document.getElementById("customer-modal").style.display = "none";
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const [y, m, day] = d.split('-');
+  return `${day}/${m}/${y.slice(-2)}`;
+}
+function openCustomerModal(name) {
+  const customer = fullCustomerList.find(c => c.name === name);
+  const records = allCustomerRecords.filter(r => r.name === name);
+
+  if (!customer || records.length === 0) return;
+
+  const lastDate = new Date(customer.date);
+  const today = new Date();
+  const daysAbsent = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+  const visits = records.length;
+  const totalAmount = records.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+  const average = totalAmount / visits;
+
+  // สรุปรายการซื้อทั้งหมด
+  const allItems = {};
+  records.forEach(r => {
+    (r.items || []).forEach(item => {
+      const nameOnly = item.split(" - ")[0];  // ลบราคา
+      const qtyMatch = item.match(/- (\d+) ชิ้น/);
+      const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
+      allItems[nameOnly] = (allItems[nameOnly] || 0) + qty;
+    });
+  });
+
+  const itemSummary = Object.entries(allItems)
+    .map(([item, qty]) => `• ${item} – ${qty} ชิ้น`)
+    .join("<br>");
+
+  // รายการย้อนหลัง
+  const historyHtml = records
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(r => {
+      const items = (r.items || []).map(item => {
+        const nameOnly = item.split(" - ")[0];
+        return `<li>• ${nameOnly}</li>`;
+      }).join("");
+      return `
+        <div style="margin-bottom:12px;">
+          <div style="margin-bottom:4px;font-weight:bold;">📅 ${formatDate(r.date)}</div>
+          <ul style="padding-left:16px;margin:0;">${items}</ul>
+          <div style="margin-top:4px;color:#666;"> ยอด: ${parseFloat(r.amount || 0).toLocaleString()} บาท</div>
+        </div>
+      `;
+    }).join("");
+
+  // สร้าง Modal
+  document.getElementById("modal-content").innerHTML = `
+    <h3 style="font-size:18px;margin-bottom:4px;">📇 ${customer.name}</h3>
+    <div><strong>OPD:</strong> ${customer.opd || '-'}</div>
+    <div><strong>เบอร์:</strong> ${customer.phone || '-'}</div>
+    <div><strong>วันล่าสุด:</strong> ${formatDate(customer.date)} <span style="color:gray;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span></div>
+    <div><strong>💳 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท</div>
+    <div><strong>มาใช้บริการ:</strong> ${visits} ครั้ง</div>
+    <div><strong>เฉลี่ยต่อครั้ง:</strong> ${Math.round(average).toLocaleString()} บาท</div>
+    <hr style="margin:12px 0;">
+    <div style="font-weight:bold;">📦 สรุปรายการซื้อทั้งหมด:</div>
+    <div style="margin:6px 0 12px;">${itemSummary}</div>
+    <div style="font-weight:bold;margin-bottom:6px;">🛍️ ประวัติการซื้อย้อนหลัง:</div>
+    ${historyHtml}
+    <div style="margin-top:10px;font-weight:bold;color:#b8860b;">💰 รวมทั้งหมด: ${totalAmount.toLocaleString()} บาท</div>
+  `;
+
+  document.getElementById("customer-modal").style.display = "flex";
+}
+
+
+
+
+function calcDaysAbsent(dateStr) {
+  const today = new Date();
+  const lastDate = new Date(dateStr);
+  const diff = today - lastDate;
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
 }
 
 
