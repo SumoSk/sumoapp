@@ -462,7 +462,7 @@ const targetRangeEnd = viewingDay;
     document.getElementById('top10List').innerHTML = sortedCustomers.map((c) => {
       const date = new Date(c.date);
       const formatted = date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
-      return `<li><span class="name" style="cursor:pointer;color:#333;" onclick="openCustomerModal('${c.name}')">${c.name}</span><span class="date"> (${formatted})</span><span class="amount">${c.amount.toLocaleString()} บาท</span></li>`;
+      return `<li><span class="name" style="cursor:pointer;color:#333;" onclick="openCustomerModal('${c.name}|${c.phone}')">${c.name}</span><span class="date"> (${formatted})</span><span class="amount">${c.amount.toLocaleString()} บาท</span></li>`;
 
     }).join('');
 
@@ -482,7 +482,7 @@ function toggleCustomerList() {
     listEl.innerHTML = fullCustomerList.slice(10).map((c, i) => {
       const date = new Date(c.date);
       const formatted = date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
-      return `<li><span class="name" style="cursor:pointer;color:#333;" onclick="openCustomerModal('${c.name}')">${i + 11}. ${c.name}</span><span class="date"> (${formatted})</span><span class="amount">${c.amount.toLocaleString()} บาท</span></li>`;
+      return `<li><span class="name" style="cursor:pointer;color:#333;" onclick="openCustomerModal('${c.name}|${c.phone}')">${i + 11}. ${c.name}</span><span class="date"> (${formatted})</span><span class="amount">${c.amount.toLocaleString()} บาท</span></li>`;
     }).join('');
   } else {
     listEl.style.display = "none";
@@ -502,28 +502,32 @@ function formatDate(d) {
   const [y, m, day] = d.split('-');
   return `${day}/${m}/${y.slice(-2)}`;
 }
-function openCustomerModal(name) {
-  const customer = fullCustomerList.find(c => c.name === name);
-  const records = allCustomerRecords.filter(r => r.name === name);
+function openCustomerModal(key) {
+  const records = allCustomerRecords.filter(r => `${r.name}|${r.phone}` === key);
+  if (records.length === 0) return;
 
-  if (!customer || records.length === 0) return;
+  const first = records[0];
+  const customer = {
+    name: first.name,
+    phone: first.phone || '-',
+    opd: first.opd || '-'
+  };
 
-  const latestRecord = records.reduce((latest, r) => {
-  return new Date(r.date) > new Date(latest.date) ? r : latest;
-}, records[0]);
+  const latestRecord = records.reduce((latest, r) =>
+    new Date(r.date) > new Date(latest.date) ? r : latest
+  , records[0]);
 
-const lastDate = new Date(latestRecord.date);  // ✅ ใช้วันที่ล่าสุดจริง
+  const lastDate = new Date(latestRecord.date);
   const today = new Date();
   const daysAbsent = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
   const visits = records.length;
   const totalAmount = records.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
   const average = totalAmount / visits;
 
-  // สรุปรายการซื้อทั้งหมด
   const allItems = {};
   records.forEach(r => {
     (r.items || []).forEach(item => {
-      const nameOnly = item.split(" - ")[0];  // ลบราคา
+      const nameOnly = item.split(" - ")[0];
       const qtyMatch = item.match(/- (\d+) ชิ้น/);
       const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
       allItems[nameOnly] = (allItems[nameOnly] || 0) + qty;
@@ -534,7 +538,6 @@ const lastDate = new Date(latestRecord.date);  // ✅ ใช้วันที�
     .map(([item, qty]) => `• ${item} – ${qty} ชิ้น`)
     .join("<br>");
 
-  // รายการย้อนหลัง
   const historyHtml = records
     .sort((a, b) => b.date.localeCompare(a.date))
     .map(r => {
@@ -551,11 +554,10 @@ const lastDate = new Date(latestRecord.date);  // ✅ ใช้วันที�
       `;
     }).join("");
 
-  // สร้าง Modal
   document.getElementById("modal-content").innerHTML = `
     <h3 style="font-size:18px;margin-bottom:4px;">📇 ${customer.name}</h3>
-    <div><strong>OPD:</strong> ${customer.opd || '-'}</div>
-    <div><strong>เบอร์:</strong> ${customer.phone || '-'}</div>
+    <div><strong>OPD:</strong> ${customer.opd}</div>
+    <div><strong>เบอร์:</strong> ${customer.phone}</div>
     <div><strong>วันล่าสุด:</strong> ${formatDate(latestRecord.date)} <span style="color:gray;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span></div>
     <div><strong>💳 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท</div>
     <div><strong>มาใช้บริการ:</strong> ${visits} ครั้ง</div>
@@ -709,10 +711,24 @@ function filterGeneral() {
     if (avg < minAvg || avg > maxAvg) continue;
     if (daysAbsent < minAbsent || daysAbsent > maxAbsent) continue;
 
-    results.push({ name, visits, totalAmount, avg, daysAbsent });
+    results.push({
+  key: `${records[0].name}|${records[0].phone || ''}`,
+  name: records[0].name,
+  visits,
+  totalAmount,
+  avg,
+  daysAbsent
+});
   }
 
-  const html = results.map(r => `<div>📇 <strong>${r.name}</strong><br>มา ${r.visits} ครั้ง | 💰 รวม ${r.totalAmount.toLocaleString()} บ. | เฉลี่ย ${Math.round(r.avg).toLocaleString()} บ. | หายไปแล้ว ${r.daysAbsent} วัน</div><hr>`).join('');
+  const html = results.map(r => `
+  <div>
+    📇 <strong style="cursor:pointer;color:#00796b;" onclick="openCustomerModal('${r.key}')">${r.name}</strong>
+
+    มา ${r.visits} ครั้ง | 💰 รวม ${r.totalAmount.toLocaleString()} บ. | เฉลี่ย ${Math.round(r.avg).toLocaleString()} บ. | หายไปแล้ว ${r.daysAbsent} วัน
+  </div><hr>
+`).join('');
+
   document.getElementById("filterResults").innerHTML = `<h4>ผลลัพธ์ ${results.length} คน</h4>` + html;
 }
 
@@ -737,11 +753,23 @@ function filterByGap() {
     const latestDate = new Date(matchedDates.sort().reverse()[0]);
     const gapMonth = Math.floor((today - latestDate) / (1000 * 60 * 60 * 24 * 30));
     if (gapMonth >= minGap && gapMonth <= maxGap) {
-      results.push({ name, product, gapMonth });
+      results.push({
+  key: `${records[0].name}|${records[0].phone || ''}`,
+  name: records[0].name,
+  product,
+  gapMonth
+});
     }
   }
 
-  const html = results.map(r => `<div>📇 <strong>${r.name}</strong><br>ไม่ได้ทำ "${r.product}" มาแล้ว ${r.gapMonth} เดือน</div><hr>`).join('');
+  const html = results.map(r => `
+  <div>
+    📇 <strong style="cursor:pointer;color:#00796b;" onclick="openCustomerModal('${r.key}')">${r.name}</strong>
+
+    ไม่ได้ทำ "${r.product}" มาแล้ว ${r.gapMonth} เดือน
+  </div><hr>
+`).join('');
+
   document.getElementById("filterResults").innerHTML = `<h4>ผลลัพธ์ ${results.length} คน</h4>` + html;
 }
 
