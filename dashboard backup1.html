@@ -580,6 +580,170 @@ function calcDaysAbsent(dateStr) {
   const diff = today - lastDate;
   return Math.floor(diff / (1000 * 60 * 60 * 24));
 }
+// ✅ UI ฟิลเตอร์ใหม่: แก้ปัญหาเลือกสินค้าไม่ได้ + ปรับ UI ให้สวยขึ้นแบบทันสมัย
+
+const productCategories = {
+  "โบทอค": ["Aestox 50 u", "Aestox 100 u", "Allergan 50 u", "Allergan 100 u"],
+  "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q", "Restylane"],
+  "งานผิว": ["Meso Chanel", "P - Cell", "Aquatic", "Hestina", "Exosome", "Rejuran", "Belotero Revive", "Sculptra", "Juvelook", "Aesthefill"],
+  "ดริปผิว": ["Snow White", "Super Aurawhite", "Vitamin Mix", "Brain Booster", "Energy Booster"],
+  "ทรีทเม้นท์": ["ทรีทเมนต์หน้าใส", "ทรีทเมนต์สิว", "ทรีทเมนต์ฝ้า"],
+  "Fat/Hifu": ["Bromi", "Sisi", "HIFU", "HIFU แถม"],
+  "อื่นๆ": ["ยาฉีดสลายฝ้า", "ครีมทาฝ้า", "ยาทานฝ้า", "ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen"]
+};
+
+const filterUI = document.createElement("div");
+filterUI.style.cssText = "margin: 40px auto 20px; padding: 20px; background: #fefefe; border: 1px solid #e0e0e0; border-radius: 12px; max-width: 1100px; font-size: 13px; line-height: 1.6; font-family: 'Prompt', sans-serif; box-shadow: 0 3px 10px rgba(0,0,0,0.03);";
+
+filterUI.innerHTML = `
+  <h3 style="color: #00695c; margin-bottom: 16px; font-size: 16px;">🔍 ฟิลเตอร์ค้นหาลูกค้า</h3>
+
+  <section style="margin-bottom: 20px;">
+    <strong style="color: #00796b;">1. ค้นหาทั่วไป</strong>
+    <div id="productListContainer" style="margin-top: 10px;"></div>
+    <button type="button" onclick="addProductSelect()" style="margin: 8px 0 14px; padding: 6px 12px; font-size: 12px; border: 1px solid #ccc; background: #f0fdfa; border-radius: 6px; cursor: pointer;">+ เพิ่มสินค้า</button>
+
+    <div><label>📅 ช่วงเวลา:</label><br><input type="date" id="startDate"> ถึง <input type="date" id="endDate"></div>
+    <div><label>💰 ยอดรวมทั้งหมด (บาท):</label><br><input type="number" id="minTotal" placeholder="ขั้นต่ำ"> - <input type="number" id="maxTotal" placeholder="สูงสุด"></div>
+    <div><label>🧾 จำนวนครั้งที่เคยมาคลินิก:</label><br><input type="number" id="minVisits" placeholder="ขั้นต่ำ"> - <input type="number" id="maxVisits" placeholder="สูงสุด"></div>
+    <div><label>⏳ จำนวนวันที่ไม่ได้มาคลินิก:</label><br><input type="number" id="minAbsent" placeholder="ขั้นต่ำ"> - <input type="number" id="maxAbsent" placeholder="สูงสุด"></div>
+    <div><label>💳 ยอดเฉลี่ยต่อบิล (บาท):</label><br><input type="number" id="minAvg" placeholder="ขั้นต่ำ"> - <input type="number" id="maxAvg" placeholder="สูงสุด"></div>
+
+    <button type="button" onclick="filterGeneral()" style="margin-top: 12px; background-color: teal; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;">ค้นหา</button>
+  </section>
+
+  <section>
+    <strong style="color: #b8860b;">2. ค้นหาตามระยะเวลาที่ไม่ได้มาซื้อซ้ำ</strong>
+    <div style="margin-top: 10px;">
+      <label>🧴 เลือกสินค้า:</label><br>
+      <select id="gapProduct" style="width: 240px; padding: 4px; font-size: 13px;">
+        <option disabled selected>กดเพื่อเลือกสินค้า</option>
+        ${Object.entries(productCategories).map(([cat, items]) => `<optgroup label="${cat}">${items.map(p => `<option value="${p}">${p}</option>`).join('')}</optgroup>`).join('')}
+      </select>
+    </div>
+    <div><label>🕒 ระยะเวลาห่าง (เดือน):</label><br><input type="number" id="minGap" placeholder="ขั้นต่ำ"> - <input type="number" id="maxGap" placeholder="สูงสุด"></div>
+    <button type="button" onclick="filterByGap()" style="margin-top: 12px; background-color: #b8860b; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;">ค้นหา</button>
+  </section>
+
+  <div id="filterResults" style="margin-top: 24px; font-size: 13px;"></div>
+`;
+
+
+document.body.appendChild(filterUI);
+
+function addProductSelect() {
+  const container = document.getElementById("productListContainer");
+  const wrapper = document.createElement("div");
+  wrapper.style.marginBottom = "6px";
+  const select = document.createElement("select");
+  select.className = "productInput";
+  select.style.cssText = "width: 240px; padding: 4px; font-size: 13px;";
+  const defaultOption = document.createElement("option");
+  defaultOption.textContent = "กดเพื่อเลือกสินค้า";
+  defaultOption.value = "";
+  defaultOption.selected = true;
+  defaultOption.disabled = true;
+  defaultOption.selected = true;
+  select.appendChild(defaultOption);
+  Object.entries(productCategories).forEach(([cat, items]) => {
+    const group = document.createElement("optgroup");
+    group.label = cat;
+    items.forEach(p => {
+      const option = document.createElement("option");
+      option.value = p;
+      option.textContent = p;
+      group.appendChild(option);
+    });
+    select.appendChild(group);
+  });
+  wrapper.appendChild(select);
+  container.appendChild(wrapper);
+}
+
+function filterGeneral() {
+  const products = Array.from(document.querySelectorAll(".productInput"))
+    .map(input => input.value.trim())
+    .filter(v => v);
+  const startDate = document.getElementById("startDate").value;
+  const endDate = document.getElementById("endDate").value;
+  const minTotal = parseFloat(document.getElementById("minTotal").value || 0);
+  const maxTotal = parseFloat(document.getElementById("maxTotal").value || Infinity);
+  const minVisits = parseInt(document.getElementById("minVisits").value || 0);
+  const maxVisits = parseInt(document.getElementById("maxVisits").value || Infinity);
+  const minAbsent = parseInt(document.getElementById("minAbsent").value || 0);
+  const maxAbsent = parseInt(document.getElementById("maxAbsent").value || Infinity);
+  const minAvg = parseFloat(document.getElementById("minAvg").value || 0);
+  const maxAvg = parseFloat(document.getElementById("maxAvg").value || Infinity);
+
+  const results = [];
+  const grouped = {};
+
+  allCustomerRecords.forEach(r => {
+    const key = r.name;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(r);
+  });
+
+  const today = new Date();
+
+  for (const [name, records] of Object.entries(grouped)) {
+    const filtered = records.filter(r => {
+      if (startDate && r.date < startDate) return false;
+      if (endDate && r.date > endDate) return false;
+      if (products.length > 0 && !r.items?.some(item => products.some(p => item.includes(p)))) return false;
+      return true;
+    });
+
+    if (filtered.length === 0) continue;
+
+    const totalAmount = filtered.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+    const visits = filtered.length;
+    const avg = totalAmount / visits;
+
+    const latest = filtered.reduce((a, b) => new Date(a.date) > new Date(b.date) ? a : b);
+    const lastDate = new Date(latest.date);
+    const daysAbsent = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+
+    if (totalAmount < minTotal || totalAmount > maxTotal) continue;
+    if (visits < minVisits || visits > maxVisits) continue;
+    if (avg < minAvg || avg > maxAvg) continue;
+    if (daysAbsent < minAbsent || daysAbsent > maxAbsent) continue;
+
+    results.push({ name, visits, totalAmount, avg, daysAbsent });
+  }
+
+  const html = results.map(r => `<div>📇 <strong>${r.name}</strong><br>มา ${r.visits} ครั้ง | 💰 รวม ${r.totalAmount.toLocaleString()} บ. | เฉลี่ย ${Math.round(r.avg).toLocaleString()} บ. | หายไปแล้ว ${r.daysAbsent} วัน</div><hr>`).join('');
+  document.getElementById("filterResults").innerHTML = `<h4>ผลลัพธ์ ${results.length} คน</h4>` + html;
+}
+
+function filterByGap() {
+  const product = document.getElementById("gapProduct").value;
+  const minGap = parseInt(document.getElementById("minGap").value || 0);
+  const maxGap = parseInt(document.getElementById("maxGap").value || Infinity);
+  const today = new Date();
+  const grouped = {};
+  const results = [];
+
+  allCustomerRecords.forEach(r => {
+    const key = r.name;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(r);
+  });
+
+  for (const [name, records] of Object.entries(grouped)) {
+    const matchedDates = records.filter(r => r.items?.some(item => item.includes(product))).map(r => r.date);
+    if (matchedDates.length === 0) continue;
+
+    const latestDate = new Date(matchedDates.sort().reverse()[0]);
+    const gapMonth = Math.floor((today - latestDate) / (1000 * 60 * 60 * 24 * 30));
+    if (gapMonth >= minGap && gapMonth <= maxGap) {
+      results.push({ name, product, gapMonth });
+    }
+  }
+
+  const html = results.map(r => `<div>📇 <strong>${r.name}</strong><br>ไม่ได้ทำ "${r.product}" มาแล้ว ${r.gapMonth} เดือน</div><hr>`).join('');
+  document.getElementById("filterResults").innerHTML = `<h4>ผลลัพธ์ ${results.length} คน</h4>` + html;
+}
 
 
   </script>
