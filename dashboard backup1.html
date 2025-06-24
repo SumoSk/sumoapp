@@ -141,7 +141,7 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.06);
       font-size: 14px;
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 20px;
     }
     .summary-group ul {
@@ -237,10 +237,7 @@
   </div>
 
   <div class="chart-summary-row">
-    <div class="chart-container">
-      <canvas id="summaryChart"></canvas>
-    </div>
-    <div class="summary-list" id="summaryList"></div>
+        <div class="summary-list" id="summaryList"></div>
   </div>
 
   <script>
@@ -447,45 +444,14 @@ const targetRangeEnd = viewingDay;
     const labels = sortedEntries.map(([cat]) => cat);
     const data = sortedEntries.map(([, qty]) => qty);
 
-    if (chartInstance) chartInstance.destroy();
-    const ctx = document.getElementById('summaryChart');
-    chartInstance = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: '',
-          data: data,
-          backgroundColor: 'rgba(0, 150, 136, 0.7)',
-          borderRadius: 8,
-          hoverBackgroundColor: 'rgba(0, 150, 136, 1)'
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => `${ctx.raw.toLocaleString()} ชิ้น`
-            }
-          }
-        },
-        scales: {
-          x: { beginAtZero: true, grid: { display: false } },
-          y: { grid: { display: false } }
-        }
-      }
-    });
+    
 
     document.getElementById('summaryList').innerHTML = sortedEntries.map(([cat]) => {
-      const items = Object.entries(categoryDetails[cat] || {})
-        .map(([sub, d]) => `<li>• ${sub} ${d.qty} ชิ้น = ${d.total.toLocaleString()} บาท</li>`).join('');
-      const total = Object.values(categoryDetails[cat] || {}).reduce((s, i) => s + i.total, 0);
-      const sumQty = categoryCounts[cat];
-      return `<div class="summary-group"><strong>${cat}</strong> — รวม ${sumQty} ชิ้น = ${total.toLocaleString()} บาท<ul>${items}</ul></div>`;
-    }).join('');
+  const items = Object.entries(categoryDetails[cat] || {})
+    .map(([sub, d]) => `<li>• ${sub} ${d.qty} ชิ้น</li>`).join('');
+  const sumQty = categoryCounts[cat];
+  return `<div class="summary-group"><strong>${cat}</strong> — รวม ${sumQty} ชิ้น<ul>${items}</ul></div>`;
+}).join('');
 
     fullCustomerList = Object.values(customerMap).sort((a, b) => b.amount - a.amount);
 
