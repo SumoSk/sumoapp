@@ -205,7 +205,44 @@
   object-fit: contain;
 }
 
+.inline-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.inline-field label {
+  white-space: nowrap;
+  min-width: 180px;
+}
+.inline-field input,
+.inline-field select {
+  padding: 4px 6px;
+  font-size: 13px;
+}
+
+.add-product-button {
+  background-color: #e0f7fa;
+  color: #00796b;
+  border: 1px solid #00bfa5;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.add-product-button:hover {
+  background-color: #b2dfdb;
+  color: #004d40;
+  transform: scale(1.03);
+}
+
   </style>
+
+
+
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -600,34 +637,59 @@ filterUI.style.cssText = "margin: 40px auto 20px; padding: 20px; background: #fe
 filterUI.innerHTML = `
   <h3 style="color: #00695c; margin-bottom: 16px; font-size: 16px;">🔍 ฟิลเตอร์ค้นหาลูกค้า</h3>
 
-  <section style="margin-bottom: 20px;">
-    <strong style="color: #00796b;">1. ค้นหาทั่วไป</strong>
-    <div id="productListContainer" style="margin-top: 10px;"></div>
-    <button type="button" onclick="addProductSelect()" style="margin: 8px 0 14px; padding: 6px 12px; font-size: 12px; border: 1px solid #ccc; background: #f0fdfa; border-radius: 6px; cursor: pointer;">+ เพิ่มสินค้า</button>
+<section style="margin-bottom: 20px;">
+  <strong style="color: #00796b;">1. ค้นหาทั่วไป</strong>
 
-    <div><label>📅 ช่วงเวลา:</label><br><input type="date" id="startDate"> ถึง <input type="date" id="endDate"></div>
-    <div><label>💰 ยอดรวมทั้งหมด (บาท):</label><br><input type="number" id="minTotal" placeholder="ขั้นต่ำ"> - <input type="number" id="maxTotal" placeholder="สูงสุด"></div>
-    <div><label>🧾 จำนวนครั้งที่เคยมาคลินิก:</label><br><input type="number" id="minVisits" placeholder="ขั้นต่ำ"> - <input type="number" id="maxVisits" placeholder="สูงสุด"></div>
-    <div><label>⏳ จำนวนวันที่ไม่ได้มาคลินิก:</label><br><input type="number" id="minAbsent" placeholder="ขั้นต่ำ"> - <input type="number" id="maxAbsent" placeholder="สูงสุด"></div>
-    <div><label>💳 ยอดเฉลี่ยต่อบิล (บาท):</label><br><input type="number" id="minAvg" placeholder="ขั้นต่ำ"> - <input type="number" id="maxAvg" placeholder="สูงสุด"></div>
+  <div style="margin-top: 10px;">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+      <label for="productListContainer" style="font-weight: bold; color: #444;">
+        🧴 สินค้าที่เคยซื้อ:
+      </label>
+      <button type="button" onclick="addProductSelect()" class="add-product-button" style="padding: 4px 10px; font-size: 12px; border: 1px solid #ccc; background: #f0fdfa; border-radius: 6px; cursor: pointer;">
+        ➕ เพิ่มสินค้า
+      </button>
+    </div>
+
+    <div id="productListContainer" style="margin-bottom: 10px;"></div>
+  </div>
+</section>
+
+    <div class="inline-field">
+  <label>📅 ช่วงเวลา:</label>
+  <input type="date" id="startDate"> ถึง 
+  <input type="date" id="endDate">
+</div>
+    
+    <div class="inline-field">
+  <label>💰 ยอดรวมทั้งหมด (บาท):</label>
+  <input type="number" id="minTotal" placeholder="ขั้นต่ำ"> - 
+  <input type="number" id="maxTotal" placeholder="สูงสุด">
+</div>
+
+    <div class="inline-field">
+  <label>🧾 จำนวนครั้งที่เคยมาคลินิก:</label>
+  <input type="number" id="minVisits" placeholder="ขั้นต่ำ"> - 
+  <input type="number" id="maxVisits" placeholder="สูงสุด">
+</div>
+
+    <div class="inline-field">
+  <label>⏳ จำนวนวันที่ไม่ได้มาคลินิก:</label>
+  <input type="number" id="minAbsent" placeholder="ขั้นต่ำ"> - 
+  <input type="number" id="maxAbsent" placeholder="สูงสุด">
+</div>
+
+    <div class="inline-field">
+  <label>💳 ยอดเฉลี่ยต่อบิล (บาท):</label>
+  <input type="number" id="minAvg" placeholder="ขั้นต่ำ"> - 
+  <input type="number" id="maxAvg" placeholder="สูงสุด">
+</div>
 
     <button type="button" onclick="filterGeneral()" style="margin-top: 12px; background-color: teal; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;">ค้นหา</button>
   </section>
 
-  <section>
-    <strong style="color: #b8860b;">2. ค้นหาตามระยะเวลาที่ไม่ได้มาซื้อซ้ำ</strong>
-    <div style="margin-top: 10px;">
-      <label>🧴 เลือกสินค้า:</label><br>
-      <select id="gapProduct" style="width: 240px; padding: 4px; font-size: 13px;">
-        <option disabled selected>กดเพื่อเลือกสินค้า</option>
-        ${Object.entries(productCategories).map(([cat, items]) => `<optgroup label="${cat}">${items.map(p => `<option value="${p}">${p}</option>`).join('')}</optgroup>`).join('')}
-      </select>
-    </div>
-    <div><label>🕒 ระยะเวลาห่าง (เดือน):</label><br><input type="number" id="minGap" placeholder="ขั้นต่ำ"> - <input type="number" id="maxGap" placeholder="สูงสุด"></div>
-    <button type="button" onclick="filterByGap()" style="margin-top: 12px; background-color: #b8860b; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;">ค้นหา</button>
-  </section>
+ 
 
-  <div id="filterResults" style="margin-top: 24px; font-size: 13px;"></div>
+<div id="filterResults" style="margin-top: 24px; font-size: 13px;"></div>
 `;
 
 
@@ -772,6 +834,7 @@ function filterByGap() {
 
   document.getElementById("filterResults").innerHTML = `<h4>ผลลัพธ์ ${results.length} คน</h4>` + html;
 }
+
 
 
   </script>
