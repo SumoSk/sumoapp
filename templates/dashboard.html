@@ -508,7 +508,11 @@ function openCustomerModal(name) {
 
   if (!customer || records.length === 0) return;
 
-  const lastDate = new Date(customer.date);
+  const latestRecord = records.reduce((latest, r) => {
+  return new Date(r.date) > new Date(latest.date) ? r : latest;
+}, records[0]);
+
+const lastDate = new Date(latestRecord.date);  // ✅ ใช้วันที่ล่าสุดจริง
   const today = new Date();
   const daysAbsent = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
   const visits = records.length;
@@ -552,7 +556,7 @@ function openCustomerModal(name) {
     <h3 style="font-size:18px;margin-bottom:4px;">📇 ${customer.name}</h3>
     <div><strong>OPD:</strong> ${customer.opd || '-'}</div>
     <div><strong>เบอร์:</strong> ${customer.phone || '-'}</div>
-    <div><strong>วันล่าสุด:</strong> ${formatDate(customer.date)} <span style="color:gray;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span></div>
+    <div><strong>วันล่าสุด:</strong> ${formatDate(latestRecord.date)} <span style="color:gray;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span></div>
     <div><strong>💳 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท</div>
     <div><strong>มาใช้บริการ:</strong> ${visits} ครั้ง</div>
     <div><strong>เฉลี่ยต่อครั้ง:</strong> ${Math.round(average).toLocaleString()} บาท</div>
