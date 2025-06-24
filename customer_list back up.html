@@ -8,7 +8,43 @@
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
     
+#customer-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.4);
+   align-items: center;
+  justify-content: center;
+}
 
+#customer-modal .modal-box {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+
+.modal-box {
+  font-size: 13px; /* ✅ ลดจากค่า default ที่ดูใหญ่เกินไป */
+  line-height: 1.6;
+  font-family: 'Prompt', sans-serif;
+}
+.modal-box h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+.modal-box strong {
+  color: #444;
+}
+.modal-box ul {
+  padding-left: 18px;
+  margin-bottom: 8px;
+}
     td.note-col,
 td.keyword-col {
   font-size: 12px;        /* ขนาดเล็กลงจากปกติ */
@@ -19,8 +55,9 @@ td.keyword-col {
     body {
   font-family: 'Prompt', 'Segoe UI', sans-serif;
       margin: 0;
-      background-color: #f7f7f7;
+      background-color: white;
       padding: 10px;
+       padding-bottom: 120px;
     }
     .menu-bar {
       display: flex;
@@ -40,35 +77,40 @@ td.keyword-col {
       color: teal;
     }
     .search-container {
-      max-width: 95%;
-      margin: 0 auto 20px auto;
-      background-color: white;
-      border-radius: 12px;
-      padding: 15px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-        position: sticky;   /* ✅ ให้ค้างด้านบน */
-  top: 60px;           /* ✅ เว้นจากเมนูด้านบนประมาณ 60px */
-  z-index: 999;        /* ✅ ให้ลอยเหนือเนื้อหา */
+   position: fixed;
+  bottom: 120px; /* ✅ เว้นระยะไม่ให้ชน floating-dock */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 600px;
+  background: rgb(235, 255, 245); /* ✅ เขียวอ่อนโปร่ง */
+
+  border-radius: 20px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 999;
     }
     .search-container label {
       font-weight: bold;
-      font-size: 18px;
+      font-size: 14px;
       display: block;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       text-align: center;
     }
     .search-container input {
       width: 100%;
-      padding: 10px 40px 10px 40px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 30px;
-      background-color: #f1f1f1;
-      background-image: url('https://cdn-icons-png.flaticon.com/512/622/622669.png');
-      background-size: 18px;
-      background-repeat: no-repeat;
-      background-position: 12px center;
-      box-sizing: border-box;
+  padding: 10px 16px 10px 40px;
+  font-size: 12px;
+  border: none;
+  border-radius: 30px;
+  background-color: rgb(255, 255, 255); /* ✅ โปร่งนิดๆ */
+  background-image: url('https://cdn-icons-png.flaticon.com/512/622/622669.png');
+  background-size: 18px;
+  background-repeat: no-repeat;
+  background-position: 12px center;
+  box-sizing: border-box;
+  color: #222;
+  outline: none;
     }
     table {
       width: 95%;
@@ -151,20 +193,47 @@ td.keyword-col {
 .detail-bar:hover {
   background-color: #bbdefb;
 }
+    .floating-dock {
+  position: fixed;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgb(249, 249, 249); /* ขาว */
 
+  border-radius: 24px;
+  padding: 4px 4px;
+  display: flex;
+  gap: 2px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  z-index: 1000;
+}
+
+.icon-button {
+  width: 74px;
+  height: 74px;
+  padding: 4px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  text-decoration: none;
+}
+
+.icon-button:hover {
+  transform: scale(1.1);
+}
+
+.icon-button img {
+  width: 74px;
+  height: 74px;
+  object-fit: contain;
+}
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="menu-bar">
-        <a href="{{ url_for('dashboard') }}">หน้าแรก</a>
-      <a href="{{ url_for('sale_summary') }}">สรุปยอดขาย</a>
-      <a href="{{ url_for('record_sales') }}">บันทึกยอดขาย</a>
-      <a href="{{ url_for('record_customer') }}">บันทึกข้อมูลลูกค้า</a>
-      <a href="{{ url_for('customer_list') }}">ข้อมูลลูกค้า</a>
-      <a href="{{ url_for('oldsaledata') }}">ข้อมูลเก่า</a>
-    </div>
-
+ 
   <div class="search-container">
         <input type="text" id="searchInput" placeholder="พิมพ์คำค้น...">
   </div>
@@ -190,6 +259,7 @@ td.keyword-col {
   <button id="export-btn">🧾 Export รายชื่อลูกค้าเป็น Excel</button>
 
   <script>
+    let customers = [];
    fetch("/api/sales")
     .then(res => res.json())
     .then(records => {
@@ -221,7 +291,7 @@ td.keyword-col {
         }
       });
 
-      const customers = Object.values(customerMap).sort((a, b) => parseInt(a.opd) - parseInt(b.opd));
+      customers = Object.values(customerMap).sort((a, b) => parseInt(a.opd) - parseInt(b.opd));
       const tableBody = document.getElementById('customer-table-body');
 
       customers.forEach((c, i) => {
@@ -232,7 +302,9 @@ td.keyword-col {
         row.innerHTML = `
           <td>${i + 1}</td>
           <td>${c.opd}</td>
-          <td>${c.name}</td>
+          <td>
+  <span class="detail-bar" style="cursor:pointer;" onclick="openCustomerModal(${i})">${c.name}</span>
+</td>
           <td>
   <span class="phone-toggle" style="color: #0288d1; cursor: pointer;" data-phone="${c.phone}" onclick="togglePhone(this)">📞</span>
 </td>
@@ -246,19 +318,7 @@ td.keyword-col {
         `;
         tableBody.appendChild(row);
 
-        const detailsRow = document.createElement('tr');
-const detailCell = document.createElement('td');
-detailCell.colSpan = 9;
-detailCell.innerHTML = `
-  <div class="details" id="${detailsId}">
-    <div class="detail-bar" onclick="toggleDetails('${detailsId}')">📖 ดูรายละเอียดเพิ่มเติม</div>
-    <div class="detail-content" style="display:none; margin-top:10px;">
-      ${generateHistoryHTML(c.history, c.name)}
-    </div>
-  </div>
-`;
-detailsRow.appendChild(detailCell);
-tableBody.appendChild(detailsRow);
+       
       });
 
       // Enable export
@@ -475,7 +535,69 @@ function togglePhone(el) {
     el.dataset.showing = "true";
   }
 }
+window.openCustomerModal = function(index) {
+  const customer = customers[index];
+  const modal = document.getElementById("customer-modal");
+  const content = document.getElementById("modal-content");
 
+  const daysAbsent = calcDaysAbsent(customer.lastDate);
+
+content.innerHTML = `
+  <h3 style="font-size:18px;margin-bottom:6px;">📇 ${customer.name}</h3>
+  <div style="font-size:13px; line-height: 1.4;">
+    <div><strong>OPD:</strong> ${customer.opd}</div>
+    <div><strong>เบอร์:</strong> ${customer.phone}</div>
+    <div><strong>วันล่าสุด:</strong> ${formatDate(customer.lastDate)} 
+      <span style="color:gray;font-weight:normal;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>
+    </div>
+    <div><strong>ยอดรวม:</strong> ${customer.total.toLocaleString()} บาท</div>
+  </div>
+  <hr style="margin:12px 0;">
+  ${generateHistoryHTML(customer.history, customer.name)}
+`;
+
+  modal.style.display = "flex";
+}
+
+function closeCustomerModal() {
+  document.getElementById("customer-modal").style.display = "none";
+}
   </script>
+  <div class="floating-dock">
+  <a href="{{ url_for('dashboard') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}">
+  </a>
+  <a href="{{ url_for('sale_summary') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}">
+  </a>
+  <a href="{{ url_for('record_sales') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}">
+  </a>
+    <a href="{{ url_for('customer_list') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}">
+  </a>
+  <a href="{{ url_for('record_customer') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}">
+  </a>
+  <a href="{{ url_for('oldsaledata') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}">
+  </a>
+  <a href="#" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_staff.png') }}">
+  </a>
+  <a href="#" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_inventory.png') }}">
+  </a>
+  <a href="#" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_appointments.png') }}">
+  </a>
+</div>
+<div id="customer-modal">
+  <div class="modal-box">
+    <button onclick="closeCustomerModal()" style="position:absolute;top:10px;right:14px;font-size:20px;">×</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+</div>
 </body>
 </html>

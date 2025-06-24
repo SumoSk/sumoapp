@@ -8,7 +8,43 @@
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
     
+#customer-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.4);
+   align-items: center;
+  justify-content: center;
+}
 
+#customer-modal .modal-box {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+
+.modal-box {
+  font-size: 13px; /* ✅ ลดจากค่า default ที่ดูใหญ่เกินไป */
+  line-height: 1.6;
+  font-family: 'Prompt', sans-serif;
+}
+.modal-box h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+.modal-box strong {
+  color: #444;
+}
+.modal-box ul {
+  padding-left: 18px;
+  margin-bottom: 8px;
+}
     td.note-col,
 td.keyword-col {
   font-size: 12px;        /* ขนาดเล็กลงจากปกติ */
@@ -223,6 +259,7 @@ td.keyword-col {
   <button id="export-btn">🧾 Export รายชื่อลูกค้าเป็น Excel</button>
 
   <script>
+    let customers = [];
    fetch("/api/sales")
     .then(res => res.json())
     .then(records => {
@@ -254,7 +291,7 @@ td.keyword-col {
         }
       });
 
-      const customers = Object.values(customerMap).sort((a, b) => parseInt(a.opd) - parseInt(b.opd));
+      customers = Object.values(customerMap).sort((a, b) => parseInt(a.opd) - parseInt(b.opd));
       const tableBody = document.getElementById('customer-table-body');
 
       customers.forEach((c, i) => {
@@ -265,7 +302,9 @@ td.keyword-col {
         row.innerHTML = `
           <td>${i + 1}</td>
           <td>${c.opd}</td>
-          <td>${c.name}</td>
+          <td>
+  <span class="detail-bar" style="cursor:pointer;" onclick="openCustomerModal(${i})">${c.name}</span>
+</td>
           <td>
   <span class="phone-toggle" style="color: #0288d1; cursor: pointer;" data-phone="${c.phone}" onclick="togglePhone(this)">📞</span>
 </td>
@@ -279,19 +318,7 @@ td.keyword-col {
         `;
         tableBody.appendChild(row);
 
-        const detailsRow = document.createElement('tr');
-const detailCell = document.createElement('td');
-detailCell.colSpan = 9;
-detailCell.innerHTML = `
-  <div class="details" id="${detailsId}">
-    <div class="detail-bar" onclick="toggleDetails('${detailsId}')">📖 ดูรายละเอียดเพิ่มเติม</div>
-    <div class="detail-content" style="display:none; margin-top:10px;">
-      ${generateHistoryHTML(c.history, c.name)}
-    </div>
-  </div>
-`;
-detailsRow.appendChild(detailCell);
-tableBody.appendChild(detailsRow);
+       
       });
 
       // Enable export
@@ -508,7 +535,37 @@ function togglePhone(el) {
     el.dataset.showing = "true";
   }
 }
+window.openCustomerModal = function(index) {
+  const customer = customers[index];
+  const modal = document.getElementById("customer-modal");
+  const content = document.getElementById("modal-content");
+  const daysAbsent = calcDaysAbsent(customer.lastDate);
+const visitCount = customer.history.length;
+const avgAmount = visitCount > 0 ? Math.round(customer.total / visitCount) : 0;
 
+
+content.innerHTML = `
+   <h3 style="font-size:18px;margin-bottom:6px;">📇 ${customer.name}</h3>
+  <div style="font-size:13px; line-height: 1.5;">
+    <div><strong>OPD:</strong> ${customer.opd}</div>
+    <div><strong>เบอร์:</strong> ${customer.phone}</div>
+    <div><strong>วันล่าสุด:</strong> ${formatDate(customer.lastDate)} 
+      <span style="color:gray;font-weight:normal;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>
+    </div>
+    <div><strong>ยอดรวม:</strong> ${customer.total.toLocaleString()} บาท</div>
+    <div><strong>มาใช้บริการ:</strong> ${visitCount} ครั้ง</div>
+    <div><strong>เฉลี่ยต่อครั้ง:</strong> ${avgAmount.toLocaleString()} บาท</div>
+  </div>
+  <hr style="margin:12px 0;">
+  ${generateHistoryHTML(customer.history, customer.name)}
+`;
+
+  modal.style.display = "flex";
+}
+
+function closeCustomerModal() {
+  document.getElementById("customer-modal").style.display = "none";
+}
   </script>
   <div class="floating-dock">
   <a href="{{ url_for('dashboard') }}" class="icon-button">
@@ -538,6 +595,13 @@ function togglePhone(el) {
   <a href="#" class="icon-button">
     <img src="{{ url_for('static', filename='icon/icon_appointments.png') }}">
   </a>
+</div>
+<div id="customer-modal">
+  <div class="modal-box">
+    <button onclick="closeCustomerModal()" style="position:absolute;top:10px;right:14px;font-size:20px;">×</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
 </div>
 </body>
 </html>
