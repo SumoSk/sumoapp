@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>แดชบอร์ด</title>
@@ -170,22 +172,22 @@
 
       .floating-dock {
   position: fixed;
-  bottom: 8px;
+  bottom: env(safe-area-inset-bottom, 16px); /* ✅ ไม่ให้ติดแถบดำ */
   left: 50%;
   transform: translateX(-50%);
-  background: rgb(249, 249, 249); /* ขาว */
-
-  border-radius: 24px;
-  padding: 4px 4px;
+  background: white;
+  border-radius: 16px;
+  padding: 6px 6px env(safe-area-inset-bottom, 16px); /* ✅ เว้นขอบล่างด้วย */
   display: flex;
-  gap: 2px;
+  gap: 6px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.1);
   z-index: 1000;
+  max-width: 95vw;
 }
 
 .icon-button {
-  width: 74px;
-  height: 74px;
+  width: 64px;                 /* ✅ ลดขนาดบนจอเล็กได้ */
+  height: 64px;
   padding: 4px;
   border-radius: 12px;
   display: flex;
@@ -193,18 +195,18 @@
   justify-content: center;
   transition: transform 0.2s ease;
   text-decoration: none;
+  flex: 0 0 auto;              /* ✅ ไม่ยืด ไม่หด */
+}
+
+.icon-button img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
 }
 
 .icon-button:hover {
   transform: scale(1.1);
 }
-
-.icon-button img {
-  width: 74px;
-  height: 74px;
-  object-fit: contain;
-}
-
 .inline-field {
   display: flex;
   align-items: center;
@@ -239,6 +241,25 @@
   transform: scale(1.03);
 }
 
+@media (max-width: 768px) {
+  .icon-button {
+    width: 48px;
+    height: 48px;
+  }
+
+  .icon-button img {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .floating-dock {
+    position: fixed;
+    bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom); /* รองรับ iPhone/iPad ที่มีแถบล่าง */
+  }
+}
   </style>
 
 
@@ -296,6 +317,7 @@ let allCustomerRecords = [];
   function changeMonth(delta) {
     viewingDate.setMonth(viewingDate.getMonth() + delta);
     fetchDataAndUpdate();
+     refreshCustomerList();
   }
 
   function fetchAllCustomerRecords() {
@@ -554,7 +576,31 @@ function toggleCustomerList() {
 
   if (listEl.style.display === "none") {
     listEl.style.display = "block";
-    listEl.innerHTML = fullCustomerList.slice(10).map((c, i) => {
+
+    // 🆕 ดึง customerMap ใหม่ตามเดือนปัจจุบัน
+    const customerMap = {};
+    allSalesRecords
+      .filter(r => r.date.startsWith(currentPrefix))
+      .forEach(r => {
+        const key = `${r.name}|${r.phone}`;
+        if (!customerMap[key]) {
+          customerMap[key] = {
+            name: r.name,
+            phone: r.phone,
+            opd: r.opd || "-",
+            date: r.date,
+            amount: 0
+          };
+        }
+        customerMap[key].amount += parseFloat(r.amount || 0);
+        customerMap[key].date = r.date > customerMap[key].date ? r.date : customerMap[key].date;
+      });
+
+    const customerList = Object.values(customerMap)
+      .sort((a, b) => b.amount - a.amount)
+      .slice(10); // ข้าม Top 10
+
+    listEl.innerHTML = customerList.map((c, i) => {
       const key = `${c.name}|${c.phone}`;
       const allRecords = allCustomerRecords.filter(r => `${r.name}|${r.phone}` === key);
 
@@ -594,6 +640,13 @@ function toggleCustomerList() {
 }
 
 
+function refreshCustomerList() {
+  const listEl = document.getElementById("allCustomerList");
+  if (listEl.style.display === "block") {
+    listEl.style.display = "none";
+    toggleCustomerList();
+  }
+}
 
 
 
