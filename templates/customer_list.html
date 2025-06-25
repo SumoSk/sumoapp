@@ -195,18 +195,18 @@ td.keyword-col {
 }
     .floating-dock {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100vw;
-  background: #ffffff;
-  border-top: 1px solid #ccc;
+  bottom: env(safe-area-inset-bottom, 0);
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-radius: 16px;
+  padding: 6px 6px;
   display: flex;
-  justify-content: space-around;
-  padding: 8px 0;
-  padding-bottom: env(safe-area-inset-bottom, 8px);
-  z-index: 10000;
-  box-shadow: 0 -4px 12px rgba(0,0,0,0.06);
-  backdrop-filter: blur(5px);
+  gap: 6px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  z-index: 1000;
+  width: auto;
+  max-width: 95vw; /* ✅ ป้องกันล้น */
 }
 
 .icon-button {
