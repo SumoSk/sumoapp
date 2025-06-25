@@ -287,17 +287,20 @@
     "Fat/Hifu": ["Bromi", "Sisi", "HIFU", "HIFU แถม"],
     "อื่นๆ": ["ยาฉีดสลายฝ้า", "ครีมทาฝ้า", "ยาทานฝ้า", "ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen", "จ่ายเงิน/จองสินค้า"]
   };
+let viewingDate = new Date(); // ✅ กำหนดให้เป็น Global ตัวเดียว
+  let allSalesRecords = [];
+let fullCustomerList = [];
+let allCustomerRecords = [];
 
-  let viewingDate = new Date();
-  let chartInstance = null;
 
   function changeMonth(delta) {
     viewingDate.setMonth(viewingDate.getMonth() + delta);
     fetchDataAndUpdate();
+     refreshCustomerList();
   }
 
   function fetchAllCustomerRecords() {
-  fetch("/api/sales")  // ใช้ endpoint เดิม
+  return fetch("/api/sales")
     .then(res => res.json())
     .then(records => {
       allCustomerRecords = records;
@@ -308,14 +311,22 @@
 }
 
   function fetchDataAndUpdate() {
-    fetch("/api/sales")
-      .then(res => res.json())
-      .then(records => updateDashboard(records))
-      .catch(err => {
-        console.error("❌ โหลดข้อมูลจาก Supabase ไม่สำเร็จ:", err);
-        alert("เกิดข้อผิดพลาดในการโหลดข้อมูลยอดขาย");
-      });
+  // โหลดทั้งหมดก่อน แล้วจึงกรองข้อมูลเฉพาะเดือน
+  if (allSalesRecords.length > 0 && allCustomerRecords.length > 0) {
+    updateDashboard(allSalesRecords);
+  } else {
+    Promise.all([
+      fetch("/api/sales").then(res => res.json()), // allSalesRecords
+      fetchAllCustomerRecords()
+    ]).then(([salesRecords]) => {
+      allSalesRecords = salesRecords;
+      updateDashboard(allSalesRecords);
+    }).catch(err => {
+      console.error("❌ โหลดข้อมูลไม่สำเร็จ:", err);
+      alert("เกิดข้อผิดพลาดในการโหลดข้อมูล");
+    });
   }
+}
 
   function updateDashboard(records) {
     const monthName = viewingDate.toLocaleString('th-TH', { month: 'long' });
@@ -454,7 +465,7 @@ const targetRangeEnd = viewingDay;
     }
   });
 
-  const currentPrefix = viewingDate.toISOString().slice(0, 7);
+ 
   const allMonths = Object.keys(groupByMonth).filter(m => m !== currentPrefix);
 
   const totalPastMonths = allMonths.reduce((sum, m) => sum + groupByMonth[m], 0);
@@ -497,11 +508,38 @@ const targetRangeEnd = viewingDay;
       .slice(0, 10);
 
     document.getElementById('top10List').innerHTML = sortedCustomers.map((c) => {
-      const date = new Date(c.date);
-      const formatted = date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
-      return `<li><span class="name" style="cursor:pointer;color:#333;" onclick="openCustomerModal('${c.name}|${c.phone}')">${c.name}</span><span class="date"> (${formatted})</span><span class="amount">${c.amount.toLocaleString()} บาท</span></li>`;
+  const key = `${c.name}|${c.phone}`;
+  const allRecords = allCustomerRecords.filter(r => `${r.name}|${r.phone}` === key);
 
-    }).join('');
+  const totalVisits = allRecords.length;
+  const totalAmount = allRecords.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+  const avg = totalVisits > 0 ? Math.round(totalAmount / totalVisits) : 0;
+
+  const latest = allRecords.length > 0
+    ? new Date(Math.max(...allRecords.map(r => new Date(r.date))))
+    : null;
+
+  const latestText = latest
+    ? latest.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
+    : "-";
+
+  const formatted = new Date(c.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+
+  const currentPrefix = viewingDate.toISOString().slice(0, 7);
+  const previousRecords = allRecords.filter(r => r.date < `${currentPrefix}-01`);
+  const isNewCustomer = previousRecords.length === 0;
+  const newBadge = isNewCustomer ? `<span style="color:red; font-weight:bold;"> ลูกค้าใหม่</span>` : "";
+
+  return `
+    <li style="margin-bottom: 8px;">
+      <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">${c.name}${newBadge}</span>
+      <span class="date"> (${formatted} | ${totalVisits}x | 💳 ${avg.toLocaleString()} | 💰 ${totalAmount.toLocaleString()} | 🔚 ${latestText})</span>
+      <span class="amount">${c.amount.toLocaleString()} บาท</span>
+    </li>
+  `;
+}).join('');
+
+
 
     document.getElementById('totalCustomer').textContent = `จำนวนลูกค้าที่มาใช้บริการทั้งหมด ${Object.keys(customerMap).length} คน (กดดูเพิ่มเติม)`;
   }
@@ -509,22 +547,89 @@ const targetRangeEnd = viewingDay;
   fetchDataAndUpdate();
 fetchAllCustomerRecords();
 
-  let fullCustomerList = [];
-let allCustomerRecords = [];
+
 
 function toggleCustomerList() {
   const listEl = document.getElementById("allCustomerList");
+  const currentPrefix = viewingDate.toISOString().slice(0, 7);
+
   if (listEl.style.display === "none") {
     listEl.style.display = "block";
-    listEl.innerHTML = fullCustomerList.slice(10).map((c, i) => {
-      const date = new Date(c.date);
-      const formatted = date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
-      return `<li><span class="name" style="cursor:pointer;color:#333;" onclick="openCustomerModal('${c.name}|${c.phone}')">${i + 11}. ${c.name}</span><span class="date"> (${formatted})</span><span class="amount">${c.amount.toLocaleString()} บาท</span></li>`;
+
+    // 🆕 ดึง customerMap ใหม่ตามเดือนปัจจุบัน
+    const customerMap = {};
+    allSalesRecords
+      .filter(r => r.date.startsWith(currentPrefix))
+      .forEach(r => {
+        const key = `${r.name}|${r.phone}`;
+        if (!customerMap[key]) {
+          customerMap[key] = {
+            name: r.name,
+            phone: r.phone,
+            opd: r.opd || "-",
+            date: r.date,
+            amount: 0
+          };
+        }
+        customerMap[key].amount += parseFloat(r.amount || 0);
+        customerMap[key].date = r.date > customerMap[key].date ? r.date : customerMap[key].date;
+      });
+
+    const customerList = Object.values(customerMap)
+      .sort((a, b) => b.amount - a.amount)
+      .slice(10); // ข้าม Top 10
+
+    listEl.innerHTML = customerList.map((c, i) => {
+      const key = `${c.name}|${c.phone}`;
+      const allRecords = allCustomerRecords.filter(r => `${r.name}|${r.phone}` === key);
+
+      const totalVisits = allRecords.length;
+      const totalAmount = allRecords.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+      const avg = totalVisits > 0 ? Math.round(totalAmount / totalVisits) : 0;
+
+      const latest = allRecords.length > 0
+        ? new Date(Math.max(...allRecords.map(r => new Date(r.date))))
+        : null;
+
+      const latestText = latest
+        ? latest.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
+        : "-";
+
+      const formattedDate = new Date(c.date).toLocaleDateString('th-TH', {
+        day: 'numeric', month: 'short', year: '2-digit'
+      });
+
+      const previousRecords = allRecords.filter(r => r.date < `${currentPrefix}-01`);
+      const isNewCustomer = previousRecords.length === 0;
+      const newBadge = isNewCustomer ? `<span style="color:red; font-weight:bold;"> ลูกค้าใหม่</span>` : "";
+
+      return `
+        <li style="margin-bottom: 8px;">
+          <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">
+            ${i + 11}. ${c.name}${newBadge}
+          </span>
+          <span class="date"> (${formattedDate} | ${totalVisits}x | 💳 ${avg.toLocaleString()} | 💰 ${totalAmount.toLocaleString()} | 🔚 ${latestText})</span>
+          <span class="amount">${c.amount.toLocaleString()} บาท</span>
+        </li>
+      `;
     }).join('');
   } else {
     listEl.style.display = "none";
   }
 }
+
+
+function refreshCustomerList() {
+  const listEl = document.getElementById("allCustomerList");
+  if (listEl.style.display === "block") {
+    listEl.style.display = "none";
+    toggleCustomerList();
+  }
+}
+
+
+
+
 function daysInMonth(year, month) {
   return new Date(year, month, 0).getDate();
 }

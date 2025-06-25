@@ -481,29 +481,62 @@ function downloadExcel() {
     return;
   }
 
-  const ws_data = [
-    ["วันที่", "ชื่อ", "เบอร์", "รายการ", "ยอด", "ช่องทางชำระเงิน", "หมายเหตุ"]
-  ];
+  const sortedRecs = window.allSalesRecords.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+  const ws_data = [];
+  let currentDate = '';
+  let dailyTotal = 0;
 
-  window.allSalesRecords.forEach(r => {
-    const items = (r.items || []).join(" | ");
+  sortedRecs.forEach((r, i) => {
+    const formattedDate = formatDate(r.date);
+    const items = (r.items || []).map(item => {
+      const match = item.match(/^(.*?) ?(?:\((.*?)\))? - (\d+) ชิ้น/);
+      if (match) {
+        const main = match[1];
+        const sub = match[2];
+        const qty = match[3];
+        return sub ? `${main} (${sub}) - ${qty} ชิ้น` : `${main} - ${qty} ชิ้น`;
+      }
+      return item;
+    }).join('\n');
+
+    if (formattedDate !== currentDate) {
+      if (currentDate !== '') {
+        // รวมยอดวันก่อนหน้า
+        ws_data.push(['', '', '', 'รวมยอดประจำวัน', dailyTotal, '']);
+        ws_data.push([]); // เว้นบรรทัด
+      }
+
+      // เริ่มวันใหม่
+      currentDate = formattedDate;
+      dailyTotal = 0;
+      ws_data.push([`วันที่ ${formattedDate}`]);
+      ws_data.push(['OPD', 'ชื่อ', 'เบอร์', 'รายการ', 'ยอด (บาท)', 'หมายเหตุ']);
+    }
+
+    dailyTotal += parseFloat(r.amount) || 0;
+
     ws_data.push([
-      r.date,
+      r.opd || '',      // OPD
       r.name,
-      r.phone || "",
+      r.phone || '',
       items,
-      r.amount,
-      r.payment || "",
-      r.note || ""
+      parseFloat(r.amount) || 0,
+      r.note || ''
     ]);
   });
 
+  // รวมยอดวันสุดท้าย
+  if (currentDate !== '') {
+    ws_data.push(['', '', '', 'รวมยอดประจำวัน', dailyTotal, '']);
+  }
+
   const worksheet = XLSX.utils.aoa_to_sheet(ws_data);
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "ยอดขาย");
+  XLSX.utils.book_append_sheet(workbook, worksheet, "ยอดขายรายวัน");
 
-  XLSX.writeFile(workbook, "ยอดขาย.xlsx");
+  XLSX.writeFile(workbook, "ยอดขายรายวัน.xlsx");
 }
+
 
   </script>
 

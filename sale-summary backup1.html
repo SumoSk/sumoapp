@@ -11,48 +11,43 @@
       background-color: #f7f7f7;
       padding: 10px;
     }
-    .menu-bar {
-      display: flex;
-      justify-content: space-around;
-      background-color: white;
-      padding: 10px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-      position: sticky;  /* ✅ ให้ค้างด้านบน */
-  top: 0;
-  z-index: 1000;      /* ✅ ซ้อนอยู่เหนือส่วนอื่น */
-    }
+    
+    
     .search-container {
-      max-width: 95%;
-      margin: 0 auto 20px auto;
-      background-color: white;
-      border-radius: 12px;
-      padding: 15px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-      position: sticky;   /* ✅ ให้ค้างด้านบน */
-  top: 60px;           /* ✅ เว้นจากเมนูด้านบนประมาณ 60px */
-  z-index: 999;        /* ✅ ให้ลอยเหนือเนื้อหา */
+   position: fixed;
+  bottom: 120px; /* ✅ เว้นระยะไม่ให้ชน floating-dock */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 600px;
+  background: rgb(235, 255, 245); /* ✅ เขียวอ่อนโปร่ง */
+
+  border-radius: 20px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 999;
     }
     .search-container label {
       font-weight: bold;
-      font-size: 18px;
+      font-size: 14px;
       display: block;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       text-align: center;
     }
     .search-container input {
       width: 100%;
-      padding: 10px 40px 10px 40px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 30px;
-      background-color: #f1f1f1;
-      background-image: url('https://cdn-icons-png.flaticon.com/512/622/622669.png');
-      background-size: 18px;
-      background-repeat: no-repeat;
-      background-position: 12px center;
-      box-sizing: border-box;
+  padding: 10px 16px 10px 40px;
+  font-size: 12px;
+  border: none;
+  border-radius: 30px;
+  background-color: rgb(255, 255, 255); /* ✅ โปร่งนิดๆ */
+  background-image: url('https://cdn-icons-png.flaticon.com/512/622/622669.png');
+  background-size: 18px;
+  background-repeat: no-repeat;
+  background-position: 12px center;
+  box-sizing: border-box;
+  color: #222;
+  outline: none;
     }
     .menu-bar a {
       text-decoration: none;
@@ -73,20 +68,51 @@
       padding: 30px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
+
+    
+     .floating-dock {
+  position: fixed;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgb(249, 249, 249); /* ขาว */
+
+  border-radius: 24px;
+  padding: 4px 4px;
+  display: flex;
+  gap: 2px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  z-index: 1000;
+}
+
+.icon-button {
+  width: 74px;
+  height: 74px;
+  padding: 4px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  text-decoration: none;
+}
+
+.icon-button:hover {
+  transform: scale(1.1);
+}
+
+.icon-button img {
+  width: 74px;
+  height: 74px;
+  object-fit: contain;
+}
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
 
 </head>
 
 <body>
-  <div class="menu-bar">
-        <a href="{{ url_for('dashboard') }}">หน้าแรก</a>
-      <a href="{{ url_for('sale_summary') }}">สรุปยอดขาย</a>
-      <a href="{{ url_for('record_sales') }}">บันทึกยอดขาย</a>
-      <a href="{{ url_for('record_customer') }}">บันทึกข้อมูลลูกค้า</a>
-      <a href="{{ url_for('customer_list') }}">ข้อมูลลูกค้า</a>
-      <a href="{{ url_for('oldsaledata') }}">ข้อมูลเก่า</a>
-    </div>
+  
 <div class="search-container">
     
     <input type="text" id="searchInput" placeholder="พิมพ์คำค้น...">
@@ -95,6 +121,10 @@
   <div class="container">
     <h2>สรุปยอดขายประจำเดือน</h2>
     <div id="reviewSection">กำลังโหลดข้อมูล...</div>
+    <div style="text-align:center; margin-top: 10px;">
+  <button onclick="downloadExcel()" style="padding:10px 20px; font-size:14px; background-color:#00796b; color:white; border:none; border-radius:8px; cursor:pointer;">
+    ⬇️ โหลด Excel
+  </button>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -121,7 +151,7 @@
     // แปลง item จาก JSON string เป็น array ถ้าเป็น string
     const records = data.map(rec => ({
       ...rec,
-      items: typeof rec.item === 'string' ? JSON.parse(rec.item) : rec.item
+      items: typeof rec.items === 'string' ? JSON.parse(rec.items) : rec.items
     }));
 
     saveAllRecords(records);
@@ -133,6 +163,7 @@
 
 
     function saveAllRecords(records) {
+        window.allSalesRecords = records; // ✅ เพิ่มบรรทัดนี้ไว้บนสุด
       const reviewSection = document.getElementById('reviewSection');
       reviewSection.innerHTML = ''; // clear previous
 
@@ -392,8 +423,17 @@ const totalPromoAmount = recs
 summaryHTML += renderItemSummary('⭐ สินค้าทั่วไป', itemSummary, itemTotal, totalNormalAmount);
 summaryHTML += renderItemSummary('🎁 โปรโมชั่น', promoItemSummary, promoItemTotal, totalPromoAmount);
 
-summaryDiv.innerHTML = summaryHTML;
+summaryDiv.innerHTML = `
+  <button onclick="toggleSummary()" style="margin-bottom:10px; padding:8px 16px; background-color:#43a047; color:white; border:none; border-radius:8px; cursor:pointer;">
+    📦 สรุปรายการขายแยกหมวดหมู่
+  </button>
+  <div id="summaryContent" style="display:none;">
+    ${summaryHTML}
+  </div>
+`;
+
 reviewSection.appendChild(summaryDiv);
+
 
         
         
@@ -429,7 +469,108 @@ reviewSection.appendChild(summaryDiv);
     row.style.display = text.includes(val) ? '' : 'none';
   });
 });
+function toggleSummary() {
+  const content = document.getElementById('summaryContent');
+  if (!content) return;
+  content.style.display = content.style.display === 'none' ? 'block' : 'none';
+}
+
+function downloadExcel() {
+  if (!window.allSalesRecords || window.allSalesRecords.length === 0) {
+    alert("ไม่มีข้อมูลให้ดาวน์โหลด");
+    return;
+  }
+
+  const sortedRecs = window.allSalesRecords.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+  const ws_data = [];
+  let currentDate = '';
+  let dailyTotal = 0;
+
+  sortedRecs.forEach((r, i) => {
+    const formattedDate = formatDate(r.date);
+    const items = (r.items || []).map(item => {
+      const match = item.match(/^(.*?) ?(?:\((.*?)\))? - (\d+) ชิ้น/);
+      if (match) {
+        const main = match[1];
+        const sub = match[2];
+        const qty = match[3];
+        return sub ? `${main} (${sub}) - ${qty} ชิ้น` : `${main} - ${qty} ชิ้น`;
+      }
+      return item;
+    }).join('\n');
+
+    if (formattedDate !== currentDate) {
+      if (currentDate !== '') {
+        // รวมยอดวันก่อนหน้า
+        ws_data.push(['', '', '', 'รวมยอดประจำวัน', dailyTotal, '']);
+        ws_data.push([]); // เว้นบรรทัด
+      }
+
+      // เริ่มวันใหม่
+      currentDate = formattedDate;
+      dailyTotal = 0;
+      ws_data.push([`วันที่ ${formattedDate}`]);
+      ws_data.push(['OPD', 'ชื่อ', 'เบอร์', 'รายการ', 'ยอด (บาท)', 'หมายเหตุ']);
+    }
+
+    dailyTotal += parseFloat(r.amount) || 0;
+
+    ws_data.push([
+      r.opd || '',      // OPD
+      r.name,
+      r.phone || '',
+      items,
+      parseFloat(r.amount) || 0,
+      r.note || ''
+    ]);
+  });
+
+  // รวมยอดวันสุดท้าย
+  if (currentDate !== '') {
+    ws_data.push(['', '', '', 'รวมยอดประจำวัน', dailyTotal, '']);
+  }
+
+  const worksheet = XLSX.utils.aoa_to_sheet(ws_data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "ยอดขายรายวัน");
+
+  XLSX.writeFile(workbook, "ยอดขายรายวัน.xlsx");
+}
+
 
   </script>
+
+
+  <div class="floating-dock">
+  <a href="{{ url_for('dashboard') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}">
+  </a>
+  <a href="{{ url_for('sale_summary') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}">
+  </a>
+  <a href="{{ url_for('record_sales') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}">
+  </a>
+    <a href="{{ url_for('customer_list') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}">
+  </a>
+  <a href="{{ url_for('record_customer') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}">
+  </a>
+  <a href="{{ url_for('oldsaledata') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}">
+  </a>
+  <a href="#" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_staff.png') }}">
+  </a>
+  <a href="{{ url_for('inventory') }}" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_inventory.png') }}">
+  </a>
+  <a href="#" class="icon-button">
+    <img src="{{ url_for('static', filename='icon/icon_appointments.png') }}">
+  </a>
+</div>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
 </body>
 </html>
