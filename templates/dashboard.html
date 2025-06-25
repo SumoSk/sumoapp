@@ -173,38 +173,41 @@
   bottom: 8px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgb(249, 249, 249); /* ขาว */
-
-  border-radius: 24px;
-  padding: 4px 4px;
+  background: rgb(249, 249, 249);
+  border-radius: 20px;
+  padding: 6px;
   display: flex;
-  gap: 2px;
+  gap: 4px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.1);
   z-index: 1000;
+
+  /* ✅ ใหม่: ให้ responsive */
+  max-width: 95vw;
+  overflow-x: auto;
 }
 
 .icon-button {
-  width: 74px;
-  height: 74px;
+  width: 60px;
+  height: 60px;
   padding: 4px;
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: transform 0.2s ease;
   text-decoration: none;
+  flex: 0 0 auto;
+}
+
+.icon-button img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
 }
 
 .icon-button:hover {
   transform: scale(1.1);
 }
-
-.icon-button img {
-  width: 74px;
-  height: 74px;
-  object-fit: contain;
-}
-
 .inline-field {
   display: flex;
   align-items: center;
@@ -239,6 +242,17 @@
   transform: scale(1.03);
 }
 
+@media (max-width: 768px) {
+  .icon-button {
+    width: 48px;
+    height: 48px;
+  }
+
+  .icon-button img {
+    width: 48px;
+    height: 48px;
+  }
+}
   </style>
 
 
