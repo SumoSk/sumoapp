@@ -122,19 +122,21 @@
   bottom: 8px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgb(249, 249, 249); /* ขาว */
-
+  background: #f9f9f9;
   border-radius: 24px;
-  padding: 4px 4px;
+  padding: 4px 8px;
   display: flex;
-  gap: 2px;
+  flex-wrap: wrap;            /* ✅ ยอมให้ปุ่มลงบรรทัดใหม่ถ้าจอเล็ก */
+  justify-content: center;    /* ✅ จัดให้อยู่ตรงกลาง */
+  gap: 6px;
+  max-width: 100vw;           /* ✅ ไม่ให้ล้นจอ */
   box-shadow: 0 8px 20px rgba(0,0,0,0.1);
   z-index: 1000;
 }
 
 .icon-button {
-  width: 74px;
-  height: 74px;
+  width: 64px;                 /* ✅ ลดขนาดบนจอเล็กได้ */
+  height: 64px;
   padding: 4px;
   border-radius: 12px;
   display: flex;
@@ -142,6 +144,7 @@
   justify-content: center;
   transition: transform 0.2s ease;
   text-decoration: none;
+  flex: 0 0 auto;              /* ✅ ไม่ยืด ไม่หด */
 }
 
 .icon-button:hover {
@@ -149,10 +152,31 @@
 }
 
 .icon-button img {
-  width: 74px;
-  height: 74px;
+  width: 60px;
+  height: 60px;
   object-fit: contain;
 }
+@media (max-width: 768px) {
+  .icon-button {
+    width: 48px;
+    height: 48px;
+  }
+
+  .icon-button img {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .floating-dock {
+    position: fixed;
+    bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom); /* รองรับ iPhone/iPad ที่มีแถบล่าง */
+  }
+}
+
+
   </style>
 </head>
 <body>
