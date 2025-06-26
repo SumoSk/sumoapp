@@ -125,6 +125,12 @@
     font-weight: 600;
   }
 
+  @media (max-width: 768px) {
+  .top10-box li span.date {
+    font-size: 8px !important;
+  }
+}
+
   .chart-summary-row {
     display: flex;
     justify-content: space-between;
@@ -1027,10 +1033,11 @@ function openCustomerModal(key) {
   const lastDate = new Date(latestRecord.date);
   const today = new Date();
   const daysAbsent = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
-  const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
+  const totalVisits = records.length;
+const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
+const paidVisits = paidRecords.length;
 const totalAmount = paidRecords.reduce((sum, r) => sum + parseFloat(r.amount), 0);
-const visits = paidRecords.length;
-const average = visits > 0 ? totalAmount / visits : 0;
+const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
 
   // แยกรายการและจัดหมวดหมู่จาก categoryMap
   const allItems = {};
@@ -1111,7 +1118,7 @@ const average = visits > 0 ? totalAmount / visits : 0;
     <div>📞 <strong>เบอร์:</strong> ${customer.phone}</div>
     <div>📅 <strong>วันล่าสุด:</strong> ${formatDate(latestRecord.date)} ${daysAbsentText}</div>
     <div style="color:#00796b;"><strong>💰 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท</div>
-    <div>🔁 <strong>มาใช้บริการ:</strong> ${visits} ครั้ง</div>
+    <div>🔁 มาใช้บริการ: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
     <div>💳 <strong>เฉลี่ยต่อครั้ง:</strong> ${Math.round(average).toLocaleString()} บาท</div>
     <hr style="margin:12px 0;">
     <div style="font-weight:bold;">📦 สรุปรายการซื้อทั้งหมด:</div>
@@ -1297,8 +1304,6 @@ function resetFilters() {
   document.getElementById("filterResults").innerHTML = "";
 }
 
-
-
 function openGroupModal() {
   const selectedKeys = Array.from(document.querySelectorAll('.selectCustomerCheckbox:checked')).map(cb => cb.value);
   if (selectedKeys.length === 0) {
@@ -1312,9 +1317,13 @@ function openGroupModal() {
     if (records.length === 0) return '';
 
     const name = records[0].name;
-    const totalAmount = records.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
-    const visits = records.length;
-    const avg = visits > 0 ? Math.round(totalAmount / visits) : 0;
+
+    const totalVisits = records.length;
+    const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
+    const paidVisits = paidRecords.length;
+    const totalAmount = paidRecords.reduce((sum, r) => sum + parseFloat(r.amount), 0);
+    const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
+
     const latest = new Date(Math.max(...records.map(r => new Date(r.date))));
     const absentDays = Math.floor((today - latest) / (1000 * 60 * 60 * 24));
     const formattedDate = latest.toLocaleDateString('th-TH', {
@@ -1324,11 +1333,11 @@ function openGroupModal() {
     return `
       <div style="margin-bottom: 10px;">
         📇 <strong>${name}</strong>
-        💰 ยอด: ${totalAmount.toLocaleString()} บาท |
-        💳 เฉลี่ย: ${avg.toLocaleString()} |
-        🔁 มา: ${visits} ครั้ง |
-        🕒 ไม่มา: ${absentDays} วัน |
-        🔚 ล่าสุด: ${formattedDate}
+        💰 ${totalAmount.toLocaleString()} |
+        💳 ${average.toLocaleString()} |
+        🔁 ${totalVisits} (${paidVisits}จ่าย) |
+        🕒 ${absentDays} วัน |
+         ${formattedDate}
       </div>
       <hr>
     `;
@@ -1441,30 +1450,33 @@ function filterGeneral() {
   const results = Object.entries(grouped).map(([key, records]) => {
     const name = records[0].name;
     const phone = records[0].phone || "";
+
+    const totalVisits = records.length;
     const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
-const totalAmount = paidRecords.reduce((sum, r) => sum + parseFloat(r.amount), 0);
-const visitCount = paidRecords.length;
-const averageBill = visitCount > 0 ? totalAmount / visitCount : 0;
+    const paidVisits = paidRecords.length;
+    const totalAmount = paidRecords.reduce((sum, r) => sum + parseFloat(r.amount), 0);
+    const averageBill = paidVisits > 0 ? totalAmount / paidVisits : 0;
 
     const latestRecord = records.reduce((latest, r) =>
-      new Date(r.date) > new Date(latest.date) ? r : latest
-    , records[0]);
+      new Date(r.date) > new Date(latest.date) ? r : latest,
+      records[0]
+    );
 
     const absentDays = Math.floor((today - new Date(latestRecord.date)) / (1000 * 60 * 60 * 24));
     const lastVisit = latestRecord.date;
 
     const allProducts = records.flatMap(r => r.items || []).map(item => {
-  const match = item.match(/\((.*?)\)/);
-  if (match) return match[1]; // ถ้าเจอในวงเล็บ ให้ใช้
-  return item.split(" - ")[0].trim(); // ไม่มีก็ใช้ชื่อก่อน "-"
-});
-
+      const match = item.match(/\((.*?)\)/);
+      if (match) return match[1];
+      return item.split(" - ")[0].trim();
+    });
 
     return {
       key,
       name,
       totalAmount,
-      visitCount,
+      totalVisits,
+      paidVisits,
       averageBill,
       absentDays,
       lastVisit,
@@ -1473,15 +1485,14 @@ const averageBill = visitCount > 0 ? totalAmount / visitCount : 0;
   }).filter(c => {
     const nameMatch = !nameInput || c.name.toLowerCase().includes(nameInput);
     const totalMatch = c.totalAmount >= minTotal && c.totalAmount <= maxTotal;
-    const visitMatch = c.visitCount >= minVisits && c.visitCount <= maxVisits;
+    const visitMatch = c.totalVisits >= minVisits && c.totalVisits <= maxVisits;
     const absentMatch = c.absentDays >= minAbsent && c.absentDays <= maxAbsent;
     const avgMatch = c.averageBill >= minAvg && c.averageBill <= maxAvg;
     const dateMatch =
       (!startDate || new Date(c.lastVisit) >= new Date(startDate)) &&
       (!endDate || new Date(c.lastVisit) <= new Date(endDate));
     const productMatch = selectedProducts.length === 0 ||
-  selectedProducts.every(p => c.products.some(prod => prod.includes(p)));
-      selectedProducts.every(p => c.products.includes(p));
+      selectedProducts.every(p => c.products.some(prod => prod.includes(p)));
 
     return nameMatch && totalMatch && visitMatch && absentMatch && avgMatch && dateMatch && productMatch;
   }).sort((a, b) => b.totalAmount - a.totalAmount);
@@ -1491,12 +1502,20 @@ const averageBill = visitCount > 0 ? totalAmount / visitCount : 0;
       day: 'numeric', month: 'short', year: '2-digit'
     });
 
-    return `<div> <input type="checkbox" class="selectCustomerCheckbox" value="${c.key}" style="margin-right:6px; vertical-align: middle;">
-      📇 <strong style="cursor:pointer;color:#00796b;" onclick="openCustomerModal('${c.key}')">${c.name}</strong> 💰 ยอด: ${c.totalAmount.toLocaleString()} บาท | 💳 เฉลี่ย: ${Math.round(c.averageBill).toLocaleString()} บาท | 🔁 มา: ${c.visitCount} ครั้ง | 🕒 ไม่มา: ${c.absentDays} วัน | 🔚 ล่าสุด: ${formattedDate}</div><hr>`;
+    return `<div>
+      <input type="checkbox" class="selectCustomerCheckbox" value="${c.key}" style="margin-right:6px; vertical-align: middle;">
+      📇 <strong style="cursor:pointer;color:#00796b;" onclick="openCustomerModal('${c.key}')">${c.name}</strong>
+      💰 ยอด: ${c.totalAmount.toLocaleString()} |
+      💳 ${Math.round(c.averageBill).toLocaleString()} |
+      🔁 ${c.totalVisits} (${c.paidVisits} จ่าย) |
+      ⏱️ ${c.absentDays} วัน |
+       ${formattedDate}
+    </div><hr>`;
   }).join('');
 
   document.getElementById("filterResults").innerHTML = `<h4>ผลลัพธ์ ${results.length} คน</h4>` + html;
 }
+
 
 
 
