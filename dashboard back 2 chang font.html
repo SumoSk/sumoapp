@@ -627,6 +627,17 @@ h3 {
         <div class="summary-list" id="summaryList"></div>
   </div>
 
+<!-- ✅ Modal แสดงกลุ่ม -->
+<div id="group-modal" style="display:none;position:fixed;inset:0;background-color:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
+  <div id="group-modal-content" style="background:white;padding:20px;border-radius:16px;width:95%;max-width:700px;max-height:90vh;overflow:auto;position:relative; font-size:13px;">
+    <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
+      <button onclick="saveGroupModalAsImage()" title="บันทึกเป็นรูปภาพ" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">💾</button>
+      <button onclick="closeGroupModal()" title="ปิดหน้าต่าง" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">❌</button>
+    </div>
+    <div style="margin-top: 20px;" id="groupSelectedList"></div>
+  </div>
+</div>
+
   <script>
     const categoryMap = {
     "โบทอค": ["Aestox 50 u", "Aestox 100 u", "Allergan 50 u", "Allergan 100 u"],
@@ -1016,9 +1027,10 @@ function openCustomerModal(key) {
   const lastDate = new Date(latestRecord.date);
   const today = new Date();
   const daysAbsent = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
-  const visits = records.length;
-  const totalAmount = records.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
-  const average = totalAmount / visits;
+  const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
+const totalAmount = paidRecords.reduce((sum, r) => sum + parseFloat(r.amount), 0);
+const visits = paidRecords.length;
+const average = visits > 0 ? totalAmount / visits : 0;
 
   // แยกรายการและจัดหมวดหมู่จาก categoryMap
   const allItems = {};
@@ -1119,20 +1131,36 @@ function closeCustomerModal() {
 function saveModalAsImage() {
   const node = document.getElementById("modal-content");
   if (!node) {
-    alert("ไม่พบเนื้อหาใน modal-content");
+    alert("ไม่พบเนื้อหา");
     return;
   }
 
   html2canvas(node, { scale: 2 }).then(canvas => {
-    const link = document.createElement("a");
-    link.download = 'customer-summary.jpg';
-    link.href = canvas.toDataURL("image/jpeg", 0.95);
-    link.click();
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    if (isIOS) {
+      // ✅ iPad/iPhone — เปิดแท็บใหม่
+      const newTab = window.open();
+      if (newTab) {
+        newTab.document.write(`<img src="${dataUrl}" style="width:100%">`);
+      } else {
+        alert("ไม่สามารถเปิดแท็บใหม่ได้ โปรดปิด popup blocker");
+      }
+    } else {
+      // ✅ เครื่องอื่น — ดาวน์โหลดอัตโนมัติ
+      const link = document.createElement("a");
+      link.download = 'customer-summary.jpg';
+      link.href = dataUrl;
+      link.click();
+    }
   }).catch(error => {
-    console.error("จับภาพไม่สำเร็จ:", error);
-    alert("เกิดข้อผิดพลาดในการบันทึกรูปภาพ");
+    console.error("เกิดข้อผิดพลาด:", error);
+    alert("บันทึกภาพไม่สำเร็จ");
   });
 }
+
 
 
 
@@ -1226,6 +1254,8 @@ filterUI.innerHTML = `
 
   <button type="button" onclick="filterGeneral()" class="search-button">ค้นหา</button>
   <button type="button" onclick="resetFilters()" class="add-product-button" style="margin-left: 10px;">รีเซ็ตค่า</button>
+  <button type="button" onclick="openGroupModal()" class="add-product-button" style="margin-left: 10px;">ดูรายการที่เลือก</button>
+
 
 </div>
 
@@ -1237,6 +1267,8 @@ filterUI.innerHTML = `
 
 
 document.body.appendChild(filterUI);
+
+
 
 function resetFilters() {
   document.getElementById("startDate").value = "";
@@ -1258,6 +1290,76 @@ function resetFilters() {
   // เคลียร์ผลลัพธ์
   document.getElementById("filterResults").innerHTML = "";
 }
+
+
+
+function openGroupModal() {
+  const selectedKeys = Array.from(document.querySelectorAll('.selectCustomerCheckbox:checked')).map(cb => cb.value);
+  if (selectedKeys.length === 0) {
+    alert("กรุณาเลือกลูกค้าอย่างน้อย 1 คน");
+    return;
+  }
+
+  const today = new Date();
+  const listHtml = selectedKeys.map(key => {
+    const records = allCustomerRecords.filter(r => `${r.name}|${r.phone}` === key);
+    if (records.length === 0) return '';
+
+    const name = records[0].name;
+    const totalAmount = records.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+    const visits = records.length;
+    const avg = visits > 0 ? Math.round(totalAmount / visits) : 0;
+    const latest = new Date(Math.max(...records.map(r => new Date(r.date))));
+    const absentDays = Math.floor((today - latest) / (1000 * 60 * 60 * 24));
+    const formattedDate = latest.toLocaleDateString('th-TH', {
+      day: 'numeric', month: 'short', year: '2-digit'
+    });
+
+    return `
+      <div style="margin-bottom: 10px;">
+        📇 <strong>${name}</strong>
+        💰 ยอด: ${totalAmount.toLocaleString()} บาท |
+        💳 เฉลี่ย: ${avg.toLocaleString()} |
+        🔁 มา: ${visits} ครั้ง |
+        🕒 ไม่มา: ${absentDays} วัน |
+        🔚 ล่าสุด: ${formattedDate}
+      </div>
+      <hr>
+    `;
+  }).join('');
+
+  document.getElementById("groupSelectedList").innerHTML = `<h3 style="margin-bottom:10px;">รายชื่อลูกค้าที่เลือก (${selectedKeys.length} คน)</h3>` + listHtml;
+  document.getElementById("group-modal").style.display = "flex";
+}
+
+function closeGroupModal() {
+  document.getElementById("group-modal").style.display = "none";
+}
+
+function saveGroupModalAsImage() {
+  const node = document.getElementById("group-modal-content");
+  if (!node) {
+    alert("ไม่พบเนื้อหาใน group-modal");
+    return;
+  }
+
+  html2canvas(node, { scale: 2 }).then(canvas => {
+    const link = document.createElement("a");
+    link.download = 'selected-customers.jpg';
+    link.href = canvas.toDataURL("image/jpeg", 0.95);
+    link.click();
+  }).catch(error => {
+    console.error("จับภาพไม่สำเร็จ:", error);
+    alert("เกิดข้อผิดพลาดในการบันทึกรูปภาพ");
+  });
+}
+
+
+
+
+
+/* จบเกี่ยวกับ ฟิลเตอร์*/
+
 
 function addProductSelect() {
   const container = document.getElementById("productListContainer");
@@ -1320,9 +1422,10 @@ function filterGeneral() {
   const results = Object.entries(grouped).map(([key, records]) => {
     const name = records[0].name;
     const phone = records[0].phone || "";
-    const totalAmount = records.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
-    const visitCount = records.length;
-    const averageBill = totalAmount / visitCount;
+    const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
+const totalAmount = paidRecords.reduce((sum, r) => sum + parseFloat(r.amount), 0);
+const visitCount = paidRecords.length;
+const averageBill = visitCount > 0 ? totalAmount / visitCount : 0;
 
     const latestRecord = records.reduce((latest, r) =>
       new Date(r.date) > new Date(latest.date) ? r : latest
@@ -1369,7 +1472,8 @@ function filterGeneral() {
       day: 'numeric', month: 'short', year: '2-digit'
     });
 
-    return `<div>📇 <strong style="cursor:pointer;color:#00796b;" onclick="openCustomerModal('${c.key}')">${c.name}</strong> 💰 ยอด: ${c.totalAmount.toLocaleString()} บาท | 💳 เฉลี่ย: ${Math.round(c.averageBill).toLocaleString()} บาท | 🔁 มา: ${c.visitCount} ครั้ง | 🕒 ไม่มา: ${c.absentDays} วัน | 🔚 ล่าสุด: ${formattedDate}</div><hr>`;
+    return `<div> <input type="checkbox" class="selectCustomerCheckbox" value="${c.key}" style="margin-right:6px; vertical-align: middle;">
+      📇 <strong style="cursor:pointer;color:#00796b;" onclick="openCustomerModal('${c.key}')">${c.name}</strong> 💰 ยอด: ${c.totalAmount.toLocaleString()} บาท | 💳 เฉลี่ย: ${Math.round(c.averageBill).toLocaleString()} บาท | 🔁 มา: ${c.visitCount} ครั้ง | 🕒 ไม่มา: ${c.absentDays} วัน | 🔚 ล่าสุด: ${formattedDate}</div><hr>`;
   }).join('');
 
   document.getElementById("filterResults").innerHTML = `<h4>ผลลัพธ์ ${results.length} คน</h4>` + html;

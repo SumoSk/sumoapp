@@ -1027,9 +1027,10 @@ function openCustomerModal(key) {
   const lastDate = new Date(latestRecord.date);
   const today = new Date();
   const daysAbsent = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
-  const visits = records.length;
-  const totalAmount = records.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
-  const average = totalAmount / visits;
+  const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
+const totalAmount = paidRecords.reduce((sum, r) => sum + parseFloat(r.amount), 0);
+const visits = paidRecords.length;
+const average = visits > 0 ? totalAmount / visits : 0;
 
   // แยกรายการและจัดหมวดหมู่จาก categoryMap
   const allItems = {};
@@ -1130,20 +1131,36 @@ function closeCustomerModal() {
 function saveModalAsImage() {
   const node = document.getElementById("modal-content");
   if (!node) {
-    alert("ไม่พบเนื้อหาใน modal-content");
+    alert("ไม่พบเนื้อหา");
     return;
   }
 
   html2canvas(node, { scale: 2 }).then(canvas => {
-    const link = document.createElement("a");
-    link.download = 'customer-summary.jpg';
-    link.href = canvas.toDataURL("image/jpeg", 0.95);
-    link.click();
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    if (isIOS) {
+      // ✅ iPad/iPhone — เปิดแท็บใหม่
+      const newTab = window.open();
+      if (newTab) {
+        newTab.document.write(`<img src="${dataUrl}" style="width:100%">`);
+      } else {
+        alert("ไม่สามารถเปิดแท็บใหม่ได้ โปรดปิด popup blocker");
+      }
+    } else {
+      // ✅ เครื่องอื่น — ดาวน์โหลดอัตโนมัติ
+      const link = document.createElement("a");
+      link.download = 'customer-summary.jpg';
+      link.href = dataUrl;
+      link.click();
+    }
   }).catch(error => {
-    console.error("จับภาพไม่สำเร็จ:", error);
-    alert("เกิดข้อผิดพลาดในการบันทึกรูปภาพ");
+    console.error("เกิดข้อผิดพลาด:", error);
+    alert("บันทึกภาพไม่สำเร็จ");
   });
 }
+
 
 
 
@@ -1405,9 +1422,10 @@ function filterGeneral() {
   const results = Object.entries(grouped).map(([key, records]) => {
     const name = records[0].name;
     const phone = records[0].phone || "";
-    const totalAmount = records.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
-    const visitCount = records.length;
-    const averageBill = totalAmount / visitCount;
+    const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
+const totalAmount = paidRecords.reduce((sum, r) => sum + parseFloat(r.amount), 0);
+const visitCount = paidRecords.length;
+const averageBill = visitCount > 0 ? totalAmount / visitCount : 0;
 
     const latestRecord = records.reduce((latest, r) =>
       new Date(r.date) > new Date(latest.date) ? r : latest
