@@ -160,11 +160,11 @@
     gap: 20px;
   }
 
-  .summary-group ul {
-    list-style: none;
-    padding-left: 20px;
-    margin: 5px 0 10px;
-  }
+ .summary-group ul {
+  list-style: none;
+  padding-left: 0px;
+  margin: 5px 0 10px;
+}
 
   .summary-group li {
     margin-bottom: 4px;
@@ -569,6 +569,21 @@ h3 {
   }
 }
 
+.inline-field input[type="text"] {
+  padding: 6px 8px;
+  font-size: 13px;
+  width: 240px;
+  max-width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+@media (max-width: 768px) {
+  .inline-field input[type="text"] {
+    font-size: 10px !important;
+  }
+}
+
 </style>
 
 
@@ -578,6 +593,9 @@ h3 {
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+
   <div id="customer-modal" style="display:none;position:fixed;inset:0;background-color:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
   <div style="background:white;padding:20px;border-radius:16px;width:90%;max-width:400px;max-height:90vh;overflow:auto;position:relative; font-size:13.5px;">
 
@@ -828,9 +846,9 @@ const targetRangeEnd = viewingDay;
 
     document.getElementById('summaryList').innerHTML = sortedEntries.map(([cat]) => {
   const items = Object.entries(categoryDetails[cat] || {})
-    .map(([sub, d]) => `<li>• ${sub} ${d.qty} ชิ้น</li>`).join('');
+  .map(([sub, d]) => `• ${sub} ${d.qty}`).join('<br>');
   const sumQty = categoryCounts[cat];
-  return `<div class="summary-group"><strong>${cat}</strong> — รวม ${sumQty} ชิ้น<ul>${items}</ul></div>`;
+  return `<div class="summary-group"><strong>${cat}</strong>รวม ${sumQty} ชิ้น<ul>${items}</ul></div>`;
 }).join('');
 
     fullCustomerList = Object.values(customerMap).sort((a, b) => b.amount - a.amount);
@@ -976,6 +994,10 @@ function formatDate(d) {
   const [y, m, day] = d.split('-');
   return `${day}/${m}/${y.slice(-2)}`;
 }
+
+
+
+
 function openCustomerModal(key) {
   const records = allCustomerRecords.filter(r => `${r.name}|${r.phone}` === key);
   if (records.length === 0) return;
@@ -998,44 +1020,87 @@ function openCustomerModal(key) {
   const totalAmount = records.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
   const average = totalAmount / visits;
 
+  // แยกรายการและจัดหมวดหมู่จาก categoryMap
   const allItems = {};
   records.forEach(r => {
     (r.items || []).forEach(item => {
-      const nameOnly = item.split(" - ")[0];
+      let name = item;
+      const match = item.match(/\((.*?)\)/);
+      if (match) {
+        name = match[1];
+      } else {
+        name = item.split(" - ")[0];
+      }
       const qtyMatch = item.match(/- (\d+) ชิ้น/);
       const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
-      allItems[nameOnly] = (allItems[nameOnly] || 0) + qty;
+      allItems[name] = (allItems[name] || 0) + qty;
     });
   });
 
-  const itemSummary = Object.entries(allItems)
-    .map(([item, qty]) => `• ${item} – ${qty} ชิ้น`)
-    .join("<br>");
+  const categorizedItems = {};
+
+  for (const [cat, names] of Object.entries(categoryMap)) {
+    names.forEach(n => {
+      if (allItems[n]) {
+        if (!categorizedItems[cat]) categorizedItems[cat] = [];
+        categorizedItems[cat].push(`${n} : ${allItems[n]}`);
+        delete allItems[n];
+      }
+    });
+  }
+
+  if (Object.keys(allItems).length) {
+    categorizedItems["อื่นๆ"] = Object.entries(allItems).map(([name, qty]) => `${name} : ${qty}`);
+  }
+
+  const itemSummary = Object.entries(categorizedItems)
+    .map(([cat, items]) => `<div style="margin-bottom:6px;"><strong>${cat}</strong>: ${items.join(" | ")}</div>`)
+    .join("");
 
   const historyHtml = records
     .sort((a, b) => b.date.localeCompare(a.date))
     .map(r => {
       const items = (r.items || []).map(item => {
-        const nameOnly = item.split(" - ")[0];
-        return `<li>• ${nameOnly}</li>`;
+        let name = item;
+        const match = item.match(/\((.*?)\)/);
+        if (match) {
+          name = match[1];
+        } else {
+          name = item.split(" - ")[0];
+        }
+        const qtyMatch = item.match(/- (\d+) ชิ้น/);
+        const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
+        return `<li>${name} : ${qty}</li>`;
       }).join("");
+
+      const noteText = r.note ? `<div style="margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${r.note}</div>` : "";
+
       return `
         <div style="margin-bottom:12px;">
           <div style="margin-bottom:4px;font-weight:bold;">📅 ${formatDate(r.date)}</div>
           <ul style="padding-left:16px;margin:0;">${items}</ul>
-          <div style="margin-top:4px;color:#666;"> ยอด: ${parseFloat(r.amount || 0).toLocaleString()} บาท</div>
+          <div style="margin-top:4px;color:#00796b;">💵 ยอด: ${parseFloat(r.amount || 0).toLocaleString()} บาท</div>
+          ${noteText}
+          <hr style="margin:8px 0; border: 0; border-top: 1px dashed #ccc;">
         </div>
       `;
     }).join("");
 
+  const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
+
   document.getElementById("modal-content").innerHTML = `
+    <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
+      <button onclick="saveModalAsImage()" title="บันทึกเป็นรูปภาพ" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">💾</button>
+      <button onclick="closeCustomerModal()" title="ปิดหน้าต่าง" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">❌</button>
+    </div>
+
     <h3 style="font-size:18px;margin-bottom:4px;">📇 ${customer.name}</h3>
-    <div><strong>OPD:</strong> ${customer.opd}</div>
-    <div><strong>เบอร์:</strong> ${customer.phone}</div>
-    <div><strong>วันล่าสุด:</strong> ${formatDate(latestRecord.date)} <span style="color:gray;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span></div>
-    <div><strong>💳 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท</div>
-    <div><strong>มาใช้บริการ:</strong> ${visits} ครั้ง</div>
-    <div><strong>เฉลี่ยต่อครั้ง:</strong> ${Math.round(average).toLocaleString()} บาท</div>
+    <div>🆔 <strong>OPD:</strong> ${customer.opd}</div>
+    <div>📞 <strong>เบอร์:</strong> ${customer.phone}</div>
+    <div>📅 <strong>วันล่าสุด:</strong> ${formatDate(latestRecord.date)} ${daysAbsentText}</div>
+    <div style="color:#00796b;"><strong>💰 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท</div>
+    <div>🔁 <strong>มาใช้บริการ:</strong> ${visits} ครั้ง</div>
+    <div>💳 <strong>เฉลี่ยต่อครั้ง:</strong> ${Math.round(average).toLocaleString()} บาท</div>
     <hr style="margin:12px 0;">
     <div style="font-weight:bold;">📦 สรุปรายการซื้อทั้งหมด:</div>
     <div style="margin:6px 0 12px;">${itemSummary}</div>
@@ -1046,6 +1111,33 @@ function openCustomerModal(key) {
 
   document.getElementById("customer-modal").style.display = "flex";
 }
+
+function closeCustomerModal() {
+  document.getElementById("customer-modal").style.display = "none";
+}
+
+function saveModalAsImage() {
+  const node = document.getElementById("modal-content");
+  if (!node) {
+    alert("ไม่พบเนื้อหาใน modal-content");
+    return;
+  }
+
+  html2canvas(node, { scale: 2 }).then(canvas => {
+    const link = document.createElement("a");
+    link.download = 'customer-summary.jpg';
+    link.href = canvas.toDataURL("image/jpeg", 0.95);
+    link.click();
+  }).catch(error => {
+    console.error("จับภาพไม่สำเร็จ:", error);
+    alert("เกิดข้อผิดพลาดในการบันทึกรูปภาพ");
+  });
+}
+
+
+
+
+
 
 
 
@@ -1126,7 +1218,15 @@ filterUI.innerHTML = `
     </div>
   </div>
 
+  <div class="inline-field">
+  <label>👤 ชื่อลูกค้า:</label>
+  <input type="text" id="customerName" placeholder="ระบุชื่อลูกค้า">
+</div>
+
+
   <button type="button" onclick="filterGeneral()" class="search-button">ค้นหา</button>
+  <button type="button" onclick="resetFilters()" class="add-product-button" style="margin-left: 10px;">รีเซ็ตค่า</button>
+
 </div>
 
 
@@ -1137,6 +1237,27 @@ filterUI.innerHTML = `
 
 
 document.body.appendChild(filterUI);
+
+function resetFilters() {
+  document.getElementById("startDate").value = "";
+  document.getElementById("endDate").value = "";
+  document.getElementById("minTotal").value = "";
+  document.getElementById("maxTotal").value = "";
+  document.getElementById("minVisits").value = "";
+  document.getElementById("maxVisits").value = "";
+  document.getElementById("minAbsent").value = "";
+  document.getElementById("maxAbsent").value = "";
+  document.getElementById("minAvg").value = "";
+  document.getElementById("maxAvg").value = "";
+  document.getElementById("customerName").value = "";
+
+  // ลบรายการสินค้า
+  const container = document.getElementById("productListContainer");
+  container.innerHTML = "";
+
+  // เคลียร์ผลลัพธ์
+  document.getElementById("filterResults").innerHTML = "";
+}
 
 function addProductSelect() {
   const container = document.getElementById("productListContainer");
@@ -1167,116 +1288,95 @@ function addProductSelect() {
   container.appendChild(wrapper);
 }
 
+// ✅ อัปเดตฟังก์ชัน filterGeneral() ให้สมบูรณ์แบบเดิม เพิ่มฟิลเตอร์ชื่อ
+
+
 function filterGeneral() {
-  const products = Array.from(document.querySelectorAll(".productInput"))
-    .map(input => input.value.trim())
-    .filter(v => v);
+  const nameInput = document.getElementById("customerName").value.trim().toLowerCase();
   const startDate = document.getElementById("startDate").value;
   const endDate = document.getElementById("endDate").value;
-  const minTotal = parseFloat(document.getElementById("minTotal").value || 0);
-  const maxTotal = parseFloat(document.getElementById("maxTotal").value || Infinity);
-  const minVisits = parseInt(document.getElementById("minVisits").value || 0);
-  const maxVisits = parseInt(document.getElementById("maxVisits").value || Infinity);
-  const minAbsent = parseInt(document.getElementById("minAbsent").value || 0);
-  const maxAbsent = parseInt(document.getElementById("maxAbsent").value || Infinity);
-  const minAvg = parseFloat(document.getElementById("minAvg").value || 0);
-  const maxAvg = parseFloat(document.getElementById("maxAvg").value || Infinity);
+  const minTotal = parseFloat(document.getElementById("minTotal").value) || 0;
+  const maxTotal = parseFloat(document.getElementById("maxTotal").value) || Infinity;
+  const minVisits = parseInt(document.getElementById("minVisits").value) || 0;
+  const maxVisits = parseInt(document.getElementById("maxVisits").value) || Infinity;
+  const minAbsent = parseInt(document.getElementById("minAbsent").value) || 0;
+  const maxAbsent = parseInt(document.getElementById("maxAbsent").value) || Infinity;
+  const minAvg = parseFloat(document.getElementById("minAvg").value) || 0;
+  const maxAvg = parseFloat(document.getElementById("maxAvg").value) || Infinity;
 
-  const results = [];
+  const selectedProducts = Array.from(document.querySelectorAll('.productInput'))
+    .map(el => el.value)
+    .filter(Boolean);
+
   const grouped = {};
+  const today = new Date();
 
   allCustomerRecords.forEach(r => {
-    const key = r.name;
+    const key = `${r.name}|${r.phone}`;
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(r);
   });
 
-  const today = new Date();
+  const results = Object.entries(grouped).map(([key, records]) => {
+    const name = records[0].name;
+    const phone = records[0].phone || "";
+    const totalAmount = records.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+    const visitCount = records.length;
+    const averageBill = totalAmount / visitCount;
 
-  for (const [name, records] of Object.entries(grouped)) {
-    const filtered = records.filter(r => {
-      if (startDate && r.date < startDate) return false;
-      if (endDate && r.date > endDate) return false;
-      if (products.length > 0 && !r.items?.some(item => products.some(p => item.includes(p)))) return false;
-      return true;
+    const latestRecord = records.reduce((latest, r) =>
+      new Date(r.date) > new Date(latest.date) ? r : latest
+    , records[0]);
+
+    const absentDays = Math.floor((today - new Date(latestRecord.date)) / (1000 * 60 * 60 * 24));
+    const lastVisit = latestRecord.date;
+
+    const allProducts = records.flatMap(r => r.items || []).map(item => {
+  const match = item.match(/\((.*?)\)/);
+  if (match) return match[1]; // ถ้าเจอในวงเล็บ ให้ใช้
+  return item.split(" - ")[0].trim(); // ไม่มีก็ใช้ชื่อก่อน "-"
+});
+
+
+    return {
+      key,
+      name,
+      totalAmount,
+      visitCount,
+      averageBill,
+      absentDays,
+      lastVisit,
+      products: allProducts
+    };
+  }).filter(c => {
+    const nameMatch = !nameInput || c.name.toLowerCase().includes(nameInput);
+    const totalMatch = c.totalAmount >= minTotal && c.totalAmount <= maxTotal;
+    const visitMatch = c.visitCount >= minVisits && c.visitCount <= maxVisits;
+    const absentMatch = c.absentDays >= minAbsent && c.absentDays <= maxAbsent;
+    const avgMatch = c.averageBill >= minAvg && c.averageBill <= maxAvg;
+    const dateMatch =
+      (!startDate || new Date(c.lastVisit) >= new Date(startDate)) &&
+      (!endDate || new Date(c.lastVisit) <= new Date(endDate));
+    const productMatch = selectedProducts.length === 0 ||
+  selectedProducts.every(p => c.products.some(prod => prod.includes(p)));
+      selectedProducts.every(p => c.products.includes(p));
+
+    return nameMatch && totalMatch && visitMatch && absentMatch && avgMatch && dateMatch && productMatch;
+  }).sort((a, b) => b.totalAmount - a.totalAmount);
+
+  const html = results.map(c => {
+    const formattedDate = new Date(c.lastVisit).toLocaleDateString('th-TH', {
+      day: 'numeric', month: 'short', year: '2-digit'
     });
 
-    if (filtered.length === 0) continue;
-
-    const totalAmount = filtered.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
-    const visits = filtered.length;
-    const avg = totalAmount / visits;
-
-    const latest = filtered.reduce((a, b) => new Date(a.date) > new Date(b.date) ? a : b);
-    const lastDate = new Date(latest.date);
-    const daysAbsent = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
-
-    if (totalAmount < minTotal || totalAmount > maxTotal) continue;
-    if (visits < minVisits || visits > maxVisits) continue;
-    if (avg < minAvg || avg > maxAvg) continue;
-    if (daysAbsent < minAbsent || daysAbsent > maxAbsent) continue;
-
-    results.push({
-  key: `${records[0].name}|${records[0].phone || ''}`,
-  name: records[0].name,
-  visits,
-  totalAmount,
-  avg,
-  daysAbsent
-});
-  }
-
-  const html = results.map(r => `
-  <div>
-    📇 <strong style="cursor:pointer;color:#00796b;" onclick="openCustomerModal('${r.key}')">${r.name}</strong>
-
-    มา ${r.visits} ครั้ง | 💰 รวม ${r.totalAmount.toLocaleString()} บ. | เฉลี่ย ${Math.round(r.avg).toLocaleString()} บ. | หายไปแล้ว ${r.daysAbsent} วัน
-  </div><hr>
-`).join('');
+    return `<div>📇 <strong style="cursor:pointer;color:#00796b;" onclick="openCustomerModal('${c.key}')">${c.name}</strong> 💰 ยอด: ${c.totalAmount.toLocaleString()} บาท | 💳 เฉลี่ย: ${Math.round(c.averageBill).toLocaleString()} บาท | 🔁 มา: ${c.visitCount} ครั้ง | 🕒 ไม่มา: ${c.absentDays} วัน | 🔚 ล่าสุด: ${formattedDate}</div><hr>`;
+  }).join('');
 
   document.getElementById("filterResults").innerHTML = `<h4>ผลลัพธ์ ${results.length} คน</h4>` + html;
 }
 
-function filterByGap() {
-  const product = document.getElementById("gapProduct").value;
-  const minGap = parseInt(document.getElementById("minGap").value || 0);
-  const maxGap = parseInt(document.getElementById("maxGap").value || Infinity);
-  const today = new Date();
-  const grouped = {};
-  const results = [];
 
-  allCustomerRecords.forEach(r => {
-    const key = r.name;
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(r);
-  });
 
-  for (const [name, records] of Object.entries(grouped)) {
-    const matchedDates = records.filter(r => r.items?.some(item => item.includes(product))).map(r => r.date);
-    if (matchedDates.length === 0) continue;
-
-    const latestDate = new Date(matchedDates.sort().reverse()[0]);
-    const gapMonth = Math.floor((today - latestDate) / (1000 * 60 * 60 * 24 * 30));
-    if (gapMonth >= minGap && gapMonth <= maxGap) {
-      results.push({
-  key: `${records[0].name}|${records[0].phone || ''}`,
-  name: records[0].name,
-  product,
-  gapMonth
-});
-    }
-  }
-
-  const html = results.map(r => `
-  <div>
-    📇 <strong style="cursor:pointer;color:#00796b;" onclick="openCustomerModal('${r.key}')">${r.name}</strong>
-
-    ไม่ได้ทำ "${r.product}" มาแล้ว ${r.gapMonth} เดือน
-  </div><hr>
-`).join('');
-
-  document.getElementById("filterResults").innerHTML = `<h4>ผลลัพธ์ ${results.length} คน</h4>` + html;
-}
 
 function toggleFloatingMenu() {
     const menu = document.getElementById("floatingMenu");
@@ -1291,6 +1391,7 @@ function toggleFloatingMenu() {
       menu.style.display = "none";
     }
   });
+
 
   </script>
   <div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
