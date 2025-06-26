@@ -1128,10 +1128,10 @@ function closeCustomerModal() {
   document.getElementById("customer-modal").style.display = "none";
 }
 
-function saveModalAsImage() {
-  const node = document.getElementById("modal-content");
+function saveGroupModalAsImage() {
+  const node = document.getElementById("group-modal-content");
   if (!node) {
-    alert("ไม่พบเนื้อหา");
+    alert("ไม่พบเนื้อหาใน group-modal");
     return;
   }
 
@@ -1141,23 +1141,29 @@ function saveModalAsImage() {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
     if (isIOS) {
-      // ✅ iPad/iPhone — เปิดแท็บใหม่
-      const newTab = window.open();
-      if (newTab) {
-        newTab.document.write(`<img src="${dataUrl}" style="width:100%">`);
-      } else {
-        alert("ไม่สามารถเปิดแท็บใหม่ได้ โปรดปิด popup blocker");
-      }
+      // ✅ แสดง preview ให้กดค้างเพื่อบันทึก
+      const previewArea = document.createElement("div");
+      previewArea.style.marginTop = "20px";
+      previewArea.innerHTML = `
+        <div style="font-weight:bold; margin-bottom:6px;">แตะค้างที่ภาพด้านล่างเพื่อบันทึกรูป</div>
+        <img src="${dataUrl}" style="width:100%; border:1px solid #ccc; border-radius:12px;">
+      `;
+
+      const existing = document.getElementById("groupImagePreview");
+      if (existing) existing.remove();
+      previewArea.id = "groupImagePreview";
+
+      node.appendChild(previewArea);
     } else {
-      // ✅ เครื่องอื่น — ดาวน์โหลดอัตโนมัติ
+      // ✅ ดาวน์โหลดตามปกติ
       const link = document.createElement("a");
-      link.download = 'customer-summary.jpg';
+      link.download = 'selected-customers.jpg';
       link.href = dataUrl;
       link.click();
     }
   }).catch(error => {
-    console.error("เกิดข้อผิดพลาด:", error);
-    alert("บันทึกภาพไม่สำเร็จ");
+    console.error("จับภาพไม่สำเร็จ:", error);
+    alert("เกิดข้อผิดพลาดในการบันทึกรูปภาพ");
   });
 }
 
@@ -1338,16 +1344,29 @@ function closeGroupModal() {
 
 function saveGroupModalAsImage() {
   const node = document.getElementById("group-modal-content");
-  if (!node) {
-    alert("ไม่พบเนื้อหาใน group-modal");
-    return;
-  }
+  if (!node) return;
 
   html2canvas(node, { scale: 2 }).then(canvas => {
-    const link = document.createElement("a");
-    link.download = 'selected-customers.jpg';
-    link.href = canvas.toDataURL("image/jpeg", 0.95);
-    link.click();
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    if (isIOS) {
+      const previewArea = document.createElement("div");
+      previewArea.style.marginTop = "20px";
+      previewArea.innerHTML = `
+        <div style="font-weight:bold; margin-bottom:6px;">แตะค้างที่ภาพด้านล่างเพื่อบันทึกรูป</div>
+        <img src="${dataUrl}" style="width:100%; border:1px solid #ccc; border-radius:12px;">
+      `;
+      const existing = document.getElementById("groupImagePreview");
+      if (existing) existing.remove();
+      previewArea.id = "groupImagePreview";
+      node.appendChild(previewArea);
+    } else {
+      const link = document.createElement("a");
+      link.download = 'selected-customers.jpg';
+      link.href = dataUrl;
+      link.click();
+    }
   }).catch(error => {
     console.error("จับภาพไม่สำเร็จ:", error);
     alert("เกิดข้อผิดพลาดในการบันทึกรูปภาพ");
