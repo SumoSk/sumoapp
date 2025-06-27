@@ -981,7 +981,7 @@ function toggleCustomerList() {
       const newBadge = isNewCustomer ? `<span style="color:red; font-weight:bold;"> ลูกค้าใหม่</span>` : "";
 
       return `
-        <li style="margin-bottom: 8px; display: inline-block;">
+        <li style="margin-bottom: 8px;">
           <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">
             ${i + 11}. ${c.name}${newBadge}
           </span>
