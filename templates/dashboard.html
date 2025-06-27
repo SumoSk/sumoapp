@@ -590,6 +590,15 @@ h3 {
   }
 }
 
+
+@media (max-width: 480px) {
+  #customer-modal > div {
+    max-width: 94vw !important;
+    padding: 12px !important;
+  }
+}
+
+
 </style>
 
 
@@ -603,7 +612,8 @@ h3 {
 
 
   <div id="customer-modal" style="display:none;position:fixed;inset:0;background-color:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
-  <div style="background:white;padding:20px;border-radius:16px;width:90%;max-width:400px;max-height:90vh;overflow:auto;position:relative; font-size:13.5px;">
+  <div style="background:white;padding:16px;border-radius:16px;width:100%;max-width:360px;box-sizing:border-box;margin: auto;max-height:90vh;overflow:auto;position:relative; font-size:13.5px;">
+
 
     <button onclick="closeCustomerModal()" style="position:absolute;top:10px;right:14px;font-size:20px;border:none;background:none;cursor:pointer;">&times;</button>
     <div id="modal-content"></div>
