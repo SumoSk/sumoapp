@@ -814,10 +814,10 @@ let text = diff > 0
 
 diff = toDateSales - toDateLastMonthSales;
 let text2 = diff > 0
-  ? `<span style="color: green;">📆 จนถึงวันที่ ${todayDate}: +${diff.toLocaleString()} บาท จากเดือนก่อน</span>`
+  ? `<span style="color: green;">📆 รวมเฉพาะ ${todayDate} วัน : +${diff.toLocaleString()} บาท จากเดือนก่อน</span>`
   : diff < 0
-    ? `<span style="color: red;">📆 จนถึงวันที่ ${todayDate}: -${Math.abs(diff).toLocaleString()} บาท จากเดือนก่อน</span>`
-    : `<span style="color: gray;">📆 จนถึงวันที่ ${todayDate}: ยอดเท่าเดิมกับเดือนก่อน</span>`;
+    ? `<span style="color: red;">📆 รวมเฉพาะ ${todayDate} วัน: -${Math.abs(diff).toLocaleString()} บาท จากเดือนก่อน</span>`
+    : `<span style="color: gray;">📆 รวมเฉพาะ ${todayDate} วัน: ยอดเท่าเดิมกับเดือนก่อน</span>`;
 
 compareEl.innerHTML = `${text}<br>${text2}`;
 
@@ -850,15 +850,21 @@ const targetRangeEnd = viewingDay;
 
   const currentMonth14Total = groupByMonth[currentPrefix] || 0;
 
-  const compareAvgDiv = document.createElement('div');
-  compareAvgDiv.style.marginTop = '4px';
-  compareAvgDiv.style.color = currentMonth14Total >= averagePastMonths ? 'green' : 'crimson';
-  compareAvgDiv.innerHTML = `📊 วันที่ 1–${targetRangeEnd} คือ: ${currentMonth14Total.toLocaleString()} บาท — ${
-    currentMonth14Total >= averagePastMonths
-      ? `✅ สูงกว่าค่าเฉลี่ยเดือนก่อนๆ ${averagePastMonths.toLocaleString()} บาท`
-      : `⚠️ ต่ำกว่าค่าเฉลี่ยเดือนก่อนๆ ${averagePastMonths.toLocaleString()} บาท`
-  }`;
-  compareEl.appendChild(compareAvgDiv);
+  const diffFromAvg = currentMonth14Total - averagePastMonths;
+const formattedDiff = diffFromAvg.toLocaleString();
+
+const compareAvgDiv = document.createElement('div');
+compareAvgDiv.style.marginTop = '4px';
+compareAvgDiv.style.color = diffFromAvg > 0 ? 'green' : diffFromAvg < 0 ? 'crimson' : 'gray';
+
+compareAvgDiv.innerHTML = `📊 รวมเฉพาะ ${targetRangeEnd} วัน คือ: ${currentMonth14Total.toLocaleString()} บาท ${
+  diffFromAvg > 0
+    ? `✅ มากกว่าค่าเฉลี่ย +${formattedDiff} บาท (${averagePastMonths.toLocaleString()})`
+    : diffFromAvg < 0
+      ? `⚠️ น้อยกว่าค่าเฉลี่ย ${formattedDiff} บาท (${averagePastMonths.toLocaleString()})`
+      : `😐 เท่ากับค่าเฉลี่ย (${formattedDiff} บาท)`
+}`;
+compareEl.appendChild(compareAvgDiv);
 }
 
 
