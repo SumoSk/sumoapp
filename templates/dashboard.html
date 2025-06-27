@@ -971,7 +971,7 @@ function toggleCustomerList() {
       const newBadge = isNewCustomer ? `<span style="color:red; font-weight:bold;"> ลูกค้าใหม่</span>` : "";
 
       return `
-        <li style="margin-bottom: 8px;">
+        <li style="margin-bottom: 8px; display: inline-block;">
           <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">
             ${i + 11}. ${c.name}${newBadge}
           </span>
@@ -1077,56 +1077,64 @@ const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
     .join("");
 
   const historyHtml = records
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map(r => {
-      const items = (r.items || []).map(item => {
-        let name = item;
-        const match = item.match(/\((.*?)\)/);
-        if (match) {
-          name = match[1];
-        } else {
-          name = item.split(" - ")[0];
-        }
-        const qtyMatch = item.match(/- (\d+) ชิ้น/);
-        const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
-        return `<li>${name} : ${qty}</li>`;
-      }).join("");
-
-      const noteText = r.note ? `<div style="margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${r.note}</div>` : "";
-
-      return `
-        <div style="margin-bottom:12px;">
-          <div style="margin-bottom:4px;font-weight:bold;">📅 ${formatDate(r.date)}</div>
-          <ul style="padding-left:16px;margin:0;">${items}</ul>
-          <div style="margin-top:4px;color:#00796b;">💵 ยอด: ${parseFloat(r.amount || 0).toLocaleString()} บาท</div>
-          ${noteText}
-          <hr style="margin:8px 0; border: 0; border-top: 1px dashed #ccc;">
-        </div>
-      `;
+  .sort((a, b) => b.date.localeCompare(a.date))
+  .map(r => {
+    const items = (r.items || []).map(item => {
+      let name = item;
+      const match = item.match(/\((.*?)\)/);
+      if (match) {
+        name = match[1];
+      } else {
+        name = item.split(" - ")[0];
+      }
+      const qtyMatch = item.match(/- (\d+) ชิ้น/);
+      const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
+      return `<li>${name} : ${qty}</li>`;
     }).join("");
+
+    const noteText = r.note
+      ? `<div style="margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${r.note}</div>`
+      : "";
+
+    return `
+      <div style="margin-bottom:16px;">
+        <div style="margin-bottom:4px;font-weight:bold;">📅 ${formatDate(r.date)}</div>
+        <ul style="padding-left:16px;margin:0;">${items}</ul>
+        <div style="margin-top:4px;color:#00796b;">💵 ยอด: ${parseFloat(r.amount || 0).toLocaleString()} บาท</div>
+        ${noteText}
+        <hr style="margin: 10px auto; border: 0; border-top: 1px dashed #999; width: 60%;">
+      </div>
+    `;
+  }).join("");
 
   const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
 
   document.getElementById("modal-content").innerHTML = `
-    <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
-      <button onclick="saveModalAsImage()" title="บันทึกเป็นรูปภาพ" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">💾</button>
-      <button onclick="closeCustomerModal()" title="ปิดหน้าต่าง" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">❌</button>
-    </div>
+  <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
+    <button onclick="saveModalAsImage()" title="บันทึกเป็นรูปภาพ" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">💾</button>
+    <button onclick="closeCustomerModal()" title="ปิดหน้าต่าง" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">❌</button>
+  </div>
 
-    <h3 style="font-size:18px;margin-bottom:4px;">📇 ${customer.name}</h3>
-    <div>🆔 <strong>OPD:</strong> ${customer.opd}</div>
-    <div>📞 <strong>เบอร์:</strong> ${customer.phone}</div>
-    <div>📅 <strong>วันล่าสุด:</strong> ${formatDate(latestRecord.date)} ${daysAbsentText}</div>
-    <div style="color:#00796b;"><strong>💰 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท</div>
-    <div>🔁 มาใช้บริการ: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
-    <div>💳 <strong>เฉลี่ยต่อครั้ง:</strong> ${Math.round(average).toLocaleString()} บาท</div>
-    <hr style="margin:12px 0;">
-    <div style="font-weight:bold;">📦 สรุปรายการซื้อทั้งหมด:</div>
-    <div style="margin:6px 0 12px;">${itemSummary}</div>
-    <div style="font-weight:bold;margin-bottom:6px;">🛍️ ประวัติการซื้อย้อนหลัง:</div>
-    ${historyHtml}
-    <div style="margin-top:10px;font-weight:bold;color:#b8860b;">💰 รวมทั้งหมด: ${totalAmount.toLocaleString()} บาท</div>
-  `;
+  <h3 style="font-size:18px;margin-bottom:4px;">📇 ${customer.name}</h3>
+  <div>🆔 <strong>OPD:</strong> ${customer.opd}</div>
+  <div>📞 <strong>เบอร์:</strong> ${customer.phone}</div>
+  <div>📅 <strong>วันล่าสุด:</strong> ${formatDate(latestRecord.date)} ${daysAbsentText}</div>
+  <div style="color:#00796b;"><strong>💰 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท</div>
+  <div>🔁 มาใช้บริการ: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
+  <div>💳 <strong>เฉลี่ยต่อครั้ง:</strong> ${Math.round(average).toLocaleString()} บาท</div>
+
+  <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
+
+  <div style="font-weight:bold;">📦 สรุปรายการซื้อทั้งหมด:</div>
+  <div style="margin:6px 0 12px;">${itemSummary}</div>
+
+  <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
+
+  <div style="font-weight:bold;margin-bottom:6px;">🛍️ ประวัติการซื้อย้อนหลัง:</div>
+  ${historyHtml}
+
+  <div style="margin-top:10px;font-weight:bold;color:#b8860b;">💰 รวมทั้งหมด: ${totalAmount.toLocaleString()} บาท</div>
+`;
 
   document.getElementById("customer-modal").style.display = "flex";
 }
@@ -1283,104 +1291,102 @@ document.body.appendChild(filterUI);
 
 
 
-function resetFilters() {
-  document.getElementById("startDate").value = "";
-  document.getElementById("endDate").value = "";
-  document.getElementById("minTotal").value = "";
-  document.getElementById("maxTotal").value = "";
-  document.getElementById("minVisits").value = "";
-  document.getElementById("maxVisits").value = "";
-  document.getElementById("minAbsent").value = "";
-  document.getElementById("maxAbsent").value = "";
-  document.getElementById("minAvg").value = "";
-  document.getElementById("maxAvg").value = "";
-  document.getElementById("customerName").value = "";
+function filterGeneral() {
+  const nameInput = document.getElementById("customerName").value.trim().toLowerCase();
+  const startDate = document.getElementById("startDate").value;
+  const endDate = document.getElementById("endDate").value;
+  const minTotal = parseFloat(document.getElementById("minTotal").value) || 0;
+  const maxTotal = parseFloat(document.getElementById("maxTotal").value) || Infinity;
+  const minVisits = parseInt(document.getElementById("minVisits").value) || 0;
+  const maxVisits = parseInt(document.getElementById("maxVisits").value) || Infinity;
+  const minAbsent = parseInt(document.getElementById("minAbsent").value) || 0;
+  const maxAbsent = parseInt(document.getElementById("maxAbsent").value) || Infinity;
+  const minAvg = parseFloat(document.getElementById("minAvg").value) || 0;
+  const maxAvg = parseFloat(document.getElementById("maxAvg").value) || Infinity;
 
-  // ลบรายการสินค้า
-  const container = document.getElementById("productListContainer");
-  container.innerHTML = "";
+  const selectedProducts = Array.from(document.querySelectorAll('.productInput'))
+    .map(el => el.value)
+    .filter(Boolean);
 
-  // เคลียร์ผลลัพธ์
-  document.getElementById("filterResults").innerHTML = "";
-}
-
-function openGroupModal() {
-  const selectedKeys = Array.from(document.querySelectorAll('.selectCustomerCheckbox:checked')).map(cb => cb.value);
-  if (selectedKeys.length === 0) {
-    alert("กรุณาเลือกลูกค้าอย่างน้อย 1 คน");
-    return;
-  }
-
+  const grouped = {};
   const today = new Date();
-  const listHtml = selectedKeys.map(key => {
-    const records = allCustomerRecords.filter(r => `${r.name}|${r.phone}` === key);
-    if (records.length === 0) return '';
 
+  allCustomerRecords.forEach(r => {
+    const key = `${r.name}|${r.phone}`;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(r);
+  });
+
+  const results = Object.entries(grouped).map(([key, records]) => {
     const name = records[0].name;
+    const phone = records[0].phone || "";
 
     const totalVisits = records.length;
     const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
     const paidVisits = paidRecords.length;
     const totalAmount = paidRecords.reduce((sum, r) => sum + parseFloat(r.amount), 0);
-    const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
+    const averageBill = paidVisits > 0 ? totalAmount / paidVisits : 0;
 
-    const latest = new Date(Math.max(...records.map(r => new Date(r.date))));
-    const absentDays = Math.floor((today - latest) / (1000 * 60 * 60 * 24));
-    const formattedDate = latest.toLocaleDateString('th-TH', {
+    const latestRecord = records.reduce((latest, r) =>
+      new Date(r.date) > new Date(latest.date) ? r : latest,
+      records[0]
+    );
+
+    const absentDays = Math.floor((today - new Date(latestRecord.date)) / (1000 * 60 * 60 * 24));
+    const lastVisit = latestRecord.date;
+
+    const allProducts = records.flatMap(r => r.items || []).map(item => {
+      const match = item.match(/\((.*?)\)/);
+      if (match) return match[1];
+      return item.split(" - ")[0].trim();
+    });
+
+    return {
+      key,
+      name,
+      totalAmount,
+      totalVisits,
+      paidVisits,
+      averageBill,
+      absentDays,
+      lastVisit,
+      products: allProducts
+    };
+  }).filter(c => {
+    const nameMatch = !nameInput || c.name.toLowerCase().includes(nameInput);
+    const totalMatch = c.totalAmount >= minTotal && c.totalAmount <= maxTotal;
+    const visitMatch = c.totalVisits >= minVisits && c.totalVisits <= maxVisits;
+    const absentMatch = c.absentDays >= minAbsent && c.absentDays <= maxAbsent;
+    const avgMatch = c.averageBill >= minAvg && c.averageBill <= maxAvg;
+    const dateMatch =
+      (!startDate || new Date(c.lastVisit) >= new Date(startDate)) &&
+      (!endDate || new Date(c.lastVisit) <= new Date(endDate));
+    const productMatch = selectedProducts.length === 0 ||
+      selectedProducts.every(p => c.products.some(prod => prod.includes(p)));
+
+    return nameMatch && totalMatch && visitMatch && absentMatch && avgMatch && dateMatch && productMatch;
+  }).sort((a, b) => b.totalAmount - a.totalAmount);
+
+  const html = results.map(c => {
+    const formattedDate = new Date(c.lastVisit).toLocaleDateString('th-TH', {
       day: 'numeric', month: 'short', year: '2-digit'
     });
 
-    return `
-      <div style="margin-bottom: 10px;">
-        📇 <strong>${name}</strong>
-        💰 ${totalAmount.toLocaleString()} |
-        💳 ${average.toLocaleString()} |
-        🔁 ${totalVisits} (${paidVisits}จ่าย) |
-        🕒 ${absentDays} วัน |
-         ${formattedDate}
-      </div>
-      <hr>
-    `;
+    return `<div>
+      <input type="checkbox" class="selectCustomerCheckbox" value="${c.key}" style="margin-right:6px; vertical-align: middle;">
+      📇 <strong style="cursor:pointer;color:#00796b;" onclick="openCustomerModal('${c.key}')">${c.name}</strong>
+      💰 ยอด: ${c.totalAmount.toLocaleString()} |
+      💳 ${Math.round(c.averageBill).toLocaleString()} |
+      🔁 ${c.totalVisits} (${c.paidVisits} จ่าย) |
+      ⏱️ ${c.absentDays} วัน |
+      ${formattedDate}
+    <div style="border-top: 1px dashed #ccc; display: inline-block; width: auto; max-width: 180px; margin: 6px 0;"></div>
+`;
   }).join('');
 
-  document.getElementById("groupSelectedList").innerHTML = `<h3 style="margin-bottom:10px;">รายชื่อลูกค้าที่เลือก (${selectedKeys.length} คน)</h3>` + listHtml;
-  document.getElementById("group-modal").style.display = "flex";
+  document.getElementById("filterResults").innerHTML = `<h4>ผลลัพธ์ ${results.length} คน</h4>` + html;
 }
 
-function closeGroupModal() {
-  document.getElementById("group-modal").style.display = "none";
-}
-
-function saveGroupModalAsImage() {
-  const node = document.getElementById("group-modal-content");
-  if (!node) return;
-
-  html2canvas(node, { scale: 2 }).then(canvas => {
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-    if (isIOS) {
-      const previewArea = document.createElement("div");
-      previewArea.style.marginTop = "20px";
-      previewArea.innerHTML = `
-        <div style="font-weight:bold; margin-bottom:6px;">แตะค้างที่ภาพด้านล่างเพื่อบันทึกรูป</div>
-        <img src="${dataUrl}" style="width:100%; border:1px solid #ccc; border-radius:12px;">
-      `;
-      const existing = document.getElementById("groupImagePreview");
-      if (existing) existing.remove();
-      previewArea.id = "groupImagePreview";
-      node.appendChild(previewArea);
-    } else {
-      const link = document.createElement("a");
-      link.download = 'selected-customers.jpg';
-      link.href = dataUrl;
-      link.click();
-    }
-  }).catch(error => {
-    console.error("จับภาพไม่สำเร็จ:", error);
-    alert("เกิดข้อผิดพลาดในการบันทึกรูปภาพ");
-  });
-}
 
 
 
