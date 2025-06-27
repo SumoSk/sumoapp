@@ -598,6 +598,60 @@ h3 {
   }
 }
 
+.group-header {
+  font-size: 18px;
+  color: #004d40;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-align: center;
+  background: #e0f2f1;
+  padding: 10px 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.customer-entry {
+  padding: 12px 16px;
+  background: #f9f9f9;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.customer-name {
+  font-size: 15px;
+  color: #00695c;
+  margin-bottom: 6px;
+}
+
+.date-info {
+  font-size: 13px;
+  color: #444;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.date-box {
+  background: #e0f7fa;
+  color: #004d40;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+  border: 1px solid #b2dfdb;
+}
+.group-header {
+  font-size: 18px;
+  color: #004d40;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-align: center;
+  background: #e0f2f1;
+  padding: 10px 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
 
 </style>
 
@@ -609,6 +663,19 @@ h3 {
 </head>
 <body>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+
+<!-- พื้นหลังเทาแบบเต็มจอ -->
+<div id="group-modal" style="display:none; position:fixed; inset:0; background-color:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
+  
+  <!-- กล่องเนื้อหา -->
+  <div id="group-modal-content" style="background:#fff; padding:20px; border-radius:10px; max-height:80vh; overflow:auto; width:90%; max-width:500px;">
+    <div id="groupSelectedList"></div>
+    <div style="text-align:right; margin-top:20px;">
+      <button onclick="closeGroupModal()" style="padding:6px 12px;">❌ ปิด</button>
+    </div>
+  </div>
+</div>
 
 
   <div id="customer-modal" style="display:none;position:fixed;inset:0;background-color:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
@@ -879,9 +946,14 @@ compareEl.appendChild(compareAvgDiv);
 
     document.getElementById('summaryList').innerHTML = sortedEntries.map(([cat]) => {
   const items = Object.entries(categoryDetails[cat] || {})
-  .map(([sub, d]) => `• ${sub} ${d.qty}`).join('<br>');
+    .map(([sub, d]) => `• ${sub} ${d.qty}`).join('<br>');
   const sumQty = categoryCounts[cat];
-  return `<div class="summary-group"><strong>${cat}</strong>รวม ${sumQty} ชิ้น<ul>${items}</ul></div>`;
+  return `
+    <div class="summary-group" style="cursor:pointer;" onclick="openGroupModalByCategory('${cat}')">
+      <strong>${cat}</strong> รวม ${sumQty} ชิ้น
+      <ul>${items}</ul>
+    </div>
+  `;
 }).join('');
 
     fullCustomerList = Object.values(customerMap).sort((a, b) => b.amount - a.amount);
@@ -929,6 +1001,86 @@ compareEl.appendChild(compareAvgDiv);
 
   fetchDataAndUpdate();
 fetchAllCustomerRecords();
+
+
+function openGroupModalByCategory(cat) {
+  const prefix = viewingDate.toISOString().slice(0, 7);
+  const productGroups = {};
+
+  // รวมข้อมูลแยกตามชื่อสินค้า
+  allSalesRecords
+    .filter(r => r.date.startsWith(prefix))
+    .forEach(r => {
+      (r.items || []).forEach(item => {
+        const match = item.match(/\((.*?)\)/); // ดึงชื่อสินค้าย่อย
+        const subItem = match ? match[1] : item;
+        const qtyMatch = item.match(/- (\d+) ชิ้น/);
+        const qty = qtyMatch ? parseInt(qtyMatch[1]) : 0;
+
+        const matchCat = Object.entries(categoryMap).find(
+          ([category, names]) => category === cat && names.some(n => subItem.includes(n))
+        );
+
+        if (matchCat) {
+          if (!productGroups[subItem]) productGroups[subItem] = {};
+
+          const personKey = `${r.name}|${r.phone}`;
+          if (!productGroups[subItem][personKey]) {
+            productGroups[subItem][personKey] = { name: r.name, dates: {} };
+          }
+
+          productGroups[subItem][personKey].dates[r.date] = 
+            (productGroups[subItem][personKey].dates[r.date] || 0) + qty;
+        }
+      });
+    });
+
+  // คำนวณยอดรวม
+  const totalQty = Object.values(productGroups).reduce((sum, prod) =>
+    sum + Object.values(prod).reduce((s2, c) =>
+      s2 + Object.values(c.dates).reduce((s3, q) => s3 + q, 0), 0
+    ), 0);
+
+  // แสดงผลแบบจัดเรียง
+  const html = Object.entries(productGroups).map(([productName, buyers]) => {
+    const buyerLines = Object.values(buyers).map(c => {
+      const dateParts = Object.entries(c.dates)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, qty]) => {
+          const thDate = new Date(date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+          return `${thDate} = ${qty}`;
+        }).join(" | ");
+      return `👤 <strong>${c.name}</strong>: ${dateParts}`;
+    }).join("<br>");
+
+    return `<div style="margin-bottom:15px;">
+      <div style="font-weight:bold; color:#00796b; margin-bottom:5px;">🔹 ${productName}</div>
+      <div>${buyerLines}</div>
+    </div>`;
+  }).join("");
+
+  document.getElementById("groupSelectedList").innerHTML = `
+    <div class="group-header">
+      📦 รายการในหมวด: <span>${cat}</span><br>
+      ✅ รวมทั้งหมด <strong style="font-size: 18px; color: #00796b;">${totalQty}</strong> ชิ้น
+    </div>
+    ${html || '<div style="padding:10px; color:#888;">ไม่มีข้อมูลในเดือนนี้</div>'}
+  `;
+
+  document.getElementById("group-modal").style.display = "flex";
+}
+
+function closeGroupModal() {
+  document.getElementById("group-modal").style.display = "none";
+}
+
+// ✅ เพิ่ม event listener
+document.getElementById("group-modal").addEventListener("click", function (e) {
+  const content = document.getElementById("group-modal-content");
+  if (!content.contains(e.target)) {
+    closeGroupModal();
+  }
+});
 
 
 
