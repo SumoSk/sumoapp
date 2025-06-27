@@ -1,10 +1,54 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>สรุปยอดขายประจำวัน</title>
   <style>
+
+    .floating-toggle {
+    position: fixed;
+    bottom: env(safe-area-inset-bottom, 18px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 128, 128, 0);
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    box-shadow: 0 4px 16px rgba(251, 251, 251, 0);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    cursor: pointer;
+  }
+
+  .floating-menu {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border-radius: 16px;
+    padding: 10px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    z-index: 999;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .floating-menu a img {
+    width: 52px;
+    height: 52px;
+  }
+
+
     body {
   font-family: 'Prompt', 'Segoe UI', sans-serif;
       margin: 0;
@@ -72,22 +116,22 @@
     
      .floating-dock {
   position: fixed;
-  bottom: 8px;
+  bottom: env(safe-area-inset-bottom, 16px); /* ✅ ไม่ให้ติดแถบดำ */
   left: 50%;
   transform: translateX(-50%);
-  background: rgb(249, 249, 249); /* ขาว */
-
-  border-radius: 24px;
-  padding: 4px 4px;
+  background: white;
+  border-radius: 16px;
+  padding: 6px 6px env(safe-area-inset-bottom, 16px); /* ✅ เว้นขอบล่างด้วย */
   display: flex;
-  gap: 2px;
+  gap: 6px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.1);
   z-index: 1000;
+  max-width: 95vw;
 }
 
 .icon-button {
-  width: 74px;
-  height: 74px;
+  width: 64px;                 /* ✅ ลดขนาดบนจอเล็กได้ */
+  height: 64px;
   padding: 4px;
   border-radius: 12px;
   display: flex;
@@ -95,6 +139,7 @@
   justify-content: center;
   transition: transform 0.2s ease;
   text-decoration: none;
+  flex: 0 0 auto;              /* ✅ ไม่ยืด ไม่หด */
 }
 
 .icon-button:hover {
@@ -102,9 +147,29 @@
 }
 
 .icon-button img {
-  width: 74px;
-  height: 74px;
+  width: 60px;
+  height: 60px;
   object-fit: contain;
+}
+
+@media (max-width: 768px) {
+  .icon-button {
+    width: 48px;
+    height: 48px;
+  }
+
+  .icon-button img {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .floating-dock {
+    position: fixed;
+    bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom); /* รองรับ iPhone/iPad ที่มีแถบล่าง */
+  }
 }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
@@ -162,7 +227,11 @@
   });
 
 
+
+
+
     function saveAllRecords(records) {
+      window.allCustomerRecords = records;
         window.allSalesRecords = records; // ✅ เพิ่มบรรทัดนี้ไว้บนสุด
       const reviewSection = document.getElementById('reviewSection');
       reviewSection.innerHTML = ''; // clear previous
@@ -330,9 +399,14 @@ summaryRow.appendChild(compareDiv);
     <tr>
       <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">${subIndex++}</td>
       <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">
-        <div><strong>${r.name}</strong></div>
-        <div style="font-size: 12px; color: #777;">OPD: ${r.opd}</div>
-      </td>
+        <div>
+  <strong 
+    style="cursor:pointer; color:#0277bd;" 
+    onclick="openCustomerModal('${r.name}|${r.phone}')"
+  >
+    ${r.name}
+  </strong>
+</div>
       <td style="border: 1px solid #ccc; padding: 6px; font-size: 13px;">
   <span 
     class="phone-icon" 
@@ -537,40 +611,252 @@ function downloadExcel() {
   XLSX.writeFile(workbook, "ยอดขายรายวัน.xlsx");
 }
 
+function toggleFloatingMenu() {
+    const menu = document.getElementById("floatingMenu");
+    menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
+  }
+
+  // ปิดเมนูถ้าแตะที่อื่น
+  document.addEventListener('click', function(e) {
+    const toggle = document.getElementById("floatingToggle");
+    const menu = document.getElementById("floatingMenu");
+    if (!toggle.contains(e.target) && !menu.contains(e.target)) {
+      menu.style.display = "none";
+    }
+  });
+
+
+  
+const categoryMap = subOptionsMap;
+
+
+
+function openCustomerModal(key) {
+  const records = allCustomerRecords.filter(r => `${r.name}|${r.phone}` === key);
+  if (records.length === 0) return;
+
+  const first = records[0];
+  const customer = {
+    name: first.name,
+    phone: first.phone || '-',
+    opd: first.opd || '-'
+  };
+
+  const latestRecord = records.reduce((latest, r) =>
+    new Date(r.date) > new Date(latest.date) ? r : latest
+  , records[0]);
+
+  const lastDate = new Date(latestRecord.date);
+  const today = new Date();
+  const daysAbsent = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+  const totalVisits = records.length;
+const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
+const paidVisits = paidRecords.length;
+const totalAmount = paidRecords.reduce((sum, r) => sum + parseFloat(r.amount), 0);
+const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
+
+  // แยกรายการและจัดหมวดหมู่จาก categoryMap
+  const allItems = {};
+  records.forEach(r => {
+    (r.items || []).forEach(item => {
+      let name = item;
+      const match = item.match(/\((.*?)\)/);
+      if (match) {
+        name = match[1];
+      } else {
+        name = item.split(" - ")[0];
+      }
+      const qtyMatch = item.match(/- (\d+) ชิ้น/);
+      const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
+      allItems[name] = (allItems[name] || 0) + qty;
+    });
+  });
+
+  const categorizedItems = {};
+
+  for (const [cat, names] of Object.entries(categoryMap)) {
+    names.forEach(n => {
+      if (allItems[n]) {
+        if (!categorizedItems[cat]) categorizedItems[cat] = [];
+        categorizedItems[cat].push(`${n} : ${allItems[n]}`);
+        delete allItems[n];
+      }
+    });
+  }
+
+  if (Object.keys(allItems).length) {
+    categorizedItems["อื่นๆ"] = Object.entries(allItems).map(([name, qty]) => `${name} : ${qty}`);
+  }
+
+  const itemSummary = Object.entries(categorizedItems)
+    .map(([cat, items]) => `<div style="margin-bottom:6px;"><strong>${cat}</strong>: ${items.join(" | ")}</div>`)
+    .join("");
+
+  const historyHtml = records
+  .sort((a, b) => b.date.localeCompare(a.date))
+  .map(r => {
+    const items = (r.items || []).map(item => {
+      let name = item;
+      const match = item.match(/\((.*?)\)/);
+      if (match) {
+        name = match[1];
+      } else {
+        name = item.split(" - ")[0];
+      }
+      const qtyMatch = item.match(/- (\d+) ชิ้น/);
+      const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
+      return `<li>${name} : ${qty}</li>`;
+    }).join("");
+
+    const noteText = r.note
+      ? `<div style="margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${r.note}</div>`
+      : "";
+
+    return `
+      <div style="margin-bottom:16px;">
+        <div style="margin-bottom:4px;font-weight:bold;">📅 ${formatDate(r.date)}</div>
+        <ul style="padding-left:16px;margin:0;">${items}</ul>
+        <div style="margin-top:4px;color:#00796b;">💵 ยอด: ${parseFloat(r.amount || 0).toLocaleString()} บาท</div>
+        ${noteText}
+        <hr style="margin: 10px auto; border: 0; border-top: 1px dashed #999; width: 60%;">
+      </div>
+    `;
+  }).join("");
+
+  const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
+
+  document.getElementById("modal-content").innerHTML = `
+  <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
+    <button onclick="saveModalAsImage()" title="บันทึกเป็นรูปภาพ" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">💾</button>
+    <button onclick="closeCustomerModal()" title="ปิดหน้าต่าง" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">❌</button>
+  </div>
+
+  <h3 style="font-size:18px;margin-bottom:4px;">📇 ${customer.name}</h3>
+  <div>🆔 <strong>OPD:</strong> ${customer.opd}</div>
+  <div>📞 <strong>เบอร์:</strong> ${customer.phone}</div>
+  <div>📅 <strong>วันล่าสุด:</strong> ${formatDate(latestRecord.date)} ${daysAbsentText}</div>
+  <div style="color:#00796b;"><strong>💰 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท</div>
+  <div>🔁 มาใช้บริการ: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
+  <div>💳 <strong>เฉลี่ยต่อครั้ง:</strong> ${Math.round(average).toLocaleString()} บาท</div>
+
+  <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
+
+  <div style="font-weight:bold;">📦 สรุปรายการซื้อทั้งหมด:</div>
+  <div style="margin:6px 0 12px;">${itemSummary}</div>
+
+  <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
+
+  <div style="font-weight:bold;margin-bottom:6px;">🛍️ ประวัติการซื้อย้อนหลัง:</div>
+  ${historyHtml}
+
+  <div style="margin-top:10px;font-weight:bold;color:#b8860b;">💰 รวมทั้งหมด: ${totalAmount.toLocaleString()} บาท</div>
+`;
+
+  document.getElementById("customer-modal").style.display = "flex";
+}
+
+function closeCustomerModal() {
+  document.getElementById("customer-modal").style.display = "none";
+}
+
+function saveModalAsImage() {
+  const node = document.getElementById("modal-content");
+  if (!node) {
+    alert("ไม่พบเนื้อหาใน modal");
+    return;
+  }
+
+  html2canvas(node, { scale: 2 }).then(canvas => {
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    if (isIOS) {
+      // ✅ iPhone/iPad: แสดง preview ให้กดค้างเพื่อเซฟ
+      const previewArea = document.createElement("div");
+      previewArea.style.marginTop = "20px";
+      previewArea.innerHTML = `
+        <div style="font-weight:bold; margin-bottom:6px;">แตะค้างที่ภาพด้านล่างเพื่อบันทึกรูป</div>
+        <img src="${dataUrl}" style="width:100%; border:1px solid #ccc; border-radius:12px;">
+      `;
+
+      const existing = document.getElementById("modalImagePreview");
+      if (existing) existing.remove();
+      previewArea.id = "modalImagePreview";
+
+      node.appendChild(previewArea);
+    } else {
+      // ✅ Android / คอม: ดาวน์โหลดอัตโนมัติ
+      const link = document.createElement("a");
+      link.download = 'customer-info.jpg';
+      link.href = dataUrl;
+      link.click();
+    }
+  }).catch(error => {
+    console.error("จับภาพไม่สำเร็จ:", error);
+    alert("เกิดข้อผิดพลาดในการบันทึกรูปภาพ");
+  });
+}
+
+
+
+
+
+function closeCustomerModal() {
+  document.getElementById("customer-modal").style.display = "none";
+}
+
+// ✅ โค้ดนี้รอ DOM โหลดเสร็จแล้วผูก event อย่างปลอดภัย
+
+
+
+function closeCustomerModal() {
+  document.getElementById("customer-modal").style.display = "none";
+}
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("customer-modal");
+    const modalBox = document.getElementById("customer-modal-box");
+
+    if (modal && modalBox) {
+      modal.addEventListener("click", function (event) {
+        if (!modalBox.contains(event.target)) {
+          closeCustomerModal();
+        }
+      });
+    }
+  });
+
+
+
 
   </script>
+<div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
+  <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu" style="width:60px;height:60px;">
+</div>
 
-
-  <div class="floating-dock">
-  <a href="{{ url_for('dashboard') }}" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}">
-  </a>
-  <a href="{{ url_for('sale_summary') }}" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}">
-  </a>
-  <a href="{{ url_for('record_sales') }}" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}">
-  </a>
-    <a href="{{ url_for('customer_list') }}" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}">
-  </a>
-  <a href="{{ url_for('record_customer') }}" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}">
-  </a>
-  <a href="{{ url_for('oldsaledata') }}" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}">
-  </a>
-  <a href="#" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_staff.png') }}">
-  </a>
-  <a href="{{ url_for('inventory') }}" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_inventory.png') }}">
-  </a>
-  <a href="#" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_appointments.png') }}">
-  </a>
+  <div id="floatingMenu" class="floating-menu">
+  <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}"></a>
+  <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}"></a>
+  <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}"></a>
+  <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}"></a>
+  <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}"></a>
+  <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}"></a>
+  <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}"></a>
+  <a href="#"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}"></a>
+  <a href="#"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}"></a>
 </div>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+
+<div id="customer-modal" style="display:none;position:fixed;inset:0;background-color:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
+  <div id="customer-modal-box" style="background:white;padding:16px;border-radius:16px;width:100%;max-width:360px;box-sizing:border-box;margin:auto;max-height:90vh;overflow:auto;position:relative;font-size:13.5px;">
+    <button onclick="closeCustomerModal()" style="position:absolute;top:10px;right:14px;font-size:20px;border:none;background:none;cursor:pointer;">&times;</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+
 
 </body>
 </html>

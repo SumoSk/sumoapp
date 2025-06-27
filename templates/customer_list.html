@@ -490,27 +490,21 @@ td.keyword-col {
   const val = this.value.trim().toLowerCase();
   const rows = document.querySelectorAll('#customer-table-body tr');
 
-  for (let i = 0; i < rows.length; i += 2) {
-    const row = rows[i];
-    const detailRow = rows[i + 1];
-
+  rows.forEach(row => {
     const opd = (row.children[1]?.textContent || "").toLowerCase();
     const name = (row.children[2]?.textContent || "").toLowerCase();
     const phone = (row.children[3]?.textContent || "").toLowerCase();
     const note = (row.children[7]?.textContent || "").toLowerCase();
     const keywords = (row.children[8]?.textContent || "").toLowerCase();
 
-    const matched = opd.includes(val) || name.includes(val) || phone.includes(val) || note.includes(val) || keywords.includes(val);
+    const matched = opd.includes(val) ||
+                    name.includes(val) ||
+                    phone.includes(val) ||
+                    note.includes(val) ||
+                    keywords.includes(val);
 
-    if (matched) {
-      row.style.display = '';
-      detailRow.style.display = '';
-      const detailDiv = detailRow.querySelector('.details');
-          } else {
-      row.style.display = 'none';
-      detailRow.style.display = 'none';
-    }
-  }
+    row.style.display = matched ? '' : 'none';
+  });
 });
 
 
@@ -522,29 +516,30 @@ td.keyword-col {
 
 
   let sortState = {};
+
+
+
   function sortTable(colIndex) {
   const tbody = document.getElementById("customer-table-body");
-  const rows = Array.from(tbody.rows).filter((_, i) => i % 2 === 0);
-  const detailRows = Array.from(tbody.rows).filter((_, i) => i % 2 !== 0);
+  const rows = Array.from(tbody.rows);
 
   const key = `col-${colIndex}`;
-  sortState[key] = !sortState[key];
+  sortState[key] = !sortState[key]; // toggle asc/desc
   const direction = sortState[key] ? 1 : -1;
 
-  const sorted = rows.map((row, i) => {
+  const sorted = rows.map(row => {
     const cellText = row.cells[colIndex].textContent.trim();
     const isDateCol = (colIndex === 4);
     const numericText = cellText.replace(/,/g, '');
     const value = isDateCol
       ? parseThaiDate(cellText)
       : (isNaN(numericText) ? cellText.toLowerCase() : parseFloat(numericText));
-    return { row, detailRow: detailRows[i], value };
+    return { row, value };
   }).sort((a, b) => (a.value > b.value ? 1 : a.value < b.value ? -1 : 0) * direction);
 
   tbody.innerHTML = '';
-  sorted.forEach(({ row, detailRow }) => {
+  sorted.forEach(({ row }) => {
     tbody.appendChild(row);
-    tbody.appendChild(detailRow);
   });
 }
 
@@ -593,6 +588,12 @@ td.keyword-col {
   return Array.from(keywordSet).join(', ');
 }
 
+
+
+
+
+
+
 function togglePhone(el) {
   if (el.dataset.showing === "true") {
     el.innerText = "📞";
@@ -602,33 +603,151 @@ function togglePhone(el) {
     el.dataset.showing = "true";
   }
 }
-window.openCustomerModal = function(index) {
+
+const categoryMap = {
+  "Botox": ["Aestox", "Allergan", "Botulax", "Botox", "Botox เฉพาะจุด"],
+  "Filler": ["Neuramis", "E.P.T.Q", "Restylane", "Juvederm", "Belotero", "Belotero Revive"],
+  "Fat Burn": ["Sisi", "Bromi", "Lipo V", "Fat ยกแก้ม", "Fat ลดเหนียง"],
+  "Meso / หน้าใส": [
+    "Meso Chanel", "P - Cell", "Aquatic", "Hestina", "Exosome", "Rejuran", "PRP", "Mesowink",
+    "สะกิดหน้าใส", "Alphaarbutin", "Transamine", "Snow White", "Super Aurawhite", "Vitamin Mix"
+  ],
+  "Hair / PRP ผม": ["PRPผม", "Meso ผม", "ปลูกผม", "สเปรย์ผม"],
+  "HIFU / RF / ยกกระชับ": ["HIFU", "HIFU แถม", "HIFU เต็มหน้า", "ปั่น RF", "Ulthera"],
+  "สิว / ฝ้า / ยา / ผลักวิตามิน": ["หน้าใส", "สิว", "ฝ้า", "ผลักวิตามิน", "ยาฉีดสลายฝ้า", "ยาทานฝ้า", "ครีมทาฝ้า", "กดสิว", "subcisionสิว"],
+  "ไหม": ["ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen"],
+  "อื่นๆ": ["จองสินค้า", "จ่ายเงิน", "สลายฟิลเลอร์", "จี้ไฝ", "อื่นๆ"]
+};
+
+
+
+
+function openCustomerModal(index) {
   const customer = customers[index];
-  const modal = document.getElementById("customer-modal");
-  const content = document.getElementById("modal-content");
-  const daysAbsent = calcDaysAbsent(customer.lastDate);
-const visitCount = customer.history.length;
-const avgAmount = visitCount > 0 ? Math.round(customer.total / visitCount) : 0;
+  const key = `${customer.name}|${customer.phone}`;
+  const records = customer.history.map(h => ({
+    ...h,
+    name: customer.name,
+    phone: customer.phone,
+    opd: customer.opd
+  }));
 
+  if (records.length === 0) return;
 
-content.innerHTML = `
-   <h3 style="font-size:18px;margin-bottom:6px;">📇 ${customer.name}</h3>
-  <div style="font-size:13px; line-height: 1.5;">
-    <div><strong>OPD:</strong> ${customer.opd}</div>
-    <div><strong>เบอร์:</strong> ${customer.phone}</div>
-    <div><strong>วันล่าสุด:</strong> ${formatDate(customer.lastDate)} 
-      <span style="color:gray;font-weight:normal;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>
+  const first = records[0];
+  const latestRecord = records.reduce((latest, r) =>
+    new Date(r.date) > new Date(latest.date) ? r : latest
+  , records[0]);
+
+  const lastDate = new Date(latestRecord.date);
+  const today = new Date();
+  const daysAbsent = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+  const totalVisits = records.length;
+  const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
+  const paidVisits = paidRecords.length;
+  const totalAmount = paidRecords.reduce((sum, r) => sum + parseFloat(r.amount), 0);
+  const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
+
+  const allItems = {};
+  records.forEach(r => {
+    (r.items || []).forEach(item => {
+      let name = item;
+      const match = item.match(/\((.*?)\)/);
+      if (match) {
+        name = match[1];
+      } else {
+        name = item.split(" - ")[0];
+      }
+      const qtyMatch = item.match(/- (\d+) ชิ้น/);
+      const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
+      allItems[name] = (allItems[name] || 0) + qty;
+    });
+  });
+
+  const categorizedItems = {};
+  for (const [cat, names] of Object.entries(categoryMap)) {
+    names.forEach(n => {
+      if (allItems[n]) {
+        if (!categorizedItems[cat]) categorizedItems[cat] = [];
+        categorizedItems[cat].push(`${n} : ${allItems[n]}`);
+        delete allItems[n];
+      }
+    });
+  }
+  if (Object.keys(allItems).length) {
+    categorizedItems["อื่นๆ"] = Object.entries(allItems).map(([name, qty]) => `${name} : ${qty}`);
+  }
+
+  const itemSummary = Object.entries(categorizedItems)
+    .map(([cat, items]) => `<div style="margin-bottom:6px;"><strong>${cat}</strong>: ${items.join(" | ")}</div>`)
+    .join("");
+
+  const historyHtml = records
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(r => {
+      const items = (r.items || []).map(item => {
+        let name = item;
+        const match = item.match(/\((.*?)\)/);
+        if (match) {
+          name = match[1];
+        } else {
+          name = item.split(" - ")[0];
+        }
+        const qtyMatch = item.match(/- (\d+) ชิ้น/);
+        const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
+        return `<li>${name} : ${qty}</li>`;
+      }).join("");
+
+      const noteText = r.note
+        ? `<div style="margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${r.note}</div>`
+        : "";
+
+      return `
+        <div style="margin-bottom:16px;">
+          <div style="margin-bottom:4px;font-weight:bold;">📅 ${formatDate(r.date)}</div>
+          <ul style="padding-left:16px;margin:0;">${items}</ul>
+          <div style="margin-top:4px;color:#00796b;">💵 ยอด: ${parseFloat(r.amount || 0).toLocaleString()} บาท</div>
+          ${noteText}
+          <hr style="margin: 10px auto; border: 0; border-top: 1px dashed #999; width: 60%;">
+        </div>
+      `;
+    }).join("");
+
+  const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
+
+  document.getElementById("modal-content").innerHTML = `
+    <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
+      <button onclick="saveModalAsImage()" title="บันทึกเป็นรูปภาพ" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">💾</button>
+      <button onclick="closeCustomerModal()" title="ปิดหน้าต่าง" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">❌</button>
     </div>
-    <div><strong>ยอดรวม:</strong> ${customer.total.toLocaleString()} บาท</div>
-    <div><strong>มาใช้บริการ:</strong> ${visitCount} ครั้ง</div>
-    <div><strong>เฉลี่ยต่อครั้ง:</strong> ${avgAmount.toLocaleString()} บาท</div>
-  </div>
-  <hr style="margin:12px 0;">
-  ${generateHistoryHTML(customer.history, customer.name)}
-`;
 
-  modal.style.display = "flex";
+    <h3 style="font-size:18px;margin-bottom:4px;">📇 ${customer.name}</h3>
+    <div>🆔 <strong>OPD:</strong> ${customer.opd}</div>
+    <div>📞 <strong>เบอร์:</strong> ${customer.phone}</div>
+    <div>📅 <strong>วันล่าสุด:</strong> ${formatDate(latestRecord.date)} ${daysAbsentText}</div>
+    <div style="color:#00796b;"><strong>💰 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท</div>
+    <div>🔁 มาใช้บริการ: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
+    <div>💳 <strong>เฉลี่ยต่อครั้ง:</strong> ${average.toLocaleString()} บาท</div>
+
+    <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
+
+    <div style="font-weight:bold;">📦 สรุปรายการซื้อทั้งหมด:</div>
+    <div style="margin:6px 0 12px;">${itemSummary}</div>
+
+    <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
+
+    <div style="font-weight:bold;margin-bottom:6px;">🛍️ ประวัติการซื้อย้อนหลัง:</div>
+    ${historyHtml}
+
+    <div style="margin-top:10px;font-weight:bold;color:#b8860b;">💰 รวมทั้งหมด: ${totalAmount.toLocaleString()} บาท</div>
+  `;
+
+  document.getElementById("customer-modal").style.display = "flex";
 }
+
+
+
+
 
 function closeCustomerModal() {
   document.getElementById("customer-modal").style.display = "none";
@@ -647,7 +766,116 @@ function closeCustomerModal() {
       menu.style.display = "none";
     }
   });
-  
+
+
+
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("customer-modal");
+  if (modal) {
+    modal.addEventListener("click", function (event) {
+      const modalBox = document.querySelector("#customer-modal .modal-box");
+      if (!modalBox.contains(event.target)) {
+        closeCustomerModal();
+      }
+    });
+  }
+});
+
+function closeCustomerModal() {
+  document.getElementById("customer-modal").style.display = "none";
+}
+
+// ✅ โค้ดนี้รอ DOM โหลดเสร็จแล้วผูก event อย่างปลอดภัย
+document.addEventListener("DOMContentLoaded", () => {
+  const modal = document.getElementById("customer-modal");
+
+  if (modal) {
+    modal.addEventListener("click", function (event) {
+      const modalBox = modal.querySelector(".modal-box");
+
+      // ถ้าแตะนอก modal-box → ปิด modal
+      if (!modalBox.contains(event.target)) {
+        closeCustomerModal();
+      }
+    });
+  } else {
+    console.error("❌ ไม่พบ customer-modal ใน DOM");
+  }
+});
+
+
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("customer-modal");
+
+  if (modal) {
+    modal.addEventListener("click", function (event) {
+      const modalBox = modal.querySelector(".modal-box");
+
+      if (!modalBox.contains(event.target)) {
+        closeCustomerModal();
+      }
+    });
+  } else {
+    console.error("❌ ไม่พบ customer-modal ใน DOM");
+  }
+});
+
+
+
+  function saveModalAsImage() {
+  const node = document.getElementById("modal-content");
+  if (!node) {
+    alert("ไม่พบเนื้อหาใน modal");
+    return;
+  }
+
+  html2canvas(node, { scale: 2 }).then(canvas => {
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    if (isIOS) {
+      // ✅ iPhone/iPad: แสดง preview ให้กดค้างเพื่อเซฟ
+      const previewArea = document.createElement("div");
+      previewArea.style.marginTop = "20px";
+      previewArea.innerHTML = `
+        <div style="font-weight:bold; margin-bottom:6px;">แตะค้างที่ภาพด้านล่างเพื่อบันทึกรูป</div>
+        <img src="${dataUrl}" style="width:100%; border:1px solid #ccc; border-radius:12px;">
+      `;
+
+      const existing = document.getElementById("modalImagePreview");
+      if (existing) existing.remove();
+      previewArea.id = "modalImagePreview";
+
+      node.appendChild(previewArea);
+    } else {
+      // ✅ Android / คอม: ดาวน์โหลดอัตโนมัติ
+      const link = document.createElement("a");
+      link.download = 'customer-info.jpg';
+      link.href = dataUrl;
+      link.click();
+    }
+  }).catch(error => {
+    console.error("จับภาพไม่สำเร็จ:", error);
+    alert("เกิดข้อผิดพลาดในการบันทึกรูปภาพ");
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const modal = document.getElementById("customer-modal");
+
+  if (modal) {
+    modal.addEventListener("click", function (event) {
+      const modalBox = modal.querySelector(".modal-box");
+      if (!modalBox.contains(event.target)) {
+        closeCustomerModal();
+      }
+    });
+  } else {
+    console.error("❌ ไม่พบ customer-modal ใน DOM");
+  }
+});
+
 
   </script>
 

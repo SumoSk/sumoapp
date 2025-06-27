@@ -1,12 +1,56 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ข้อมูลลูกค้าทั้งหมด</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
+
+    .floating-toggle {
+    position: fixed;
+    bottom: env(safe-area-inset-bottom, 18px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 128, 128, 0);
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    box-shadow: 0 4px 16px rgba(251, 251, 251, 0);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    cursor: pointer;
+  }
+
+  .floating-menu {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border-radius: 16px;
+    padding: 10px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    z-index: 999;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .floating-menu a img {
+    width: 52px;
+    height: 52px;
+  }
+
+
     
 #customer-modal {
   display: none;
@@ -195,22 +239,22 @@ td.keyword-col {
 }
     .floating-dock {
   position: fixed;
-  bottom: 8px;
+  bottom: env(safe-area-inset-bottom, 16px); /* ✅ ไม่ให้ติดแถบดำ */
   left: 50%;
   transform: translateX(-50%);
-  background: rgb(249, 249, 249); /* ขาว */
-
-  border-radius: 24px;
-  padding: 4px 4px;
+  background: white;
+  border-radius: 16px;
+  padding: 6px 6px env(safe-area-inset-bottom, 16px); /* ✅ เว้นขอบล่างด้วย */
   display: flex;
-  gap: 2px;
+  gap: 6px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.1);
   z-index: 1000;
+  max-width: 95vw;
 }
 
 .icon-button {
-  width: 74px;
-  height: 74px;
+  width: 64px;                 /* ✅ ลดขนาดบนจอเล็กได้ */
+  height: 64px;
   padding: 4px;
   border-radius: 12px;
   display: flex;
@@ -218,17 +262,40 @@ td.keyword-col {
   justify-content: center;
   transition: transform 0.2s ease;
   text-decoration: none;
+  flex: 0 0 auto;              /* ✅ ไม่ยืด ไม่หด */
 }
+
+.icon-button img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
 
 .icon-button:hover {
   transform: scale(1.1);
 }
 
-.icon-button img {
-  width: 74px;
-  height: 74px;
-  object-fit: contain;
+@media (max-width: 768px) {
+  .icon-button {
+    width: 48px;
+    height: 48px;
+  }
+
+  .icon-button img {
+    width: 48px;
+    height: 48px;
+  }
 }
+
+@media (max-width: 1024px) {
+  .floating-dock {
+    position: fixed;
+    bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom); /* รองรับ iPhone/iPad ที่มีแถบล่าง */
+  }
+}
+
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
 </head>
@@ -423,27 +490,21 @@ td.keyword-col {
   const val = this.value.trim().toLowerCase();
   const rows = document.querySelectorAll('#customer-table-body tr');
 
-  for (let i = 0; i < rows.length; i += 2) {
-    const row = rows[i];
-    const detailRow = rows[i + 1];
-
+  rows.forEach(row => {
     const opd = (row.children[1]?.textContent || "").toLowerCase();
     const name = (row.children[2]?.textContent || "").toLowerCase();
     const phone = (row.children[3]?.textContent || "").toLowerCase();
     const note = (row.children[7]?.textContent || "").toLowerCase();
     const keywords = (row.children[8]?.textContent || "").toLowerCase();
 
-    const matched = opd.includes(val) || name.includes(val) || phone.includes(val) || note.includes(val) || keywords.includes(val);
+    const matched = opd.includes(val) ||
+                    name.includes(val) ||
+                    phone.includes(val) ||
+                    note.includes(val) ||
+                    keywords.includes(val);
 
-    if (matched) {
-      row.style.display = '';
-      detailRow.style.display = '';
-      const detailDiv = detailRow.querySelector('.details');
-          } else {
-      row.style.display = 'none';
-      detailRow.style.display = 'none';
-    }
-  }
+    row.style.display = matched ? '' : 'none';
+  });
 });
 
 
@@ -455,29 +516,30 @@ td.keyword-col {
 
 
   let sortState = {};
+
+
+
   function sortTable(colIndex) {
   const tbody = document.getElementById("customer-table-body");
-  const rows = Array.from(tbody.rows).filter((_, i) => i % 2 === 0);
-  const detailRows = Array.from(tbody.rows).filter((_, i) => i % 2 !== 0);
+  const rows = Array.from(tbody.rows);
 
   const key = `col-${colIndex}`;
-  sortState[key] = !sortState[key];
+  sortState[key] = !sortState[key]; // toggle asc/desc
   const direction = sortState[key] ? 1 : -1;
 
-  const sorted = rows.map((row, i) => {
+  const sorted = rows.map(row => {
     const cellText = row.cells[colIndex].textContent.trim();
     const isDateCol = (colIndex === 4);
     const numericText = cellText.replace(/,/g, '');
     const value = isDateCol
       ? parseThaiDate(cellText)
       : (isNaN(numericText) ? cellText.toLowerCase() : parseFloat(numericText));
-    return { row, detailRow: detailRows[i], value };
+    return { row, value };
   }).sort((a, b) => (a.value > b.value ? 1 : a.value < b.value ? -1 : 0) * direction);
 
   tbody.innerHTML = '';
-  sorted.forEach(({ row, detailRow }) => {
+  sorted.forEach(({ row }) => {
     tbody.appendChild(row);
-    tbody.appendChild(detailRow);
   });
 }
 
@@ -526,6 +588,12 @@ td.keyword-col {
   return Array.from(keywordSet).join(', ');
 }
 
+
+
+
+
+
+
 function togglePhone(el) {
   if (el.dataset.showing === "true") {
     el.innerText = "📞";
@@ -539,18 +607,22 @@ window.openCustomerModal = function(index) {
   const customer = customers[index];
   const modal = document.getElementById("customer-modal");
   const content = document.getElementById("modal-content");
-
   const daysAbsent = calcDaysAbsent(customer.lastDate);
+const visitCount = customer.history.length;
+const avgAmount = visitCount > 0 ? Math.round(customer.total / visitCount) : 0;
+
 
 content.innerHTML = `
-  <h3 style="font-size:18px;margin-bottom:6px;">📇 ${customer.name}</h3>
-  <div style="font-size:13px; line-height: 1.4;">
+   <h3 style="font-size:18px;margin-bottom:6px;">📇 ${customer.name}</h3>
+  <div style="font-size:13px; line-height: 1.5;">
     <div><strong>OPD:</strong> ${customer.opd}</div>
     <div><strong>เบอร์:</strong> ${customer.phone}</div>
     <div><strong>วันล่าสุด:</strong> ${formatDate(customer.lastDate)} 
       <span style="color:gray;font-weight:normal;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>
     </div>
     <div><strong>ยอดรวม:</strong> ${customer.total.toLocaleString()} บาท</div>
+    <div><strong>มาใช้บริการ:</strong> ${visitCount} ครั้ง</div>
+    <div><strong>เฉลี่ยต่อครั้ง:</strong> ${avgAmount.toLocaleString()} บาท</div>
   </div>
   <hr style="margin:12px 0;">
   ${generateHistoryHTML(customer.history, customer.name)}
@@ -562,35 +634,38 @@ content.innerHTML = `
 function closeCustomerModal() {
   document.getElementById("customer-modal").style.display = "none";
 }
+
+ function toggleFloatingMenu() {
+    const menu = document.getElementById("floatingMenu");
+    menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
+  }
+
+  // ปิดเมนูถ้าแตะที่อื่น
+  document.addEventListener('click', function(e) {
+    const toggle = document.getElementById("floatingToggle");
+    const menu = document.getElementById("floatingMenu");
+    if (!toggle.contains(e.target) && !menu.contains(e.target)) {
+      menu.style.display = "none";
+    }
+  });
+  
+
   </script>
-  <div class="floating-dock">
-  <a href="{{ url_for('dashboard') }}" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}">
-  </a>
-  <a href="{{ url_for('sale_summary') }}" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}">
-  </a>
-  <a href="{{ url_for('record_sales') }}" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}">
-  </a>
-    <a href="{{ url_for('customer_list') }}" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}">
-  </a>
-  <a href="{{ url_for('record_customer') }}" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}">
-  </a>
-  <a href="{{ url_for('oldsaledata') }}" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}">
-  </a>
-  <a href="#" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_staff.png') }}">
-  </a>
-  <a href="#" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_inventory.png') }}">
-  </a>
-  <a href="#" class="icon-button">
-    <img src="{{ url_for('static', filename='icon/icon_appointments.png') }}">
-  </a>
+
+  <div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
+  <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu" style="width:60px;height:60px;">
+</div>
+
+  <div id="floatingMenu" class="floating-menu">
+  <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}"></a>
+  <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}"></a>
+  <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}"></a>
+  <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}"></a>
+  <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}"></a>
+  <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}"></a>
+  <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}"></a>
+  <a href="#"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}"></a>
+  <a href="#"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}"></a>
 </div>
 <div id="customer-modal">
   <div class="modal-box">

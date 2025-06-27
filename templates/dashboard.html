@@ -612,7 +612,7 @@ h3 {
 
 
   <div id="customer-modal" style="display:none;position:fixed;inset:0;background-color:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
-  <div style="background:white;padding:16px;border-radius:16px;width:100%;max-width:360px;box-sizing:border-box;margin: auto;max-height:90vh;overflow:auto;position:relative; font-size:13.5px;">
+  <div id="customer-modal-box" style="background:white;;padding:16px;border-radius:16px;width:100%;max-width:360px;box-sizing:border-box;margin: auto;max-height:90vh;overflow:auto;position:relative; font-size:13.5px;">
 
 
     <button onclick="closeCustomerModal()" style="position:absolute;top:10px;right:14px;font-size:20px;border:none;background:none;cursor:pointer;">&times;</button>
@@ -1153,10 +1153,10 @@ function closeCustomerModal() {
   document.getElementById("customer-modal").style.display = "none";
 }
 
-function saveGroupModalAsImage() {
-  const node = document.getElementById("group-modal-content");
+function saveModalAsImage() {
+  const node = document.getElementById("modal-content");
   if (!node) {
-    alert("ไม่พบเนื้อหาใน group-modal");
+    alert("ไม่พบเนื้อหาใน modal");
     return;
   }
 
@@ -1166,7 +1166,7 @@ function saveGroupModalAsImage() {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
     if (isIOS) {
-      // ✅ แสดง preview ให้กดค้างเพื่อบันทึก
+      // ✅ iPhone/iPad: แสดง preview ให้กดค้างเพื่อเซฟ
       const previewArea = document.createElement("div");
       previewArea.style.marginTop = "20px";
       previewArea.innerHTML = `
@@ -1174,15 +1174,15 @@ function saveGroupModalAsImage() {
         <img src="${dataUrl}" style="width:100%; border:1px solid #ccc; border-radius:12px;">
       `;
 
-      const existing = document.getElementById("groupImagePreview");
+      const existing = document.getElementById("modalImagePreview");
       if (existing) existing.remove();
-      previewArea.id = "groupImagePreview";
+      previewArea.id = "modalImagePreview";
 
       node.appendChild(previewArea);
     } else {
-      // ✅ ดาวน์โหลดตามปกติ
+      // ✅ Android / คอม: ดาวน์โหลดอัตโนมัติ
       const link = document.createElement("a");
-      link.download = 'selected-customers.jpg';
+      link.download = 'customer-info.jpg';
       link.href = dataUrl;
       link.click();
     }
@@ -1195,6 +1195,12 @@ function saveGroupModalAsImage() {
 
 
 
+
+function closeCustomerModal() {
+  document.getElementById("customer-modal").style.display = "none";
+}
+
+// ✅ โค้ดนี้รอ DOM โหลดเสร็จแล้วผูก event อย่างปลอดภัย
 
 
 
@@ -1549,6 +1555,54 @@ function toggleFloatingMenu() {
       menu.style.display = "none";
     }
   });
+
+
+function closeCustomerModal() {
+  document.getElementById("customer-modal").style.display = "none";
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("customer-modal");
+  if (modal) {
+    modal.addEventListener("click", function (event) {
+      const modalBox = modal.querySelector(".modal-box");
+      if (!modalBox.contains(event.target)) {
+        closeCustomerModal();
+      }
+    });
+  }
+});
+
+function closeCustomerModal() {
+  document.getElementById("customer-modal").style.display = "none";
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("customer-modal");
+  if (!modal) return;
+
+  modal.addEventListener("click", function (event) {
+    const modalBox = modal.querySelector(".modal-box");
+    if (!modalBox.contains(event.target)) {
+      closeCustomerModal();
+    }
+  });
+});
+
+
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("customer-modal");
+  const modalBox = document.getElementById("customer-modal-box");
+
+  if (modal && modalBox) {
+    modal.addEventListener("click", function (event) {
+      if (!modalBox.contains(event.target)) {
+        closeCustomerModal();
+      }
+    });
+  }
+});
+
 
 
   </script>
