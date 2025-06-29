@@ -167,7 +167,14 @@
   </style>
 </head>
 <body>
+  <body>
 <h2>คลังเวชภัณฑ์</h2>
+<div class="month-nav">
+  <button onclick="prevMonth()">⬅️ ดูก่อนหน้า</button>
+  <button onclick="nextMonth()">ดูถัดไป ➡️</button>
+</div>
+
+
 <table>
   <thead>
     <tr id="tableHeader">
@@ -178,39 +185,63 @@
   </thead>
   <tbody id="tableBody"></tbody>
 </table>
+
 <div class="btn-bar">
-  <button onclick="submit()">ยืนยันบันทึกทั้งหมด</button>
+ <button onclick="addNewItem()">➕ เพิ่มเวชภัณฑ์ใหม่</button>
 </div>
 <script>
 const groupedData = {};
-window.dynamicDates = [];
+let sortedItemList = [
+  "Syringe 10", "Syringe 5", "Syringe 3", "Syringe 1",
+  "เข็ม 32", "เข็ม 30", "เข็ม 24", "เข็ม 18Gx1", "เข็ม 18Gx1 1/2",
+  "Cannula", "Medicut", "ผีเสื้อ 24", "ผีเสื้อ 25", "Set IV", "หลอด PRR",
+  "Nss 1000 ML", "Nss 100 ML", "Nss 5 ML", "SWI 5 ML", "ถุงมือ S",
+  "สำลีก้อน", "สำลีแผ่น", "ยาชา (ครีม)", "Swabs", "แอลกอฮอล์",
+  "ยาทาฝ้า", "ยาทาสิว", "อะโลเจล", "Scrub", "Milky"
+];
+let allData = [], allDates = [], currentMonth = null;
 
 async function fetchData() {
   const res = await fetch("/api/inventory");
-  const data = await res.json();
-  const dateSet = new Set();
-  data.forEach(row => {
-    if (!groupedData[row.item_name]) groupedData[row.item_name] = {};
-    groupedData[row.item_name][row.date] = row.quantity;
-    dateSet.add(row.date);
-  });
-  window.dynamicDates = Array.from(dateSet).sort();
+  allData = await res.json();
+  const dateSet = new Set(allData.map(d => d.date));
+  allDates = Array.from(dateSet).sort((a, b) => new Date(b) - new Date(a));
+  currentMonth = new Date(allDates[0]).getMonth();
+  groupByItem();
   renderTable();
 }
 
+function groupByItem() {
+  for (const row of allData) {
+    if (!groupedData[row.item_name]) groupedData[row.item_name] = {};
+    groupedData[row.item_name][row.date] = row.quantity;
+  }
+}
+
+function getFilteredDates() {
+  return allDates.filter(d => new Date(d).getMonth() === currentMonth)
+                 .slice(0, 3)
+                 .reverse();
+}
+
 function renderTable() {
+  const filteredDates = getFilteredDates();
   const headerRow = document.getElementById("tableHeader");
   const tbody = document.getElementById("tableBody");
-  headerRow.innerHTML = `<th>ชื่อเวชภัณฑ์</th>` +
-    window.dynamicDates.map(date => `<th>${formatDate(date)}</th>`).join('') +
-    `<th><input type='date' id='inputDate' style='font-size:14px;padding:4px;' /></th>`;
+  headerRow.innerHTML = `<th>ลำดับ</th><th>ชื่อเวชภัณฑ์</th>` +
+    filteredDates.map(date => `<th>${formatDate(date)}</th>`).join('') +
+    `<th><input type='date' id='inputDate'></th><th>จัดการ</th>`;
 
   tbody.innerHTML = "";
-  Object.keys(groupedData).forEach(name => {
+  sortedItemList.forEach((name, index) => {
+    const preview = filteredDates.map(d => `<td>${groupedData[name]?.[d] ?? '-'}</td>`).join('');
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td class='name'>${name}</td>` +
-      window.dynamicDates.map(d => `<td>${groupedData[name][d] ?? "-"}</td>`).join('') +
-      `<td><input type='number' name='${name}'></td>`;
+    tr.innerHTML = `<td>${index + 1}</td><td class='name'>${name}</td>` +
+      preview +
+      `<td><input type='number' name='${name}'></td>
+       <td>
+         <button class='btn-single' onclick='submitSingle("${name}")'>บันทึก</button>
+       </td>`;
     tbody.appendChild(tr);
   });
 }
@@ -220,50 +251,96 @@ function formatDate(dateStr) {
   return d.toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "2-digit" });
 }
 
-function submit() {
-  const date = document.getElementById("inputDate").value;
-  if (!date) return alert("กรุณาเลือกวันที่ก่อนบันทึก");
-  if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการบันทึกข้อมูลทั้งหมดนี้?")) return;
+function submitSingle(itemName) {
+  const inputDate = document.getElementById("inputDate").value;
+  if (!inputDate) return alert("กรุณาเลือกวันที่ก่อนบันทึก");
+  const input = document.querySelector(`input[name='${itemName}']`);
+  if (!input || input.value === '') return alert("กรุณากรอกข้อมูล");
+  const payload = [{ item_name: itemName, date: inputDate, quantity: parseFloat(input.value) }];
+  saveData(payload);
+}
+
+function submitAll() {
+  const inputDate = document.getElementById("inputDate").value;
+  if (!inputDate) return alert("กรุณาเลือกวันที่ก่อนบันทึก");
   const payload = [];
-  const inputs = document.querySelectorAll("input[type='number']");
-  inputs.forEach(input => {
+  document.querySelectorAll("input[type='number']").forEach(input => {
     if (input.value !== '') {
       payload.push({
         item_name: input.name,
-        date: date,
+        date: inputDate,
         quantity: parseFloat(input.value)
       });
     }
   });
+  saveData(payload);
+}
+
+function saveData(payload) {
   fetch("/api/save_inventory", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   })
-  .then(res => res.json())
-  .then(() => {
-    alert("✅ บันทึกสำเร็จ");
-    fetchData();
-  })
-  .catch(err => alert("เกิดข้อผิดพลาด"));
+    .then(res => res.json())
+    .then(() => {
+      alert("✅ บันทึกสำเร็จ");
+      fetchData();
+
+function addNewItem() {
+  const newItem = prompt("กรุณากรอกชื่อเวชภัณฑ์ใหม่");
+  if (newItem && !sortedItemList.includes(newItem)) {
+    sortedItemList.push(newItem);
+    sortedItemList.sort();
+    renderTable();
+  } else if (sortedItemList.includes(newItem)) {
+    alert("เวชภัณฑ์นี้มีอยู่แล้วในรายการ");
+  }
+}
+    })
+    .catch(() => alert("เกิดข้อผิดพลาด"));
+}
+
+function prevMonth() {
+  if (currentMonth > 0) {
+    currentMonth--;
+    renderTable();
+  }
+}
+
+function nextMonth() {
+  if (currentMonth < 11) {
+    currentMonth++;
+    renderTable();
+  }
 }
 
 fetchData();
 
+function addNewItem() {
+  const item_name = prompt("ชื่อเวชภัณฑ์ใหม่:");
+  if (!item_name) return;
 
-function toggleFloatingMenu() {
-    const menu = document.getElementById("floatingMenu");
-    menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
-  }
+  const date = prompt("วันที่ (เช่น 2025-06-29):");
+  if (!date) return;
 
-  // ปิดเมนูถ้าแตะที่อื่น
-  document.addEventListener('click', function(e) {
-    const toggle = document.getElementById("floatingToggle");
-    const menu = document.getElementById("floatingMenu");
-    if (!toggle.contains(e.target) && !menu.contains(e.target)) {
-      menu.style.display = "none";
-    }
-  });
+  const quantityStr = prompt("จำนวน:");
+  const quantity = parseFloat(quantityStr);
+  if (isNaN(quantity)) return alert("จำนวนไม่ถูกต้อง");
+
+  const payload = [{ item_name, date, quantity }];
+  fetch("/api/save_inventory", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+    .then(res => res.json())
+    .then(() => {
+      alert("✅ บันทึกสำเร็จ");
+      fetchData(); // โหลดใหม่
+    })
+    .catch(() => alert("เกิดข้อผิดพลาด"));
+}
 
 </script>
 
