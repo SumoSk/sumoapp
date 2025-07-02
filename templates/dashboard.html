@@ -742,14 +742,16 @@ h3 {
 
   <script>
     const categoryMap = {
-    "โบทอค": ["Aestox 50 u", "Aestox 100 u", "Allergan 50 u", "Allergan 100 u"],
-    "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q ระบุสีด้วย", "Restylane ระบุสีด้วย"],
-    "งานผิว": ["Meso Chanel", "P - Cell", "Aquatic", "Hestina", "Exosome", "Rejuran", "Belotero Revive", "Sculptra", "Juvelook", "Aesthefill"],
-    "ดริปผิว": ["Snow White", "Super Aurawhite", "Vitamin Mix", "Brain Booster", "Energy Booster"],
-    "ทรีทเม้นท์": ["ทรีทเมนต์หน้าใส", "ทรีทเมนต์สิว", "ทรีทเมนต์ฝ้า"],
-    "Fat/Hifu": ["Bromi", "Sisi", "HIFU", "HIFU แถม"],
-    "อื่นๆ": ["ยาฉีดสลายฝ้า", "ครีมทาฝ้า", "ยาทานฝ้า", "ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen", "จ่ายเงิน/จองสินค้า"]
-  };
+  "โบทอค": [  "Aestox 50 u",  "Aestox 100 u",  "Allergan 50 u",  "Allergan 100 u",  "เฉพาะจุด",  "แบ่งไว้แล้ว" ],
+  "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q ระบุสีด้วย", "Restylane ระบุสีด้วย"  ],
+  "งานผิว": ["Meso Chanel","P - Cell","Aquatic","Hestina","Exosome","Rejuran","Belotero Revive","Sculptra","Juvelook","Aesthefill","Mesowink","AlphaArbutin","PRP"],
+  "ดริปผิว": ["Snow White", "Super Aurawhite", "Vitamin Mix", "Brain Booster", "Energy Booster"  ],
+  "ทรีทเม้นท์": [    "ทรีทเมนต์หน้าใส", "ทรีทเมนต์สิว", "ทรีทเมนต์ฝ้า"  ],
+  "Fat/Hifu": [    "Bromi", "Sisi", "HIFU", "HIFU แถม"  ],
+  "อื่นๆ": [    "ยาฉีดสลายฝ้า", "ครีมทาฝ้า", "ยาทานฝ้า", "ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen", "จ่ายเงิน/จองสินค้า"  ],
+  "โปรโมชั่น/อีเว้นพิเศษ": [    "สลายฟิลเลอร์", "ไหม PDO", "ปั่น RF", "ไหมลิฟท์กรอบหน้า", "ผลักวิตามิน"  ]
+};
+
 let viewingDate = new Date(); // ✅ กำหนดให้เป็น Global ตัวเดียว
   let allSalesRecords = [];
 let fullCustomerList = [];
@@ -1024,49 +1026,47 @@ fetchAllCustomerRecords();
 
 function openGroupModalByCategory(cat) {
   const prefix = viewingDate.toISOString().slice(0, 7);
-  const productGroups = {};
+  const summary = {};
+  const totalQty = { count: 0 };
 
-  // รวมข้อมูลแยกตามชื่อสินค้า
+  const catElement = Array.from(document.querySelectorAll(".summary-group"))
+    .find(group => group.querySelector("strong")?.textContent === cat);
+
+  const catText = catElement?.innerText || "";
+
   allSalesRecords
     .filter(r => r.date.startsWith(prefix))
     .forEach(r => {
       (r.items || []).forEach(item => {
-        const match = item.match(/\((.*?)\)/); // ดึงชื่อสินค้าย่อย
-        const subItem = match ? match[1] : item;
+        const match = item.match(/\((.*?)\)/);
+        const subItem = match ? match[1] : item.split(" - ")[0].trim();
+
         const qtyMatch = item.match(/- (\d+) ชิ้น/);
-        const qty = qtyMatch ? parseInt(qtyMatch[1]) : 0;
+        const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
 
-        const matchCat = Object.entries(categoryMap).find(
-          ([category, names]) => category === cat && names.some(n => subItem.includes(n))
-        );
+        if (!catText.includes(subItem) && !catText.includes(item)) return;
 
-        if (matchCat) {
-          if (!productGroups[subItem]) productGroups[subItem] = {};
+        if (!summary[subItem]) summary[subItem] = {};
+        const key = `${r.name}|${r.phone}`;
+        if (!summary[subItem][key]) summary[subItem][key] = {
+          name: r.name,
+          dates: {}
+        };
+        summary[subItem][key].dates[r.date] = 
+          (summary[subItem][key].dates[r.date] || 0) + qty;
 
-          const personKey = `${r.name}|${r.phone}`;
-          if (!productGroups[subItem][personKey]) {
-            productGroups[subItem][personKey] = { name: r.name, dates: {} };
-          }
-
-          productGroups[subItem][personKey].dates[r.date] = 
-            (productGroups[subItem][personKey].dates[r.date] || 0) + qty;
-        }
+        totalQty.count += qty;
       });
     });
 
-  // คำนวณยอดรวม
-  const totalQty = Object.values(productGroups).reduce((sum, prod) =>
-    sum + Object.values(prod).reduce((s2, c) =>
-      s2 + Object.values(c.dates).reduce((s3, q) => s3 + q, 0), 0
-    ), 0);
-
-  // แสดงผลแบบจัดเรียง
-  const html = Object.entries(productGroups).map(([productName, buyers]) => {
+  const html = Object.entries(summary).map(([productName, buyers]) => {
     const buyerLines = Object.values(buyers).map(c => {
       const dateParts = Object.entries(c.dates)
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([date, qty]) => {
-          const thDate = new Date(date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+          const thDate = new Date(date).toLocaleDateString('th-TH', {
+            day: 'numeric', month: 'short'
+          });
           return `${thDate} = ${qty}`;
         }).join(" | ");
       return `👤 <strong>${c.name}</strong>: ${dateParts}`;
@@ -1080,14 +1080,15 @@ function openGroupModalByCategory(cat) {
 
   document.getElementById("groupSelectedList").innerHTML = `
     <div class="group-header">
-      📦 รายการในหมวด: <span>${cat}</span><br>
-      ✅ รวมทั้งหมด <strong style="font-size: 18px; color: #00796b;">${totalQty}</strong> ชิ้น
+      📦 รายการในหมวด: ${cat}<br>
+      ✅ รวมทั้งหมด <strong style="font-size: 18px; color: #00796b;">${totalQty.count}</strong> ชิ้น
     </div>
     ${html || '<div style="padding:10px; color:#888;">ไม่มีข้อมูลในเดือนนี้</div>'}
   `;
 
   document.getElementById("group-modal").style.display = "flex";
 }
+
 
 function closeGroupModal() {
   document.getElementById("group-modal").style.display = "none";

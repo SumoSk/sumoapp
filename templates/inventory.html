@@ -342,6 +342,20 @@ function addNewItem() {
     .catch(() => alert("เกิดข้อผิดพลาด"));
 }
 
+
+ function toggleFloatingMenu() {
+    const menu = document.getElementById("floatingMenu");
+    menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
+  }
+
+  document.addEventListener('click', function(e) {
+    const toggle = document.getElementById("floatingToggle");
+    const menu = document.getElementById("floatingMenu");
+    if (!toggle.contains(e.target) && !menu.contains(e.target)) {
+      menu.style.display = "none";
+    }
+  });
+  
 </script>
 
 <div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">

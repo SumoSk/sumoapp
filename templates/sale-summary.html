@@ -555,7 +555,8 @@ function downloadExcel() {
     return;
   }
 
-  const sortedRecs = window.allSalesRecords.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+  const sortedRecs = window.allSalesRecords.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+
   const ws_data = [];
   let currentDate = '';
   let dailyTotal = 0;
