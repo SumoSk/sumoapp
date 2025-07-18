@@ -3,14 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-
-  <!-- ✅ iOS Home Screen Fullscreen + Icon -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Palmy Clinic
+  <meta name="apple-mobile-web-app-title" content="Palmy Clinic">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo.jpg') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-
   <title>เข้าสู่ระบบ</title>
 
   <style>
@@ -37,12 +34,14 @@
       max-width: 420px;
       width: 90%;
       text-align: center;
+      position: relative;
     }
 
     .logo {
       max-width: 130px;
       margin-bottom: 20px;
       border-radius: 8px;
+      cursor: pointer;
     }
 
     h2 {
@@ -119,23 +118,87 @@
       border-radius: 6px;
     }
 
-    @media (max-width: 480px) {
-      .login-box {
-        padding: 25px;
-      }
-      h2 {
-        font-size: 18px;
-      }
+    /* ✅ PIN MODAL STYLE */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      z-index: 90;
+    }
+
+    .modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      display: none;
+      z-index: 100;
+      text-align: center;
+      width: 300px;
+    }
+
+    .modal h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
+    .pin-display {
+      font-size: 30px;
+      letter-spacing: 12px;
+      margin-bottom: 20px;
+    }
+
+    .pin-pad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .pin-pad button {
+      padding: 15px;
+      font-size: 18px;
+      border-radius: 10px;
+      background: #d4af37;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .pin-pad button:hover {
+      background-color: #b99128;
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+      100% { transform: translateX(0); }
+    }
+
+    .shake {
+      animation: shake 0.4s;
     }
   </style>
 </head>
 <body>
+
   <div class="login-box">
-    <img src="{{ url_for('static', filename='logo.jpg') }}" alt="โลโก้" class="logo">
+    <img src="{{ url_for('static', filename='logo.jpg') }}" alt="โลโก้" class="logo" onclick="showPinModal()">
     <h2>Dr.Palmy Clinic System</h2>
+
     {% if error %}
       <div class="error">{{ error }}</div>
     {% endif %}
+
     <form method="POST">
       <label for="username">ชื่อผู้ใช้:</label>
       <input type="text" name="username" id="username" required>
@@ -154,17 +217,95 @@
     </form>
   </div>
 
+  <!-- ✅ PIN MODAL -->
+  <div class="modal-overlay" id="pinModalOverlay" onclick="closePinModal()"></div>
+  <div class="modal" id="pinModal">
+    <h3>ใส่ PIN</h3>
+    <div class="pin-display" id="pinDisplay">○ ○ ○ ○ ○ ○</div>
+    <div class="pin-pad">
+      <button onclick="appendPin('1')">1</button>
+      <button onclick="appendPin('2')">2</button>
+      <button onclick="appendPin('3')">3</button>
+      <button onclick="appendPin('4')">4</button>
+      <button onclick="appendPin('5')">5</button>
+      <button onclick="appendPin('6')">6</button>
+      <button onclick="appendPin('7')">7</button>
+      <button onclick="appendPin('8')">8</button>
+      <button onclick="appendPin('9')">9</button>
+      <button onclick="clearPin()">ลบ</button>
+      <button onclick="appendPin('0')">0</button>
+    </div>
+  </div>
+
   <script>
     function togglePassword() {
       const pw = document.getElementById('password');
       const toggle = document.querySelector('.toggle-password');
-      if (pw.type === "password") {
-        pw.type = "text";
-        toggle.textContent = "ซ่อน";
-      } else {
-        pw.type = "password";
-        toggle.textContent = "แสดง";
+      pw.type = pw.type === "password" ? "text" : "password";
+      toggle.textContent = pw.type === "password" ? "แสดง" : "ซ่อน";
+    }
+
+    let pinInput = "";
+
+    function showPinModal() {
+      pinInput = "";
+      updatePinDisplay();
+      document.getElementById("pinModal").style.display = "block";
+      document.getElementById("pinModalOverlay").style.display = "block";
+    }
+
+    function closePinModal() {
+      document.getElementById("pinModal").style.display = "none";
+      document.getElementById("pinModalOverlay").style.display = "none";
+    }
+
+    function appendPin(num) {
+      if (pinInput.length < 6) {
+        pinInput += num;
+        updatePinDisplay();
+        if (pinInput.length === 6) {
+          setTimeout(() => submitPin(), 100);
+        }
       }
+    }
+
+    function clearPin() {
+      pinInput = pinInput.slice(0, -1);
+      updatePinDisplay();
+    }
+
+    function updatePinDisplay() {
+      let display = "";
+      for (let i = 0; i < 6; i++) {
+        display += i < pinInput.length ? "● " : "○ ";
+      }
+      document.getElementById("pinDisplay").textContent = display.trim();
+    }
+
+    function submitPin() {
+      fetch('/pin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: pinInput })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          window.location.href = '/dashboard';
+        } else {
+          const pinDisplay = document.getElementById("pinDisplay");
+          pinDisplay.classList.add("shake");
+          setTimeout(() => {
+            pinDisplay.classList.remove("shake");
+          }, 500);
+
+          pinInput = "";
+          updatePinDisplay();
+        }
+      })
+      .catch(() => {
+        alert("เกิดข้อผิดพลาด");
+      });
     }
   </script>
 </body>

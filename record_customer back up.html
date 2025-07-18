@@ -1,10 +1,54 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>บันทึกข้อมูลลูกค้า</title>
   <style>
+
+    .floating-toggle {
+    position: fixed;
+    bottom: env(safe-area-inset-bottom, 18px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 128, 128, 0);
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    box-shadow: 0 4px 16px rgba(251, 251, 251, 0);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    cursor: pointer;
+  }
+
+  .floating-menu {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border-radius: 16px;
+    padding: 10px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    z-index: 999;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .floating-menu a img {
+    width: 52px;
+    height: 52px;
+  }
+
+
     body {
       font-family: 'Prompt', 'Segoe UI', sans-serif;
       margin: 0;
@@ -12,35 +56,43 @@
       padding: 10px;
        padding-bottom: 120px;
     }
-        .search-container {
-      max-width: 95%;
-      margin: 0 auto 20px auto;
-      display: flex;
-      flex-direction: column;
+    .search-container {
+   position: fixed;
+  bottom: 120px; /* ✅ เว้นระยะไม่ให้ชน floating-dock */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 600px;
+  background: rgb(235, 255, 245); /* ✅ เขียวอ่อนโปร่ง */
+
+  border-radius: 20px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 999;
     }
     .search-container label {
-      margin-bottom: 8px;
       font-weight: bold;
-      color: #222;
+      font-size: 14px;
+      display: block;
+      margin-bottom: 8px;
       text-align: center;
-      font-size: 20px;
     }
     .search-container input {
-      padding: 12px 20px;
-      border: 1px solid #ccc;
-      border-radius: 30px;
-      font-size: 16px;
-      background-color: white;
-      outline: none;
-      background-image: url('https://cdn-icons-png.flaticon.com/512/622/622669.png');
-      background-size: 18px;
-      background-repeat: no-repeat;
-      background-position: 12px center;
-      padding-left: 40px;
       width: 100%;
-      box-sizing: border-box;
-      color: #222;
+  padding: 10px 16px 10px 40px;
+  font-size: 12px;
+  border: none;
+  border-radius: 30px;
+  background-color: rgb(255, 255, 255); /* ✅ โปร่งนิดๆ */
+  background-image: url('https://cdn-icons-png.flaticon.com/512/622/622669.png');
+  background-size: 18px;
+  background-repeat: no-repeat;
+  background-position: 12px center;
+  box-sizing: border-box;
+  color: #222;
+  outline: none;
     }
+       templates/sale-summary.html
     #addCustomerBtn {
       display: block;
       margin: 0 auto 15px auto;
@@ -107,24 +159,24 @@
     .delete-btn { background-color: #e53935; }
 
 
-    .floating-dock {
+       .floating-dock {
   position: fixed;
-  bottom: 16px;
+  bottom: env(safe-area-inset-bottom, 16px); /* ✅ ไม่ให้ติดแถบดำ */
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(12px);
-  border-radius: 24px;
-  padding: 8px 12px;
+  background: white;
+  border-radius: 16px;
+  padding: 6px 6px env(safe-area-inset-bottom, 16px); /* ✅ เว้นขอบล่างด้วย */
   display: flex;
-  gap: 16px;
+  gap: 6px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.1);
   z-index: 1000;
+  max-width: 95vw;
 }
 
 .icon-button {
-  width: 72px;
-  height: 72px;
+  width: 64px;                 /* ✅ ลดขนาดบนจอเล็กได้ */
+  height: 64px;
   padding: 4px;
   border-radius: 12px;
   display: flex;
@@ -132,6 +184,7 @@
   justify-content: center;
   transition: transform 0.2s ease;
   text-decoration: none;
+  flex: 0 0 auto;              /* ✅ ไม่ยืด ไม่หด */
 }
 
 .icon-button:hover {
@@ -139,16 +192,35 @@
 }
 
 .icon-button img {
-  width: 72px;
-  height: 72px;
+  width: 60px;
+  height: 60px;
   object-fit: contain;
+}
+
+@media (max-width: 768px) {
+  .icon-button {
+    width: 48px;
+    height: 48px;
+  }
+
+  .icon-button img {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .floating-dock {
+    position: fixed;
+    bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom); /* รองรับ iPhone/iPad ที่มีแถบล่าง */
+  }
 }
   </style>
 </head>
 <body>
       <div class="search-container">
-    <label for="searchInput">ค้นหาลูกค้า</label>
-    <input type="text" id="searchInput" placeholder="ค้นหาชื่อลูกค้า...">
+        <input type="text" id="searchInput" placeholder="ค้นหาชื่อลูกค้า...">
   </div>
 
   <button id="addCustomerBtn">➕ เพิ่มลูกค้าใหม่</button>
@@ -417,8 +489,40 @@ function submitNewCustomer() {
     thElement.querySelector(".arrow").textContent = ascending ? "🔼" : "🔽";
     sortState[keyName] = ascending;
   }
+
+  function toggleFloatingMenu() {
+    const menu = document.getElementById("floatingMenu");
+    menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
+  }
+
+  // ปิดเมนูถ้าแตะที่อื่น
+  document.addEventListener('click', function(e) {
+    const toggle = document.getElementById("floatingToggle");
+    const menu = document.getElementById("floatingMenu");
+    if (!toggle.contains(e.target) && !menu.contains(e.target)) {
+      menu.style.display = "none";
+    }
+  });
+
+
 </script>
 
+
+<div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
+  <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu" style="width:60px;height:60px;">
+</div>
+
+  <div id="floatingMenu" class="floating-menu">
+  <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}"></a>
+  <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}"></a>
+  <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}"></a>
+  <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}"></a>
+  <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}"></a>
+  <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}"></a>
+  <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}"></a>
+  <a href="#"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}"></a>
+  <a href="#"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}"></a>
+</div>
 
 </body>
 </html>

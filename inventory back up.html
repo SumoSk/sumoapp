@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>คลังเวชภัณฑ์</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+
+    .floating-toggle {
+    position: fixed;
+    bottom: env(safe-area-inset-bottom, 18px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 128, 128, 0);
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    box-shadow: 0 4px 16px rgba(251, 251, 251, 0);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    cursor: pointer;
+  }
+
+  .floating-menu {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border-radius: 16px;
+    padding: 10px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    z-index: 999;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .floating-menu a img {
+    width: 52px;
+    height: 52px;
+  }
+
+
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+      padding-bottom: 120px;
+    }
+    h2 {
+      text-align: center;
+      color: #00695c;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #e0f2f1;
+      color: #00695c;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    td.name {
+      font-weight: bold;
+      text-align: left;
+    }
+    td input[type="number"] {
+      width: 80px;
+      padding: 4px;
+      font-size: 14px;
+      text-align: center;
+    }
+    .btn-bar {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .btn-bar button {
+      padding: 10px 20px;
+      font-size: 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #00796b;
+      color: white;
+      margin: 0 10px;
+    }
+    .btn-bar button:hover {
+      background: #004d40;
+    }
+     
+  .floating-dock {
+  position: fixed;
+  bottom: env(safe-area-inset-bottom, 16px); /* ✅ ไม่ให้ติดแถบดำ */
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-radius: 16px;
+  padding: 6px 6px env(safe-area-inset-bottom, 16px); /* ✅ เว้นขอบล่างด้วย */
+  display: flex;
+  gap: 6px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  z-index: 1000;
+  max-width: 95vw;
+}
+
+    .icon-button {
+  width: 64px;                 /* ✅ ลดขนาดบนจอเล็กได้ */
+  height: 64px;
+  padding: 4px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  text-decoration: none;
+  flex: 0 0 auto;              /* ✅ ไม่ยืด ไม่หด */
+}
+
+.icon-button img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
+
+    .icon-button:hover {
+      transform: scale(1.1);
+    }
+    
+    @media (max-width: 768px) {
+  .icon-button {
+    width: 48px;
+    height: 48px;
+  }
+
+  .icon-button img {
+    width: 48px;
+    height: 48px;
+  }
+}
+@media (max-width: 1024px) {
+  .floating-dock {
+    position: fixed;
+    bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom); /* รองรับ iPhone/iPad ที่มีแถบล่าง */
+  }
+}
+
+  </style>
+</head>
+<body>
+  <body>
+<h2>คลังเวชภัณฑ์</h2>
+<div class="month-nav">
+  <button onclick="prevMonth()">⬅️ ดูก่อนหน้า</button>
+  <button onclick="nextMonth()">ดูถัดไป ➡️</button>
+</div>
+
+
+<table>
+  <thead>
+    <tr id="tableHeader">
+      <th>ชื่อเวชภัณฑ์</th>
+      <!-- วันที่จะถูกเพิ่มแบบไดนามิก -->
+      <th><input type="date" id="inputDate" style="font-size:14px;padding:4px;" /></th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+
+<div class="btn-bar">
+ <button onclick="addNewItem()">➕ เพิ่มเวชภัณฑ์ใหม่</button>
+</div>
+<script>
+const groupedData = {};
+let sortedItemList = [
+  "Syringe 10", "Syringe 5", "Syringe 3", "Syringe 1",
+  "เข็ม 32", "เข็ม 30", "เข็ม 24", "เข็ม 18Gx1", "เข็ม 18Gx1 1/2",
+  "Cannula", "Medicut", "ผีเสื้อ 24", "ผีเสื้อ 25", "Set IV", "หลอด PRR",
+  "Nss 1000 ML", "Nss 100 ML", "Nss 5 ML", "SWI 5 ML", "ถุงมือ S",
+  "สำลีก้อน", "สำลีแผ่น", "ยาชา (ครีม)", "Swabs", "แอลกอฮอล์",
+  "ยาทาฝ้า", "ยาทาสิว", "อะโลเจล", "Scrub", "Milky"
+];
+let allData = [], allDates = [], currentMonth = null;
+
+async function fetchData() {
+  const res = await fetch("/api/inventory");
+  allData = await res.json();
+  const dateSet = new Set(allData.map(d => d.date));
+  allDates = Array.from(dateSet).sort((a, b) => new Date(b) - new Date(a));
+  currentMonth = new Date(allDates[0]).getMonth();
+  groupByItem();
+  renderTable();
+}
+
+function groupByItem() {
+  for (const row of allData) {
+    if (!groupedData[row.item_name]) groupedData[row.item_name] = {};
+    groupedData[row.item_name][row.date] = row.quantity;
+  }
+}
+
+function getFilteredDates() {
+  return allDates.filter(d => new Date(d).getMonth() === currentMonth)
+                 .slice(0, 3)
+                 .reverse();
+}
+
+function renderTable() {
+  const filteredDates = getFilteredDates();
+  const headerRow = document.getElementById("tableHeader");
+  const tbody = document.getElementById("tableBody");
+  headerRow.innerHTML = `<th>ลำดับ</th><th>ชื่อเวชภัณฑ์</th>` +
+    filteredDates.map(date => `<th>${formatDate(date)}</th>`).join('') +
+    `<th><input type='date' id='inputDate'></th><th>จัดการ</th>`;
+
+  tbody.innerHTML = "";
+  sortedItemList.forEach((name, index) => {
+    const preview = filteredDates.map(d => `<td>${groupedData[name]?.[d] ?? '-'}</td>`).join('');
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${index + 1}</td><td class='name'>${name}</td>` +
+      preview +
+      `<td><input type='number' name='${name}'></td>
+       <td>
+         <button class='btn-single' onclick='submitSingle("${name}")'>บันทึก</button>
+       </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "2-digit" });
+}
+
+function submitSingle(itemName) {
+  const inputDate = document.getElementById("inputDate").value;
+  if (!inputDate) return alert("กรุณาเลือกวันที่ก่อนบันทึก");
+  const input = document.querySelector(`input[name='${itemName}']`);
+  if (!input || input.value === '') return alert("กรุณากรอกข้อมูล");
+  const payload = [{ item_name: itemName, date: inputDate, quantity: parseFloat(input.value) }];
+  saveData(payload);
+}
+
+function submitAll() {
+  const inputDate = document.getElementById("inputDate").value;
+  if (!inputDate) return alert("กรุณาเลือกวันที่ก่อนบันทึก");
+  const payload = [];
+  document.querySelectorAll("input[type='number']").forEach(input => {
+    if (input.value !== '') {
+      payload.push({
+        item_name: input.name,
+        date: inputDate,
+        quantity: parseFloat(input.value)
+      });
+    }
+  });
+  saveData(payload);
+}
+
+function saveData(payload) {
+  fetch("/api/save_inventory", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+    .then(res => res.json())
+    .then(() => {
+      alert("✅ บันทึกสำเร็จ");
+      fetchData();
+
+function addNewItem() {
+  const newItem = prompt("กรุณากรอกชื่อเวชภัณฑ์ใหม่");
+  if (newItem && !sortedItemList.includes(newItem)) {
+    sortedItemList.push(newItem);
+    sortedItemList.sort();
+    renderTable();
+  } else if (sortedItemList.includes(newItem)) {
+    alert("เวชภัณฑ์นี้มีอยู่แล้วในรายการ");
+  }
+}
+    })
+    .catch(() => alert("เกิดข้อผิดพลาด"));
+}
+
+function prevMonth() {
+  if (currentMonth > 0) {
+    currentMonth--;
+    renderTable();
+  }
+}
+
+function nextMonth() {
+  if (currentMonth < 11) {
+    currentMonth++;
+    renderTable();
+  }
+}
+
+fetchData();
+
+function addNewItem() {
+  const item_name = prompt("ชื่อเวชภัณฑ์ใหม่:");
+  if (!item_name) return;
+
+  const date = prompt("วันที่ (เช่น 2025-06-29):");
+  if (!date) return;
+
+  const quantityStr = prompt("จำนวน:");
+  const quantity = parseFloat(quantityStr);
+  if (isNaN(quantity)) return alert("จำนวนไม่ถูกต้อง");
+
+  const payload = [{ item_name, date, quantity }];
+  fetch("/api/save_inventory", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+    .then(res => res.json())
+    .then(() => {
+      alert("✅ บันทึกสำเร็จ");
+      fetchData(); // โหลดใหม่
+    })
+    .catch(() => alert("เกิดข้อผิดพลาด"));
+}
+
+
+ function toggleFloatingMenu() {
+    const menu = document.getElementById("floatingMenu");
+    menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
+  }
+
+  document.addEventListener('click', function(e) {
+    const toggle = document.getElementById("floatingToggle");
+    const menu = document.getElementById("floatingMenu");
+    if (!toggle.contains(e.target) && !menu.contains(e.target)) {
+      menu.style.display = "none";
+    }
+  });
+  
+</script>
+
+<div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
+  <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu" style="width:60px;height:60px;">
+</div>
+
+<div id="floatingMenu" class="floating-menu">
+  <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}"></a>
+  <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}"></a>
+  <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}"></a>
+  <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}"></a>
+  <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}"></a>
+  <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}"></a>
+  <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}"></a>
+  <a href="#"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}"></a>
+  <a href="#"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}"></a>
+</div>
+</body>
+</html>

@@ -303,3 +303,20 @@ def api_save_inventory():
         return jsonify({"message": "success"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+    
+@app.route('/pin-login', methods=['POST'])
+def pin_login():
+    data = request.get_json()
+    pin = data.get('pin', '')
+    try:
+        result = supabase.table("users").select("*").eq("pin", pin).single().execute()
+        user = result.data
+        if user:
+            session['username'] = user['username']
+            session['role'] = user.get('role', '')
+            return jsonify({"success": True})
+        return jsonify({"success": False})
+    except Exception as e:
+        print("❌ PIN LOGIN ERROR:", e)
+        return jsonify({"success": False})
