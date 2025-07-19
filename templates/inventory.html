@@ -1,55 +1,12 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>คลังเวชภัณฑ์</title>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
-
-    .floating-toggle {
-    position: fixed;
-    bottom: env(safe-area-inset-bottom, 18px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 128, 128, 0);
-    width: 58px;
-    height: 58px;
-    border-radius: 50%;
-    box-shadow: 0 4px 16px rgba(251, 251, 251, 0);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    cursor: pointer;
-  }
-
-  .floating-menu {
-    position: fixed;
-    bottom: 90px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: white;
-    border-radius: 16px;
-    padding: 10px;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-    z-index: 999;
-    max-height: 60vh;
-    overflow-y: auto;
-  }
-
-  .floating-menu a img {
-    width: 52px;
-    height: 52px;
-  }
-
-
     body {
       font-family: 'Prompt', sans-serif;
       background: #f4f4f4;
@@ -59,6 +16,27 @@
     h2 {
       text-align: center;
       color: #00695c;
+    }
+    .month-nav {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .month-nav button {
+      background: #009688;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      font-size: 16px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .month-nav button:hover {
+      background: #00796b;
     }
     table {
       border-collapse: collapse;
@@ -105,93 +83,118 @@
     .btn-bar button:hover {
       background: #004d40;
     }
-     
-  .floating-dock {
-  position: fixed;
-  bottom: env(safe-area-inset-bottom, 16px); /* ✅ ไม่ให้ติดแถบดำ */
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  border-radius: 16px;
-  padding: 6px 6px env(safe-area-inset-bottom, 16px); /* ✅ เว้นขอบล่างด้วย */
-  display: flex;
-  gap: 6px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-  z-index: 1000;
-  max-width: 95vw;
-}
 
-    .icon-button {
-  width: 64px;                 /* ✅ ลดขนาดบนจอเล็กได้ */
-  height: 64px;
-  padding: 4px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s ease;
-  text-decoration: none;
-  flex: 0 0 auto;              /* ✅ ไม่ยืด ไม่หด */
-}
-
-.icon-button img {
-  width: 60px;
-  height: 60px;
-  object-fit: contain;
-}
-
-
-    .icon-button:hover {
-      transform: scale(1.1);
+    /* Popup */
+    #popupForm {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
     }
-    
-    @media (max-width: 768px) {
-  .icon-button {
-    width: 48px;
-    height: 48px;
-  }
+    #popupForm .form-box {
+      background: white;
+      padding: 20px 30px;
+      border-radius: 12px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    }
+    #popupForm h3 {
+      margin-top: 0;
+      color: #00695c;
+      text-align: center;
+    }
+    #popupForm label {
+      display: block;
+      margin: 10px 0 4px;
+      font-weight: bold;
+    }
+    #popupForm input {
+      width: 100%;
+      padding: 8px;
+      font-size: 15px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    #popupForm .popup-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+    #popupForm button {
+      padding: 8px 16px;
+      font-size: 15px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #popupForm .submit-btn {
+      background: #00796b;
+      color: white;
+    }
+    #popupForm .cancel-btn {
+      background: #ccc;
+    }
 
-  .icon-button img {
-    width: 48px;
-    height: 48px;
-  }
+.btn-single {
+  padding: 6px 12px;
+  font-size: 14px;
+  background-color: #009688;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
-@media (max-width: 1024px) {
-  .floating-dock {
-    position: fixed;
-    bottom: 0;
-    padding-bottom: env(safe-area-inset-bottom); /* รองรับ iPhone/iPad ที่มีแถบล่าง */
-  }
+.btn-single:hover {
+  background-color: #00796b;
 }
 
   </style>
 </head>
 <body>
-  <body>
+
 <h2>คลังเวชภัณฑ์</h2>
 <div class="month-nav">
-  <button onclick="prevMonth()">⬅️ ดูก่อนหน้า</button>
-  <button onclick="nextMonth()">ดูถัดไป ➡️</button>
+  <button onclick="prevMonth()"><span class="material-icons">chevron_left</span> ดูก่อนหน้า</button>
+  <button onclick="nextMonth()">ดูถัดไป <span class="material-icons">chevron_right</span></button>
 </div>
-
 
 <table>
   <thead>
-    <tr id="tableHeader">
-      <th>ชื่อเวชภัณฑ์</th>
-      <!-- วันที่จะถูกเพิ่มแบบไดนามิก -->
-      <th><input type="date" id="inputDate" style="font-size:14px;padding:4px;" /></th>
-    </tr>
+    <tr id="tableHeader"></tr>
   </thead>
   <tbody id="tableBody"></tbody>
 </table>
 
 <div class="btn-bar">
- <button onclick="addNewItem()">➕ เพิ่มเวชภัณฑ์ใหม่</button>
+  <button onclick="showAddPopup()">➕ เพิ่มเวชภัณฑ์ใหม่</button>
+  <button onclick="submitAll()">💾 บันทึกทั้งหมด</button>
 </div>
+
+<!-- ✅ Popup Form -->
+<div id="popupForm">
+  <div class="form-box">
+    <h3>เพิ่มเวชภัณฑ์ใหม่</h3>
+    <label>ชื่อเวชภัณฑ์</label>
+    <input type="text" id="newName" />
+    <label>จำนวน</label>
+    <input type="number" id="newQty" />
+    <label>วันที่</label>
+    <input type="date" id="newDate" />
+    <div class="popup-actions">
+      <button class="submit-btn" onclick="submitNewItem()">บันทึก</button>
+      <button class="cancel-btn" onclick="hideAddPopup()">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
 <script>
-const groupedData = {};
-let sortedItemList = [
+const fixedItemList = [ /* เหมือนเดิม 30 รายการ */ 
   "Syringe 10", "Syringe 5", "Syringe 3", "Syringe 1",
   "เข็ม 32", "เข็ม 30", "เข็ม 24", "เข็ม 18Gx1", "เข็ม 18Gx1 1/2",
   "Cannula", "Medicut", "ผีเสื้อ 24", "ผีเสื้อ 25", "Set IV", "หลอด PRR",
@@ -199,6 +202,8 @@ let sortedItemList = [
   "สำลีก้อน", "สำลีแผ่น", "ยาชา (ครีม)", "Swabs", "แอลกอฮอล์",
   "ยาทาฝ้า", "ยาทาสิว", "อะโลเจล", "Scrub", "Milky"
 ];
+let sortedItemList = [...fixedItemList];
+const groupedData = {};
 let allData = [], allDates = [], currentMonth = null;
 
 async function fetchData() {
@@ -208,6 +213,7 @@ async function fetchData() {
   allDates = Array.from(dateSet).sort((a, b) => new Date(b) - new Date(a));
   currentMonth = new Date(allDates[0]).getMonth();
   groupByItem();
+  extendWithNewItems();
   renderTable();
 }
 
@@ -218,10 +224,15 @@ function groupByItem() {
   }
 }
 
+function extendWithNewItems() {
+  const allItems = new Set(allData.map(d => d.item_name));
+  const additionalItems = Array.from(allItems).filter(name => !fixedItemList.includes(name));
+  additionalItems.sort((a, b) => a.localeCompare(b, 'th'));
+  sortedItemList = [...fixedItemList, ...additionalItems];
+}
+
 function getFilteredDates() {
-  return allDates.filter(d => new Date(d).getMonth() === currentMonth)
-                 .slice(0, 3)
-                 .reverse();
+  return allDates.filter(d => new Date(d).getMonth() === currentMonth).slice(0, 3).reverse();
 }
 
 function renderTable() {
@@ -231,7 +242,6 @@ function renderTable() {
   headerRow.innerHTML = `<th>ลำดับ</th><th>ชื่อเวชภัณฑ์</th>` +
     filteredDates.map(date => `<th>${formatDate(date)}</th>`).join('') +
     `<th><input type='date' id='inputDate'></th><th>จัดการ</th>`;
-
   tbody.innerHTML = "";
   sortedItemList.forEach((name, index) => {
     const preview = filteredDates.map(d => `<td>${groupedData[name]?.[d] ?? '-'}</td>`).join('');
@@ -239,9 +249,7 @@ function renderTable() {
     tr.innerHTML = `<td>${index + 1}</td><td class='name'>${name}</td>` +
       preview +
       `<td><input type='number' name='${name}'></td>
-       <td>
-         <button class='btn-single' onclick='submitSingle("${name}")'>บันทึก</button>
-       </td>`;
+       <td><button class="btn-single" onclick='submitSingle("${name}")'>บันทึก</button></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -253,28 +261,70 @@ function formatDate(dateStr) {
 
 function submitSingle(itemName) {
   const inputDate = document.getElementById("inputDate").value;
-  if (!inputDate) return alert("กรุณาเลือกวันที่ก่อนบันทึก");
   const input = document.querySelector(`input[name='${itemName}']`);
-  if (!input || input.value === '') return alert("กรุณากรอกข้อมูล");
-  const payload = [{ item_name: itemName, date: inputDate, quantity: parseFloat(input.value) }];
+  if (!inputDate || !input.value) return alert("กรุณากรอกข้อมูลให้ครบ");
+
+  const qty = parseFloat(input.value);
+
+  // ตรวจซ้ำ
+  const isDuplicate = allData.some(entry =>
+    entry.item_name === itemName &&
+    entry.date === inputDate &&
+    parseFloat(entry.quantity) === qty
+  );
+
+  if (isDuplicate) {
+    alert(`⚠️ ข้อมูลซ้ำ:
+เวชภัณฑ์: ${itemName}
+วันที่: ${inputDate}
+จำนวน: ${qty}`);
+    return;
+  }
+
+  const payload = [{ item_name: itemName, date: inputDate, quantity: qty }];
   saveData(payload);
 }
+
+
 
 function submitAll() {
   const inputDate = document.getElementById("inputDate").value;
   if (!inputDate) return alert("กรุณาเลือกวันที่ก่อนบันทึก");
+
   const payload = [];
+  const duplicateList = [];
+
   document.querySelectorAll("input[type='number']").forEach(input => {
     if (input.value !== '') {
-      payload.push({
-        item_name: input.name,
-        date: inputDate,
-        quantity: parseFloat(input.value)
-      });
+      const name = input.name;
+      const qty = parseFloat(input.value);
+
+      const isDuplicate = allData.some(entry =>
+        entry.item_name === name &&
+        entry.date === inputDate &&
+        parseFloat(entry.quantity) === qty
+      );
+
+      if (isDuplicate) {
+        duplicateList.push(`- ${name} | ${inputDate} | ${qty}`);
+      } else {
+        payload.push({ item_name: name, date: inputDate, quantity: qty });
+      }
     }
   });
+
+  if (duplicateList.length > 0) {
+    alert(`⚠️ มีข้อมูลซ้ำ ${duplicateList.length} รายการ ไม่ได้บันทึก:\n\n${duplicateList.join('\n')}`);
+  }
+
+  if (payload.length === 0) {
+    alert("ไม่มีข้อมูลใหม่ที่ต้องบันทึก");
+    return;
+  }
+
   saveData(payload);
 }
+
 
 function saveData(payload) {
   fetch("/api/save_inventory", {
@@ -286,19 +336,8 @@ function saveData(payload) {
     .then(() => {
       alert("✅ บันทึกสำเร็จ");
       fetchData();
-
-function addNewItem() {
-  const newItem = prompt("กรุณากรอกชื่อเวชภัณฑ์ใหม่");
-  if (newItem && !sortedItemList.includes(newItem)) {
-    sortedItemList.push(newItem);
-    sortedItemList.sort();
-    renderTable();
-  } else if (sortedItemList.includes(newItem)) {
-    alert("เวชภัณฑ์นี้มีอยู่แล้วในรายการ");
-  }
-}
     })
-    .catch(() => alert("เกิดข้อผิดพลาด"));
+    .catch(() => alert("❌ เกิดข้อผิดพลาด"));
 }
 
 function prevMonth() {
@@ -315,63 +354,41 @@ function nextMonth() {
   }
 }
 
-fetchData();
-
-function addNewItem() {
-  const item_name = prompt("ชื่อเวชภัณฑ์ใหม่:");
-  if (!item_name) return;
-
-  const date = prompt("วันที่ (เช่น 2025-06-29):");
-  if (!date) return;
-
-  const quantityStr = prompt("จำนวน:");
-  const quantity = parseFloat(quantityStr);
-  if (isNaN(quantity)) return alert("จำนวนไม่ถูกต้อง");
-
-  const payload = [{ item_name, date, quantity }];
-  fetch("/api/save_inventory", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  })
-    .then(res => res.json())
-    .then(() => {
-      alert("✅ บันทึกสำเร็จ");
-      fetchData(); // โหลดใหม่
-    })
-    .catch(() => alert("เกิดข้อผิดพลาด"));
+// 🟢 Popup Functions
+function showAddPopup() {
+  document.getElementById("popupForm").style.display = "flex";
+}
+function hideAddPopup() {
+  document.getElementById("popupForm").style.display = "none";
 }
 
+function submitNewItem() {
+  const name = document.getElementById("newName").value.trim();
+  const qty = parseFloat(document.getElementById("newQty").value);
+  const date = document.getElementById("newDate").value;
 
- function toggleFloatingMenu() {
-    const menu = document.getElementById("floatingMenu");
-    menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
+  if (!name || isNaN(qty) || !date) {
+    return alert("กรุณากรอกข้อมูลให้ครบ");
   }
 
-  document.addEventListener('click', function(e) {
-    const toggle = document.getElementById("floatingToggle");
-    const menu = document.getElementById("floatingMenu");
-    if (!toggle.contains(e.target) && !menu.contains(e.target)) {
-      menu.style.display = "none";
-    }
-  });
-  
+  // 🔍 ตรวจซ้ำจากชื่อ-วันที่-จำนวน
+  const isDuplicate = allData.some(entry =>
+    entry.item_name === name &&
+    entry.date === date &&
+    parseFloat(entry.quantity) === qty
+  );
+
+  if (isDuplicate) {
+    return alert("⚠️ ข้อมูลนี้มีอยู่แล้วในระบบ (ชื่อ, วันที่, จำนวน ตรงกัน)");
+  }
+
+  const payload = [{ item_name: name, quantity: qty, date }];
+  saveData(payload);
+  hideAddPopup();
+}
+
+fetchData();
 </script>
 
-<div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
-  <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu" style="width:60px;height:60px;">
-</div>
-
-<div id="floatingMenu" class="floating-menu">
-  <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}"></a>
-  <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}"></a>
-  <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}"></a>
-  <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}"></a>
-  <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}"></a>
-  <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}"></a>
-  <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}"></a>
-  <a href="#"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}"></a>
-  <a href="#"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}"></a>
-</div>
 </body>
 </html>
