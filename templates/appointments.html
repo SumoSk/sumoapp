@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>📊 กราฟยอดขาย (1D / 1W / 1M)</title>
+  <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    body {
+      font-family: 'Sarabun', sans-serif;
+      margin: 0;
+      background: #f4f4f4;
+    }
+
+    h2 {
+      text-align: center;
+      padding: 20px;
+      color: #2c3e50;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+    }
+
+    #chart {
+      width: 100%;
+      height: 600px;
+    }
+
+    .buttons {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .buttons button {
+      padding: 10px 20px;
+      margin: 0 5px;
+      font-size: 16px;
+      background: #ecf0f1;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .buttons button:hover {
+      background: #d0d3d4;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>📊 กราฟยอดขาย (1D / 1W / 1M)</h2>
+  <div class="container">
+    <div class="buttons">
+      <button onclick="updateChart('1D')">1D</button>
+      <button onclick="updateChart('1W')">1W</button>
+      <button onclick="updateChart('1M')">1M</button>
+    </div>
+    <div id="chart"></div>
+  </div>
+
+  <script>
+    let chart, series;
+    let rawData = [];
+
+    async function fetchData() {
+      const res = await fetch('/api/sales');
+      const data = await res.json();
+      rawData = data.filter(entry => {
+        const amount = parseFloat(entry.amount);
+        return entry.date && !isNaN(amount) && amount > 0;
+      });
+      updateChart('1D');
+    }
+
+    function getStartOfWeek(date) {
+      const d = new Date(date);
+      const day = d.getDay(); // 0=Sun, 1=Mon
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1); // จันทร์เป็นวันเริ่ม
+      const weekStart = new Date(d.setDate(diff));
+      return weekStart.toISOString().slice(0, 10); // YYYY-MM-DD
+    }
+
+    function groupByPeriod(data, period) {
+      const grouped = {};
+
+      data.forEach(entry => {
+        const date = new Date(entry.date);
+        const amount = parseFloat(entry.amount);
+
+        let key;
+        if (period === '1D') {
+          key = entry.date;
+        } else if (period === '1W') {
+          key = getStartOfWeek(date);
+        } else if (period === '1M') {
+          key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
+        }
+
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(amount);
+      });
+
+      const sortedKeys = Object.keys(grouped).sort();
+      let prevClose = 0;
+
+      return sortedKeys.map(key => {
+        const values = grouped[key];
+        const open = prevClose;
+        const close = values.reduce((a, b) => a + b, 0);
+        const high = Math.max(open, close);
+        const low = Math.min(open, close);
+        prevClose = close;
+
+        return { time: key, open, high, low, close };
+      });
+    }
+
+    function updateChart(period) {
+      const candleData = groupByPeriod(rawData, period).filter(item =>
+        item.time &&
+        isFinite(item.open) &&
+        isFinite(item.high) &&
+        isFinite(item.low) &&
+        isFinite(item.close)
+      );
+
+      if (!chart) {
+        chart = LightweightCharts.createChart(document.getElementById('chart'), {
+          layout: { background: { color: '#fff' }, textColor: '#333' },
+          grid: { vertLines: { color: '#eee' }, horzLines: { color: '#eee' } },
+          width: document.getElementById('chart').offsetWidth,
+          height: 600,
+          timeScale: { timeVisible: true, secondsVisible: false },
+        });
+
+        series = chart.addCandlestickSeries({
+          upColor: '#0ECB81',
+          downColor: '#F6465D',
+          borderVisible: false,
+          wickUpColor: '#0ECB81',
+          wickDownColor: '#F6465D',
+        });
+      }
+
+      series.setData(candleData);
+
+      // ✅ ดันกราฟให้เลื่อนไปแท่งสุดท้ายเสมอ
+      chart.timeScale().scrollToRealTime();
+    }
+
+    fetchData();
+  </script>
+  {% include "floating_menu.html" %}
+</body>
+</html>

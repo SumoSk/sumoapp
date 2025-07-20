@@ -1,0 +1,80 @@
+<!-- 
+✅ วิธีใช้:
+✨ ในหน้าอื่นเช่น inventory.html หรือ dashboard.html:
+
+
+ใส่ไว้ก่อน </body> หรือใน layout base.html ก็ได้
+(เพื่อให้แสดงทุกหน้าแบบถาวร)
+-->
+
+<!-- floating_menu.html -->
+ <style>
+  .floating-toggle {
+    position: fixed;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 58px;
+    height: 58px;
+    background: rgba(0, 128, 128, 0);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    cursor: pointer;
+  }
+  .floating-menu {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border-radius: 16px;
+    padding: 10px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    z-index: 999;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  .floating-menu a img {
+    width: 52px;
+    height: 52px;
+  }
+</style>
+
+<div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
+  <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu" style="width:60px;height:60px;">
+</div>
+
+<div id="floatingMenu" class="floating-menu">
+  <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}"></a>
+  <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}"></a>
+  <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}"></a>
+  <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}"></a>
+  <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}"></a>
+  <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}"></a>
+  <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}"></a>
+  <a href="#"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}"></a>
+  <a href="{{ url_for('appointments') }}"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}"></a>
+</div>
+
+<script>
+  function toggleFloatingMenu() {
+    const menu = document.getElementById("floatingMenu");
+    menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
+  }
+
+  document.addEventListener('click', function(e) {
+    const toggle = document.getElementById("floatingToggle");
+    const menu = document.getElementById("floatingMenu");
+    if (!toggle.contains(e.target) && !menu.contains(e.target)) {
+      menu.style.display = "none";
+    }
+  });
+</script>
+

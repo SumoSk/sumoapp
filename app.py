@@ -320,3 +320,21 @@ def pin_login():
     except Exception as e:
         print("❌ PIN LOGIN ERROR:", e)
         return jsonify({"success": False})
+    
+@app.route('/appointments')
+def appointments():
+    return render_template('appointments.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+@app.route('/sales_chart')
+def sales_chart():
+    return render_template('sales_chart.html')
+
+@app.route('/daily_sales_graph')
+def daily_sales_graph():
+    if 'username' in session:
+        return render_template('daily_sales_graph.html')
+    return redirect(url_for('login'))
