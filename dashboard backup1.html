@@ -930,11 +930,17 @@ const targetRangeEnd = viewingDay;
     }
   });
 
- 
-  const allMonths = Object.keys(groupByMonth).filter(m => m !== currentPrefix);
+ // ✅ กำหนดเกณฑ์ขั้นต่ำ เช่น 300,000
+const VALID_MONTH_THRESHOLD = 400000;
 
-  const totalPastMonths = allMonths.reduce((sum, m) => sum + groupByMonth[m], 0);
-  const averagePastMonths = Math.round(totalPastMonths / allMonths.length || 1);
+// ✅ กรองเฉพาะเดือนที่ยอด >= 300,000 เท่านั้น
+const allMonths = Object.keys(groupByMonth)
+  .filter(m => m !== currentPrefix && groupByMonth[m] >= VALID_MONTH_THRESHOLD);
+
+// ✅ นับเฉพาะเดือนที่ผ่านเกณฑ์เท่านั้นมาคิดเฉลี่ย
+const totalPastMonths = allMonths.reduce((sum, m) => sum + groupByMonth[m], 0);
+const averagePastMonths = Math.round(totalPastMonths / (allMonths.length || 1));
+
 
   const currentMonth14Total = groupByMonth[currentPrefix] || 0;
 
@@ -988,32 +994,84 @@ compareEl.appendChild(compareAvgDiv);
   const allRecords = allCustomerRecords.filter(r => `${r.name}|${r.phone}` === key);
 
   const totalVisits = allRecords.length;
-  const totalAmount = allRecords.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
-  const avg = totalVisits > 0 ? Math.round(totalAmount / totalVisits) : 0;
+const paidRecords = allRecords.filter(r => parseFloat(r.amount || 0) > 0);
+const paidVisits = paidRecords.length;
+const totalAmount = paidRecords.reduce((sum, r) => sum + parseFloat(r.amount), 0);
+const avg = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
+
 
   const latest = allRecords.length > 0
     ? new Date(Math.max(...allRecords.map(r => new Date(r.date))))
     : null;
 
-  const latestText = latest
-    ? latest.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
-    : "-";
+  const daysSinceLastVisit = latest
+    ? Math.floor((new Date() - latest) / (1000 * 60 * 60 * 24))
+    : null;
 
-  const formatted = new Date(c.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+  // 🔚 สีตามจำนวนวัน
+  let absentColor = 'gray';
+  if (daysSinceLastVisit < 30) absentColor = 'green';
+  else if (daysSinceLastVisit <= 90) absentColor = 'orange';
+  else absentColor = 'crimson';
 
-  const currentPrefix = viewingDate.toISOString().slice(0, 7);
-  const previousRecords = allRecords.filter(r => r.date < `${currentPrefix}-01`);
+  // 💰 สีตามยอดรวม
+ let totalColor = 'gray';
+let totalExtra = '';
+let totalIcon = '';
+
+if (totalAmount < 50000) {
+  totalColor = 'crimson';
+} else if (totalAmount <= 99999) {
+  totalColor = 'green';
+} else if (totalAmount <= 200000) {
+  totalColor = 'goldenrod';
+} else {
+  totalColor = '#8B6508'; // ทองเข้มมาก
+  totalExtra = 'font-weight:bold;';
+  totalIcon = ' 💎';
+}
+
+  // 💳 สีตามยอดเฉลี่ย
+  let avgColor = 'gray';
+  if (avg < 5000) avgColor = 'crimson';
+  else if (avg <= 9999) avgColor = 'green';
+  else avgColor = '#b8860b'; // ทองเข้ม
+
+  // 🔁 ข้อความ "มา X วัน"
+  const totalVisitsText = `<span>มา ${totalVisits} วัน</span>`;
+
+  // 🔚 ไม่มา ... วัน พร้อมสี
+  const lastVisitText = daysSinceLastVisit != null
+    ? `<span style="color:${absentColor};">🔚 ไม่มา ${daysSinceLastVisit} วัน</span>`
+    : `<span>🔚 ไม่มีข้อมูล</span>`;
+
+  // 📅 เปลี่ยนวันที่เป็นรูปแบบ วัน/เดือน
+  const formatted = new Date(c.date).toLocaleDateString('th-TH', {
+    day: 'numeric', month: 'numeric'
+  });
+
+  const previousRecords = allRecords.filter(r => r.date < `${viewingDate.toISOString().slice(0, 7)}-01`);
   const isNewCustomer = previousRecords.length === 0;
   const newBadge = isNewCustomer ? `<span style="color:red; font-weight:bold;"> ลูกค้าใหม่</span>` : "";
 
   return `
     <li style="margin-bottom: 8px;">
-      <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">${c.name}${newBadge}</span>
-      <span class="date"> (${formatted} | ${totalVisits}x | 💳 ${avg.toLocaleString()} | 💰 ${totalAmount.toLocaleString()} | 🔚 ${latestText})</span>
+      <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">
+        ${c.name}${newBadge}
+      </span>
+      <span class="date">
+        (${formatted} |
+        ${totalVisitsText} |
+        💳 <span style="color:${avgColor};">${avg.toLocaleString()}</span> |
+        💰 <span style="color:${totalColor}; ${totalExtra}">${totalAmount.toLocaleString()}${totalIcon}</span> |
+
+        ${lastVisitText})
+      </span>
       <span class="amount">${c.amount.toLocaleString()} บาท</span>
     </li>
   `;
 }).join('');
+
 
 
 
@@ -1111,7 +1169,6 @@ function toggleCustomerList() {
   if (listEl.style.display === "none") {
     listEl.style.display = "block";
 
-    // 🆕 ดึง customerMap ใหม่ตามเดือนปัจจุบัน
     const customerMap = {};
     allSalesRecords
       .filter(r => r.date.startsWith(currentPrefix))
@@ -1139,19 +1196,52 @@ function toggleCustomerList() {
       const allRecords = allCustomerRecords.filter(r => `${r.name}|${r.phone}` === key);
 
       const totalVisits = allRecords.length;
-      const totalAmount = allRecords.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
-      const avg = totalVisits > 0 ? Math.round(totalAmount / totalVisits) : 0;
+const paidRecords = allRecords.filter(r => parseFloat(r.amount || 0) > 0);
+const paidVisits = paidRecords.length;
+const totalAmount = paidRecords.reduce((sum, r) => sum + parseFloat(r.amount), 0);
+const avg = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
 
       const latest = allRecords.length > 0
         ? new Date(Math.max(...allRecords.map(r => new Date(r.date))))
         : null;
 
-      const latestText = latest
-        ? latest.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
-        : "-";
+      const daysSinceLastVisit = latest
+        ? Math.floor((new Date() - latest) / (1000 * 60 * 60 * 24))
+        : null;
+
+      let absentColor = 'gray';
+      if (daysSinceLastVisit < 30) absentColor = 'green';
+      else if (daysSinceLastVisit <= 90) absentColor = 'orange';
+      else absentColor = 'crimson';
+
+      let totalColor = 'gray';
+let totalExtra = '';
+let totalIcon = '';
+
+if (totalAmount < 50000) {
+  totalColor = 'crimson';
+} else if (totalAmount <= 99999) {
+  totalColor = 'green';
+} else if (totalAmount <= 200000) {
+  totalColor = 'goldenrod';
+} else {
+  totalColor = '#8B6508'; // ทองเข้มมาก
+  totalExtra = 'font-weight:bold;';
+  totalIcon = ' 💎';
+}
+
+      let avgColor = 'gray';
+      if (avg < 5000) avgColor = 'crimson';
+      else if (avg <= 9999) avgColor = 'green';
+      else avgColor = '#b8860b'; // ทองเข้ม
+
+      const totalVisitsText = `<span>มา ${totalVisits} วัน</span>`;
+      const lastVisitText = daysSinceLastVisit != null
+        ? `<span style="color:${absentColor};">🔚 ไม่มา ${daysSinceLastVisit} วัน</span>`
+        : `<span>🔚 ไม่มีข้อมูล</span>`;
 
       const formattedDate = new Date(c.date).toLocaleDateString('th-TH', {
-        day: 'numeric', month: 'short', year: '2-digit'
+        day: 'numeric', month: 'numeric'
       });
 
       const previousRecords = allRecords.filter(r => r.date < `${currentPrefix}-01`);
@@ -1163,7 +1253,14 @@ function toggleCustomerList() {
           <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">
             ${i + 11}. ${c.name}${newBadge}
           </span>
-          <span class="date"> (${formattedDate} | ${totalVisits}x | 💳 ${avg.toLocaleString()} | 💰 ${totalAmount.toLocaleString()} | 🔚 ${latestText})</span>
+          <span class="date">
+            (${formattedDate} |
+            ${totalVisitsText} |
+            💳 <span style="color:${avgColor};">${avg.toLocaleString()}</span> |
+            💰 <span style="color:${totalColor}; ${totalExtra}">${totalAmount.toLocaleString()}${totalIcon}</span> |
+
+            ${lastVisitText})
+          </span>
           <span class="amount">${c.amount.toLocaleString()} บาท</span>
         </li>
       `;
@@ -1172,6 +1269,7 @@ function toggleCustomerList() {
     listEl.style.display = "none";
   }
 }
+
 
 
 function refreshCustomerList() {
@@ -1798,7 +1896,8 @@ document.addEventListener("DOMContentLoaded", function () {
   <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}"></a>
   <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}"></a>
   <a href="#"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}"></a>
-  <a href="#"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}"></a>
+  <a href="{{ url_for('appointments') }}"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}"></a>
+
 </div>
 
 </body>
