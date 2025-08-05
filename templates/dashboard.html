@@ -794,129 +794,353 @@ let allCustomerRecords = [];
 }
 
   function updateDashboard(records) {
-  const monthName = viewingDate.toLocaleString('th-TH', { month: 'long' });
-  const yearBE = viewingDate.getFullYear() + 543;
-  const prefix = viewingDate.toISOString().slice(0, 7);
-  const currentPrefix = prefix;
+    const monthName = viewingDate.toLocaleString('th-TH', { month: 'long' });
+    const yearBE = viewingDate.getFullYear() + 543;
+    const prefix = viewingDate.toISOString().slice(0, 7);
 
-  document.querySelector('#mainTitle .month').textContent = `${monthName} ${yearBE}`;
+    document.querySelector('#mainTitle .month').textContent = `${monthName} ${yearBE}`;
 
-  let totalSales = 0;
-  let lastMonthSales = 0;
-  let toDateSales = 0;
-  let toDateLastMonthSales = 0;
+    let totalSales = 0;
+    let lastMonthSales = 0;
+    let toDateSales = 0;
+    let toDateLastMonthSales = 0;
 
-  const today = new Date();
+
+// กำหนดวันที่วันนี้จริง (เพื่อใช้เป็น reference)
+const today = new Date();
+const todayRealDate = today.getDate();
+
+// เอาวันที่เดียวกันของเดือนที่กำลังดู
+const viewingDay = Math.min(todayRealDate, daysInMonth(viewingDate.getFullYear(), viewingDate.getMonth() + 1));
+const todayDate = viewingDay;
+
+
+
+
+const currentPrefix = viewingDate.toISOString().slice(0, 7);
+const lastMonthDate = new Date(viewingDate);
+lastMonthDate.setMonth(viewingDate.getMonth() - 1);
+const lastPrefix = lastMonthDate.toISOString().slice(0, 7);
+    const categoryCounts = {};
+    const categoryDetails = {};
+    const customerMap = {};
+
+    // ✅ รอบที่ 1: คำนวณยอดขายรวมของเดือนปัจจุบันและเดือนก่อนหน้า
+records.forEach(r => {
+  const amount = parseFloat(r.amount || 0);
+  if (r.date.startsWith(currentPrefix)) {
+  totalSales += amount;
+
+  const recDay = parseInt(r.date.split("-")[2]);
+  if (recDay <= todayDate) {
+    toDateSales += amount;
+  }
+}
+
+if (r.date.startsWith(lastPrefix)) {
+  lastMonthSales += amount;
+
+  const recDay = parseInt(r.date.split("-")[2]);
+  if (recDay <= todayDate) {
+    toDateLastMonthSales += amount;
+  }
+}
+  
+});
+
+// ✅ รอบที่ 2: ประมวลผลเฉพาะเดือนที่กำลังแสดงผล
+records
+  .filter(r => r.date.startsWith(prefix))
+  .forEach(r => {
+    const key = `${r.name}|${r.phone}`;
+    if (!customerMap[key]) {
+      customerMap[key] = {
+  name: r.name,
+  phone: r.phone,
+  opd: r.opd || '-',      // ✅ เพิ่มบรรทัดนี้
+  date: r.date,
+  amount: 0
+};
+    }
+    customerMap[key].amount += parseFloat(r.amount || 0);
+    customerMap[key].date = r.date > customerMap[key].date ? r.date : customerMap[key].date;
+
+    (r.items || []).forEach(item => {
+      const match = item.match(/\((.*?)\)/);
+      const subItem = match ? match[1] : item;
+      const qtyMatch = item.match(/- (\d+) ชิ้น x (\d+)/);
+      const qty = qtyMatch ? parseInt(qtyMatch[1]) : 0;
+      const price = qtyMatch ? parseInt(qtyMatch[2]) : 0;
+      const total = qty * price;
+
+      const categoryMatch = item.match(/^(.+?) ?\(/);
+      const category = categoryMatch ? categoryMatch[1].trim() : "อื่นๆ";
+
+      if (!categoryCounts[category]) categoryCounts[category] = 0;
+      if (!categoryDetails[category]) categoryDetails[category] = {};
+
+      categoryCounts[category] += qty;
+      categoryDetails[category][subItem] = categoryDetails[category][subItem] || { qty: 0, total: 0 };
+      categoryDetails[category][subItem].qty += qty;
+      categoryDetails[category][subItem].total += total;
+    });
+  });
+
+
+    document.querySelector('#mainTitle .total').innerHTML = `💰 ยอดขายรวม ${totalSales.toLocaleString()} บาท`;
+
+
+
+const compareEl = document.querySelector('#mainTitle .compare');
+
+let diff = totalSales - lastMonthSales;
+let text = diff > 0
+  ? `<span style="color: green;">+${diff.toLocaleString()} บาท จากเดือนก่อน</span>`
+  : diff < 0
+    ? `<span style="color: red;">-${Math.abs(diff).toLocaleString()} บาท จากเดือนก่อน</span>`
+    : `<span style="color: gray;">ยอดเท่าเดิมกับเดือนก่อน</span>`;
+
+diff = toDateSales - toDateLastMonthSales;
+let text2 = diff > 0
+  ? `<span style="color: green;">📆 รวมเฉพาะ ${todayDate} วัน : +${diff.toLocaleString()} บาท จากเดือนก่อน</span>`
+  : diff < 0
+    ? `<span style="color: red;">📆 รวมเฉพาะ ${todayDate} วัน: -${Math.abs(diff).toLocaleString()} บาท จากเดือนก่อน</span>`
+    : `<span style="color: gray;">📆 รวมเฉพาะ ${todayDate} วัน: ยอดเท่าเดิมกับเดือนก่อน</span>`;
+
+compareEl.innerHTML = `${text}<br>${text2}`;
+
+const allDates = records.map(r => r.date).filter(Boolean);
+const latestDate = allDates.sort().reverse()[0];
+
+if (latestDate) {
+  const todayDay = today.getDate();
   const viewingDay = Math.min(today.getDate(), daysInMonth(viewingDate.getFullYear(), viewingDate.getMonth() + 1));
+  const targetRangeEnd = viewingDay;
 
-  const lastMonthDate = new Date(viewingDate);
-  lastMonthDate.setMonth(viewingDate.getMonth() - 1);
-  const lastPrefix = lastMonthDate.toISOString().slice(0, 7);
+  const currentPrefix = viewingDate.toISOString().slice(0, 7);
 
-  // ✅ หาวันจันทร์-อาทิตย์ของสัปดาห์นี้
-  const dayOfWeek = today.getDay() === 0 ? 7 : today.getDay(); // 1=จันทร์, 7=อาทิตย์
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - dayOfWeek + 1);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-
-  let todaySales = 0;
-  let thisWeekSales = 0;
-
-  const groupByMonthToDay = {};
-  const fullMonthTotal = {};
-
+  // ✅ Step 1: รวมยอดทั้งเดือนทั้งหมด
+  const monthlyTotalMap = {};  // key = YYYY-MM
   records.forEach(r => {
-    const amount = parseFloat(r.amount || 0);
-    if (!r.date || !r.date.includes("-")) return;
-
-    const [y, m, d] = r.date.split("-");
-    const day = parseInt(d);
+    const [y, m] = r.date.split("-");
     const ym = `${y}-${m}`;
-    const dateObj = new Date(r.date);
+    if (!monthlyTotalMap[ym]) monthlyTotalMap[ym] = 0;
+    monthlyTotalMap[ym] += parseFloat(r.amount || 0);
+  });
 
-    if (r.date.startsWith(currentPrefix)) {
-      totalSales += amount;
-      if (day <= viewingDay) toDateSales += amount;
-    }
+  // ✅ Step 2: เลือกเฉพาะเดือนที่ยอดรวม >= 400,000 และไม่ใช่เดือนปัจจุบัน
+  const VALID_MONTH_THRESHOLD = 400000;
+  const qualifiedMonths = Object.entries(monthlyTotalMap)
+    .filter(([m, total]) => m !== currentPrefix && total >= VALID_MONTH_THRESHOLD)
+    .map(([m]) => m);
 
-    if (r.date.startsWith(lastPrefix)) {
-      lastMonthSales += amount;
-      if (day <= viewingDay) toDateLastMonthSales += amount;
-    }
-
-    if (day <= viewingDay) {
-      groupByMonthToDay[ym] = (groupByMonthToDay[ym] || 0) + amount;
-    }
-
-    fullMonthTotal[ym] = (fullMonthTotal[ym] || 0) + amount;
-
-    // ✅ ยอดขายวันนี้
-    const isToday = dateObj.toDateString() === today.toDateString();
-    if (isToday) todaySales += amount;
-
-    // ✅ ยอดขายสัปดาห์นี้
-    if (dateObj >= monday && dateObj <= sunday) {
-      thisWeekSales += amount;
+  // ✅ Step 3: คำนวณยอดช่วงวันที่ 1–n ของเดือนที่ผ่านเกณฑ์
+  const rangeTotals = {};
+  records.forEach(r => {
+    const [y, m, d] = r.date.split("-");
+    const ym = `${y}-${m}`;
+    if (!qualifiedMonths.includes(ym)) return;
+    if (parseInt(d) <= targetRangeEnd) {
+      if (!rangeTotals[ym]) rangeTotals[ym] = 0;
+      rangeTotals[ym] += parseFloat(r.amount || 0);
     }
   });
 
-  // ✅ แสดงยอดรวมเดือนปัจจุบัน
-  document.querySelector('#mainTitle .total').innerHTML = `💰 ยอดขายรวม ${totalSales.toLocaleString()} บาท`;
+  const totalPast = Object.values(rangeTotals).reduce((sum, val) => sum + val, 0);
+  const averagePast = Math.round(totalPast / (Object.keys(rangeTotals).length || 1));
 
-  // ✅ เปรียบเทียบกับเดือนก่อน
-  const compareEl = document.querySelector('#mainTitle .compare');
-
-  let diff = totalSales - lastMonthSales;
-  let text = diff > 0
-    ? `<span style="color: green;">+${diff.toLocaleString()} บาท จากเดือนก่อน</span>`
-    : diff < 0
-      ? `<span style="color: red;">-${Math.abs(diff).toLocaleString()} บาท จากเดือนก่อน</span>`
-      : `<span style="color: gray;">ยอดเท่าเดิมกับเดือนก่อน</span>`;
-
-  diff = toDateSales - toDateLastMonthSales;
-  let text2 = diff > 0
-    ? `<span style="color: green;">📆 รวมเฉพาะ ${viewingDay} วัน : +${diff.toLocaleString()} บาท จากเดือนก่อน</span>`
-    : diff < 0
-      ? `<span style="color: red;">📆 รวมเฉพาะ ${viewingDay} วัน: -${Math.abs(diff).toLocaleString()} บาท จากเดือนก่อน</span>`
-      : `<span style="color: gray;">📆 รวมเฉพาะ ${viewingDay} วัน: ยอดเท่าเดิมกับเดือนก่อน</span>`;
-
-  compareEl.innerHTML = `${text}<br>${text2}`;
-
-  // ✅ เปรียบเทียบกับค่าเฉลี่ยเดือนก่อน (เฉพาะ 1–viewingDay)
-  const VALID_MONTH_THRESHOLD = 400000;
-  const validMonths = Object.keys(fullMonthTotal)
-    .filter(m => m !== currentPrefix && fullMonthTotal[m] >= VALID_MONTH_THRESHOLD);
-
-  const totalValidDays = validMonths.reduce((sum, m) => sum + (groupByMonthToDay[m] || 0), 0);
-  const averagePastMonths = Math.round(totalValidDays / (validMonths.length || 1));
-  const currentMonthToDateTotal = groupByMonthToDay[currentPrefix] || 0;
-  const diffFromAvg = currentMonthToDateTotal - averagePastMonths;
+  const currentMonth14Total = toDateSales;
+  const diffFromAvg = currentMonth14Total - averagePast;
   const formattedDiff = diffFromAvg.toLocaleString();
 
   const compareAvgDiv = document.createElement('div');
   compareAvgDiv.style.marginTop = '4px';
   compareAvgDiv.style.color = diffFromAvg > 0 ? 'green' : diffFromAvg < 0 ? 'crimson' : 'gray';
 
-  compareAvgDiv.innerHTML = `📊 รวมเฉพาะ ${viewingDay} วัน คือ: ${currentMonthToDateTotal.toLocaleString()} บาท ${
+  compareAvgDiv.innerHTML = `📊 รวมเฉพาะ ${targetRangeEnd} วัน คือ: ${currentMonth14Total.toLocaleString()} บาท ${
     diffFromAvg > 0
-      ? `✅ มากกว่าค่าเฉลี่ย +${formattedDiff} บาท (${averagePastMonths.toLocaleString()})`
+      ? `✅ มากกว่าค่าเฉลี่ย +${formattedDiff} บาท (${averagePast.toLocaleString()})`
       : diffFromAvg < 0
-        ? `⚠️ น้อยกว่าค่าเฉลี่ย ${formattedDiff} บาท (${averagePastMonths.toLocaleString()})`
-        : `😐 เท่ากับค่าเฉลี่ย (${averagePastMonths.toLocaleString()})`
+        ? `⚠️ น้อยกว่าค่าเฉลี่ย ${Math.abs(diffFromAvg).toLocaleString()} บาท (${averagePast.toLocaleString()})`
+        : `😐 เท่ากับค่าเฉลี่ย (${averagePast.toLocaleString()} บาท)`
   }`;
+
   compareEl.appendChild(compareAvgDiv);
-
-  // ✅ แสดงยอดขายวันนี้และสัปดาห์นี้ (คุณอาจจะนำไปใส่ตรงไหนก็ได้ใน UI)
- const todayAndWeekDiv = document.createElement('div');
-todayAndWeekDiv.style.marginTop = '4px';
-todayAndWeekDiv.style.color = 'gray';
-todayAndWeekDiv.style.fontWeight = 'normal';
-
-todayAndWeekDiv.innerHTML = ` ยอดขายวันนี้: ${todaySales.toLocaleString()} บาท &nbsp;&nbsp;  ยอดขายสัปดาห์นี้: ${thisWeekSales.toLocaleString()} บาท`;
-
-compareEl.appendChild(todayAndWeekDiv);
 }
+
+// ✅ สร้างตัวแปรนับยอด
+let todaySales = 0;
+let weekSales = 0;
+
+// ✅ กำหนดวันจันทร์-อาทิตย์ของ "สัปดาห์นี้"
+const todayDateObj = new Date();
+const todayDayOfWeek = todayDateObj.getDay(); // 0=อาทิตย์, 1=จันทร์, ...
+const currentMonth = viewingDate.getMonth();
+const currentYear = viewingDate.getFullYear();
+
+// หาวันจันทร์ของสัปดาห์นี้
+let monday = new Date(todayDateObj);
+monday.setDate(todayDateObj.getDate() - ((todayDayOfWeek + 6) % 7));
+
+// ถ้าวันจันทร์อยู่นอกเดือนปัจจุบัน → ใช้วันที่ 1 ของเดือนแทน
+if (monday.getMonth() !== currentMonth) {
+  monday = new Date(currentYear, currentMonth, 1);
+}
+
+// วันอาทิตย์ของสัปดาห์นี้
+const sunday = new Date(monday);
+sunday.setDate(monday.getDate() + 6);
+
+// ✅ คำนวณยอดขาย "วันนี้" และ "สัปดาห์นี้"
+records.forEach(r => {
+  const recordDate = new Date(r.date);
+  const amount = parseFloat(r.amount || 0);
+
+  const isSameDate =
+    recordDate.getFullYear() === todayDateObj.getFullYear() &&
+    recordDate.getMonth() === todayDateObj.getMonth() &&
+    recordDate.getDate() === todayDateObj.getDate();
+
+  if (isSameDate) {
+    todaySales += amount;
+  }
+
+  const inCurrentMonth = recordDate.getMonth() === currentMonth &&
+                         recordDate.getFullYear() === currentYear;
+
+  if (recordDate >= monday && recordDate <= sunday && inCurrentMonth) {
+    weekSales += amount;
+  }
+});
+
+// ✅ แสดงผลลัพธ์ในหน้าจอ (ใต้ .compare)
+const extraInfo = document.createElement("div");
+extraInfo.style.marginTop = "6px";
+extraInfo.style.fontSize = "13px"; // เท่ากับ .compare
+extraInfo.style.color = "#00796b"; // เขียวเข้มแบบธีม
+
+extraInfo.innerHTML = `
+   <strong>วันนี้:</strong> ${todaySales.toLocaleString()} บาท   <strong>สัปดาห์นี้:</strong> ${weekSales.toLocaleString()} บาท
+`;
+
+document.querySelector('#mainTitle .compare').appendChild(extraInfo);
+
+
+
+
+
+    const sortedEntries = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
+    const labels = sortedEntries.map(([cat]) => cat);
+    const data = sortedEntries.map(([, qty]) => qty);
+
+    
+
+    document.getElementById('summaryList').innerHTML = sortedEntries.map(([cat]) => {
+  const items = Object.entries(categoryDetails[cat] || {})
+    .map(([sub, d]) => `• ${sub} ${d.qty}`).join('<br>');
+  const sumQty = categoryCounts[cat];
+  return `
+    <div class="summary-group" style="cursor:pointer;" onclick="openGroupModalByCategory('${cat}')">
+      <strong>${cat}</strong> รวม ${sumQty} ชิ้น
+      <ul>${items}</ul>
+    </div>
+  `;
+}).join('');
+
+    fullCustomerList = Object.values(customerMap).sort((a, b) => b.amount - a.amount);
+
+    const sortedCustomers = Object.values(customerMap)
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 10);
+
+    document.getElementById('top10List').innerHTML = sortedCustomers.map((c) => {
+  const key = `${c.name}|${c.phone}`;
+  const allRecords = allCustomerRecords.filter(r => `${r.name}|${r.phone}` === key);
+
+  const totalVisits = allRecords.length;
+const paidRecords = allRecords.filter(r => parseFloat(r.amount || 0) > 0);
+const paidVisits = paidRecords.length;
+const totalAmount = paidRecords.reduce((sum, r) => sum + parseFloat(r.amount), 0);
+const avg = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
+
+
+  const latest = allRecords.length > 0
+    ? new Date(Math.max(...allRecords.map(r => new Date(r.date))))
+    : null;
+
+  const daysSinceLastVisit = latest
+    ? Math.floor((new Date() - latest) / (1000 * 60 * 60 * 24))
+    : null;
+
+  // 🔚 สีตามจำนวนวัน
+  let absentColor = 'gray';
+  if (daysSinceLastVisit < 30) absentColor = 'green';
+  else if (daysSinceLastVisit <= 90) absentColor = 'orange';
+  else absentColor = 'crimson';
+
+  // 💰 สีตามยอดรวม
+ let totalColor = 'gray';
+let totalExtra = '';
+let totalIcon = '';
+
+if (totalAmount < 50000) {
+  totalColor = 'crimson';
+} else if (totalAmount <= 99999) {
+  totalColor = 'green';
+} else if (totalAmount <= 200000) {
+  totalColor = 'goldenrod';
+} else {
+  totalColor = '#8B6508'; // ทองเข้มมาก
+  totalExtra = 'font-weight:bold;';
+  totalIcon = ' 💎';
+}
+
+  // 💳 สีตามยอดเฉลี่ย
+  let avgColor = 'gray';
+  if (avg < 5000) avgColor = 'crimson';
+  else if (avg <= 9999) avgColor = 'green';
+  else avgColor = '#b8860b'; // ทองเข้ม
+
+  // 🔁 ข้อความ "มา X วัน"
+  const totalVisitsText = `<span>มา ${totalVisits} วัน</span>`;
+
+  // 🔚 ไม่มา ... วัน พร้อมสี
+  const lastVisitText = daysSinceLastVisit != null
+    ? `<span style="color:${absentColor};">🔚 ไม่มา ${daysSinceLastVisit} วัน</span>`
+    : `<span>🔚 ไม่มีข้อมูล</span>`;
+
+  // 📅 เปลี่ยนวันที่เป็นรูปแบบ วัน/เดือน
+  const formatted = new Date(c.date).toLocaleDateString('th-TH', {
+    day: 'numeric', month: 'numeric'
+  });
+
+  const previousRecords = allRecords.filter(r => r.date < `${viewingDate.toISOString().slice(0, 7)}-01`);
+  const isNewCustomer = previousRecords.length === 0;
+  const newBadge = isNewCustomer ? `<span style="color:red; font-weight:bold;"> ลูกค้าใหม่</span>` : "";
+
+  return `
+    <li style="margin-bottom: 8px;">
+      <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">
+        ${c.name}${newBadge}
+      </span>
+      <span class="date">
+        (${formatted} |
+        ${totalVisitsText} |
+        💳 <span style="color:${avgColor};">${avg.toLocaleString()}</span> |
+        💰 <span style="color:${totalColor}; ${totalExtra}">${totalAmount.toLocaleString()}${totalIcon}</span> |
+
+        ${lastVisitText})
+      </span>
+      <span class="amount">${c.amount.toLocaleString()} บาท</span>
+    </li>
+  `;
+}).join('');
+
+
+
+
+    document.getElementById('totalCustomer').textContent = `จำนวนลูกค้าที่มาใช้บริการทั้งหมด ${Object.keys(customerMap).length} คน (กดดูเพิ่มเติม)`;
+  }
 
   fetchDataAndUpdate();
 fetchAllCustomerRecords();

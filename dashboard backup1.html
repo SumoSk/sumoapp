@@ -915,51 +915,115 @@ const latestDate = allDates.sort().reverse()[0];
 if (latestDate) {
   const todayDay = today.getDate();
   const viewingDay = Math.min(today.getDate(), daysInMonth(viewingDate.getFullYear(), viewingDate.getMonth() + 1));
-const targetRangeEnd = viewingDay;
+  const targetRangeEnd = viewingDay;
 
-  const groupByMonth = {};
+  const currentPrefix = viewingDate.toISOString().slice(0, 7);
 
+  // ✅ Step 1: รวมยอดทั้งเดือนทั้งหมด
+  const monthlyTotalMap = {};  // key = YYYY-MM
   records.forEach(r => {
-    if (!r.date) return;
+    const [y, m] = r.date.split("-");
+    const ym = `${y}-${m}`;
+    if (!monthlyTotalMap[ym]) monthlyTotalMap[ym] = 0;
+    monthlyTotalMap[ym] += parseFloat(r.amount || 0);
+  });
+
+  // ✅ Step 2: เลือกเฉพาะเดือนที่ยอดรวม >= 400,000 และไม่ใช่เดือนปัจจุบัน
+  const VALID_MONTH_THRESHOLD = 400000;
+  const qualifiedMonths = Object.entries(monthlyTotalMap)
+    .filter(([m, total]) => m !== currentPrefix && total >= VALID_MONTH_THRESHOLD)
+    .map(([m]) => m);
+
+  // ✅ Step 3: คำนวณยอดช่วงวันที่ 1–n ของเดือนที่ผ่านเกณฑ์
+  const rangeTotals = {};
+  records.forEach(r => {
     const [y, m, d] = r.date.split("-");
     const ym = `${y}-${m}`;
-    const day = parseInt(d);
-    if (day <= targetRangeEnd) {
-      if (!groupByMonth[ym]) groupByMonth[ym] = 0;
-      groupByMonth[ym] += parseFloat(r.amount || 0);
+    if (!qualifiedMonths.includes(ym)) return;
+    if (parseInt(d) <= targetRangeEnd) {
+      if (!rangeTotals[ym]) rangeTotals[ym] = 0;
+      rangeTotals[ym] += parseFloat(r.amount || 0);
     }
   });
 
- // ✅ กำหนดเกณฑ์ขั้นต่ำ เช่น 300,000
-const VALID_MONTH_THRESHOLD = 400000;
+  const totalPast = Object.values(rangeTotals).reduce((sum, val) => sum + val, 0);
+  const averagePast = Math.round(totalPast / (Object.keys(rangeTotals).length || 1));
 
-// ✅ กรองเฉพาะเดือนที่ยอด >= 300,000 เท่านั้น
-const allMonths = Object.keys(groupByMonth)
-  .filter(m => m !== currentPrefix && groupByMonth[m] >= VALID_MONTH_THRESHOLD);
+  const currentMonth14Total = toDateSales;
+  const diffFromAvg = currentMonth14Total - averagePast;
+  const formattedDiff = diffFromAvg.toLocaleString();
 
-// ✅ นับเฉพาะเดือนที่ผ่านเกณฑ์เท่านั้นมาคิดเฉลี่ย
-const totalPastMonths = allMonths.reduce((sum, m) => sum + groupByMonth[m], 0);
-const averagePastMonths = Math.round(totalPastMonths / (allMonths.length || 1));
+  const compareAvgDiv = document.createElement('div');
+  compareAvgDiv.style.marginTop = '4px';
+  compareAvgDiv.style.color = diffFromAvg > 0 ? 'green' : diffFromAvg < 0 ? 'crimson' : 'gray';
 
+  compareAvgDiv.innerHTML = `📊 รวมเฉพาะ ${targetRangeEnd} วัน คือ: ${currentMonth14Total.toLocaleString()} บาท ${
+    diffFromAvg > 0
+      ? `✅ มากกว่าค่าเฉลี่ย +${formattedDiff} บาท (${averagePast.toLocaleString()})`
+      : diffFromAvg < 0
+        ? `⚠️ น้อยกว่าค่าเฉลี่ย ${Math.abs(diffFromAvg).toLocaleString()} บาท (${averagePast.toLocaleString()})`
+        : `😐 เท่ากับค่าเฉลี่ย (${averagePast.toLocaleString()} บาท)`
+  }`;
 
-  const currentMonth14Total = groupByMonth[currentPrefix] || 0;
-
-  const diffFromAvg = currentMonth14Total - averagePastMonths;
-const formattedDiff = diffFromAvg.toLocaleString();
-
-const compareAvgDiv = document.createElement('div');
-compareAvgDiv.style.marginTop = '4px';
-compareAvgDiv.style.color = diffFromAvg > 0 ? 'green' : diffFromAvg < 0 ? 'crimson' : 'gray';
-
-compareAvgDiv.innerHTML = `📊 รวมเฉพาะ ${targetRangeEnd} วัน คือ: ${currentMonth14Total.toLocaleString()} บาท ${
-  diffFromAvg > 0
-    ? `✅ มากกว่าค่าเฉลี่ย +${formattedDiff} บาท (${averagePastMonths.toLocaleString()})`
-    : diffFromAvg < 0
-      ? `⚠️ น้อยกว่าค่าเฉลี่ย ${formattedDiff} บาท (${averagePastMonths.toLocaleString()})`
-      : `😐 เท่ากับค่าเฉลี่ย (${formattedDiff} บาท)`
-}`;
-compareEl.appendChild(compareAvgDiv);
+  compareEl.appendChild(compareAvgDiv);
 }
+
+// ✅ สร้างตัวแปรนับยอด
+let todaySales = 0;
+let weekSales = 0;
+
+// ✅ กำหนดวันจันทร์-อาทิตย์ของ "สัปดาห์นี้"
+const todayDateObj = new Date();
+const todayDayOfWeek = todayDateObj.getDay(); // 0=อาทิตย์, 1=จันทร์, ...
+const currentMonth = viewingDate.getMonth();
+const currentYear = viewingDate.getFullYear();
+
+// หาวันจันทร์ของสัปดาห์นี้
+let monday = new Date(todayDateObj);
+monday.setDate(todayDateObj.getDate() - ((todayDayOfWeek + 6) % 7));
+
+// ถ้าวันจันทร์อยู่นอกเดือนปัจจุบัน → ใช้วันที่ 1 ของเดือนแทน
+if (monday.getMonth() !== currentMonth) {
+  monday = new Date(currentYear, currentMonth, 1);
+}
+
+// วันอาทิตย์ของสัปดาห์นี้
+const sunday = new Date(monday);
+sunday.setDate(monday.getDate() + 6);
+
+// ✅ คำนวณยอดขาย "วันนี้" และ "สัปดาห์นี้"
+records.forEach(r => {
+  const recordDate = new Date(r.date);
+  const amount = parseFloat(r.amount || 0);
+
+  const isSameDate =
+    recordDate.getFullYear() === todayDateObj.getFullYear() &&
+    recordDate.getMonth() === todayDateObj.getMonth() &&
+    recordDate.getDate() === todayDateObj.getDate();
+
+  if (isSameDate) {
+    todaySales += amount;
+  }
+
+  const inCurrentMonth = recordDate.getMonth() === currentMonth &&
+                         recordDate.getFullYear() === currentYear;
+
+  if (recordDate >= monday && recordDate <= sunday && inCurrentMonth) {
+    weekSales += amount;
+  }
+});
+
+// ✅ แสดงผลลัพธ์ในหน้าจอ (ใต้ .compare)
+const extraInfo = document.createElement("div");
+extraInfo.style.marginTop = "6px";
+extraInfo.style.fontSize = "13px"; // เท่ากับ .compare
+extraInfo.style.color = "#00796b"; // เขียวเข้มแบบธีม
+
+extraInfo.innerHTML = `
+   <strong>วันนี้:</strong> ${todaySales.toLocaleString()} บาท   <strong>สัปดาห์นี้:</strong> ${weekSales.toLocaleString()} บาท
+`;
+
+document.querySelector('#mainTitle .compare').appendChild(extraInfo);
 
 
 
