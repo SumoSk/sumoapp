@@ -1016,11 +1016,16 @@ records.forEach(r => {
 // ✅ แสดงผลลัพธ์ในหน้าจอ (ใต้ .compare)
 const extraInfo = document.createElement("div");
 extraInfo.style.marginTop = "6px";
-extraInfo.style.fontSize = "13px"; // เท่ากับ .compare
-extraInfo.style.color = "#00796b"; // เขียวเข้มแบบธีม
+extraInfo.style.fontSize = "13px";
+extraInfo.style.color = "green"; // ✅ สีเขียวให้เหมือนบรรทัดอื่น
+extraInfo.style.fontWeight = "normal"; // หรือ 500 ถ้าบรรทัดอื่นหนาไม่มาก
+
+const formatDay = d => d.getDate(); // เอาเฉพาะวันที่ (1-31)
+
+const weekRangeText = `(${formatDay(monday)}–${formatDay(sunday)})`;
 
 extraInfo.innerHTML = `
-   <strong>วันนี้:</strong> ${todaySales.toLocaleString()} บาท   <strong>สัปดาห์นี้:</strong> ${weekSales.toLocaleString()} บาท
+ วันนี้: ${todaySales.toLocaleString()} บาท สัปดาห์นี้ ${weekRangeText}: ${weekSales.toLocaleString()} บาท
 `;
 
 document.querySelector('#mainTitle .compare').appendChild(extraInfo);
