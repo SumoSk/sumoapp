@@ -1016,7 +1016,7 @@ records.forEach(r => {
 // ✅ แสดงผลลัพธ์ในหน้าจอ (ใต้ .compare)
 const extraInfo = document.createElement("div");
 extraInfo.style.marginTop = "6px";
-extraInfo.style.fontSize = "13px";
+extraInfo.style.fontSize = "10px";
 extraInfo.style.color = "green"; // ✅ สีเขียวให้เหมือนบรรทัดอื่น
 extraInfo.style.fontWeight = "normal"; // หรือ 500 ถ้าบรรทัดอื่นหนาไม่มาก
 
@@ -1025,7 +1025,7 @@ const formatDay = d => d.getDate(); // เอาเฉพาะวันที�
 const weekRangeText = `(${formatDay(monday)}–${formatDay(sunday)})`;
 
 extraInfo.innerHTML = `
-<span style="color: green; font-size: 13px;">
+<span style="color: green; font-size: 10px;">
  วันนี้: ${todaySales.toLocaleString()} บาท สัปดาห์นี้ (${formatDay(monday)}–${formatDay(sunday)}): ${weekSales.toLocaleString()} บาท
 </span>
 `;
