@@ -199,6 +199,90 @@
   #customer-modal {
     display: flex; justify-content: center; align-items: center; padding: 16px;
   }
+
+  /* ปุ่มในแถบเดือน ขนาดกระชับ */
+.month-nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.month-nav button {
+  background-color: #009688;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  font-size: 13px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color .2s ease, transform .05s ease;
+  white-space: nowrap;
+}
+.month-nav button:hover { background-color: #00796b; }
+.month-nav button:active { transform: translateY(1px); }
+
+/* ปรับสองปุ่มกลางให้โทนต่างนิดหน่อย (อ่านง่าย) */
+#openRangeBtn { background-color: #00897b; }
+#clearRangeBtn { background-color: #607d8b; }
+#clearRangeBtn:hover { background-color: #546e7a; }
+
+/* ====== Modal เลือกช่วงเดือน ====== */
+.range-modal { position: fixed; inset: 0; z-index: 1200; display: none; }
+.range-modal__backdrop {
+  position: absolute; inset: 0; background: rgba(0,0,0,.45);
+}
+.range-modal__panel {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(92vw, 420px);
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.18);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.range-modal__header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; background: #e0f2f1; font-weight: 600; color: #004d40;
+}
+.range-modal__close {
+  background: transparent; border: none; font-size: 18px;
+  cursor: pointer; color: #004d40;
+}
+.range-modal__body {
+  display: grid; gap: 12px; padding: 14px;
+}
+.range-modal__body label {
+  display: grid; gap: 6px; font-size: 13px; color: #335;
+}
+.range-modal__body input[type="month"]{
+  -webkit-appearance: none; appearance: none;
+  width: 100%; padding: 8px 10px; font-size: 14px;
+  border: 1px solid #cfe7e5; border-radius: 10px; background: #fff;
+}
+.range-modal__footer {
+  display: flex; justify-content: flex-end; gap: 8px; padding: 12px 14px;
+  border-top: 1px solid #eee;
+}
+.btn-primary, .btn-secondary {
+  border: none; padding: 8px 14px; border-radius: 10px; font-size: 13px; cursor: pointer;
+}
+.btn-primary { background: #009688; color: #fff; }
+.btn-primary:hover { background: #00796b; }
+.btn-secondary { background: #eceff1; color: #37474f; }
+.btn-secondary:hover { background: #e0e3e6; }
+
+/* มือถือ: ปุ่มและ modal กระชับขึ้น */
+@media (max-width: 768px){
+  .month-nav { gap: 6px; margin-bottom: 12px; }
+  .month-nav button { padding: 7px 12px; font-size: 12px; border-radius: 9px; }
+  .range-modal__panel { width: min(94vw, 380px); }
+  .range-modal__body input[type="month"]{ font-size: 13px; padding: 7px 10px; }
+}
+
+
 </style>
 </head>
 <body>
@@ -223,15 +307,39 @@
 
 <div class="month-nav">
   <button onclick="changeMonth(-1)">← เดือนก่อนหน้า</button>
-  <button onclick="changeMonth(1)">เดือนถัดไป →</button>
 
-  <!-- ช่วงเดือนแบบกำหนดเอง -->
-  <input type="month" id="rangeStart">
-  <span class="sep">–</span>
-  <input type="month" id="rangeEnd">
-  <button onclick="applyRange()">ใช้ช่วงเดือน</button>
-  <button onclick="clearRange()">ล้างช่วง</button>
+  <!-- ปุ่มกลาง 2 ปุ่ม -->
+  <button id="openRangeBtn" onclick="openRangeModal()">เลือกช่วงเวลา</button>
+  <button id="clearRangeBtn" onclick="clearRange()">ล้างช่วง</button>
+
+  <button onclick="changeMonth(1)">เดือนถัดไป →</button>
 </div>
+
+<!-- Popup เลือกช่วงเดือน -->
+<div id="rangeModal" class="range-modal" style="display:none;">
+  <div class="range-modal__backdrop" onclick="closeRangeModal()"></div>
+  <div class="range-modal__panel">
+    <div class="range-modal__header">
+      <div>เลือกช่วงเดือน</div>
+      <button class="range-modal__close" onclick="closeRangeModal()">✕</button>
+    </div>
+    <div class="range-modal__body">
+      <label>
+        เดือนเริ่มต้น
+        <input type="month" id="rangeStartModal">
+      </label>
+      <label>
+        เดือนสิ้นสุด
+        <input type="month" id="rangeEndModal">
+      </label>
+    </div>
+    <div class="range-modal__footer">
+      <button class="btn-secondary" onclick="closeRangeModal()">ยกเลิก</button>
+      <button class="btn-primary" onclick="applyRangeFromModal()">ตกลง</button>
+    </div>
+  </div>
+</div>
+
 
 <div id="mainTitle">
   <div class="month"></div>
@@ -995,6 +1103,40 @@
     const menu = document.getElementById("floatingMenu");
     if (!toggle.contains(e.target) && !menu.contains(e.target)) menu.style.display = "none";
   });
+
+  // ===== Modal เลือกช่วงเดือน =====
+function openRangeModal(){
+  const s = document.getElementById('rangeStartModal');
+  const e = document.getElementById('rangeEndModal');
+  // เติมค่าล่าสุดไว้ให้แก้ต่อได้
+  s.value = monthRange.startYM || '';
+  e.value = monthRange.endYM || '';
+  document.getElementById('rangeModal').style.display = 'block';
+}
+
+function closeRangeModal(){
+  document.getElementById('rangeModal').style.display = 'none';
+}
+
+function applyRangeFromModal(){
+  const s = document.getElementById('rangeStartModal').value;
+  const e = document.getElementById('rangeEndModal').value;
+  if(!s || !e){ alert('กรุณาเลือกเดือนเริ่มต้นและสิ้นสุด'); return; }
+  if(ymNum(s) > ymNum(e)){ alert('เดือนเริ่มต้องไม่เกินเดือนสิ้นสุด'); return; }
+  monthRange.enabled = true;
+  monthRange.startYM = s;
+  monthRange.endYM = e;
+  closeRangeModal();
+  fetchDataAndUpdate();
+}
+
+// ถ้ามี clearRange() อยู่แล้ว ให้แทนที่ด้วยอันนี้ (เพิ่มการปิด modal)
+function clearRange(){
+  monthRange.enabled = false;
+  monthRange.startYM = monthRange.endYM = null;
+  closeRangeModal();
+  fetchDataAndUpdate();
+}
 </script>
 
 <div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
