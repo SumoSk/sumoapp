@@ -671,6 +671,14 @@ h3 {
   align-items: center;
   padding: 16px;
 }
+.top10-box li {
+  white-space: nowrap;        /* ทั้งบรรทัดไม่ตัด */
+}
+
+.top10-box li .amount {
+  white-space: nowrap;        /* ตัวเลขไม่ตัด */
+  font-variant-numeric: tabular-nums;
+}
 
 </style>
 
@@ -1130,21 +1138,19 @@ if (totalAmount < 50000) {
   const newBadge = isNewCustomer ? `<span style="color:red; font-weight:bold;"> ลูกค้าใหม่</span>` : "";
 
   return `
-    <li style="margin-bottom: 8px;">
-      <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">
-        ${c.name}${newBadge}
-      </span>
-      <span class="date">
-        (${formatted} |
-        ${totalVisitsText} |
-        💳 <span style="color:${avgColor};">${avg.toLocaleString()}</span> |
-        💰 <span style="color:${totalColor}; ${totalExtra}">${totalAmount.toLocaleString()}${totalIcon}</span> |
+  <li style="margin-bottom: 8px;">
+    <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">
+      ${c.name}${newBadge}
+    </span>
+    <span class="date">
+      (💳 <span style="color:${avgColor};">${avg.toLocaleString()}</span> มา ${totalVisits}
+       | 💰 <span style="color:${totalColor}; ${totalExtra}">${totalAmount.toLocaleString()}${totalIcon}</span>
+       | ${lastVisitText})
+    </span>
+    <span class="amount">${c.amount.toLocaleString()} บาท</span>
+  </li>
+`;
 
-        ${lastVisitText})
-      </span>
-      <span class="amount">${c.amount.toLocaleString()} บาท</span>
-    </li>
-  `;
 }).join('');
 
 
@@ -1339,21 +1345,19 @@ if (totalAmount < 50000) {
       const newBadge = isNewCustomer ? `<span style="color:red; font-weight:bold;"> ลูกค้าใหม่</span>` : "";
 
       return `
-        <li style="margin-bottom: 8px;">
-          <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">
-            ${i + 11}. ${c.name}${newBadge}
-          </span>
-          <span class="date">
-            (${formattedDate} |
-            ${totalVisitsText} |
-            💳 <span style="color:${avgColor};">${avg.toLocaleString()}</span> |
-            💰 <span style="color:${totalColor}; ${totalExtra}">${totalAmount.toLocaleString()}${totalIcon}</span> |
+  <li style="margin-bottom: 8px;">
+    <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">
+      ${i + 11}. ${c.name}${newBadge}
+    </span>
+    <span class="date">
+      (💳 <span style="color:${avgColor};">${avg.toLocaleString()}</span> มา ${totalVisits}
+       | 💰 <span style="color:${totalColor}; ${totalExtra}">${totalAmount.toLocaleString()}${totalIcon}</span>
+       | ${lastVisitText})
+    </span>
+    <span class="amount">${c.amount.toLocaleString()} บาท</span>
+  </li>
+`;
 
-            ${lastVisitText})
-          </span>
-          <span class="amount">${c.amount.toLocaleString()} บาท</span>
-        </li>
-      `;
     }).join('');
   } else {
     listEl.style.display = "none";
