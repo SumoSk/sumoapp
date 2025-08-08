@@ -685,11 +685,12 @@ h3 {
 
 
 <!-- พื้นหลังเทาแบบเต็มจอ -->
-<div id="group-modal" style="display:none; position:fixed; inset:0; background-color:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
+<!-- FIX: เปลี่ยน id กันชนกับ modal หลัก -->
+<div id="group-modal-legacy" style="display:none; position:fixed; inset:0; background-color:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
   
   <!-- กล่องเนื้อหา -->
-  <div id="group-modal-content" style="background:#fff; padding:20px; border-radius:10px; max-height:80vh; overflow:auto; width:90%; max-width:500px;">
-    <div id="groupSelectedList"></div>
+  <div id="group-modal-content-legacy" style="background:#fff; padding:20px; border-radius:10px; max-height:80vh; overflow:auto; width:90%; max-width:500px;">
+    <div id="groupSelectedList-legacy"></div>
     <div style="text-align:right; margin-top:20px;">
       <button onclick="closeGroupModal()" style="padding:6px 12px;">❌ ปิด</button>
     </div>
@@ -741,6 +742,9 @@ h3 {
 </div>
 
   <script>
+    // FIX: helper กัน timezone
+    function formatYM(d){const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');return `${y}-${m}`;}
+
     const categoryMap = {
   "โบทอค": [  "Aestox 50 u",  "Aestox 100 u",  "Allergan 50 u",  "Allergan 100 u",  "เฉพาะจุด",  "แบ่งไว้แล้ว" ],
   "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q ระบุสีด้วย", "Restylane ระบุสีด้วย"  ],
@@ -796,7 +800,7 @@ let allCustomerRecords = [];
   function updateDashboard(records) {
     const monthName = viewingDate.toLocaleString('th-TH', { month: 'long' });
     const yearBE = viewingDate.getFullYear() + 543;
-    const prefix = viewingDate.toISOString().slice(0, 7);
+    const prefix = formatYM(viewingDate); // FIX
 
     document.querySelector('#mainTitle .month').textContent = `${monthName} ${yearBE}`;
 
@@ -817,10 +821,10 @@ const todayDate = viewingDay;
 
 
 
-const currentPrefix = viewingDate.toISOString().slice(0, 7);
+const currentPrefix = formatYM(viewingDate); // FIX
 const lastMonthDate = new Date(viewingDate);
 lastMonthDate.setMonth(viewingDate.getMonth() - 1);
-const lastPrefix = lastMonthDate.toISOString().slice(0, 7);
+const lastPrefix = formatYM(lastMonthDate); // FIX
     const categoryCounts = {};
     const categoryDetails = {};
     const customerMap = {};
@@ -917,7 +921,7 @@ if (latestDate) {
   const viewingDay = Math.min(today.getDate(), daysInMonth(viewingDate.getFullYear(), viewingDate.getMonth() + 1));
   const targetRangeEnd = viewingDay;
 
-  const currentPrefix = viewingDate.toISOString().slice(0, 7);
+  const currentPrefix = formatYM(viewingDate); // FIX
 
   // ✅ Step 1: รวมยอดทั้งเดือนทั้งหมด
   const monthlyTotalMap = {};  // key = YYYY-MM
@@ -1121,7 +1125,7 @@ if (totalAmount < 50000) {
     day: 'numeric', month: 'numeric'
   });
 
-  const previousRecords = allRecords.filter(r => r.date < `${viewingDate.toISOString().slice(0, 7)}-01`);
+  const previousRecords = allRecords.filter(r => r.date < `${formatYM(viewingDate)}-01`); // FIX
   const isNewCustomer = previousRecords.length === 0;
   const newBadge = isNewCustomer ? `<span style="color:red; font-weight:bold;"> ลูกค้าใหม่</span>` : "";
 
@@ -1154,7 +1158,7 @@ fetchAllCustomerRecords();
 
 
 function openGroupModalByCategory(cat) {
-  const prefix = viewingDate.toISOString().slice(0, 7);
+  const prefix = formatYM(viewingDate); // FIX
   const summary = {};
   const totalQty = { count: 0 };
 
@@ -1232,10 +1236,25 @@ document.getElementById("group-modal").addEventListener("click", function (e) {
 });
 
 
+// FIX: เพิ่มฟังก์ชันที่ปุ่มเรียกใช้
+function saveGroupModalAsImage() {
+  const node = document.getElementById("group-modal-content");
+  if (!node) return;
+  html2canvas(node, { scale: 2 }).then(canvas => {
+    const link = document.createElement("a");
+    link.download = 'group-summary.jpg';
+    link.href = canvas.toDataURL("image/jpeg", 0.95);
+    link.click();
+  }).catch(err => {
+    console.error("จับภาพไม่สำเร็จ:", err);
+    alert("เกิดข้อผิดพลาดในการบันทึกรูปภาพ");
+  });
+}
+
 
 function toggleCustomerList() {
   const listEl = document.getElementById("allCustomerList");
-  const currentPrefix = viewingDate.toISOString().slice(0, 7);
+  const currentPrefix = formatYM(viewingDate); // FIX
 
   if (listEl.style.display === "none") {
     listEl.style.display = "block";
@@ -1359,6 +1378,9 @@ function daysInMonth(year, month) {
 }
 
 
+// FIX: กัน XSS เบื้องต้น
+function escapeHTML(s=''){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
 function closeCustomerModal() {
   document.getElementById("customer-modal").style.display = "none";
 }
@@ -1450,7 +1472,7 @@ const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
     }).join("");
 
     const noteText = r.note
-      ? `<div style="margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${r.note}</div>`
+      ? `<div style="margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${escapeHTML(r.note)}</div>` // FIX: sanitize
       : "";
 
     return `
@@ -1496,7 +1518,7 @@ const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
   document.getElementById("customer-modal").style.display = "flex";
 }
 
-function closeCustomerModal() {
+function closeCustomerModal_v1() { // FIX: เปลี่ยนชื่อกันชน
   document.getElementById("customer-modal").style.display = "none";
 }
 
@@ -1543,13 +1565,11 @@ function saveModalAsImage() {
 
 
 
-function closeCustomerModal() {
+function closeCustomerModal_v2() { // FIX: กันชนตัวซ้ำ
   document.getElementById("customer-modal").style.display = "none";
 }
 
 // ✅ โค้ดนี้รอ DOM โหลดเสร็จแล้วผูก event อย่างปลอดภัย
-
-
 
 
 
@@ -1654,7 +1674,7 @@ document.body.appendChild(filterUI);
 
 
 
-function filterGeneral() {
+function filterGeneral_v1() { // FIX: กันชนชื่อเวอร์ชันแรก
   const nameInput = document.getElementById("customerName").value.trim().toLowerCase();
   const startDate = document.getElementById("startDate").value;
   const endDate = document.getElementById("endDate").value;
@@ -1904,15 +1924,18 @@ function toggleFloatingMenu() {
   });
 
 
-function closeCustomerModal() {
+// NOTE: มีหลายเวอร์ชันของ closeCustomerModal ในไฟล์เดิม
+function closeCustomerModal_v3() { // FIX: กันชน
   document.getElementById("customer-modal").style.display = "none";
 }
 
+// FIX: เดิมอ้าง .modal-box ซึ่งไม่มี ให้ใช้ #customer-modal-box และเช็ค null
 document.addEventListener("DOMContentLoaded", function () {
   const modal = document.getElementById("customer-modal");
   if (modal) {
+    const modalBox = document.getElementById("customer-modal-box");
+    if (!modalBox) return;
     modal.addEventListener("click", function (event) {
-      const modalBox = modal.querySelector(".modal-box");
       if (!modalBox.contains(event.target)) {
         closeCustomerModal();
       }
@@ -1920,16 +1943,18 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-function closeCustomerModal() {
+function closeCustomerModal_v4() { // FIX: กันชน
   document.getElementById("customer-modal").style.display = "none";
 }
 
+// FIX: บล็อค DOMContentLoaded ซ้ำอีกตัว — แก้ selector + ใส่ guard
 document.addEventListener("DOMContentLoaded", function () {
   const modal = document.getElementById("customer-modal");
   if (!modal) return;
+  const modalBox = document.getElementById("customer-modal-box");
+  if (!modalBox) return;
 
   modal.addEventListener("click", function (event) {
-    const modalBox = modal.querySelector(".modal-box");
     if (!modalBox.contains(event.target)) {
       closeCustomerModal();
     }
