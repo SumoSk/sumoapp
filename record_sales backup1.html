@@ -54,15 +54,12 @@
     .card{border:1px solid var(--line);padding:12px;border-radius:12px;margin:8px 0;display:flex;justify-content:space-between;gap:12px}
     .card .left{min-width:0}
     /* ▼ ขนาดตัวอักษร/ระยะห่างในกล่องรายการแก้ไข */
-#editRecordList .card{ font-size:14px; }
-#editRecordList .card .left strong{ font-size:14px; font-weight:700; }
-#editRecordList .items-list{ font-size:14px; margin:4px 0 0; padding-left:18px; }
-#editRecordList .items-list li{ margin:0; line-height:1.35; } /* ต่อๆกัน ชิดขึ้น */
-#editRecordList .total-line{ margin-top:6px; font-weight:700; color:#0b7660; font-size:14px; }
-
-/* ปรับขนาดปุ่มในบล็อกแก้ไขให้พอดี */
-#editRecordList .actions .btn{ font-size:13px; padding:8px 12px; }
-
+    #editRecordList .card{ font-size:14px; }
+    #editRecordList .card .left strong{ font-size:14px; font-weight:700; }
+    #editRecordList .items-list{ font-size:14px; margin:4px 0 0; padding-left:18px; }
+    #editRecordList .items-list li{ margin:0; line-height:1.35; }
+    #editRecordList .total-line{ margin-top:6px; font-weight:700; color:#0b7660; font-size:14px; }
+    #editRecordList .actions .btn{ font-size:13px; padding:8px 12px; }
 
     /* Review table */
     table{ width:100%; border-collapse: collapse; margin-top:8px }
@@ -99,12 +96,26 @@
     .center-actions{ display:flex; justify-content:center; gap:10px; margin-top:12px }
     .center-actions .btn{ min-width:180px }
 
+    /* ปุ่มล็อกให้กดได้/โฟกัสได้ */
+    .lock-badge{ cursor:pointer; }
+    .lock-badge:focus{ outline:2px solid #94d3ce; }
+
     @media (max-width:700px){
       .field-row{grid-template-columns:130px 1fr}
       .item-row, .item-row.single{grid-template-columns:1fr}
       .item-actions{justify-content:flex-start}
       .toggle{ width: 150px; height: 36px }
     }
+
+    /* ===== Diagnostics (ฟิลเตอร์ค้นหาเออเร้อ) ===== */
+    .diag-panel{background:#f7fffb;border:1px solid #bfeee3;border-radius:14px;padding:16px;margin-top:20px}
+    .diag-title{font-weight:800;color:#0b7660;margin:0 0 10px}
+    .chip-btn{border:1px solid #a7e1da;background:#fff;color:#0b7660;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer}
+    .chip-btn:hover{background:#eaf9f6}
+    #diag-count{margin-left:8px;color:#0b7660;font-size:12px}
+    #diag-results{width:100%;border-collapse:collapse;margin-top:10px}
+    #diag-results th,#diag-results td{border:1px solid var(--line);padding:8px;font-size:12px}
+    #diag-results thead tr{background:#f0fdfa}
 
     /* floating dock (unchanged) */
     .floating-toggle{position:fixed;bottom:env(safe-area-inset-bottom,18px);left:50%;transform:translateX(-50%);background:rgba(0,128,128,0);width:58px;height:58px;border-radius:50%;box-shadow:0 4px 16px rgba(251,251,251,0);display:flex;justify-content:center;align-items:center;z-index:1000;cursor:pointer}
@@ -160,7 +171,9 @@
         <label for="name">ชื่อเล่น-จริง</label>
         <div class="row nowrap">
           <input type="text" id="name" name="name" placeholder="เช่น โบว์ - เมลดา" disabled class="grow">
-          <span id="lockNameBadge" class="pill" style="display:none;">🔒 ถูกล็อก</span>
+          <span id="lockNameBadge" class="pill lock-badge" style="display:none;"
+                role="button" tabindex="0" aria-label="คลิกเพื่อปลดล็อกชื่อและเบอร์"
+                onclick="unlockNamePhone()">🔒 ถูกล็อก</span>
         </div>
       </div>
 
@@ -168,7 +181,9 @@
         <label for="phone">เบอร์โทรศัพท์</label>
         <div class="row nowrap">
           <input type="tel" id="phone" name="phone" placeholder="เช่น 0912345678" disabled class="grow">
-          <span id="lockPhoneBadge" class="pill" style="display:none;">🔒 ถูกล็อก</span>
+          <span id="lockPhoneBadge" class="pill lock-badge" style="display:none;"
+                role="button" tabindex="0" aria-label="คลิกเพื่อปลดล็อกชื่อและเบอร์"
+                onclick="unlockNamePhone()">🔒 ถูกล็อก</span>
         </div>
       </div>
 
@@ -223,6 +238,28 @@
     <div class="center-actions">
       <button class="btn btn-save" id="btnSaveAll" onclick="saveAllRecords()" disabled>บันทึกทั้งหมด</button>
     </div>
+
+    <!-- ▼▼▼ ฟิลเตอร์ค้นหาเออเร้อ/ข้อมูลผิดปกติ (อยู่ท้ายสุดของหน้า) ▼▼▼ -->
+    <div class="diag-panel">
+      <div class="diag-title">🔎 ค้นหาข้อมูลที่อาจไม่เรียบร้อย <span id="diag-count"></span></div>
+      <div class="chips" style="gap:8px; flex-wrap:wrap;">
+        <button class="chip-btn" onclick="runDiag('missingPhone')">ไม่มีเบอร์โทร</button>
+        <button class="chip-btn" onclick="runDiag('nameDifferentOPD')">ชื่อซ้ำ (ต่าง OPD)</button>
+        <button class="chip-btn" onclick="runDiag('phoneDifferentName')">เบอร์ซ้ำ (ต่างชื่อ)</button>
+        <button class="chip-btn" onclick="runDiag('opdDifferentNamePhone')">OPD ซ้ำ (ต่างชื่อ/เบอร์)</button>
+        <button class="chip-btn" onclick="runDiag('invalidPhone')">รูปแบบเบอร์ไม่ถูก</button>
+        <button class="chip-btn" onclick="runDiag('invalidOPD')">OPD ไม่ครบ 4 หลัก</button>
+        <button class="chip-btn" onclick="runDiag('splitGroups')">กลุ่มแตก (name+phone+opd เดียวกัน)</button>
+        <button class="chip-btn" onclick="runDiag('sameNameMultiPhones')">ชื่อเดียวหลายเบอร์/ว่าง</button>
+      </div>
+
+      <table id="diag-results" style="display:none;">
+        <thead><tr id="diag-head"></tr></thead>
+        <tbody id="diag-body"></tbody>
+      </table>
+    </div>
+    <!-- ▲▲▲ ฟิลเตอร์ค้นหาเออเร้อ/ข้อมูลผิดปกติ ▲▲▲ -->
+
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -252,6 +289,11 @@
     let customerMap = {};             // opd -> {name, phone}
     let currentEditId = null;         // id of record being edited (if any)
     let editDataByOPD = [];           // cache for edit list
+    // ปลดล็อกชื่อ/เบอร์แบบแมนนวล + ติดตาม OPD ล่าสุด
+    let manualUnlockNamePhone = false;
+    let lastOPDForLock = '';
+    // Diagnostics: cache sales
+    let allSales = null;
 
     // ---------- Prefill customers ----------
     fetch('/api/customers').then(r=>r.json()).then(data=>{
@@ -271,13 +313,34 @@
           if (e.key === 'Enter') { e.preventDefault(); loadDatesByOPD(); }
         });
       }
-      // คำนวณครั้งแรก (แต่ default ปิด → ไม่ปรับ amount)
+      // keyboard support for lock badges
+      ['lockNameBadge','lockPhoneBadge'].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el){
+          el.addEventListener('keydown', (e)=>{
+            if(e.key==='Enter' || e.key===' '){ e.preventDefault(); unlockNamePhone(); }
+          });
+        }
+      });
+      // คำนวณครั้งแรก (default ปิด)
       recalcAmount();
     });
 
     // ---------- UI helpers ----------
     function digitsOnly(el){ el.value = (el.value || '').replace(/\D/g,'').slice(0,4); }
     function isValidOPD(opd){ return /^\d{4}$/.test(opd||''); }
+
+    function unlockNamePhone(){
+      manualUnlockNamePhone = true;
+      const nameEl  = document.getElementById('name');
+      const phoneEl = document.getElementById('phone');
+      const lockName  = document.getElementById('lockNameBadge');
+      const lockPhone = document.getElementById('lockPhoneBadge');
+      nameEl.disabled = false; phoneEl.disabled = false;
+      nameEl.readOnly = false; phoneEl.readOnly = false;
+      lockName.style.display = 'none'; lockPhone.style.display = 'none';
+      setTimeout(()=> nameEl.focus(), 0);
+    }
 
     function onOPDInput(el){
       digitsOnly(el);
@@ -289,6 +352,8 @@
       const lockPhone = document.getElementById('lockPhoneBadge');
 
       if(!isValidOPD(el.value)){
+        manualUnlockNamePhone = false;
+        lastOPDForLock = '';
         nameEl.value=''; phoneEl.value='';
         nameEl.disabled = true; phoneEl.disabled = true;
         nameEl.readOnly = false; phoneEl.readOnly = false;
@@ -297,16 +362,28 @@
       }
 
       const opd = el.value;
+      if(opd !== lastOPDForLock){
+        manualUnlockNamePhone = false; // เปลี่ยน OPD → กลับสถานะเริ่มต้น
+        lastOPDForLock = opd;
+      }
+
       const c = customerMap[opd];
-      if(c){
+      if(c && !manualUnlockNamePhone){
+        // พบลูกค้า + ยังไม่ปลดล็อกเอง → ล็อก
         nameEl.value = c.name||''; phoneEl.value = c.phone||'';
         nameEl.disabled = true; phoneEl.disabled = true;
         nameEl.readOnly = true; phoneEl.readOnly = true;
         lockName.style.display='inline-flex'; lockPhone.style.display='inline-flex';
       }else{
+        // ไม่พบลูกค้า หรือผู้ใช้ปลดล็อกเองแล้ว
         nameEl.disabled = false; phoneEl.disabled = false;
         nameEl.readOnly = false; phoneEl.readOnly = false;
         lockName.style.display='none'; lockPhone.style.display='none';
+        // ถ้าปลดล็อกแล้วแต่ช่องว่าง และมีข้อมูลลูกค้า → เติมให้ครั้งเดียว
+        if(c && manualUnlockNamePhone && !nameEl.value && !phoneEl.value){
+          nameEl.value = c.name || '';
+          phoneEl.value = c.phone || '';
+        }
       }
     }
 
@@ -452,60 +529,83 @@
         .catch(()=> { list.innerHTML = '<div class="muted">โหลดข้อมูลไม่สำเร็จ</div>'; });
     }
 
+    // helper แบบ Promise สำหรับปุ่มแก้ไขจากแผงเออเร้อ
+    function loadDatesByOPDFor(opd){
+      const list = document.getElementById('editRecordList');
+      const dateBtns = document.getElementById('editDateButtons');
+      document.getElementById('editOPD').value = opd;
+      dateBtns.innerHTML = '';
+      list.innerHTML = '<div class="muted">กำลังโหลดข้อมูล…</div>';
+      return fetch(`/api/sales?opd=${encodeURIComponent(opd)}`)
+        .then(r=> r.ok ? r.json() : Promise.reject())
+        .then(data=>{
+          editDataByOPD = data || [];
+          if(editDataByOPD.length===0){
+            dateBtns.innerHTML = '';
+            list.innerHTML = '<div class="muted">ไม่พบข้อมูลของ OPD นี้</div>';
+            return;
+          }
+          const dates = [...new Set(editDataByOPD.map(r=> (r.date||'').slice(0,10)))].sort((a,b)=> new Date(b)-new Date(a));
+          dateBtns.innerHTML = '📅 วันที่ทั้งหมด:<br>' + dates.map((d,i)=>(
+            `<span class="chip ${i===0?'active':''}" data-date="${d}" onclick="selectEditDateChip(this)">${formatDate(d)}</span>`
+          )).join('');
+          showEditList(dates[0]);
+        })
+        .catch(()=> { list.innerHTML = '<div class="muted">โหลดข้อมูลไม่สำเร็จ</div>'; });
+    }
+
     function selectEditDateChip(el){
       document.querySelectorAll('#editDateButtons .chip').forEach(c=> c.classList.remove('active'));
       el.classList.add('active');
       showEditList(el.getAttribute('data-date'));
     }
 
-   function showEditList(date){
-  const list = document.getElementById('editRecordList');
-  const rows = editDataByOPD.filter(r => (r.date||'').slice(0,10) === date);
-  if(rows.length === 0){
-    list.innerHTML = '<div class="muted">ไม่มีรายการในวันนี้</div>';
-    return;
-  }
+    function showEditList(date){
+      const list = document.getElementById('editRecordList');
+      const rows = editDataByOPD.filter(r => (r.date||'').slice(0,10) === date);
+      if(rows.length === 0){
+        list.innerHTML = '<div class="muted">ไม่มีรายการในวันนี้</div>';
+        return;
+      }
 
-  // ลบราคาและจำนวนท้ายสตริง  " - N ชิ้น x P บาท"
-  const stripPrice = (s) => String(s).replace(/ - \d+(?:\.\d+)? ชิ้น x \d+(?:\.\d+)? บาท$/, '');
-  // สรุปรวมจากรายการ หากไม่มี r.amount
-  const sumFromItems = (items=[]) => items.reduce((acc, line)=>{
-    const m = String(line).match(/ - (\d+(?:\.\d+)?) ชิ้น x (\d+(?:\.\d+)?) บาท$/);
-    if(!m) return acc;
-    const qty = parseFloat(m[1]||'0');
-    const price = parseFloat(m[2]||'0');
-    return acc + (qty*price);
-  }, 0);
+      // ลบราคาและจำนวนท้ายสตริง  " - N ชิ้น x P บาท"
+      const stripPrice = (s) => String(s).replace(/ - \d+(?:\.\d+)? ชิ้น x \d+(?:\.\d+)? บาท$/, '');
+      // สรุปรวมจากรายการ หากไม่มี r.amount
+      const sumFromItems = (items=[]) => items.reduce((acc, line)=>{
+        const m = String(line).match(/ - (\d+(?:\.\d+)?) ชิ้น x (\d+(?:\.\d+)?) บาท$/);
+        if(!m) return acc;
+        const qty = parseFloat(m[1]||'0');
+        const price = parseFloat(m[2]||'0');
+        return acc + (qty*price);
+      }, 0);
 
-  const html = rows.map(r => {
-    const items = Array.isArray(r.items) ? r.items : [];
-    const cleanList = items.length
-      ? `<ul class="items-list">${items.map(x => `<li>${safe(stripPrice(x))}</li>`).join('')}</ul>`
-      : '<div class="muted">(ไม่มีรายละเอียดรายการ)</div>';
+      const html = rows.map(r => {
+        const items = Array.isArray(r.items) ? r.items : [];
+        const cleanList = items.length
+          ? `<ul class="items-list">${items.map(x => `<li>${safe(stripPrice(x))}</li>`).join('')}</ul>`
+          : '<div class="muted">(ไม่มีรายละเอียดรายการ)</div>';
 
-    // ใช้ r.amount ถ้ามี ไม่งั้นคำนวณจาก items
-    const total = (r.amount != null && r.amount !== '') ? Number(r.amount) : sumFromItems(items);
-    const totalStr = Number.isFinite(total) ? total.toLocaleString() : '0';
+        // ใช้ r.amount ถ้ามี ไม่งั้นคำนวณจาก items
+        const total = (r.amount != null && r.amount !== '') ? Number(r.amount) : sumFromItems(items);
+        const totalStr = Number.isFinite(total) ? total.toLocaleString() : '0';
 
-    return `
-      <div class="card">
-        <div class="left">
-          <div><strong>${safe(r.name || '-')}</strong></div>
-          ${cleanList}
-          <div class="total-line">รวม: ${totalStr} บาท</div>
-        </div>
-        <div class="actions">
-          <button type="button" class="btn btn-primary" onclick="editSelectedRecordById('${r.id}')">แก้ไข</button>
-          <button type="button" class="btn btn-danger" onclick="deleteRecordFromSupabase('${r.id}')">ลบ</button>
-        </div>
-      </div>
-    `;
-  }).join('');
+        return `
+          <div class="card">
+            <div class="left">
+              <div><strong>${safe(r.name || '-')}</strong></div>
+              ${cleanList}
+              <div class="total-line">รวม: ${totalStr} บาท</div>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn btn-primary" onclick="editSelectedRecordById('${r.id}')">แก้ไข</button>
+              <button type="button" class="btn btn-danger" onclick="deleteRecordFromSupabase('${r.id}')">ลบ</button>
+            </div>
+          </div>
+        `;
+      }).join('');
 
-  list.innerHTML = html;
-}
-
-
+      list.innerHTML = html;
+    }
 
     function findRecordInEditCacheById(id){
       return (editDataByOPD || []).find(x => String(x.id) === String(id)) || null;
@@ -614,7 +714,7 @@
       document.getElementById('saleForm').reset();
       document.getElementById('date').value = keepDate;
       document.getElementById('opd').value = keepOPD;
-      onOPDInput(document.getElementById('opd'));
+      onOPDInput(document.getElementById('opd')); // re-apply lock/enabled state
       initFirstRow();
       currentEditId = null;
       document.getElementById('currentId').value = '';
@@ -737,6 +837,8 @@
       document.getElementById('saleForm').reset();
       initDateToday();
       initFirstRow();
+      manualUnlockNamePhone = false;
+      lastOPDForLock = '';
       onOPDInput(document.getElementById('opd')); // lock/unlock name/phone
       document.getElementById('btnReview').disabled = true;
       recalcAmount();
@@ -745,6 +847,288 @@
     function safe(v){
       const map = {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"};
       return (v==null?'':String(v)).replace(/[&<>"']/g, s=>map[s]);
+    }
+
+    /* =========================
+       Diagnostics (เออเร้อ)
+       ========================= */
+    const normName = s => String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
+    const onlyDigits = s => String(s||'').replace(/\D/g,'');
+    const normPhone = s => {
+      let d = onlyDigits(s);
+      if(d.startsWith('66') && d.length>=11) d = '0' + d.slice(-9);
+      return d;
+    };
+    const normOPD = s => String(s||'').trim().padStart(4,'0');
+    const isValidPhone = p => { const d = normPhone(p); return d.length===9 || d.length===10; };
+    const isValidOPDVal = o => /^\d{4}$/.test(String(o||'').trim());
+
+    async function ensureAllSales(){
+      if(allSales) return allSales;
+      const r = await fetch('/api/sales');
+      const data = await r.json().catch(()=>[]);
+      allSales = data || [];
+      return allSales;
+    }
+
+    async function runDiag(type){
+      await ensureAllSales();
+      const rows = diagCompute(type);
+      renderDiag(type, rows);
+    }
+
+    function diagCompute(type){
+      const out = [];
+      const byName = new Map();
+      const byPhone = new Map();
+      const byOPD = new Map();
+      const byTripletNorm = new Map();
+
+      (allSales||[]).forEach(r=>{
+        const nameN = normName(r.name);
+        const phoneN = normPhone(r.phone);
+        const opdN = normOPD(r.opd);
+
+        if(!byName.has(nameN)) byName.set(nameN,{opds:new Set(),phones:new Set(),rows:[]});
+        byName.get(nameN).opds.add(opdN); byName.get(nameN).phones.add(phoneN||''); byName.get(nameN).rows.push(r);
+
+        if(phoneN){
+          if(!byPhone.has(phoneN)) byPhone.set(phoneN,{names:new Set(),opds:new Set(),rows:[]});
+          byPhone.get(phoneN).names.add(nameN); byPhone.get(phoneN).opds.add(opdN); byPhone.get(phoneN).rows.push(r);
+        }
+
+        if(!byOPD.has(opdN)) byOPD.set(opdN,{names:new Set(),phones:new Set(),rows:[]});
+        byOPD.get(opdN).names.add(nameN); byOPD.get(opdN).phones.add(phoneN||''); byOPD.get(opdN).rows.push(r);
+
+        const tripKey = `${nameN}|${phoneN}|${opdN}`;
+        if(!byTripletNorm.has(tripKey)) byTripletNorm.set(tripKey,{rawKeys:new Set(),rows:[]});
+        byTripletNorm.get(tripKey).rawKeys.add(`${(r.name||'').trim()}|${(r.phone||'').trim()}`);
+        byTripletNorm.get(tripKey).rows.push(r);
+      });
+
+      switch(type){
+        case 'missingPhone': {
+          (allSales||[]).forEach(r=>{
+            const d = normPhone(r.phone);
+            if(!d){ out.push({id:r.id, name:r.name||'-',opd:normOPD(r.opd),phone:'-',date:r.date}); }
+          });
+          break;
+        }
+        case 'nameDifferentOPD': {
+          byName.forEach((v, nameN)=>{
+            const opds = Array.from(v.opds).filter(x=>x!=='0000' && x!=='');
+            if(new Set(opds).size>1){
+              out.push({
+                name: v.rows[0]?.name || nameN,
+                opds: Array.from(new Set(opds)),
+                phones: Array.from(v.phones).filter(Boolean),
+                count: v.rows.length
+              });
+            }
+          });
+          break;
+        }
+        case 'phoneDifferentName': {
+          byPhone.forEach((v, phoneN)=>{
+            if(!phoneN) return;
+            if(v.names.size>1){
+              out.push({
+                phone: phoneN,
+                names: Array.from(v.names).map(n=>v.rows.find(r=>normName(r.name)===n)?.name || n),
+                opds: Array.from(v.opds),
+                count: v.rows.length
+              });
+            }
+          });
+          break;
+        }
+        case 'opdDifferentNamePhone': {
+          byOPD.forEach((v, opdN)=>{
+            if(v.names.size>1 || (v.phones.size>1 && !v.phones.has(''))){
+              out.push({
+                opd: opdN,
+                names: Array.from(v.names).map(n=>v.rows.find(r=>normName(r.name)===n)?.name || n),
+                phones: Array.from(v.phones),
+                count: v.rows.length
+              });
+            }
+          });
+          break;
+        }
+        case 'invalidPhone': {
+          (allSales||[]).forEach(r=>{
+            const d = normPhone(r.phone);
+            if(d && !isValidPhone(d)){
+              out.push({id:r.id, name:r.name||'-',opd:normOPD(r.opd),phone:r.phone||'-',date:r.date});
+            }
+          });
+          break;
+        }
+        case 'invalidOPD': {
+          (allSales||[]).forEach(r=>{
+            if(!isValidOPDVal(String(r.opd||''))){
+              out.push({id:r.id, name:r.name||'-',opd:String(r.opd||''),norm: normOPD(r.opd),phone:r.phone||'-',date:r.date});
+            }
+          });
+          break;
+        }
+        case 'splitGroups': {
+          byTripletNorm.forEach((v, k)=>{
+            if(v.rawKeys.size>1){
+              const [nameN, phoneN, opdN] = k.split('|');
+              out.push({
+                name: v.rows[0]?.name || nameN,
+                opd: opdN,
+                phone: v.rows[0]?.phone || phoneN,
+                variants: Array.from(v.rawKeys),
+                count: v.rows.length
+              });
+            }
+          });
+          break;
+        }
+        case 'sameNameMultiPhones': {
+          byName.forEach((v, nameN)=>{
+            const phones = Array.from(v.phones);
+            const nonEmpty = phones.filter(p=>p);
+            if(nonEmpty.length>1 || (nonEmpty.length>=1 && phones.includes(''))){
+              out.push({
+                name: v.rows[0]?.name || nameN,
+                phones: phones,
+                opds: Array.from(v.opds),
+                count: v.rows.length
+              });
+            }
+          });
+          break;
+        }
+      }
+      return out;
+    }
+
+    function renderDiag(type, rows){
+      const head = document.getElementById('diag-head');
+      const body = document.getElementById('diag-body');
+      const table = document.getElementById('diag-results');
+      const counter = document.getElementById('diag-count');
+
+      const headersByType = {
+        missingPhone: ['ชื่อ','OPD','เบอร์','วันที่','จัดการ'],
+        nameDifferentOPD: ['ชื่อ','OPDs','เบอร์ที่พบ','จำนวน','แก้ไข'],
+        phoneDifferentName: ['เบอร์','ชื่อที่พบ','OPDs','จำนวน','แก้ไข'],
+        opdDifferentNamePhone: ['OPD','ชื่อที่พบ','เบอร์ที่พบ','จำนวน','แก้ไข'],
+        invalidPhone: ['ชื่อ','OPD','เบอร์','วันที่','จัดการ'],
+        invalidOPD: ['ชื่อ','OPD (เดิม)','OPD ที่คาด','เบอร์','วันที่','จัดการ'],
+        splitGroups: ['ชื่อ','OPD','เบอร์','รูปแบบที่พบ (name|phone)','จำนวน','แก้ไข'],
+        sameNameMultiPhones: ['ชื่อ','เบอร์ทั้งหมด','OPDs','จำนวน','แก้ไข']
+      };
+
+      const cols = headersByType[type] || ['ข้อมูล'];
+      head.innerHTML = cols.map(c=>`<th>${c}</th>`).join('');
+      body.innerHTML = rows.map(r=>{
+        switch(type){
+          case 'missingPhone': {
+            return `<tr>
+              <td>${safe(r.name)}</td>
+              <td>${safe(r.opd)}</td>
+              <td style="color:#b91c1c">-</td>
+              <td>${formatDate(r.date)}</td>
+              <td><button class="btn btn-outline" onclick="editFromDiag('${r.opd}','${r.id||''}')">แก้ไขรายการ</button></td>
+            </tr>`;
+          }
+          case 'nameDifferentOPD': {
+            const opds = (r.opds||[]).map(o=>`<button class="btn btn-outline" onclick="goEditByOPD('${o}')">OPD ${o}</button>`).join(' ');
+            return `<tr>
+              <td>${safe(r.name)}</td>
+              <td>${safe((r.opds||[]).join(', '))}</td>
+              <td>${safe((r.phones||[]).join(', ')||'-')}</td>
+              <td>${r.count}</td>
+              <td>${opds||'-'}</td>
+            </tr>`;
+          }
+          case 'phoneDifferentName': {
+            const opds = (r.opds||[]).map(o=>`<button class="btn btn-outline" onclick="goEditByOPD('${o}')">OPD ${o}</button>`).join(' ');
+            return `<tr>
+              <td>${safe(r.phone)}</td>
+              <td>${safe((r.names||[]).join(', '))}</td>
+              <td>${safe((r.opds||[]).join(', '))}</td>
+              <td>${r.count}</td>
+              <td>${opds||'-'}</td>
+            </tr>`;
+          }
+          case 'opdDifferentNamePhone': {
+            return `<tr>
+              <td>${safe(r.opd)}</td>
+              <td>${safe((r.names||[]).join(', '))}</td>
+              <td>${safe((r.phones||[]).join(', '))}</td>
+              <td>${r.count}</td>
+              <td><button class="btn btn-outline" onclick="goEditByOPD('${r.opd}')">แก้ไข OPD ${safe(r.opd)}</button></td>
+            </tr>`;
+          }
+          case 'invalidPhone': {
+            return `<tr>
+              <td>${safe(r.name)}</td>
+              <td>${safe(r.opd)}</td>
+              <td style="color:#b91c1c">${safe(r.phone)}</td>
+              <td>${formatDate(r.date)}</td>
+              <td><button class="btn btn-outline" onclick="editFromDiag('${r.opd}','${r.id||''}')">แก้ไขรายการ</button></td>
+            </tr>`;
+          }
+          case 'invalidOPD': {
+            return `<tr>
+              <td>${safe(r.name)}</td>
+              <td style="color:#b91c1c">${safe(r.opd)}</td>
+              <td>${safe(r.norm)}</td>
+              <td>${safe(r.phone)}</td>
+              <td>${formatDate(r.date)}</td>
+              <td><button class="btn btn-outline" onclick="goEditByOPD('${r.norm}')">ลองเปิด OPD ${safe(r.norm)}</button></td>
+            </tr>`;
+          }
+          case 'splitGroups': {
+            return `<tr>
+              <td>${safe(r.name)}</td>
+              <td>${safe(r.opd)}</td>
+              <td>${safe(r.phone)}</td>
+              <td>${safe((r.variants||[]).join(' | '))}</td>
+              <td>${r.count}</td>
+              <td><button class="btn btn-outline" onclick="goEditByOPD('${r.opd}')">แก้ไข OPD ${safe(r.opd)}</button></td>
+            </tr>`;
+          }
+          case 'sameNameMultiPhones': {
+            const opds = (r.opds||[]).map(o=>`<button class="btn btn-outline" onclick="goEditByOPD('${o}')">OPD ${o}</button>`).join(' ');
+            return `<tr>
+              <td>${safe(r.name)}</td>
+              <td>${safe((r.phones||[]).map(p=>p||'(ว่าง)').join(', '))}</td>
+              <td>${safe((r.opds||[]).join(', '))}</td>
+              <td>${r.count}</td>
+              <td>${opds||'-'}</td>
+            </tr>`;
+          }
+          default: return `<tr><td>—</td></tr>`;
+        }
+      }).join('');
+
+      document.getElementById('diag-results').style.display = 'table';
+      counter.textContent = rows.length ? `พบ ${rows.length} เคส` : 'ไม่พบความผิดปกติ';
+      document.getElementById('diag-results').scrollIntoView({behavior:'smooth', block:'start'});
+    }
+
+    // ปุ่มแก้ไขจากผลวิเคราะห์
+    function goEditByOPD(opd){
+      if(!isValidOPD(opd)) { alert('OPD ไม่ครบ 4 หลัก ไม่สามารถค้นหาได้'); return; }
+      loadDatesByOPDFor(opd).then(()=>{
+        // scroll ไปโซนแก้ไข
+        const top = document.getElementById('editSection').offsetTop;
+        window.scrollTo({ top: Math.max(0, top - 10), behavior: 'smooth' });
+      });
+    }
+    function editFromDiag(opd, id){
+      if(!isValidOPD(opd)) { alert('OPD ไม่ครบ 4 หลัก'); return; }
+      loadDatesByOPDFor(opd).then(()=>{
+        if(id){ editSelectedRecordById(id); }
+        const top = document.getElementById('editSection').offsetTop;
+        window.scrollTo({ top: Math.max(0, top - 10), behavior: 'smooth' });
+      });
     }
   </script>
 

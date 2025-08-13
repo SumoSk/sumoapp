@@ -2,31 +2,81 @@
 <html lang="th">
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ข้อมูลลูกค้าทั้งหมด</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
   <style>
+    body{font-family:'Prompt','Segoe UI',sans-serif;margin:0;background:#fff;padding:10px 10px 120px}
+    .menu-bar{display:flex;justify-content:space-around;background:#fff;padding:10px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.05);margin-bottom:20px;position:sticky;top:0;z-index:1000}
+    .menu-bar a{text-decoration:none;font-weight:bold;color:teal}
 
+    table{width:95%;margin:20px auto;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+    th,td{border:1px solid #eee;padding:10px;text-align:left;font-size:12px;vertical-align:top}
+    th{background:#e0f7fa;color:#00796b;cursor:pointer}
+    tr:nth-child(even){background:#f9f9f9}
+    tr:hover{background:#e0f2f1}
+/* Modal */
+#customer-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.4);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+}
+#customer-modal .modal-box{
+  background:#fff;
+  padding:24px;
+  border-radius:16px;
+  max-width:90%;
+  max-height:90vh;
+  overflow-y:auto;
+  position:relative;
+  box-shadow:0 8px 30px rgba(0,0,0,.2);
+  font-size:13px;
+  line-height:1.6;
+}
+#modal-content h3{ font-size:16px; margin-bottom:8px; }
+
+    .details ul{padding-left:20px;margin:0}
+    .show-btn{padding:5px 10px;background:#0288d1;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px}
+    #export-btn{display:block;margin:20px auto;background:#4caf50;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-size:10px;font-weight:bold;cursor:pointer}
+    .phone-toggle{padding:4px 8px;border-radius:8px;background:#e3f2fd;font-weight:bold;color:#0277bd;cursor:pointer}
+    .details{display:flex;justify-content:flex-start;padding:0;margin:0;background:none;border:none}
+    .detail-bar{display:inline-block;padding:1px 1px;margin:0;background:#e3f2fd;color:#0277bd;border-radius:14px;font-size:10px;font-weight:500;cursor:pointer}
+    .detail-bar:hover{background:#bbdefb}
+    td.note-col,td.keyword-col{font-size:12px;color:#444;line-height:1.4em}
+
+    /* ▼ แผงฟิลเตอร์ตรวจข้อมูลผิดปกติ */
+    .diag-panel{width:95%;margin:24px auto 8px;background:#f7fffb;border:1px solid #bfeee3;border-radius:14px;padding:12px 12px 14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+    .diag-title{font-weight:800;color:#0b7660;margin:0 0 8px}
+    .chips{display:flex;flex-wrap:wrap;gap:8px}
+    .chip-btn{border:1px solid #a7e1da;background:#fff;color:#0b7660;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer}
+    .chip-btn:hover{background:#eaf9f6}
+    #diag-count{margin-left:8px;color:#0b7660;font-size:12px}
+    #diag-results{width:95%;margin:8px auto 20px;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+    #diag-results th,#diag-results td{border:1px solid #eee;padding:8px;font-size:12px}
+    #diag-results thead tr{background:#f0fdfa}
+
+    /* ▼ Floating Dock (ปุ่มเปลี่ยนหน้าแบบเดิม) */
     .floating-toggle {
     position: fixed;
-    bottom: env(safe-area-inset-bottom, 18px);
+    bottom: 18px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 128, 128, 0);
     width: 58px;
     height: 58px;
+    background: rgba(0, 128, 128, 0);
     border-radius: 50%;
-    box-shadow: 0 4px 16px rgba(251, 251, 251, 0);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
     cursor: pointer;
   }
-
   .floating-menu {
     position: fixed;
     bottom: 90px;
@@ -44,266 +94,14 @@
     max-height: 60vh;
     overflow-y: auto;
   }
-
   .floating-menu a img {
     width: 52px;
     height: 52px;
   }
-
-
-    
-#customer-modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background-color: rgba(0, 0, 0, 0.4);
-   align-items: center;
-  justify-content: center;
-}
-
-#customer-modal .modal-box {
-  background: white;
-  padding: 24px;
-  border-radius: 16px;
-  max-width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-}
-
-.modal-box {
-  font-size: 13px; /* ✅ ลดจากค่า default ที่ดูใหญ่เกินไป */
-  line-height: 1.6;
-  font-family: 'Prompt', sans-serif;
-}
-.modal-box h3 {
-  font-size: 16px;
-  margin-bottom: 8px;
-}
-.modal-box strong {
-  color: #444;
-}
-.modal-box ul {
-  padding-left: 18px;
-  margin-bottom: 8px;
-}
-    td.note-col,
-td.keyword-col {
-  font-size: 12px;        /* ขนาดเล็กลงจากปกติ */
-  color: #444;            /* สีเทาเข้ม อ่านง่าย */
-  line-height: 1.4em;     /* ระยะบรรทัดพอดี */
-}
-    
-    body {
-  font-family: 'Prompt', 'Segoe UI', sans-serif;
-      margin: 0;
-      background-color: white;
-      padding: 10px;
-       padding-bottom: 120px;
-    }
-    .menu-bar {
-      display: flex;
-      justify-content: space-around;
-      background-color: white;
-      padding: 10px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
-      position: sticky;  /* ✅ ให้ค้างด้านบน */
-  top: 0;
-  z-index: 1000;      /* ✅ ซ้อนอยู่เหนือส่วนอื่น */
-    }
-    .menu-bar a {
-      text-decoration: none;
-      font-weight: bold;
-      color: teal;
-    }
-    .search-container {
-   position: fixed;
-  bottom: 120px; /* ✅ เว้นระยะไม่ให้ชน floating-dock */
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  max-width: 600px;
-  background: rgb(235, 255, 245); /* ✅ เขียวอ่อนโปร่ง */
-
-  border-radius: 20px;
-  padding: 12px 14px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 999;
-    }
-    .search-container label {
-      font-weight: bold;
-      font-size: 14px;
-      display: block;
-      margin-bottom: 8px;
-      text-align: center;
-    }
-    .search-container input {
-      width: 100%;
-  padding: 10px 16px 10px 40px;
-  font-size: 12px;
-  border: none;
-  border-radius: 30px;
-  background-color: rgb(255, 255, 255); /* ✅ โปร่งนิดๆ */
-  background-image: url('https://cdn-icons-png.flaticon.com/512/622/622669.png');
-  background-size: 18px;
-  background-repeat: no-repeat;
-  background-position: 12px center;
-  box-sizing: border-box;
-  color: #222;
-  outline: none;
-    }
-    table {
-      width: 95%;
-      margin: 20px auto;
-      border-collapse: collapse;
-      background-color: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    th, td {
-      border: 1px solid #eee;
-      padding: 10px;
-      text-align: left;
-      font-size: 12px;
-      vertical-align: top;
-    }
-    th {
-      background-color: #e0f7fa;
-      color: #00796b;
-    }
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-    tr:hover {
-      background-color: #e0f2f1;
-    }
- 
-    .details ul {
-      padding-left: 20px;
-      margin: 0;
-    }
-    .show-btn {
-      padding: 5px 10px;
-      background-color: #0288d1;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-    }
-    #export-btn {
-      display: block;
-      margin: 20px auto;
-      background-color: #4caf50;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      font-size: 10px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .phone-toggle {
-  padding: 4px 8px;
-  border-radius: 8px;
-  background-color: #e3f2fd;
-  font-weight: bold;
-}
-.details {
-  display: flex;
-  justify-content: flex-start;
-  padding: 0;
-  margin: 0;
-  background: none;
-  border: none;
-}
-.detail-bar {
-  display: inline-block;
-  padding: 1px 1px;
-  margin: 0px 0 0 0;
-  background-color: #e3f2fd;
-  color: #0277bd;
-  border-radius: 14px;
-  font-size: 10px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-.detail-bar:hover {
-  background-color: #bbdefb;
-}
-    .floating-dock {
-  position: fixed;
-  bottom: env(safe-area-inset-bottom, 16px); /* ✅ ไม่ให้ติดแถบดำ */
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  border-radius: 16px;
-  padding: 6px 6px env(safe-area-inset-bottom, 16px); /* ✅ เว้นขอบล่างด้วย */
-  display: flex;
-  gap: 6px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-  z-index: 1000;
-  max-width: 95vw;
-}
-
-.icon-button {
-  width: 64px;                 /* ✅ ลดขนาดบนจอเล็กได้ */
-  height: 64px;
-  padding: 4px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s ease;
-  text-decoration: none;
-  flex: 0 0 auto;              /* ✅ ไม่ยืด ไม่หด */
-}
-
-.icon-button img {
-  width: 60px;
-  height: 60px;
-  object-fit: contain;
-}
-
-
-.icon-button:hover {
-  transform: scale(1.1);
-}
-
-@media (max-width: 768px) {
-  .icon-button {
-    width: 48px;
-    height: 48px;
-  }
-
-  .icon-button img {
-    width: 48px;
-    height: 48px;
-  }
-}
-
-@media (max-width: 1024px) {
-  .floating-dock {
-    position: fixed;
-    bottom: 0;
-    padding-bottom: env(safe-area-inset-bottom); /* รองรับ iPhone/iPad ที่มีแถบล่าง */
-  }
-}
-
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
 </head>
 <body>
- 
-  <div class="search-container">
-        <input type="text" id="searchInput" placeholder="พิมพ์คำค้น...">
-  </div>
+
 
   <table>
     <thead>
@@ -317,7 +115,6 @@ td.keyword-col {
         <th onclick="sortTable(6)">ไม่มาคลินิก ⬍</th>
         <th onclick="sortTable(7)">หมายเหตุ ⬍</th>
         <th onclick="sortTable(8)">รายการที่เคยซื้อ ⬍</th>
-        
       </tr>
     </thead>
     <tbody id="customer-table-body"></tbody>
@@ -325,440 +122,482 @@ td.keyword-col {
 
   <button id="export-btn">🧾 Export รายชื่อลูกค้าเป็น Excel</button>
 
+  <!-- ▼ แผงฟิลเตอร์ตรวจข้อมูลผิดปกติ -->
+  <div class="diag-panel">
+    <div class="diag-title">🔎 ค้นหาข้อมูลที่อาจไม่เรียบร้อย <span id="diag-count"></span></div>
+    <div class="chips">
+      <button class="chip-btn" onclick="runDiag('missingPhone')">ไม่มีเบอร์โทร</button>
+      <button class="chip-btn" onclick="runDiag('nameDifferentOPD')">ชื่อซ้ำ (ต่าง OPD)</button>
+      <button class="chip-btn" onclick="runDiag('phoneDifferentName')">เบอร์ซ้ำ (ต่างชื่อ)</button>
+      <button class="chip-btn" onclick="runDiag('opdDifferentNamePhone')">OPD ซ้ำ (ต่างชื่อ/เบอร์)</button>
+      <button class="chip-btn" onclick="runDiag('invalidPhone')">รูปแบบเบอร์ไม่ถูก</button>
+      <button class="chip-btn" onclick="runDiag('invalidOPD')">OPD ไม่ครบ 4 หลัก</button>
+      <button class="chip-btn" onclick="runDiag('splitGroups')">กลุ่มแตก (ชื่อ+เบอร์+OPD เดียวกัน)</button>
+      <button class="chip-btn" onclick="runDiag('sameNameMultiPhones')">ชื่อเดียวหลายเบอร์/ว่าง</button>
+    </div>
+  </div>
+
+  <table id="diag-results" style="display:none;">
+    <thead><tr id="diag-head"></tr></thead>
+    <tbody id="diag-body"></tbody>
+  </table>
+
   <script>
     let customers = [];
-   fetch("/api/sales")
-    .then(res => res.json())
-    .then(records => {
-      const customerMap = {};
-      records.forEach(rec => {
-        const key = `${rec.name}|${rec.phone}`;
-        if (!customerMap[key]) {
-          customerMap[key] = {
-            name: rec.name,
-            phone: rec.phone || '-',
-            opd: rec.opd || '',
-            total: 0,
-            lastDate: rec.date,
-              note: rec.note || '', // ✅ เพิ่มตรงนี้
-            history: []
-          };
-        }
-        customerMap[key].total += parseFloat(rec.amount) || 0;
-        customerMap[key].history.push({
-          date: rec.date,
-          items: rec.items,
-          amount: rec.amount,
-          payment: rec.payment,
-          note: rec.note
+    let allSales = [];
+    let sortState = {};
+
+    // ---- โหลดข้อมูลและสรุป customers + เก็บ allSales ----
+    fetch("/api/sales")
+      .then(res => res.json())
+      .then(records => {
+        allSales = records || [];
+
+        const customerMap = {};
+        records.forEach(rec => {
+          const key = `${rec.name}|${rec.phone}`;
+          if (!customerMap[key]) {
+            customerMap[key] = {
+              name: rec.name,
+              phone: rec.phone || '-',
+              opd: rec.opd || '',
+              total: 0,
+              lastDate: rec.date,
+              note: rec.note || '',
+              history: []
+            };
+          }
+          customerMap[key].total += parseFloat(rec.amount) || 0;
+          customerMap[key].history.push({
+            date: rec.date,
+            items: rec.items || [],
+            amount: rec.amount,
+            payment: rec.payment,
+            note: rec.note
+          });
+          if (rec.date > customerMap[key].lastDate) {
+            customerMap[key].note = rec.note || '';
+            customerMap[key].lastDate = rec.date;
+          }
         });
-        if (rec.date > customerMap[key].lastDate) {
-          customerMap[key].note = rec.note || ''; // ✅ เพิ่มหมายเหตุจาก record ล่าสุด
-          customerMap[key].lastDate = rec.date;
-        }
+
+        customers = Object.values(customerMap).sort((a, b) => parseInt(a.opd) - parseInt(b.opd));
+        const tableBody = document.getElementById('customer-table-body');
+
+        customers.forEach((c, i) => {
+          const row = document.createElement('tr');
+          const daysAbsent = calcDaysAbsent(c.lastDate);
+          const keywords = extractKeywordsFromHistory(c.history);
+          row.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${c.opd}</td>
+            <td><span class="detail-bar" onclick="openCustomerModal(${i})">${c.name}</span></td>
+            <td><span class="phone-toggle" data-phone="${c.phone}" onclick="togglePhone(this)">📞</span></td>
+            <td>${formatDate(c.lastDate)}</td>
+            <td>${c.total.toLocaleString()}</td>
+            <td>${daysAbsent}</td>
+            <td class="note-col">${c.note || '-'}</td>
+            <td class="keyword-col">${keywords || '-'}</td>
+          `;
+          tableBody.appendChild(row);
+        });
+
+        document.getElementById('export-btn').addEventListener('click', () => {
+          const data = customers.map(c => ({
+            ชื่อ: c.name,
+            OPD: c.opd,
+            เบอร์โทร: c.phone,
+            'วันล่าสุดที่ซื้อ': formatDate(c.lastDate),
+            'ยอดรวม (บาท)': c.total
+          }));
+          const sheet = XLSX.utils.json_to_sheet(data);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, sheet, 'ลูกค้าทั้งหมด');
+          XLSX.writeFile(wb, 'รายชื่อลูกค้าทั้งหมด.xlsx');
+        });
+      })
+      .catch(err => {
+        console.error("❌ โหลดข้อมูลลูกค้าจาก Supabase ไม่สำเร็จ:", err);
+        alert("เกิดข้อผิดพลาดในการโหลดข้อมูลลูกค้า");
       });
 
-      customers = Object.values(customerMap).sort((a, b) => parseInt(a.opd) - parseInt(b.opd));
-      const tableBody = document.getElementById('customer-table-body');
-
-      customers.forEach((c, i) => {
-        const row = document.createElement('tr');
-        const detailsId = `details-${i}`;
-        const daysAbsent = calcDaysAbsent(c.lastDate);
-        const keywords = extractKeywordsFromHistory(c.history); // ✅ ต้องใส่บรรทัดนี้ก่อนใช้
-        row.innerHTML = `
-          <td>${i + 1}</td>
-          <td>${c.opd}</td>
-          <td>
-  <span class="detail-bar" style="cursor:pointer;" onclick="openCustomerModal(${i})">${c.name}</span>
-</td>
-          <td>
-  <span class="phone-toggle" style="color: #0288d1; cursor: pointer;" data-phone="${c.phone}" onclick="togglePhone(this)">📞</span>
-</td>
-
-          <td>${formatDate(c.lastDate)}</td>
-          <td>${c.total.toLocaleString()}</td>
-          <td>${daysAbsent}</td>
-           <td class="note-col">${c.note || '-'}</td>
-          <td class="keyword-col">${keywords || '-'}</td>
-          
-        `;
-        tableBody.appendChild(row);
-
-       
-      });
-
-      // Enable export
-      document.getElementById('export-btn').addEventListener('click', () => {
-        const data = customers.map(c => ({
-          ชื่อ: c.name,
-          OPD: c.opd,
-          เบอร์โทร: c.phone,
-          'วันล่าสุดที่ซื้อ': formatDate(c.lastDate),
-          'ยอดรวม (บาท)': c.total
-        }));
-        const sheet = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, sheet, 'ลูกค้าทั้งหมด');
-        XLSX.writeFile(wb, 'รายชื่อลูกค้าทั้งหมด.xlsx');
-      });
-    })
-    .catch(err => {
-      console.error("❌ โหลดข้อมูลลูกค้าจาก Supabase ไม่สำเร็จ:", err);
-      alert("เกิดข้อผิดพลาดในการโหลดข้อมูลลูกค้า");
-    });
-
-  function toggleDetails(id) {
-  const container = document.getElementById(id);
-  const content = container.querySelector(".detail-content");
-  const isVisible = content.style.display === 'block';
-  content.style.display = isVisible ? 'none' : 'block';
-}
-
-  function generateHistoryHTML(history, customerName) {
-    const grouped = {};
-    const itemSummary = {};
-    const itemTotal = {};
-    let grandTotal = 0;
-
-    history.forEach(h => {
-      if (!grouped[h.date]) grouped[h.date] = [];
-      grouped[h.date].push(h);
-      grandTotal += parseFloat(h.amount) || 0;
-
-      (h.items || []).forEach(itemStr => {
-        const match = itemStr.match(/^(.*?) ?(?:\((.*?)\))? - (\d+) ชิ้น x (\d+)/);
-        if (match) {
-          const sub = match[2] || match[1];
-          const qty = parseInt(match[3]);
-          const price = parseInt(match[4]);
-          itemSummary[sub] = (itemSummary[sub] || 0) + qty;
-          itemTotal[sub] = (itemTotal[sub] || 0) + qty * price;
-        }
-      });
-    });
-
-    const dailyHTML = Object.entries(grouped).sort(([d1], [d2]) => new Date(d2) - new Date(d1)).map(([date, list]) => {
-      const itemsHTML = list.map(h => `
-        <ul>
-          ${h.items.map(item => `<li>${item}</li>`).join('')}
-          <li><strong>ยอด:</strong> ${h.amount} บาท (${h.payment})</li>
-          ${h.note ? `<li><em>📝 ${h.note}</em></li>` : ''}
-        </ul>
-      `).join('');
-      return `<strong>📅 ${formatDate(date)}</strong>${itemsHTML}`;
-    }).join('<hr>');
-
-    const summaryHTML = Object.entries(itemSummary)
-      .map(([sub]) => `• ${sub} — ${itemSummary[sub]} ชิ้น = ${itemTotal[sub].toLocaleString()} บาท`)
-      .join('<br>');
-
-    return `
-      <div class="detail-capture">
-        ${dailyHTML}
-        <hr>
-        <strong>📦 สรุปการซื้อทั้งหมด:</strong><br>
-        ${summaryHTML}<br><br>
-        <strong>💰 รวมทั้งหมด:</strong> ${grandTotal.toLocaleString()} บาท
-      </div>
-      <br>
-      <button onclick="downloadCustomerImage(this, '${customerName}')" class="show-btn">📸 บันทึกเป็นรูป (JPEG)</button>
-    `;
-  }
-
-  function formatDate(d) {
-    if (!d) return '';
-    const [y, m, day] = d.split('-');
-    return `${day}/${m}/${y.slice(-2)}`;
-  }
-
-  function downloadCustomerImage(button, customerName) {
-    const container = button.previousElementSibling;
-    html2canvas(container).then(canvas => {
-      const link = document.createElement("a");
-      link.download = `${customerName}-details.jpeg`;
-      link.href = canvas.toDataURL("image/jpeg");
-      link.click();
-    });
-  }
-
-
-
-
-
-  document.getElementById('searchInput').addEventListener('input', function () {
-  const val = this.value.trim().toLowerCase();
-  const rows = document.querySelectorAll('#customer-table-body tr');
-
-  rows.forEach(row => {
-    const opd = (row.children[1]?.textContent || "").toLowerCase();
-    const name = (row.children[2]?.textContent || "").toLowerCase();
-    const phone = (row.children[3]?.textContent || "").toLowerCase();
-    const note = (row.children[7]?.textContent || "").toLowerCase();
-    const keywords = (row.children[8]?.textContent || "").toLowerCase();
-
-    const matched = opd.includes(val) ||
-                    name.includes(val) ||
-                    phone.includes(val) ||
-                    note.includes(val) ||
-                    keywords.includes(val);
-
-    row.style.display = matched ? '' : 'none';
-  });
-});
-
-
-
-
-
-
-
-
-
-  let sortState = {};
-
-
-
-  function sortTable(colIndex) {
-  const tbody = document.getElementById("customer-table-body");
-  const rows = Array.from(tbody.rows);
-
-  const key = `col-${colIndex}`;
-  sortState[key] = !sortState[key]; // toggle asc/desc
-  const direction = sortState[key] ? 1 : -1;
-
-  const sorted = rows.map(row => {
-    const cellText = row.cells[colIndex].textContent.trim();
-    const isDateCol = (colIndex === 4);
-    const numericText = cellText.replace(/,/g, '');
-    const value = isDateCol
-      ? parseThaiDate(cellText)
-      : (isNaN(numericText) ? cellText.toLowerCase() : parseFloat(numericText));
-    return { row, value };
-  }).sort((a, b) => (a.value > b.value ? 1 : a.value < b.value ? -1 : 0) * direction);
-
-  tbody.innerHTML = '';
-  sorted.forEach(({ row }) => {
-    tbody.appendChild(row);
-  });
-}
-
-
-  function calcDaysAbsent(lastDateStr) {
-    const today = new Date();
-    const lastDate = new Date(lastDateStr);
-    const diffTime = today - lastDate;
-    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  }
-
-  // เพิ่ม parseThaiDate สำหรับจัดเรียงวันที่
-    function parseThaiDate(dateStr) {
-      const parts = dateStr.split('/');
-      if (parts.length !== 3) return new Date(0);
-      const [d, m, y] = parts;
-      const fullYear = parseInt(y) < 50 ? 2000 + parseInt(y) : 1900 + parseInt(y);
-      return new Date(fullYear, parseInt(m) - 1, parseInt(d));
+    // ---------- Utilities ----------
+    function formatDate(d){ if(!d) return ''; const [y,m,day]=d.split('-'); return `${day}/${m}/${y.slice(-2)}`; }
+    function calcDaysAbsent(lastDateStr){ const today=new Date(); const last=new Date(lastDateStr); return Math.floor((today-last)/(1000*60*60*24)); }
+    function parseThaiDate(dateStr){ const p=dateStr.split('/'); if(p.length!==3) return new Date(0); const [d,m,y]=p; const full=parseInt(y)<50?2000+parseInt(y):1900+parseInt(y); return new Date(full, parseInt(m)-1, parseInt(d)); }
+    function sortTable(colIndex){
+      const tbody=document.getElementById("customer-table-body");
+      const rows=Array.from(tbody.rows);
+      const key=`col-${colIndex}`; sortState[key]=!sortState[key]; const dir=sortState[key]?1:-1;
+      const sorted=rows.map(row=>{
+        const t=row.cells[colIndex].textContent.trim();
+        const isDate=(colIndex===4); const n=t.replace(/,/g,'');
+        const v=isDate?parseThaiDate(t):(isNaN(n)?t.toLowerCase():parseFloat(n));
+        return {row,value:v};
+      }).sort((a,b)=>(a.value>b.value?1:a.value<b.value?-1:0)*dir);
+      tbody.innerHTML=''; sorted.forEach(({row})=>tbody.appendChild(row));
     }
-    function extractKeywordsFromHistory(history) {
-  const keywordSet = new Set();
-  const commonKeywords = [
-    "Aestox", "Allergan", "เฉพาะจุด", "แบ่งไว้แล้ว",
-    "Neuramis", "E.P.T.Q", "Restylane",
-    "Bromi", "Sisi", "HIFU", "HIFU แถม",
-    "Meso Chanel", "P - Cell", "Aquatic", "Hestina", "Exosome", "Rejuran",
-    "Belotero Revive", "Sculptra", "Juvelook", "Aesthefill", 
-    "PRP", "Mesowink", "สะกิดหน้าใส", "Alphaarbutin", "Transamine",
-    "Snow White", "Super Aurawhite", "Vitamin Mix", "Brain Booster", "Energy Booster",
-    "หน้าใส", "สิว", "ฝ้า", "ผลักวิตามิน", "ปั่น RF", "กดสิว", "subcisionสิว",
-    "ยาฉีดสลายฝ้า", "ครีมทาฝ้า", "ยาทานฝ้า", 
-    "ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen", 
-    "จ่ายเงิน", "จองสินค้า", "สลายฟิลเลอร์", "PRPผม", "จี้ไฝ"
-  ];
+    function extractKeywordsFromHistory(history){
+      const set=new Set();
+      const keys=["Aestox","Allergan","เฉพาะจุด","แบ่งไว้แล้ว","Neuramis","E.P.T.Q","Restylane","Bromi","Sisi","HIFU","HIFU แถม","Meso Chanel","P - Cell","Aquatic","Hestina","Exosome","Rejuran","Belotero Revive","Sculptra","Juvelook","Aesthefill","PRP","Mesowink","สะกิดหน้าใส","Alphaarbutin","Transamine","Snow White","Super Aurawhite","Vitamin Mix","Brain Booster","Energy Booster","หน้าใส","สิว","ฝ้า","ผลักวิตามิน","ปั่น RF","กดสิว","subcisionสิว","ยาฉีดสลายฝ้า","ครีมทาฝ้า","ยาทานฝ้า","ไหมลิฟท์กรอบหน้า","ไหม PDO","ไหม Collagen","จ่ายเงิน","จองสินค้า","สลายฟิลเลอร์","PRPผม","จี้ไฝ"];
+      history.forEach(h=> (h.items||[]).forEach(s=> keys.forEach(k=> { if(String(s).toLowerCase().includes(k.toLowerCase())) set.add(k); })));
+      return Array.from(set).join(', ');
+    }
+    function togglePhone(el){
+      if(el.dataset.showing==="true"){ el.innerText="📞"; el.dataset.showing="false"; }
+      else{ el.innerText=el.dataset.phone; el.dataset.showing="true"; }
+    }
+    function safe(v){ const m={"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}; return (v==null?'':String(v)).replace(/[&<>"']/g, s=>m[s]); }
 
-  history.forEach(h => {
-    (h.items || []).forEach(itemStr => {
-      commonKeywords.forEach(keyword => {
-        if (itemStr.toLowerCase().includes(keyword.toLowerCase())) {
-          keywordSet.add(keyword);
-        }
+    // ---------- Modal & รายละเอียดลูกค้า ----------
+    const categoryMap = {
+      "Botox": ["Aestox","Allergan","Botulax","Botox","Botox เฉพาะจุด","Nabota"],
+      "Filler": ["Neuramis","E.P.T.Q","Restylane","Juvederm","Belotero","Belotero Revive"],
+      "Fat Burn": ["Sisi","Bromi","Lipo V","Fat ยกแก้ม","Fat ลดเหนียง"],
+      "Meso / หน้าใส": ["Meso Chanel","P - Cell","Aquatic","Hestina","Exosome","Rejuran","PRP","Mesowink","สะกิดหน้าใส","Alphaarbutin","Transamine","Snow White","Super Aurawhite","Vitamin Mix"],
+      "Hair / PRP ผม": ["PRPผม","Meso ผม","ปลูกผม","สเปรย์ผม"],
+      "HIFU / RF / ยกกระชับ": ["HIFU","HIFU แถม","HIFU เต็มหน้า","ปั่น RF","Ulthera"],
+      "สิว / ฝ้า / ยา / ผลักวิตามิน": ["หน้าใส","สิว","ฝ้า","ผลักวิตามิน","ยาฉีดสลายฝ้า","ยาทานฝ้า","ครีมทาฝ้า","กดสิว","subcisionสิว"],
+      "ไหม": ["ไหมลิฟท์กรอบหน้า","ไหม PDO","ไหม Collagen"],
+      "อื่นๆ": ["จองสินค้า","จ่ายเงิน","สลายฟิลเลอร์","จี้ไฝ","อื่นๆ"]
+    };
+
+    function openCustomerModal(index) {
+      const customer = customers[index];
+      const records = customer.history.map(h => ({...h, name: customer.name, phone: customer.phone, opd: customer.opd}));
+      if (records.length === 0) return;
+
+      const latestRecord = records.reduce((latest, r) => new Date(r.date) > new Date(latest.date) ? r : latest, records[0]);
+
+      const lastDate = new Date(latestRecord.date);
+      const daysAbsent = Math.floor((new Date() - lastDate) / (1000 * 60 * 60 * 24));
+      const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
+      const paidVisits = paidRecords.length;
+      const totalAmount = paidRecords.reduce((sum, r) => sum + parseFloat(r.amount), 0);
+      const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
+
+      const allItems = {};
+      records.forEach(r => {
+        (r.items || []).forEach(item => {
+          let name = item;
+          const match = item.match(/\((.*?)\)/);
+          if (match) { name = match[1]; } else { name = item.split(" - ")[0]; }
+          const qtyMatch = item.match(/- (\d+) ชิ้น/);
+          const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
+          allItems[name] = (allItems[name] || 0) + qty;
+        });
       });
-    });
-  });
 
-  return Array.from(keywordSet).join(', ');
-}
-
-
-
-
-
-
-
-function togglePhone(el) {
-  if (el.dataset.showing === "true") {
-    el.innerText = "📞";
-    el.dataset.showing = "false";
-  } else {
-    el.innerText = el.dataset.phone;
-    el.dataset.showing = "true";
-  }
-}
-
-const categoryMap = {
-  "Botox": ["Aestox", "Allergan", "Botulax", "Botox", "Botox เฉพาะจุด"],
-  "Filler": ["Neuramis", "E.P.T.Q", "Restylane", "Juvederm", "Belotero", "Belotero Revive"],
-  "Fat Burn": ["Sisi", "Bromi", "Lipo V", "Fat ยกแก้ม", "Fat ลดเหนียง"],
-  "Meso / หน้าใส": [
-    "Meso Chanel", "P - Cell", "Aquatic", "Hestina", "Exosome", "Rejuran", "PRP", "Mesowink",
-    "สะกิดหน้าใส", "Alphaarbutin", "Transamine", "Snow White", "Super Aurawhite", "Vitamin Mix"
-  ],
-  "Hair / PRP ผม": ["PRPผม", "Meso ผม", "ปลูกผม", "สเปรย์ผม"],
-  "HIFU / RF / ยกกระชับ": ["HIFU", "HIFU แถม", "HIFU เต็มหน้า", "ปั่น RF", "Ulthera"],
-  "สิว / ฝ้า / ยา / ผลักวิตามิน": ["หน้าใส", "สิว", "ฝ้า", "ผลักวิตามิน", "ยาฉีดสลายฝ้า", "ยาทานฝ้า", "ครีมทาฝ้า", "กดสิว", "subcisionสิว"],
-  "ไหม": ["ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen"],
-  "อื่นๆ": ["จองสินค้า", "จ่ายเงิน", "สลายฟิลเลอร์", "จี้ไฝ", "อื่นๆ"]
-};
-
-
-
-
-function openCustomerModal(index) {
-  const customer = customers[index];
-  const key = `${customer.name}|${customer.phone}`;
-  const records = customer.history.map(h => ({
-    ...h,
-    name: customer.name,
-    phone: customer.phone,
-    opd: customer.opd
-  }));
-
-  if (records.length === 0) return;
-
-  const first = records[0];
-  const latestRecord = records.reduce((latest, r) =>
-    new Date(r.date) > new Date(latest.date) ? r : latest
-  , records[0]);
-
-  const lastDate = new Date(latestRecord.date);
-  const today = new Date();
-  const daysAbsent = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
-  const totalVisits = records.length;
-  const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
-  const paidVisits = paidRecords.length;
-  const totalAmount = paidRecords.reduce((sum, r) => sum + parseFloat(r.amount), 0);
-  const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
-
-  const allItems = {};
-  records.forEach(r => {
-    (r.items || []).forEach(item => {
-      let name = item;
-      const match = item.match(/\((.*?)\)/);
-      if (match) {
-        name = match[1];
-      } else {
-        name = item.split(" - ")[0];
+      const categorizedItems = {};
+      for (const [cat, names] of Object.entries(categoryMap)) {
+        names.forEach(n => {
+          if (allItems[n]) {
+            if (!categorizedItems[cat]) categorizedItems[cat] = [];
+            categorizedItems[cat].push(`${n} : ${allItems[n]}`);
+            delete allItems[n];
+          }
+        });
       }
-      const qtyMatch = item.match(/- (\d+) ชิ้น/);
-      const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
-      allItems[name] = (allItems[name] || 0) + qty;
-    });
-  });
-
-  const categorizedItems = {};
-  for (const [cat, names] of Object.entries(categoryMap)) {
-    names.forEach(n => {
-      if (allItems[n]) {
-        if (!categorizedItems[cat]) categorizedItems[cat] = [];
-        categorizedItems[cat].push(`${n} : ${allItems[n]}`);
-        delete allItems[n];
+      if (Object.keys(allItems).length) {
+        categorizedItems["อื่นๆ"] = Object.entries(allItems).map(([name, qty]) => `${name} : ${qty}`);
       }
-    });
-  }
-  if (Object.keys(allItems).length) {
-    categorizedItems["อื่นๆ"] = Object.entries(allItems).map(([name, qty]) => `${name} : ${qty}`);
-  }
 
-  const itemSummary = Object.entries(categorizedItems)
-    .map(([cat, items]) => `<div style="margin-bottom:6px;"><strong>${cat}</strong>: ${items.join(" | ")}</div>`)
-    .join("");
+      const itemSummary = Object.entries(categorizedItems)
+        .map(([cat, items]) => `<div style="margin-bottom:6px;"><strong>${cat}</strong>: ${items.join(" | ")}</div>`)
+        .join("");
 
-  const historyHtml = records
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map(r => {
-      const items = (r.items || []).map(item => {
-        let name = item;
-        const match = item.match(/\((.*?)\)/);
-        if (match) {
-          name = match[1];
-        } else {
-          name = item.split(" - ")[0];
-        }
-        const qtyMatch = item.match(/- (\d+) ชิ้น/);
-        const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
-        return `<li>${name} : ${qty}</li>`;
-      }).join("");
+      const historyHtml = records
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .map(r => {
+          const items = (r.items || []).map(item => {
+            let name = item;
+            const match = item.match(/\((.*?)\)/);
+            if (match) { name = match[1]; } else { name = item.split(" - ")[0]; }
+            const qtyMatch = item.match(/- (\d+) ชิ้น/);
+            const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
+            return `<li>${name} : ${qty}</li>`;
+          }).join("");
 
-      const noteText = r.note
-        ? `<div style="margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${r.note}</div>`
-        : "";
+          const noteText = r.note ? `<div style="margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${r.note}</div>` : "";
 
-      return `
-        <div style="margin-bottom:16px;">
-          <div style="margin-bottom:4px;font-weight:bold;">📅 ${formatDate(r.date)}</div>
-          <ul style="padding-left:16px;margin:0;">${items}</ul>
-          <div style="margin-top:4px;color:#00796b;">💵 ยอด: ${parseFloat(r.amount || 0).toLocaleString()} บาท</div>
-          ${noteText}
-          <hr style="margin: 10px auto; border: 0; border-top: 1px dashed #999; width: 60%;">
+          return `
+            <div style="margin-bottom:16px;">
+              <div style="margin-bottom:4px;font-weight:bold;">📅 ${formatDate(r.date)}</div>
+              <ul style="padding-left:16px;margin:0;">${items}</ul>
+              <div style="margin-top:4px;color:#00796b;">💵 ยอด: ${parseFloat(r.amount || 0).toLocaleString()} บาท</div>
+              ${noteText}
+              <hr style="margin: 10px auto; border: 0; border-top: 1px dashed #999; width: 60%;">
+            </div>
+          `;
+        }).join("");
+
+      const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
+
+      document.getElementById("modal-content").innerHTML = `
+        <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
+          <button onclick="saveModalAsImage()" title="บันทึกเป็นรูปภาพ" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">💾</button>
+          <button onclick="closeCustomerModal()" title="ปิดหน้าต่าง" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">❌</button>
         </div>
+
+        <h3 style="font-size:18px;margin-bottom:4px;">📇 ${customer.name}</h3>
+        <div>🆔 <strong>OPD:</strong> ${customer.opd}</div>
+        <div>📞 <strong>เบอร์:</strong> ${customer.phone}</div>
+        <div>📅 <strong>วันล่าสุด:</strong> ${formatDate(latestRecord.date)} ${daysAbsentText}</div>
+        <div style="color:#00796b;"><strong>💰 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท</div>
+        <div>🔁 มาใช้บริการ: ${records.length} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
+        <div>💳 <strong>เฉลี่ยต่อครั้ง:</strong> ${average.toLocaleString()} บาท</div>
+
+        <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
+
+        <div style="font-weight:bold;">📦 สรุปรายการซื้อทั้งหมด:</div>
+        <div style="margin:6px 0 12px;">${itemSummary}</div>
+
+        <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
+
+        <div style="font-weight:bold;margin-bottom:6px;">🛍️ ประวัติการซื้อย้อนหลัง:</div>
+        ${historyHtml}
+
+        <div style="margin-top:10px;font-weight:bold;color:#b8860b;">💰 รวมทั้งหมด: ${totalAmount.toLocaleString()} บาท</div>
       `;
-    }).join("");
 
-  const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
+      document.getElementById("customer-modal").style.display = "flex";
+    }
 
-  document.getElementById("modal-content").innerHTML = `
-    <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
-      <button onclick="saveModalAsImage()" title="บันทึกเป็นรูปภาพ" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">💾</button>
-      <button onclick="closeCustomerModal()" title="ปิดหน้าต่าง" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">❌</button>
-    </div>
+    function saveModalAsImage() {
+      const node = document.getElementById("modal-content");
+      if (!node) { alert("ไม่พบเนื้อหาใน modal"); return; }
+      html2canvas(node, { scale: 2 }).then(canvas => {
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (isIOS) {
+          const previewArea = document.createElement("div");
+          previewArea.style.marginTop = "20px";
+          previewArea.innerHTML = `
+            <div style="font-weight:bold; margin-bottom:6px;">แตะค้างที่ภาพด้านล่างเพื่อบันทึกรูป</div>
+            <img src="${dataUrl}" style="width:100%; border:1px solid #ccc; border-radius:12px;">
+          `;
+          const existing = document.getElementById("modalImagePreview");
+          if (existing) existing.remove();
+          previewArea.id = "modalImagePreview";
+          node.appendChild(previewArea);
+        } else {
+          const link = document.createElement("a");
+          link.download = 'customer-info.jpg';
+          link.href = dataUrl;
+          link.click();
+        }
+      }).catch(error => {
+        console.error("จับภาพไม่สำเร็จ:", error);
+        alert("เกิดข้อผิดพลาดในการบันทึกรูปภาพ");
+      });
+    }
 
-    <h3 style="font-size:18px;margin-bottom:4px;">📇 ${customer.name}</h3>
-    <div>🆔 <strong>OPD:</strong> ${customer.opd}</div>
-    <div>📞 <strong>เบอร์:</strong> ${customer.phone}</div>
-    <div>📅 <strong>วันล่าสุด:</strong> ${formatDate(latestRecord.date)} ${daysAbsentText}</div>
-    <div style="color:#00796b;"><strong>💰 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท</div>
-    <div>🔁 มาใช้บริการ: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
-    <div>💳 <strong>เฉลี่ยต่อครั้ง:</strong> ${average.toLocaleString()} บาท</div>
+    function closeCustomerModal(){ document.getElementById("customer-modal").style.display="none"; }
 
-    <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
+    // ---------- ฟิลเตอร์ตรวจข้อมูลผิดปกติ ----------
+    const normName = s => String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
+    const onlyDigits = s => String(s||'').replace(/\D/g,'');
+    const normPhone = s => {
+      let d = onlyDigits(s);
+      if(d.startsWith('66') && d.length>=11) d = '0' + d.slice(-9);
+      return d;
+    };
+    const normOPD = s => String(s||'').trim().padStart(4,'0');
+    const isValidPhone = p => { const d = normPhone(p); return d.length===9 || d.length===10; };
+    const isValidOPD = o => /^\d{4}$/.test(String(o||'').trim());
 
-    <div style="font-weight:bold;">📦 สรุปรายการซื้อทั้งหมด:</div>
-    <div style="margin:6px 0 12px;">${itemSummary}</div>
+    function runDiag(type){
+      if(!allSales.length){ alert('ยังไม่มีข้อมูลขายให้ตรวจ'); return; }
+      const rows = diagCompute(type);
+      renderDiag(type, rows);
+    }
 
-    <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
+    function diagCompute(type){
+      const out = [];
+      const byName = new Map();
+      const byPhone = new Map();
+      const byOPD = new Map();
+      const byTripletNorm = new Map();
 
-    <div style="font-weight:bold;margin-bottom:6px;">🛍️ ประวัติการซื้อย้อนหลัง:</div>
-    ${historyHtml}
+      allSales.forEach(r=>{
+        const nameN = normName(r.name);
+        const phoneN = normPhone(r.phone);
+        const opdN = normOPD(r.opd);
 
-    <div style="margin-top:10px;font-weight:bold;color:#b8860b;">💰 รวมทั้งหมด: ${totalAmount.toLocaleString()} บาท</div>
-  `;
+        if(!byName.has(nameN)) byName.set(nameN,{opds:new Set(),phones:new Set(),rows:[]});
+        byName.get(nameN).opds.add(opdN); byName.get(nameN).phones.add(phoneN||''); byName.get(nameN).rows.push(r);
 
-  document.getElementById("customer-modal").style.display = "flex";
-}
+        if(phoneN){
+          if(!byPhone.has(phoneN)) byPhone.set(phoneN,{names:new Set(),opds:new Set(),rows:[]});
+          byPhone.get(phoneN).names.add(nameN); byPhone.get(phoneN).opds.add(opdN); byPhone.get(phoneN).rows.push(r);
+        }
+
+        if(!byOPD.has(opdN)) byOPD.set(opdN,{names:new Set(),phones:new Set(),rows:[]});
+        byOPD.get(opdN).names.add(nameN); byOPD.get(opdN).phones.add(phoneN||''); byOPD.get(opdN).rows.push(r);
+
+        const tripKey = `${nameN}|${phoneN}|${opdN}`;
+        if(!byTripletNorm.has(tripKey)) byTripletNorm.set(tripKey,{rawKeys:new Set(),rows:[]});
+        byTripletNorm.get(tripKey).rawKeys.add(`${(r.name||'').trim()}|${(r.phone||'').trim()}`);
+        byTripletNorm.get(tripKey).rows.push(r);
+      });
+
+      switch(type){
+        case 'missingPhone': {
+          allSales.forEach(r=>{
+            const d = normPhone(r.phone);
+            if(!d){ out.push({name:r.name||'-',opd:normOPD(r.opd),phone:'-',date:r.date}); }
+          });
+          break;
+        }
+        case 'nameDifferentOPD': {
+          byName.forEach((v, nameN)=>{
+            const opds = Array.from(v.opds).filter(x=>x!=='0000' && x!=='');
+            if(new Set(opds).size>1){
+              out.push({
+                name: v.rows[0]?.name || nameN,
+                opds: Array.from(new Set(opds)).join(', '),
+                phones: Array.from(v.phones).filter(Boolean).join(', '),
+                count: v.rows.length
+              });
+            }
+          });
+          break;
+        }
+        case 'phoneDifferentName': {
+          byPhone.forEach((v, phoneN)=>{
+            if(!phoneN) return;
+            if(v.names.size>1){
+              out.push({
+                phone: phoneN,
+                names: Array.from(v.names).map(n=>v.rows.find(r=>normName(r.name)===n)?.name || n).join(', '),
+                opds: Array.from(v.opds).join(', '),
+                count: v.rows.length
+              });
+            }
+          });
+          break;
+        }
+        case 'opdDifferentNamePhone': {
+          byOPD.forEach((v, opdN)=>{
+            if(v.names.size>1 || (v.phones.size>1 && !v.phones.has(''))){
+              out.push({
+                opd: opdN,
+                names: Array.from(v.names).map(n=>v.rows.find(r=>normName(r.name)===n)?.name || n).join(', '),
+                phones: Array.from(v.phones).join(', '),
+                count: v.rows.length
+              });
+            }
+          });
+          break;
+        }
+        case 'invalidPhone': {
+          allSales.forEach(r=>{
+            const d = normPhone(r.phone);
+            if(d && !isValidPhone(d)){
+              out.push({name:r.name||'-',opd:normOPD(r.opd),phone:r.phone||'-',date:r.date});
+            }
+          });
+          break;
+        }
+        case 'invalidOPD': {
+          allSales.forEach(r=>{
+            if(!isValidOPD(String(r.opd||''))){
+              out.push({name:r.name||'-',opd:r.opd||'',phone:r.phone||'-',date:r.date});
+            }
+          });
+          break;
+        }
+        case 'splitGroups': {
+          byTripletNorm.forEach((v, k)=>{
+            if(v.rawKeys.size>1){
+              const [nameN, phoneN, opdN] = k.split('|');
+              out.push({
+                name: v.rows[0]?.name || nameN,
+                opd: opdN,
+                phone: v.rows[0]?.phone || phoneN,
+                variants: Array.from(v.rawKeys).join('  |  '),
+                count: v.rows.length
+              });
+            }
+          });
+          break;
+        }
+        case 'sameNameMultiPhones': {
+          byName.forEach((v, nameN)=>{
+            const phones = Array.from(v.phones);
+            const nonEmpty = phones.filter(p=>p);
+            if(nonEmpty.length>1 || (nonEmpty.length>=1 && phones.includes(''))){
+              out.push({
+                name: v.rows[0]?.name || nameN,
+                phones: phones.map(p=>p||'(ว่าง)').join(', '),
+                opds: Array.from(v.opds).join(', '),
+                count: v.rows.length
+              });
+            }
+          });
+          break;
+        }
+      }
+      return out;
+    }
+
+    function renderDiag(type, rows){
+      const head = document.getElementById('diag-head');
+      const body = document.getElementById('diag-body');
+      const table = document.getElementById('diag-results');
+      const counter = document.getElementById('diag-count');
+
+      const headersByType = {
+        missingPhone: ['ชื่อ','OPD','เบอร์','วันที่'],
+        nameDifferentOPD: ['ชื่อ','OPDs','เบอร์ที่พบ','จำนวนรายการ'],
+        phoneDifferentName: ['เบอร์','ชื่อที่พบ','OPDs','จำนวนรายการ'],
+        opdDifferentNamePhone: ['OPD','ชื่อที่พบ','เบอร์ที่พบ','จำนวนรายการ'],
+        invalidPhone: ['ชื่อ','OPD','เบอร์','วันที่'],
+        invalidOPD: ['ชื่อ','OPD (เดิม)','เบอร์','วันที่'],
+        splitGroups: ['ชื่อ','OPD','เบอร์','รูปแบบที่พบ (name|phone)','จำนวนรายการ'],
+        sameNameMultiPhones: ['ชื่อ','เบอร์ทั้งหมด','OPDs','จำนวนรายการ']
+      };
+
+      const cols = headersByType[type] || ['ข้อมูล'];
+      head.innerHTML = cols.map(c=>`<th>${c}</th>`).join('');
+      body.innerHTML = rows.map(r=>{
+        switch(type){
+          case 'missingPhone': return `<tr><td>${safe(r.name)}</td><td>${safe(r.opd)}</td><td style="color:#b91c1c">-</td><td>${formatDate(r.date)}</td></tr>`;
+          case 'nameDifferentOPD': return `<tr><td>${safe(r.name)}</td><td>${safe(r.opds)}</td><td>${safe(r.phones||'-')}</td><td>${r.count}</td></tr>`;
+          case 'phoneDifferentName': return `<tr><td>${safe(r.phone)}</td><td>${safe(r.names)}</td><td>${safe(r.opds)}</td><td>${r.count}</td></tr>`;
+          case 'opdDifferentNamePhone': return `<tr><td>${safe(r.opd)}</td><td>${safe(r.names)}</td><td>${safe(r.phones)}</td><td>${r.count}</td></tr>`;
+          case 'invalidPhone': return `<tr><td>${safe(r.name)}</td><td>${safe(r.opd)}</td><td style="color:#b91c1c">${safe(r.phone)}</td><td>${formatDate(r.date)}</td></tr>`;
+          case 'invalidOPD': return `<tr><td>${safe(r.name)}</td><td style="color:#b91c1c">${safe(r.opd)}</td><td>${safe(r.phone)}</td><td>${formatDate(r.date)}</td></tr>`;
+          case 'splitGroups': return `<tr><td>${safe(r.name)}</td><td>${safe(r.opd)}</td><td>${safe(r.phone)}</td><td>${safe(r.variants)}</td><td>${r.count}</td></tr>`;
+          case 'sameNameMultiPhones': return `<tr><td>${safe(r.name)}</td><td>${safe(r.phones)}</td><td>${safe(r.opds)}</td><td>${r.count}</td></tr>`;
+          default: return `<tr><td>—</td></tr>`;
+        }
+      }).join('');
+
+      counter.textContent = rows.length ? `พบ ${rows.length} เคส` : 'ไม่พบความผิดปกติ';
+      table.style.display = 'table';
+      table.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+
+    
+
+    // ปิด modal เมื่อคลิกนอกกล่อง
+    document.addEventListener("DOMContentLoaded", function () {
+      const modal = document.getElementById("customer-modal");
+      if (modal) {
+        modal.addEventListener("click", function (event) {
+          const modalBox = modal.querySelector(".modal-box");
+          if (!modalBox.contains(event.target)) { closeCustomerModal(); }
+        });
+      }
+    });
 
 
-
-
-
-function closeCustomerModal() {
-  document.getElementById("customer-modal").style.display = "none";
-}
-
- function toggleFloatingMenu() {
+    function toggleFloatingMenu() {
     const menu = document.getElementById("floatingMenu");
     menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
   }
 
-  // ปิดเมนูถ้าแตะที่อื่น
   document.addEventListener('click', function(e) {
     const toggle = document.getElementById("floatingToggle");
     const menu = document.getElementById("floatingMenu");
@@ -766,124 +605,13 @@ function closeCustomerModal() {
       menu.style.display = "none";
     }
   });
-
-
-
-document.addEventListener("DOMContentLoaded", function () {
-  const modal = document.getElementById("customer-modal");
-  if (modal) {
-    modal.addEventListener("click", function (event) {
-      const modalBox = document.querySelector("#customer-modal .modal-box");
-      if (!modalBox.contains(event.target)) {
-        closeCustomerModal();
-      }
-    });
-  }
-});
-
-function closeCustomerModal() {
-  document.getElementById("customer-modal").style.display = "none";
-}
-
-// ✅ โค้ดนี้รอ DOM โหลดเสร็จแล้วผูก event อย่างปลอดภัย
-document.addEventListener("DOMContentLoaded", () => {
-  const modal = document.getElementById("customer-modal");
-
-  if (modal) {
-    modal.addEventListener("click", function (event) {
-      const modalBox = modal.querySelector(".modal-box");
-
-      // ถ้าแตะนอก modal-box → ปิด modal
-      if (!modalBox.contains(event.target)) {
-        closeCustomerModal();
-      }
-    });
-  } else {
-    console.error("❌ ไม่พบ customer-modal ใน DOM");
-  }
-});
-
-
-document.addEventListener("DOMContentLoaded", function () {
-  const modal = document.getElementById("customer-modal");
-
-  if (modal) {
-    modal.addEventListener("click", function (event) {
-      const modalBox = modal.querySelector(".modal-box");
-
-      if (!modalBox.contains(event.target)) {
-        closeCustomerModal();
-      }
-    });
-  } else {
-    console.error("❌ ไม่พบ customer-modal ใน DOM");
-  }
-});
-
-
-
-  function saveModalAsImage() {
-  const node = document.getElementById("modal-content");
-  if (!node) {
-    alert("ไม่พบเนื้อหาใน modal");
-    return;
-  }
-
-  html2canvas(node, { scale: 2 }).then(canvas => {
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
-
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-    if (isIOS) {
-      // ✅ iPhone/iPad: แสดง preview ให้กดค้างเพื่อเซฟ
-      const previewArea = document.createElement("div");
-      previewArea.style.marginTop = "20px";
-      previewArea.innerHTML = `
-        <div style="font-weight:bold; margin-bottom:6px;">แตะค้างที่ภาพด้านล่างเพื่อบันทึกรูป</div>
-        <img src="${dataUrl}" style="width:100%; border:1px solid #ccc; border-radius:12px;">
-      `;
-
-      const existing = document.getElementById("modalImagePreview");
-      if (existing) existing.remove();
-      previewArea.id = "modalImagePreview";
-
-      node.appendChild(previewArea);
-    } else {
-      // ✅ Android / คอม: ดาวน์โหลดอัตโนมัติ
-      const link = document.createElement("a");
-      link.download = 'customer-info.jpg';
-      link.href = dataUrl;
-      link.click();
-    }
-  }).catch(error => {
-    console.error("จับภาพไม่สำเร็จ:", error);
-    alert("เกิดข้อผิดพลาดในการบันทึกรูปภาพ");
-  });
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  const modal = document.getElementById("customer-modal");
-
-  if (modal) {
-    modal.addEventListener("click", function (event) {
-      const modalBox = modal.querySelector(".modal-box");
-      if (!modalBox.contains(event.target)) {
-        closeCustomerModal();
-      }
-    });
-  } else {
-    console.error("❌ ไม่พบ customer-modal ใน DOM");
-  }
-});
-
-
   </script>
 
-  <div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
+ <div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
   <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu" style="width:60px;height:60px;">
 </div>
 
-  <div id="floatingMenu" class="floating-menu">
+<div id="floatingMenu" class="floating-menu">
   <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}"></a>
   <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}"></a>
   <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}"></a>
@@ -892,14 +620,14 @@ document.addEventListener("DOMContentLoaded", () => {
   <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}"></a>
   <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}"></a>
   <a href="#"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}"></a>
-  <a href="#"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}"></a>
+  <a href="{{ url_for('appointments') }}"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}"></a>
 </div>
 <div id="customer-modal">
-  <div class="modal-box">
-    <button onclick="closeCustomerModal()" style="position:absolute;top:10px;right:14px;font-size:20px;">×</button>
+  <div class="modal-box" role="dialog" aria-modal="true">
+    <button onclick="closeCustomerModal()" title="ปิดหน้าต่าง"
+            style="position:absolute;top:10px;right:14px;font-size:20px;border:none;background:transparent;cursor:pointer">×</button>
     <div id="modal-content"></div>
   </div>
-</div>
 </div>
 </body>
 </html>
