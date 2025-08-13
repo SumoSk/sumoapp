@@ -51,6 +51,7 @@
     background-color: #e0f2f1; border-radius: 16px; padding: 20px 30px;
     margin: 0 auto 30px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     max-width: fit-content; text-align: center;
+    cursor: pointer; /* ทำให้คลิกได้ */
   }
   #mainTitle .month { font-size: 26px; font-weight: 600; color: #004d40; }
   #mainTitle .total { font-size: 18px; color: #009688; margin-top: 6px; }
@@ -200,7 +201,7 @@
     display: flex; justify-content: center; align-items: center; padding: 16px;
   }
 
-  /* ปุ่มในแถบเดือน ขนาดกระชับ */
+  /* ปุ่มในแถบเดือน */
 .month-nav {
   display: flex;
   justify-content: center;
@@ -222,17 +223,13 @@
 }
 .month-nav button:hover { background-color: #00796b; }
 .month-nav button:active { transform: translateY(1px); }
-
-/* ปรับสองปุ่มกลางให้โทนต่างนิดหน่อย (อ่านง่าย) */
 #openRangeBtn { background-color: #00897b; }
 #clearRangeBtn { background-color: #607d8b; }
 #clearRangeBtn:hover { background-color: #546e7a; }
 
-/* ====== Modal เลือกช่วงเดือน ====== */
+/* ===== Modal เลือกช่วงเดือน ===== */
 .range-modal { position: fixed; inset: 0; z-index: 1200; display: none; }
-.range-modal__backdrop {
-  position: absolute; inset: 0; background: rgba(0,0,0,.45);
-}
+.range-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.45); }
 .range-modal__panel {
   position: absolute; left: 50%; top: 50%;
   transform: translate(-50%, -50%);
@@ -251,12 +248,8 @@
   background: transparent; border: none; font-size: 18px;
   cursor: pointer; color: #004d40;
 }
-.range-modal__body {
-  display: grid; gap: 12px; padding: 14px;
-}
-.range-modal__body label {
-  display: grid; gap: 6px; font-size: 13px; color: #335;
-}
+.range-modal__body { display: grid; gap: 12px; padding: 14px; }
+.range-modal__body label { display: grid; gap: 6px; font-size: 13px; color: #335; }
 .range-modal__body input[type="month"]{
   -webkit-appearance: none; appearance: none;
   width: 100%; padding: 8px 10px; font-size: 14px;
@@ -282,7 +275,11 @@
   .range-modal__body input[type="month"]{ font-size: 13px; padding: 7px 10px; }
 }
 
-
+/* ===== ตารางสรุปใน popup ===== */
+.table-mini { width:100%; border-collapse:collapse; font-size:13px; }
+.table-mini th, .table-mini td { padding:6px 8px; border-bottom:1px dashed #e0e0e0; text-align:right; }
+.table-mini th:first-child, .table-mini td:first-child { text-align:left; }
+.badge { display:inline-block; padding:2px 8px; border-radius:999px; background:#e0f2f1; color:#004d40; font-size:12px; }
 </style>
 </head>
 <body>
@@ -339,7 +336,6 @@
     </div>
   </div>
 </div>
-
 
 <div id="mainTitle">
   <div class="month"></div>
@@ -635,7 +631,6 @@
       const lastVisitText = daysSinceLastVisit != null
         ? `<span style="color:${absentColor};">🔚 ไม่มา ${daysSinceLastVisit} วัน</span>` : `<span>🔚 ไม่มีข้อมูล</span>`;
 
-      // ลูกค้าใหม่: ไม่มีรายการก่อนช่วง (หรือก่อนเดือนปัจจุบันเมื่อไม่ใช้ช่วง)
       const isNewCustomer = monthRange.enabled
         ? allRec.filter(r => ymNum(dateYM(r.date)) < ymNum(monthRange.startYM)).length === 0
         : allRec.filter(r => r.date < `${formatYM(viewingDate)}-01`).length === 0;
@@ -659,6 +654,9 @@
 
   fetchDataAndUpdate();
   fetchAllCustomerRecords();
+
+  // === คลิกกรอบสรุปเดือนเพื่อเปิด popup รายวัน ===
+  document.getElementById('mainTitle').addEventListener('click', openMonthlySalesPopup);
 
   // ===== กลุ่มหมวด (modal) =====
   function openGroupModalByCategory(cat) {
@@ -802,7 +800,7 @@
   function daysInMonth(y,m){ return new Date(y,m,0).getDate(); }
 
   // ===== Modal ลูกค้า =====
-  function escapeHTML(s=''){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  function escapeHTML(s=''){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]) );}
   function closeCustomerModal(){ document.getElementById("customer-modal").style.display = "none"; }
   function formatDate(d){ if(!d) return ''; const [y,m,day]=d.split('-'); return `${day}/${m}/${y.slice(-2)}`; }
 
@@ -1108,16 +1106,11 @@
 function openRangeModal(){
   const s = document.getElementById('rangeStartModal');
   const e = document.getElementById('rangeEndModal');
-  // เติมค่าล่าสุดไว้ให้แก้ต่อได้
   s.value = monthRange.startYM || '';
   e.value = monthRange.endYM || '';
   document.getElementById('rangeModal').style.display = 'block';
 }
-
-function closeRangeModal(){
-  document.getElementById('rangeModal').style.display = 'none';
-}
-
+function closeRangeModal(){ document.getElementById('rangeModal').style.display = 'none'; }
 function applyRangeFromModal(){
   const s = document.getElementById('rangeStartModal').value;
   const e = document.getElementById('rangeEndModal').value;
@@ -1129,14 +1122,171 @@ function applyRangeFromModal(){
   closeRangeModal();
   fetchDataAndUpdate();
 }
-
-// ถ้ามี clearRange() อยู่แล้ว ให้แทนที่ด้วยอันนี้ (เพิ่มการปิด modal)
 function clearRange(){
   monthRange.enabled = false;
   monthRange.startYM = monthRange.endYM = null;
   closeRangeModal();
   fetchDataAndUpdate();
 }
+
+/* =======================
+   Popup รายวัน (ไม่เอาวันศูนย์)
+   ======================= */
+function openMonthlySalesPopup(){
+  // Helpers
+  const fmtYM = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  const parseQty = (items=[]) => items.reduce((s,it)=>{
+    const m = it.match(/- (\d+) ชิ้น/); return s + (m? parseInt(m[1]):1);
+  },0);
+  const thDateWithWeekday = (iso)=>{
+    const d = new Date(iso);
+    const wd = d.toLocaleDateString('th-TH',{ weekday:'long' });
+    const dt = d.toLocaleDateString('th-TH',{ day:'2-digit', month:'short', year:'numeric' });
+    return `${dt} (${wd})`;
+  };
+
+  // ระบุช่วงเดือน
+  const now = new Date();
+  const curY = viewingDate.getFullYear();
+  const curM = viewingDate.getMonth();
+
+  // เดือนปัจจุบัน: 1→วันนี้ / ถ้าเปิดดูเดือนเก่าจะเป็นทั้งเดือนนั้น
+  let curStart = new Date(curY, curM, 1);
+  let curEnd   = (curY===now.getFullYear() && curM===now.getMonth())
+                  ? new Date(now.getFullYear(), now.getMonth(), now.getDate())
+                  : new Date(curY, curM+1, 0);
+
+  // เดือนที่แล้ว: ทั้งเดือน
+  const prevStart = new Date(curY, curM-1, 1);
+  const prevEnd   = new Date(curY, curM, 0);
+
+  const curPrefix  = fmtYM(curStart);
+  const prevPrefix = fmtYM(prevStart);
+
+  // สร้างสรุปรายวัน (เฉพาะวันที่มียอด)
+  function dailySummary(from, to, prefix){
+    const map = {}; // date -> {total, bills, items, customers:Set}
+    allSalesRecords.forEach(r=>{
+      if(!r.date.startsWith(prefix)) return;
+      const d = new Date(r.date);
+      if(d < from || d > to) return;
+
+      if(!map[r.date]) map[r.date] = { total:0, bills:0, items:0, customers:new Set() };
+      map[r.date].total   += parseFloat(r.amount||0);
+      map[r.date].bills   += 1;
+      map[r.date].items   += parseQty(r.items);
+      map[r.date].customers.add(`${r.name}|${r.phone}`);
+    });
+
+    const rows = Object.entries(map)
+      .map(([date, v])=>({
+        date,
+        total: v.total,
+        bills: v.bills,
+        avgBill: v.bills ? Math.round(v.total / v.bills) : 0,
+        items: v.items,
+        customers: v.customers.size
+      }))
+      .filter(r=>r.total>0) // ไม่เอาวันศูนย์
+      .sort((a,b)=>a.date.localeCompare(b.date));
+
+    const sum = rows.reduce((s,r)=>s+r.total,0);
+    const days = rows.length;
+    const avgPerDay = days? Math.round(sum/days):0;
+    const best = rows.slice().sort((a,b)=>b.total-a.total)[0] || null;
+    const worst = rows.slice().sort((a,b)=>a.total-b.total)[0] || null;
+
+    const wdTotal = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
+    rows.forEach(r=>{
+      const wd = new Date(r.date).getDay(); // 0=อา
+      wdTotal[wd] += r.total;
+    });
+
+    return { rows, sum, days, avgPerDay, best, worst, wdTotal };
+  }
+
+  const cur = dailySummary(curStart, curEnd, curPrefix);
+  const prev = dailySummary(prevStart, prevEnd, prevPrefix);
+
+  // วาดตาราง
+  const toRow = r => `
+    <tr>
+      <td>${thDateWithWeekday(r.date)}</td>
+      <td>${r.total.toLocaleString()}</td>
+      <td>${r.bills.toLocaleString()}</td>
+      <td>${r.avgBill.toLocaleString()}</td>
+      <td>${r.items.toLocaleString()}</td>
+      <td>${r.customers.toLocaleString()}</td>
+    </tr>`;
+
+  const wdNames = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+  const wdBadges = (wdTotal)=> wdNames.map((n,i)=>`<span class="badge" title="รวม ${n}">${n}: ${Math.round(wdTotal[i]).toLocaleString()}</span>`).join(' ');
+
+  const curTitle = new Date(curStart).toLocaleString('th-TH',{month:'long'}) + ' ' + (curStart.getFullYear()+543);
+  const prevTitle= new Date(prevStart).toLocaleString('th-TH',{month:'long'}) + ' ' + (prevStart.getFullYear()+543);
+
+  const html = `
+    <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
+      <button onclick="saveModalAsImage()" title="บันทึกเป็นรูปภาพ" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer;">💾</button>
+      <button onclick="closeCustomerModal()" title="ปิดหน้าต่าง" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer;">❌</button>
+    </div>
+
+    <h3 style="margin:0 0 6px;">📅 สรุปรายวันเดือนปัจจุบัน — ${curTitle}</h3>
+    <div style="margin-bottom:8px;">
+      <span class="badge">รวม: ${cur.sum.toLocaleString()} บาท</span>
+      <span class="badge">จำนวนวันที่มีขาย: ${cur.days} วัน</span>
+      <span class="badge">เฉลี่ย/วัน: ${cur.avgPerDay.toLocaleString()}</span>
+      ${cur.best ? `<span class="badge">สูงสุด: ${thDateWithWeekday(cur.best.date)} = ${cur.best.total.toLocaleString()}</span>`:''}
+      ${cur.worst ? `<span class="badge">ต่ำสุด: ${thDateWithWeekday(cur.worst.date)} = ${cur.worst.total.toLocaleString()}</span>`:''}
+    </div>
+    <div style="margin-bottom:10px;">${wdBadges(cur.wdTotal)}</div>
+    <table class="table-mini">
+      <thead>
+        <tr>
+          <th>วันที่ (วัน)</th>
+          <th>ยอดรวม</th>
+          <th>บิล</th>
+          <th>เฉลี่ย/บิล</th>
+          <th>ชิ้น</th>
+          <th>ลูกค้า</th>
+        </tr>
+      </thead>
+      <tbody>${cur.rows.map(toRow).join('')}</tbody>
+    </table>
+
+    <hr style="margin:16px 0; border:0; border-top:1px solid #ddd;">
+
+    <h3 style="margin:0 0 6px;">📅 เดือนที่แล้ว — ${prevTitle}</h3>
+    <div style="margin-bottom:8px;">
+      <span class="badge">รวม: ${prev.sum.toLocaleString()} บาท</span>
+      <span class="badge">จำนวนวันที่มีขาย: ${prev.days} วัน</span>
+      <span class="badge">เฉลี่ย/วัน: ${prev.avgPerDay.toLocaleString()}</span>
+      ${prev.best ? `<span class="badge">สูงสุด: ${thDateWithWeekday(prev.best.date)} = ${prev.best.total.toLocaleString()}</span>`:''}
+      ${prev.worst ? `<span class="badge">ต่ำสุด: ${thDateWithWeekday(prev.worst.date)} = ${prev.worst.total.toLocaleString()}</span>`:''}
+    </div>
+    <div style="margin-bottom:10px;">${wdBadges(prev.wdTotal)}</div>
+    <table class="table-mini">
+      <thead>
+        <tr>
+          <th>วันที่ (วัน)</th>
+          <th>ยอดรวม</th>
+          <th>บิล</th>
+          <th>เฉลี่ย/บิล</th>
+          <th>ชิ้น</th>
+          <th>ลูกค้า
+                 </tr>
+      </thead>
+      <tbody>${prev.rows.map(toRow).join('')}</tbody>
+    </table>
+  `;
+
+  // ใช้ modal เดิม
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('customer-modal').style.display = 'flex';
+}
+
+
+
 </script>
 
 <div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
