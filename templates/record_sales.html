@@ -5,19 +5,108 @@
   <meta charset="UTF-8" />
   <title>บันทึกยอดขายประจำวัน</title>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f7f7f7; padding: 10px 10px 140px; }
-    h2 { text-align: center; color: teal; font-size: 20px; margin-top: 0; }
-    .container { max-width: 700px; margin: 30px auto; background: #fff; border-radius: 12px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-    label { font-weight: bold; display: block; margin-top: 20px; }
-    input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-    .flex-row { display: flex; gap: 10px; }
-    .flex-row > * { flex: 1; }
-    .item-row { display: flex; gap: 10px; margin-top: 10px; }
-    .item-row select, .item-row input { flex: 1; }
-    .add-button { margin-top: 10px; padding: 10px; background-color: #0288d1; color: white; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; }
-    button[type="button"], .save-all-btn { margin-top: 20px; padding: 12px; width: 100%; background-color: #43a047; color: white; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; }
+    :root{
+      --teal:#0f766e;
+      --teal-600:#0d9488;
+      --bg:#f7f7f7;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --chip:#eef7f6;
+      --danger:#c62828;
+    }
+    *{box-sizing:border-box}
+    body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background-color: var(--bg); padding: 10px 10px 140px; color:#111827 }
+    h2 { text-align: center; color: var(--teal); font-size: 20px; margin: 10px 0 0 }
+    .container { max-width: 880px; margin: 20px auto; background: var(--card); border-radius: 14px; padding: 22px; box-shadow: 0 6px 22px rgba(2,8,23,.06) }
+    .section-title{display:flex;align-items:center;gap:8px;margin:8px 0 6px;font-weight:800;color:#0b7660}
+    .section-sub{margin:0 0 10px;color:var(--muted);font-size:12px}
 
-    /* floating dock (เดิม) */
+    /* inline field rows */
+    .field-row{display:grid;grid-template-columns:180px 1fr;gap:12px;align-items:center;margin:8px 0}
+    .field-row label{font-weight:700;font-size:14px;margin:0}
+    input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 10px; background:#fff; font-size:14px }
+    input:focus, select:focus, textarea:focus{ outline: 2px solid #94d3ce; border-color: #94d3ce }
+    .muted{ color: var(--muted); font-size:12px }
+    .pill{background:var(--chip); border:1px solid #cfe9e6; color:#0b7660; padding:4px 8px; border-radius:999px; font-size:12px; display:inline-flex; align-items:center; gap:6px }
+    .row{display:flex;gap:8px;align-items:center}
+    .nowrap{flex-wrap:nowrap}
+    .grow{flex:1; min-width:0}
+
+    /* buttons */
+    .btn { display:inline-flex; gap:8px; align-items:center; justify-content:center; padding: 10px 12px; border-radius: 10px; border:none; cursor:pointer; font-weight:700; font-size:14px }
+    .btn-primary{ background: var(--teal-600); color:#fff }
+    .btn-save{ background:#43a047; color:#fff; padding:12px 18px }
+    .btn-ghost{ background:#f1f5f9 }
+    .btn-danger{ background: var(--danger); color:#fff }
+    .btn-outline{ background:#fff; color:#0b7660; border:1px solid #a7e1da }
+
+    /* items */
+    .item-row { display: grid; grid-template-columns: 1.2fr 1.2fr .7fr .6fr auto; gap: 10px; margin-top: 10px; align-items: center }
+    .item-row.single{grid-template-columns: 1.2fr 1.2fr .7fr .6fr auto}
+    .item-actions{display:flex;justify-content:flex-end}
+
+    /* Edit panel */
+    .edit-panel {background:#f9fbfb;border:1px solid #e0efef;border-radius:14px;padding:16px;margin-top:16px}
+    .chips{ margin-top:8px }
+    .chip{display:inline-block;padding:6px 10px;border-radius:20px;border:1px solid #cde;cursor:pointer;background:#fff;margin:4px 6px 0 0;font-size:13px}
+    .chip.active{background:#0b7660;color:#fff;border-color:#0b7660}
+    .card{border:1px solid var(--line);padding:12px;border-radius:12px;margin:8px 0;display:flex;justify-content:space-between;gap:12px}
+    .card .left{min-width:0}
+    /* ▼ ขนาดตัวอักษร/ระยะห่างในกล่องรายการแก้ไข */
+#editRecordList .card{ font-size:14px; }
+#editRecordList .card .left strong{ font-size:14px; font-weight:700; }
+#editRecordList .items-list{ font-size:14px; margin:4px 0 0; padding-left:18px; }
+#editRecordList .items-list li{ margin:0; line-height:1.35; } /* ต่อๆกัน ชิดขึ้น */
+#editRecordList .total-line{ margin-top:6px; font-weight:700; color:#0b7660; font-size:14px; }
+
+/* ปรับขนาดปุ่มในบล็อกแก้ไขให้พอดี */
+#editRecordList .actions .btn{ font-size:13px; padding:8px 12px; }
+
+
+    /* Review table */
+    table{ width:100%; border-collapse: collapse; margin-top:8px }
+    th, td{ border:1px solid var(--line); padding:8px; font-size:13px; vertical-align:top }
+    thead tr{ background:#f8fafc }
+    .actions{ display:flex; gap:6px; justify-content:center }
+
+    /* Toggle (โปร่งใส อ่านตัวอักษรได้) */
+    .toggle{
+      position: relative; display: inline-grid; grid-template-columns: 1fr 1fr;
+      align-items:center; width: 160px; height: 38px; border:1px solid #a7e1da;
+      border-radius: 999px; background: transparent; overflow:hidden; user-select:none;
+    }
+    .toggle span{
+      text-align:center; font-weight:700; font-size:14px; z-index:2;
+      color:#0b7660; padding:0 4px;
+    }
+    .toggle .knob{
+      position:absolute; top:2px; bottom:2px; width: calc(50% - 4px);
+      background: rgba(13,148,136,.18); border:1px solid rgba(13,148,136,.35);
+      border-radius: 999px; z-index:1; transition: transform .18s ease;
+      transform: translateX(2px); /* default = ซ้าย */
+    }
+    .toggle[data-side="right"] .knob{ transform: translateX(calc(100% + 2px)); }
+    .toggle input{ display:none }
+    .toggle[data-side="left"] span:first-child{ color:#064e3b; font-weight:800 }
+    .toggle[data-side="right"] span:last-child{ color:#064e3b; font-weight:800 }
+
+    /* amount row: บังคับบรรทัดเดียว */
+    .amount-row input{ flex:1; min-width:0 }
+    .amount-row .toggle{ flex: none; }
+
+    /* center primary actions */
+    .center-actions{ display:flex; justify-content:center; gap:10px; margin-top:12px }
+    .center-actions .btn{ min-width:180px }
+
+    @media (max-width:700px){
+      .field-row{grid-template-columns:130px 1fr}
+      .item-row, .item-row.single{grid-template-columns:1fr}
+      .item-actions{justify-content:flex-start}
+      .toggle{ width: 150px; height: 36px }
+    }
+
+    /* floating dock (unchanged) */
     .floating-toggle{position:fixed;bottom:env(safe-area-inset-bottom,18px);left:50%;transform:translateX(-50%);background:rgba(0,128,128,0);width:58px;height:58px;border-radius:50%;box-shadow:0 4px 16px rgba(251,251,251,0);display:flex;justify-content:center;align-items:center;z-index:1000;cursor:pointer}
     .floating-menu{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#fff;border-radius:16px;padding:10px;display:none;flex-direction:column;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(0,0,0,.2);z-index:999;max-height:60vh;overflow-y:auto}
     .floating-menu a img{width:52px;height:52px}
@@ -27,68 +116,113 @@
   <div class="container">
     <h2>บันทึกยอดขายประจำวัน</h2>
 
-    <!-- 🔎 โหมดแก้ไข (IDs ไม่ซ้ำ) -->
-    <button class="add-button" onclick="startEditExisting()">✏️ แก้ไขเดิม</button>
-    <div id="editSection" style="display:none; margin-top:20px;">
-      <label>กรอกเลข OPD เพื่อแก้ไข</label>
-      <div class="flex-row">
-        <input type="text" id="editOPD" placeholder="กรอก OPD (4 หลัก)">
-        <button type="button" class="save-all-btn" style="background-color: teal;" onclick="loadDatesByOPD()">ค้นหา</button>
-      </div>
-      <div id="editDateButtons" style="margin-top: 12px;"></div>
-      <div id="editRecordList" style="margin-top: 12px;"></div>
-    </div>
-
-    <form id="saleForm" onsubmit="return false;">
-      <!-- เก็บ id สำหรับโหมดแก้ไขรายบันทึก -->
-      <input type="hidden" id="currentId" value="">
-
-      <label for="date">1. วันที่</label>
-      <input type="date" id="date" name="date">
-
-      <label for="opd">2. เลข OPD</label>
-      <input type="text" id="opd" name="opd" placeholder="กรอกเลข OPD" oninput="autoFillByOPD()">
-
-      <label for="name">3. ชื่อเล่น ชื่อจริง</label>
-      <input type="text" id="name" name="name" placeholder="เช่น โบว์ - พิมพ์ใจ สุวรรณ">
-
-      <label for="phone">4. เบอร์โทรศัพท์</label>
-      <input type="tel" id="phone" name="phone" placeholder="เช่น 0912345678">
-
-      <label>5. รายการ</label>
-      <div class="item-list" id="itemList">
-        <div class="item-row">
-          <select name="item[]" onchange="updateSubOptions(this, this.nextElementSibling)">
-            <option value="">-- เลือกรายการหลัก --</option>
-          </select>
-          <select name="subitem[]">
-            <option value="">-- เลือกรายการย่อย --</option>
-          </select>
-          <input type="number" name="price[]" placeholder="ราคา" step="0.01">
-          <input type="number" name="qty[]" placeholder="จำนวน" step="1">
+    <!-- 🔧 แก้ไขรายการเดิม (แสดงไว้เลย) -->
+    <div id="editSection" class="edit-panel">
+      <div class="section-title">🛠️ แก้ไขรายการเดิม</div>
+      <p class="section-sub">ค้นหาจากเลข OPD (ต้องกรอกให้ครบ 4 หลัก) จากนั้นเลือกวันที่ และแก้ไข/ลบรายการได้ทันที</p>
+      <div class="field-row">
+        <label>ค้นหา OPD</label>
+        <div class="row nowrap">
+          <input type="text" id="editOPD" class="grow"
+                 placeholder="เช่น 0007"
+                 inputmode="numeric" pattern="\\d{4}" maxlength="4"
+                 oninput="digitsOnly(this)">
+          <button type="button" class="btn btn-outline" onclick="loadDatesByOPD()">ค้นหา</button>
         </div>
       </div>
-      <button type="button" class="add-button" onclick="addItemRow()">+ เพิ่มรายการ</button>
+      <div id="editDateButtons" class="chips" style="margin-top:12px;"></div>
+      <div id="editRecordList" style="margin-top:12px;"></div>
+    </div>
 
-      <label for="amount">6. ยอดขายรวม</label>
-      <div class="flex-row">
-        <input type="number" id="amount" name="amount" placeholder="จำนวนเงิน (บาท)" step="0.01">
-        <select id="paymentType" name="paymentType">
-          <option value="โอน">โอน</option>
-          <option value="สด">สด</option>
-        </select>
+    <!-- 📝 ฟอร์มบันทึก -->
+    <form id="saleForm" onsubmit="return false;">
+      <input type="hidden" id="currentId" value="">
+
+      <div class="section-title">🧾 กรอกข้อมูล</div>
+
+      <div class="field-row">
+        <label for="date">วันที่</label>
+        <input type="date" id="date" name="date">
       </div>
 
-      <label for="note">7. หมายเหตุ</label>
-      <textarea id="note" name="note" rows="3" placeholder="เช่น ลูกค้าขอแถมเพิ่ม / จองโปรล่วงหน้า / ค้างทำ / จับฉลากได้"></textarea>
+      <div class="field-row">
+        <label for="opd">เลข OPD</label>
+        <div class="row nowrap">
+          <input
+            type="text" id="opd" name="opd" placeholder="กรอกเลข OPD 4 หลัก เช่น 0001"
+            inputmode="numeric" maxlength="4" pattern="\\d{4}"
+            oninput="onOPDInput(this);" class="grow">
+          <span class="pill">ต้องครบ 4 หลัก</span>
+        </div>
+      </div>
 
-      <button type="button" class="save-all-btn" onclick="reviewForm()">บันทึก (ยืนยันข้างล่างอีกที)</button>
+      <div class="field-row">
+        <label for="name">ชื่อเล่น-จริง</label>
+        <div class="row nowrap">
+          <input type="text" id="name" name="name" placeholder="เช่น โบว์ - เมลดา" disabled class="grow">
+          <span id="lockNameBadge" class="pill" style="display:none;">🔒 ถูกล็อก</span>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <label for="phone">เบอร์โทรศัพท์</label>
+        <div class="row nowrap">
+          <input type="tel" id="phone" name="phone" placeholder="เช่น 0912345678" disabled class="grow">
+          <span id="lockPhoneBadge" class="pill" style="display:none;">🔒 ถูกล็อก</span>
+        </div>
+      </div>
+
+      <div class="section-title">🧴 รายการ (เริ่มด้วย 1 รายการ)</div>
+      <div id="itemList"></div>
+      <div class="row" style="margin-top:8px">
+        <button type="button" class="btn btn-outline" onclick="addItemRow()">+ เพิ่มรายการ</button>
+      </div>
+
+      <!-- สวิตช์คำนวณอัตโนมัติ (เริ่มปิด) -->
+      <div class="field-row">
+        <label>คำนวณอัตโนมัติ</label>
+        <div class="row nowrap">
+          <div id="sumToggle" class="toggle" role="switch" aria-checked="false" tabindex="0" data-side="left"
+               onclick="toggleSum()" onkeydown="toggleSumKey(event)">
+            <span>ปิด</span><span>เปิด</span>
+            <div class="knob"></div>
+            <input type="hidden" id="sumHidden" value="ปิด">
+          </div>
+        </div>
+      </div>
+
+      <!-- ✅ ยอดรวม + โอน/สด บรรทัดเดียวกัน -->
+      <div class="field-row">
+        <label for="amount">ยอดขายรวม</label>
+        <div class="row nowrap amount-row">
+          <input type="number" id="amount" name="amount" placeholder="จำนวนเงิน (บาท)" step="0.01" min="0" class="grow">
+          <div id="payToggle" class="toggle" role="switch" aria-checked="true" tabindex="0" data-side="left"
+               onclick="togglePayment()" onkeydown="togglePaymentKey(event)">
+            <span>โอน</span><span>สด</span>
+            <div class="knob"></div>
+            <input type="hidden" id="paymentHidden" value="โอน">
+          </div>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <label for="note">หมายเหตุ</label>
+        <textarea id="note" name="note" rows="2" placeholder=""></textarea>
+      </div>
+
+      <!-- ปุ่มกลางหน้า -->
+      <div class="center-actions">
+        <button type="button" id="btnReview" class="btn btn-primary" onclick="reviewForm()" disabled>บันทึก (ยืนยันข้างล่างอีกที)</button>
+        <button type="button" class="btn btn-ghost" onclick="clearForm()">ล้างฟอร์ม</button>
+      </div>
     </form>
 
     <div id="reviewSection" style="margin-top:16px;">
       <h3>รายการที่รอการบันทึก</h3>
     </div>
-    <button class="save-all-btn" onclick="saveAllRecords()">บันทึกทั้งหมด</button>
+    <div class="center-actions">
+      <button class="btn btn-save" id="btnSaveAll" onclick="saveAllRecords()" disabled>บันทึกทั้งหมด</button>
+    </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -113,18 +247,6 @@
       "โปรโมชั่น/อีเว้นพิเศษ": []
     };
 
-    // fill options for the first row
-    (function initFirstRow(){
-      const sel = document.querySelector('select[name="item[]"]');
-      sel.innerHTML = '<option value="">-- เลือกรายการหลัก --</option>' +
-        Object.keys(subOptionsMap).map(k=>`<option value="${k}">${k}</option>`).join('');
-      // default date today
-      const d = new Date();
-      const mm = String(d.getMonth()+1).padStart(2,'0');
-      const dd = String(d.getDate()).padStart(2,'0');
-      document.getElementById('date').value = `${d.getFullYear()}-${mm}-${dd}`;
-    })();
-
     // ---------- State ----------
     let records = [];                 // pending to save
     let customerMap = {};             // opd -> {name, phone}
@@ -133,11 +255,108 @@
 
     // ---------- Prefill customers ----------
     fetch('/api/customers').then(r=>r.json()).then(data=>{
-      (data||[]).forEach(c=>{ if(c.opd){ customerMap[c.opd] = {name:c.name||'', phone:c.phone||''}; } });
+      (data||[]).forEach(c=>{
+        if(c.opd){ customerMap[c.opd] = {name:c.name||'', phone:c.phone||''}; }
+      });
     }).catch(()=>{});
 
+    // ---------- Init ----------
+    document.addEventListener('DOMContentLoaded', () => {
+      initFirstRow();
+      initDateToday();
+      // Enter ค้นหา
+      const ipt = document.getElementById('editOPD');
+      if (ipt) {
+        ipt.addEventListener('keydown', (e)=>{
+          if (e.key === 'Enter') { e.preventDefault(); loadDatesByOPD(); }
+        });
+      }
+      // คำนวณครั้งแรก (แต่ default ปิด → ไม่ปรับ amount)
+      recalcAmount();
+    });
+
     // ---------- UI helpers ----------
-    function startEditExisting(){ document.getElementById('editSection').style.display='block'; }
+    function digitsOnly(el){ el.value = (el.value || '').replace(/\D/g,'').slice(0,4); }
+    function isValidOPD(opd){ return /^\d{4}$/.test(opd||''); }
+
+    function onOPDInput(el){
+      digitsOnly(el);
+      document.getElementById('btnReview').disabled = !isValidOPD(el.value);
+
+      const nameEl = document.getElementById('name');
+      const phoneEl = document.getElementById('phone');
+      const lockName = document.getElementById('lockNameBadge');
+      const lockPhone = document.getElementById('lockPhoneBadge');
+
+      if(!isValidOPD(el.value)){
+        nameEl.value=''; phoneEl.value='';
+        nameEl.disabled = true; phoneEl.disabled = true;
+        nameEl.readOnly = false; phoneEl.readOnly = false;
+        lockName.style.display='none'; lockPhone.style.display='none';
+        return;
+      }
+
+      const opd = el.value;
+      const c = customerMap[opd];
+      if(c){
+        nameEl.value = c.name||''; phoneEl.value = c.phone||'';
+        nameEl.disabled = true; phoneEl.disabled = true;
+        nameEl.readOnly = true; phoneEl.readOnly = true;
+        lockName.style.display='inline-flex'; lockPhone.style.display='inline-flex';
+      }else{
+        nameEl.disabled = false; phoneEl.disabled = false;
+        nameEl.readOnly = false; phoneEl.readOnly = false;
+        lockName.style.display='none'; lockPhone.style.display='none';
+      }
+    }
+
+    /* ----- Toggle utilities ----- */
+    function setToggle(el, side){ // side: 'left'|'right'
+      el.setAttribute('data-side', side);
+      el.setAttribute('aria-checked', side==='right' ? 'true':'false');
+    }
+
+    // Payment toggle
+    function getPayment(){ return document.getElementById('paymentHidden').value || 'โอน'; }
+    function setPayment(val){
+      const toggle = document.getElementById('payToggle');
+      const hidden = document.getElementById('paymentHidden');
+      if(val === 'สด'){ setToggle(toggle, 'right'); hidden.value = 'สด'; }
+      else { setToggle(toggle, 'left'); hidden.value = 'โอน'; }
+    }
+    function togglePayment(){
+      const cur = getPayment();
+      setPayment(cur === 'โอน' ? 'สด' : 'โอน');
+    }
+    function togglePaymentKey(e){
+      if([' ','Enter','ArrowLeft','ArrowRight'].includes(e.key)){
+        e.preventDefault();
+        if(e.key==='ArrowLeft'){ setPayment('โอน'); }
+        else if(e.key==='ArrowRight'){ setPayment('สด'); }
+        else { togglePayment(); }
+      }
+    }
+
+    // Sum toggle (เริ่มปิด)
+    function getSumState(){ return document.getElementById('sumHidden').value || 'ปิด'; }
+    function setSumState(val){
+      const toggle = document.getElementById('sumToggle');
+      const hidden = document.getElementById('sumHidden');
+      if(val === 'เปิด'){ setToggle(toggle, 'right'); hidden.value = 'เปิด'; recalcAmount(); }
+      else { setToggle(toggle, 'left'); hidden.value = 'ปิด'; }
+    }
+    function toggleSum(){
+      const cur = getSumState();
+      setSumState(cur === 'เปิด' ? 'ปิด' : 'เปิด');
+    }
+    function toggleSumKey(e){
+      if([' ','Enter','ArrowLeft','ArrowRight'].includes(e.key)){
+        e.preventDefault();
+        if(e.key==='ArrowLeft'){ setSumState('ปิด'); }
+        else if(e.key==='ArrowRight'){ setSumState('เปิด'); }
+        else { toggleSum(); }
+      }
+    }
 
     function updateSubOptions(itemSelect, subSelect){
       const selected = itemSelect.value;
@@ -154,70 +373,149 @@
         options.map(opt=>`<option value="${opt}">${opt}</option>`).join('');
     }
 
-    function addItemRow(){
+    function makeItemRow(){
       const row = document.createElement('div');
-      row.className = 'item-row';
+      row.className = 'item-row single';
       row.innerHTML = `
         <select name="item[]" onchange="updateSubOptions(this, this.nextElementSibling)">
           <option value="">-- เลือกรายการหลัก --</option>
           ${Object.keys(subOptionsMap).map(k=>`<option value="${k}">${k}</option>`).join('')}
         </select>
         <select name="subitem[]"><option value="">-- เลือกรายการย่อย --</option></select>
-        <input type="number" name="price[]" placeholder="ราคา" step="0.01">
-        <input type="number" name="qty[]" placeholder="จำนวน" step="1">
+        <input type="number" name="price[]" placeholder="ราคา" step="0.01" min="0" oninput="recalcAmount()">
+        <input type="number" name="qty[]" placeholder="จำนวน" step="1" min="1" oninput="recalcAmount()">
+        <div class="item-actions">
+          <button type="button" class="btn btn-ghost" onclick="removeItemRow(this)">ลบ</button>
+        </div>
       `;
-      document.getElementById('itemList').appendChild(row);
+      return row;
+    }
+
+    function initFirstRow(){
+      const list = document.getElementById('itemList');
+      list.innerHTML = '';
+      list.appendChild(makeItemRow());
+      // toggle defaults
+      setPayment('โอน');
+      setSumState('ปิด'); // เริ่มปิด
+    }
+
+    function addItemRow(){
+      const list = document.getElementById('itemList');
+      list.appendChild(makeItemRow());
+    }
+
+    function removeItemRow(btn){
+      const row = btn.closest('.item-row');
+      const list = document.getElementById('itemList');
+      if(list.children.length>1){
+        row.remove();
+        recalcAmount();
+      }
+    }
+
+    function initDateToday(){
+      const d = new Date();
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const dd = String(d.getDate()).padStart(2,'0');
+      document.getElementById('date').value = `${d.getFullYear()}-${mm}-${dd}`;
     }
 
     function formatDate(dateStr){ if(!dateStr) return ''; const [y,m,d] = dateStr.split('-'); return `${d}/${m}/${y.slice(-2)}`; }
 
-    function autoFillByOPD(){
-      const opd = document.getElementById('opd').value.trim().padStart(4,'0');
-      if(!opd) return;
-      const c = customerMap[opd];
-      if(c){ document.getElementById('name').value = c.name; document.getElementById('phone').value = c.phone; }
-    }
-
+    // ----- แก้ไขรายการเดิม -----
     function loadDatesByOPD(){
-      const opdRaw = document.getElementById('editOPD').value.trim();
-      if(!opdRaw) return alert('กรุณากรอก OPD');
-      const opd = opdRaw.padStart(4,'0');
+      const raw = (document.getElementById('editOPD').value||'').trim();
+      if(!isValidOPD(raw)) return alert('กรุณากรอก OPD 4 หลักให้ครบ');
+      const opd = raw;
+
+      const list = document.getElementById('editRecordList');
+      const dateBtns = document.getElementById('editDateButtons');
+      dateBtns.innerHTML = '';
+      list.innerHTML = '<div class="muted">กำลังโหลดข้อมูล…</div>';
+
       fetch(`/api/sales?opd=${encodeURIComponent(opd)}`)
-        .then(r=>r.json())
+        .then(r=> r.ok ? r.json() : Promise.reject())
         .then(data=>{
           editDataByOPD = data || [];
-          if(editDataByOPD.length===0) return alert('ไม่พบข้อมูล OPD นี้');
-          const dates = [...new Set(editDataByOPD.map(r=> (r.date||'').slice(0,10)))];
-          const buttons = dates.map(d=>`<button type="button" onclick="showEditList('${d}')" style="margin:5px">${formatDate(d)}</button>`).join('');
-          document.getElementById('editDateButtons').innerHTML = `📅 วันที่ทั้งหมด:<br>${buttons}`;
-          document.getElementById('editRecordList').innerHTML = '';
+          if(editDataByOPD.length===0){
+            dateBtns.innerHTML = '';
+            list.innerHTML = '<div class="muted">ไม่พบข้อมูลของ OPD นี้</div>';
+            return;
+          }
+          const dates = [...new Set(editDataByOPD.map(r=> (r.date||'').slice(0,10)))].sort((a,b)=> new Date(b)-new Date(a));
+          dateBtns.innerHTML = '📅 วันที่ทั้งหมด:<br>' + dates.map((d,i)=>(
+            `<span class="chip ${i===0?'active':''}" data-date="${d}" onclick="selectEditDateChip(this)">${formatDate(d)}</span>`
+          )).join('');
+          showEditList(dates[0]);
         })
-        .catch(()=>alert('โหลดข้อมูลไม่สำเร็จ'));
+        .catch(()=> { list.innerHTML = '<div class="muted">โหลดข้อมูลไม่สำเร็จ</div>'; });
     }
 
-    function showEditList(date){
-      const rows = editDataByOPD.filter(r => (r.date||'').slice(0,10) === date);
-      const html = rows.map((r,i)=>`
-        <div style="border:1px solid #ccc;padding:10px;margin-bottom:8px;border-radius:8px;">
-          <div><strong>${safe(r.name)}</strong> (${safe(r.phone)})</div>
-          <div>ยอด: ${safe(r.amount)} บาท / ${safe(r.payment)}</div>
-          <div style="margin-top:6px;display:flex;gap:6px;">
-            <button type="button" onclick="editSelectedRecord(${i})">✏️ แก้ไขเฉพาะบรรทัดนี้</button>
-            <button type="button" style="background:#c62828" onclick="deleteRecordFromSupabase('${r.id}')">🗑️ ลบ</button>
-          </div>
-        </div>`).join('');
-      document.getElementById('editRecordList').innerHTML = `<h4>รายการวันที่ ${formatDate(date)}:</h4>` + html;
+    function selectEditDateChip(el){
+      document.querySelectorAll('#editDateButtons .chip').forEach(c=> c.classList.remove('active'));
+      el.classList.add('active');
+      showEditList(el.getAttribute('data-date'));
     }
 
-    function editSelectedRecord(index){
-      const rec = editDataByOPD[index];
-      if(!rec) return;
-      // set current edit id
+   function showEditList(date){
+  const list = document.getElementById('editRecordList');
+  const rows = editDataByOPD.filter(r => (r.date||'').slice(0,10) === date);
+  if(rows.length === 0){
+    list.innerHTML = '<div class="muted">ไม่มีรายการในวันนี้</div>';
+    return;
+  }
+
+  // ลบราคาและจำนวนท้ายสตริง  " - N ชิ้น x P บาท"
+  const stripPrice = (s) => String(s).replace(/ - \d+(?:\.\d+)? ชิ้น x \d+(?:\.\d+)? บาท$/, '');
+  // สรุปรวมจากรายการ หากไม่มี r.amount
+  const sumFromItems = (items=[]) => items.reduce((acc, line)=>{
+    const m = String(line).match(/ - (\d+(?:\.\d+)?) ชิ้น x (\d+(?:\.\d+)?) บาท$/);
+    if(!m) return acc;
+    const qty = parseFloat(m[1]||'0');
+    const price = parseFloat(m[2]||'0');
+    return acc + (qty*price);
+  }, 0);
+
+  const html = rows.map(r => {
+    const items = Array.isArray(r.items) ? r.items : [];
+    const cleanList = items.length
+      ? `<ul class="items-list">${items.map(x => `<li>${safe(stripPrice(x))}</li>`).join('')}</ul>`
+      : '<div class="muted">(ไม่มีรายละเอียดรายการ)</div>';
+
+    // ใช้ r.amount ถ้ามี ไม่งั้นคำนวณจาก items
+    const total = (r.amount != null && r.amount !== '') ? Number(r.amount) : sumFromItems(items);
+    const totalStr = Number.isFinite(total) ? total.toLocaleString() : '0';
+
+    return `
+      <div class="card">
+        <div class="left">
+          <div><strong>${safe(r.name || '-')}</strong></div>
+          ${cleanList}
+          <div class="total-line">รวม: ${totalStr} บาท</div>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn btn-primary" onclick="editSelectedRecordById('${r.id}')">แก้ไข</button>
+          <button type="button" class="btn btn-danger" onclick="deleteRecordFromSupabase('${r.id}')">ลบ</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  list.innerHTML = html;
+}
+
+
+
+    function findRecordInEditCacheById(id){
+      return (editDataByOPD || []).find(x => String(x.id) === String(id)) || null;
+    }
+    function editSelectedRecordById(id){
+      const rec = findRecordInEditCacheById(id);
+      if(!rec) return alert('ไม่พบรายการสำหรับแก้ไข');
       currentEditId = rec.id || null;
       document.getElementById('currentId').value = currentEditId || '';
-      // fill form
       editRecordFromObject(rec);
-      // clear preview queue so user confirms fresh
       records = [];
       renderReviewSection();
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -225,53 +523,64 @@
 
     function editRecordFromObject(rec){
       document.getElementById('date').value = (rec.date||'').slice(0,10);
-      document.getElementById('opd').value = rec.opd || '';
-      document.getElementById('name').value = rec.name || '';
-      document.getElementById('phone').value = rec.phone || '';
+
+      const opdEl = document.getElementById('opd');
+      opdEl.value = (rec.opd||'').slice(0,4);
+      onOPDInput(opdEl);
+
+      if(!customerMap[opdEl.value]){
+        document.getElementById('name').value = rec.name || '';
+        document.getElementById('phone').value = rec.phone || '';
+      }
+
       document.getElementById('amount').value = rec.amount || '';
-      document.getElementById('paymentType').value = rec.payment || 'โอน';
+      setPayment(rec.payment === 'สด' ? 'สด' : 'โอน');
+      setSumState('ปิด'); // เริ่มปิดทุกครั้ง
       document.getElementById('note').value = rec.note || '';
 
-      // items
-      const itemList = document.getElementById('itemList');
-      itemList.innerHTML = '';
-      (rec.items||[]).forEach(line => {
-        const row = document.createElement('div');
-        row.className = 'item-row';
-        row.innerHTML = `
-          <select name="item[]" onchange="updateSubOptions(this, this.nextElementSibling)">
-            <option value="">-- เลือกรายการหลัก --</option>
-            ${Object.keys(subOptionsMap).map(k=>`<option value="${k}">${k}</option>`).join('')}
-          </select>
-          <select name="subitem[]"><option value="">-- เลือกรายการย่อย --</option></select>
-          <input type="number" name="price[]" placeholder="ราคา" step="0.01">
-          <input type="number" name="qty[]" placeholder="จำนวน" step="1">
-        `;
-        const m = String(line).match(/^(.*?) ?(?:\((.*?)\))? - (\d+(?:\.\d+)?) ชิ้น x (\d+(?:\.\d+)?) บาท/);
-        const itemSel = row.querySelector('select[name="item[]"]');
-        const subSel  = row.querySelector('select[name="subitem[]"]');
-        if(m){
-          const main = (m[1]||'').trim();
-          const sub = m[2]||''; const qty = m[3]||''; const price = m[4]||'';
-          itemSel.value = main; updateSubOptions(itemSel, subSel); subSel.value = sub;
-          row.querySelector('input[name="qty[]"]').value = qty;
-          row.querySelector('input[name="price[]"]').value = price;
-        }
-        itemList.appendChild(row);
-      });
-      if((rec.items||[]).length===0){
-        // keep one empty row
-        addItemRow();
+      const list = document.getElementById('itemList');
+      list.innerHTML = '';
+      if((rec.items||[]).length === 0){
+        list.appendChild(makeItemRow());
+      }else{
+        (rec.items||[]).forEach(line => {
+          const row = makeItemRow();
+          const m = String(line).match(/^(.*?) ?(?:\((.*?)\))? - (\d+(?:\.\d+)?) ชิ้น x (\d+(?:\.\d+)?) บาท/);
+          const itemSel = row.querySelector('select[name="item[]"]');
+          const subSel  = row.querySelector('select[name="subitem[]"]');
+          if(m){
+            const main = (m[1]||'').trim();
+            const sub = m[2]||'';
+            const qty = m[3]||'';
+            const price = m[4]||'';
+            itemSel.value = main;
+            updateSubOptions(itemSel, subSel);
+            subSel.value = sub;
+            row.querySelector('input[name="qty[]"]').value = qty;
+            row.querySelector('input[name="price[]"]').value = price;
+          }else{
+            const plain = String(line).trim();
+            const main = plain.split('(')[0].split('-')[0].trim();
+            itemSel.value = main;
+            updateSubOptions(itemSel, subSel);
+          }
+          list.appendChild(row);
+        });
       }
+      recalcAmount();
     }
 
+    // ----- Review / Save -----
     function reviewForm(){
+      const opdVal = (document.getElementById('opd').value||'').trim();
+      if(!isValidOPD(opdVal)){ alert('กรุณากรอก OPD 4 หลักให้ครบ'); return; }
+
       const date = (document.getElementById('date').value||'').slice(0,10);
-      const opd  = (document.getElementById('opd').value||'').trim().padStart(4,'0');
+      const opd  = opdVal;
       const name = document.getElementById('name').value||'';
       const phone = document.getElementById('phone').value||'';
       const amount = document.getElementById('amount').value||'';
-      const payment = document.getElementById('paymentType').value||'โอน';
+      const payment = getPayment();
       const note = document.getElementById('note').value||'';
 
       const itemNames = document.querySelectorAll('select[name="item[]"]');
@@ -281,33 +590,40 @@
 
       const items = [];
       for(let i=0;i<itemNames.length;i++){
-        const main = itemNames[i].value; const sub = itemSubs[i].value;
-        const price = itemPrices[i].value; const qty = itemQtys[i].value;
-        if(main && price && qty){
+        const main = (itemNames[i].value||'').trim();
+        const sub  = (itemSubs[i].value||'').trim();
+        const qty  = itemQtys[i].value;
+        const priceRaw = itemPrices[i].value;
+        const priceNum = Number(priceRaw==='' ? 0 : priceRaw);
+        if(main && qty){
           const label = sub ? `${main} (${sub})` : main;
-          items.push(`${label} - ${qty} ชิ้น x ${price} บาท`);
+          const priceStr = Number.isInteger(priceNum) ? priceNum.toString() : priceNum.toFixed(2);
+          items.push(`${label} - ${qty} ชิ้น x ${priceStr} บาท`);
         }
       }
 
       const rec = { date, opd, name, phone, amount, payment, note, items };
       if(currentEditId){ rec.id = currentEditId; }
 
-      // queue & preview
       records.push(rec);
       renderReviewSection();
+      validateSaveAllReady();
 
-      // reset form but keep date & opd for speed
+      // reset form (คงค่า date & opd)
       const keepDate = date; const keepOPD = opd;
       document.getElementById('saleForm').reset();
-      document.getElementById('date').value = keepDate; document.getElementById('opd').value = keepOPD;
-      document.getElementById('itemList').innerHTML = document.querySelector('.item-row').outerHTML;
-      // clear edit-id after staged to queue (so you can queue multiple updates)
-      currentEditId = null; document.getElementById('currentId').value = '';
+      document.getElementById('date').value = keepDate;
+      document.getElementById('opd').value = keepOPD;
+      onOPDInput(document.getElementById('opd'));
+      initFirstRow();
+      currentEditId = null;
+      document.getElementById('currentId').value = '';
+      recalcAmount();
     }
 
     function renderReviewSection(){
       const section = document.getElementById('reviewSection');
-      section.innerHTML = '<h3>สรุปยอดขายตามวัน</h3>';
+      section.innerHTML = '<h3>รายการที่รอการบันทึก</h3>';
 
       const grouped = {};
       records.forEach((r,idx)=>{ const d=r.date||''; (grouped[d]||(grouped[d]=[])).push({...r, _idx: idx}); });
@@ -320,28 +636,33 @@
         const rowsHtml = list.map((r,i)=>{
           const itemsHtml = (r.items||[]).map(x=>`<li>${safe(x)}</li>`).join('');
           return `<tr>
-            <td style="border:1px solid #ccc;padding:6px;font-size:13px;">${i+1}</td>
-            <td style="border:1px solid #ccc;padding:6px;font-size:13px;"><div><strong>${safe(r.name)}</strong></div><div style="font-size:12px;color:#777;">OPD: ${safe(r.opd)}</div></td>
-            <td style="border:1px solid #ccc;padding:6px;font-size:13px;">${safe(r.phone)}</td>
-            <td style="border:1px solid #ccc;padding:6px;font-size:13px;"><ul style='margin:0;padding-left:16px;'>${itemsHtml}</ul></td>
-            <td style="border:1px solid #ccc;padding:6px;font-size:13px;">${safe(r.amount)} บาท (${safe(r.payment)})${r.note?`<div style='font-size:12px;color:#555;'>📝 ${safe(r.note)}</div>`:''}</td>
-            <td style="border:1px solid #ccc;padding:6px;text-align:center;font-size:13px;">
-              <button type="button" onclick="editRecordFromObject(records[${r._idx}]); currentEditId = records[${r._idx}].id || null; document.getElementById('currentId').value=currentEditId||'';">✏️</button>
-              <button type="button" onclick="deleteRecord(${r._idx})">🗑️</button>
+            <td>${i+1}</td>
+            <td><div><strong>${safe(r.name||'-')}</strong></div><div class="muted">OPD: ${safe(r.opd)}</div></td>
+            <td>${safe(r.phone||'-')}</td>
+            <td><ul style='margin:0;padding-left:16px;'>${itemsHtml || '<span class="muted">ไม่มีรายการ</span>'}</ul></td>
+            <td>${safe(r.amount||0)} บาท (${safe(r.payment)})${r.note?`<div class='muted'>📝 ${safe(r.note)}</div>`:''}</td>
+            <td style="text-align:center;">
+              <div class="actions">
+                <button type="button" class="btn btn-primary"
+                  onclick="editRecordFromObject(records[${r._idx}]); currentEditId = records[${r._idx}].id || null; document.getElementById('currentId').value=currentEditId||'';">
+                  แก้ไข
+                </button>
+                <button type="button" class="btn btn-danger" onclick="deleteRecord(${r._idx})">ลบ</button>
+              </div>
             </td>
           </tr>`;
         }).join('');
 
         const table = document.createElement('table');
-        table.style.width='100%'; table.style.borderCollapse='collapse'; table.innerHTML = `
+        table.innerHTML = `
           <thead>
-            <tr style="background:#f0f0f0;">
-              <th style="border:1px solid #ccc;padding:6px;font-size:13px;">ลำดับ</th>
-              <th style="border:1px solid #ccc;padding:6px;font-size:13px;">ชื่อ</th>
-              <th style="border:1px solid #ccc;padding:6px;font-size:13px;">เบอร์</th>
-              <th style="border:1px solid #ccc;padding:6px;font-size:13px;">รายการ</th>
-              <th style="border:1px solid #ccc;padding:6px;font-size:13px;">ยอด</th>
-              <th style="border:1px solid #ccc;padding:6px;font-size:13px;">จัดการ</th>
+            <tr>
+              <th>ลำดับ</th>
+              <th>ชื่อ</th>
+              <th>เบอร์</th>
+              <th>รายการ</th>
+              <th>ยอด</th>
+              <th>จัดการ</th>
             </tr>
           </thead>
           <tbody>${rowsHtml}</tbody>`;
@@ -350,40 +671,81 @@
       });
     }
 
-    function deleteRecord(idx){ if(!confirm('ลบรายการนี้ออกจากคิวใช่ไหม?')) return; records.splice(idx,1); renderReviewSection(); }
+    function deleteRecord(idx){
+      if(!confirm('ลบรายการนี้ออกจากคิวใช่ไหม?')) return;
+      records.splice(idx,1);
+      renderReviewSection();
+      validateSaveAllReady();
+    }
+
+    function validateSaveAllReady(){
+      const ok = records.length>0 && records.every(r=> isValidOPD(r.opd));
+      document.getElementById('btnSaveAll').disabled = !ok;
+    }
 
     function saveAllRecords(){
       if(records.length===0) return alert('ยังไม่มีรายการในคิว');
+      if(!records.every(r=> isValidOPD(r.opd))){
+        alert('มีรายการที่ OPD ไม่ครบ 4 หลัก กรุณาแก้ไขก่อนบันทึก');
+        return;
+      }
       if(!confirm('✨ ยืนยันบันทึกทั้งหมด')) return;
-      fetch('/api/save_sales', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(records) })
-        .then(r=>r.json())
-        .then(data=>{
-          if(data && (data.message||'').includes('สำเร็จ')){
-            alert(`✅ บันทึกเรียบร้อย อัปเดต ${data.updated||0} / เพิ่มใหม่ ${data.inserted||0}`);
-            records = []; renderReviewSection();
-            document.getElementById('saleForm').reset();
-            document.getElementById('itemList').innerHTML = document.querySelector('.item-row').outerHTML;
-          }else{
-            alert('❌ บันทึกไม่สำเร็จ');
-          }
-        })
-        .catch(err=>{ console.error(err); alert('เกิดข้อผิดพลาดในการเชื่อมต่อ'); });
+      fetch('/api/save_sales', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(records)
+      })
+      .then(r=>r.json())
+      .then(data=>{
+        if(data && (data.message||'').includes('สำเร็จ')){
+          alert(`✅ บันทึกเรียบร้อย อัปเดต ${data.updated||0} / เพิ่มใหม่ ${data.inserted||0}`);
+          records = []; renderReviewSection(); validateSaveAllReady();
+          clearForm();
+        }else{
+          alert('❌ บันทึกไม่สำเร็จ');
+        }
+      })
+      .catch(err=>{ console.error(err); alert('เกิดข้อผิดพลาดในการเชื่อมต่อ'); });
     }
 
     function deleteRecordFromSupabase(id){
       if(!id) return; if(!confirm('❌ ลบรายการนี้จริงหรือไม่?')) return;
-      fetch('/api/delete_sales_record', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id}) })
-        .then(r=>r.json()).then(data=>{ alert('ลบสำเร็จ'); loadDatesByOPD(); })
-        .catch(()=> alert('ลบไม่สำเร็จ'));
+      fetch('/api/delete_sales_record', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({id})
+      })
+      .then(r=>r.json()).then(()=>{ alert('ลบสำเร็จ'); loadDatesByOPD(); })
+      .catch(()=> alert('ลบไม่สำเร็จ'));
     }
 
-    // tiny helpers
-    function safe(v){ return (v==null?'':String(v)).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",
-      ">":"&gt;","\"":"&quot;","'":"&#39;"}[s])); }
+    // ----- Auto-sum -----
+    function recalcAmount(){
+      if(getSumState() !== 'เปิด') return; // ทำงานเฉพาะเมื่อเปิด
+      const prices = document.querySelectorAll('input[name="price[]"]');
+      const qtys   = document.querySelectorAll('input[name="qty[]"]');
+      let total = 0;
+      for(let i=0;i<prices.length;i++){
+        const p = Number(prices[i].value==='' ? 0 : prices[i].value);
+        const q = Number(qtys[i].value||0);
+        total += p*q;
+      }
+      document.getElementById('amount').value = (Number.isInteger(total)? total : total.toFixed(2));
+    }
 
-    // floating menu (unchanged)
-    function toggleFloatingMenu(){ const menu = document.getElementById('floatingMenu'); menu.style.display = (menu.style.display==='flex')?'none':'flex'; }
-    document.addEventListener('click', function(e){ const t=document.getElementById('floatingToggle'); const m=document.getElementById('floatingMenu'); if(!t.contains(e.target)&&!m.contains(e.target)){ m.style.display='none'; }});
+    function clearForm(){
+      document.getElementById('saleForm').reset();
+      initDateToday();
+      initFirstRow();
+      onOPDInput(document.getElementById('opd')); // lock/unlock name/phone
+      document.getElementById('btnReview').disabled = true;
+      recalcAmount();
+    }
+
+    function safe(v){
+      const map = {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"};
+      return (v==null?'':String(v)).replace(/[&<>"']/g, s=>map[s]);
+    }
   </script>
 
   <!-- floating menu (unchanged) -->
@@ -401,5 +763,16 @@
     <a href="#"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}"></a>
     <a href="#"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}"></a>
   </div>
+  <script>
+    function toggleFloatingMenu(){
+      const menu = document.getElementById('floatingMenu');
+      menu.style.display = (menu.style.display==='flex')?'none':'flex';
+    }
+    document.addEventListener('click', function(e){
+      const t=document.getElementById('floatingToggle');
+      const m=document.getElementById('floatingMenu');
+      if(t && m && !t.contains(e.target) && !m.contains(e.target)){ m.style.display='none'; }
+    });
+  </script>
 </body>
 </html>

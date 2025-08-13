@@ -1,167 +1,238 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
-from supabase import create_client, Client
-from werkzeug.security import check_password_hash
-import json
-import os
-from dotenv import load_dotenv
-from collections import defaultdict
+from __future__ import annotations
 
-# ✅ โหลดค่าจาก .env
+import os
+import json
+import time
+from datetime import timedelta
+from collections import defaultdict, deque
+from typing import Any, Dict, List
+
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    session,
+    jsonify,
+    abort,
+)
+from werkzeug.security import check_password_hash
+from dotenv import load_dotenv
+from supabase import create_client, Client
+
+# =============================================================
+# Environment & App Setup
+# =============================================================
 load_dotenv()
 
-# ✅ Flask config
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY")
+app.secret_key = os.getenv("FLASK_SECRET_KEY", os.urandom(32))
 
-# Supabase config
-url = os.getenv("SUPABASE_URL")
-key = os.getenv("SUPABASE_KEY")
-supabase: Client = create_client(url, key)
+# Harden cookies (works on HTTPS; set SECURE only in prod if needed)
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true",
+    PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
+)
 
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").strip()
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise RuntimeError("Missing SUPABASE_URL or SUPABASE_KEY in environment")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# =============================================================
+# Simple rate limiters (in-memory)
+# =============================================================
+# Basic sliding window limiter per IP for sensitive endpoints
+_LOGIN_ATTEMPTS: Dict[str, deque] = defaultdict(deque)
+_PIN_ATTEMPTS: Dict[str, deque] = defaultdict(deque)
+
+RATE_WINDOW_SEC = 300  # 5 minutes
+MAX_LOGIN_ATTEMPTS = 10
+MAX_PIN_ATTEMPTS = 20
+
+def _rate_limited(bucket: Dict[str, deque], max_events: int, window_sec: int) -> bool:
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "-")
+    dq = bucket[ip]
+    now = time.time()
+    # drop old
+    while dq and (now - dq[0] > window_sec):
+        dq.popleft()
+    # check
+    if len(dq) >= max_events:
+        return True
+    dq.append(now)
+    return False
+
+# =============================================================
+# Helpers
+# =============================================================
+SAFE_CUSTOMER_FIELDS = {"name", "phone", "birthMonth", "vip", "note"}
+
+
+def login_required(view_func):
+    def wrapper(*args, **kwargs):
+        if "username" not in session:
+            return redirect(url_for("login"))
+        return view_func(*args, **kwargs)
+    wrapper.__name__ = view_func.__name__
+    return wrapper
+
+
+def normalize_opd(opd: Any) -> str:
+    if opd is None:
+        return ""
+    return str(opd).strip().zfill(4)
+
+
+def safe_date_str(d: Any) -> str:
+    # Expect 'YYYY-MM-DD...' and keep first 10 chars
+    if not d:
+        return ""
+    return str(d)[:10]
+
+
+# =============================================================
+# Auth Views
+# =============================================================
 @app.route('/', methods=['GET', 'POST'])
 def login():
     error = None
     if request.method == 'POST':
-        username = request.form['username'].strip()
-        password = request.form['password'].strip()
+        if _rate_limited(_LOGIN_ATTEMPTS, MAX_LOGIN_ATTEMPTS, RATE_WINDOW_SEC):
+            error = 'พยายามเข้าสู่ระบบถี่เกินไป กรุณารอสักครู่'
+            return render_template('login.html', error=error), 429
+
+        username = (request.form.get('username') or '').strip()
+        password = (request.form.get('password') or '').strip()
 
         try:
             result = supabase.table("users").select("*").eq("username", username).single().execute()
-            print("📦 Result:", result)
             user = result.data
-            print("📦 User data:", user)
-
             if user:
-                if user['password_hash'] == password:
-                    session['username'] = username
+                stored = user.get('password_hash') or ''
+                ok = False
+                try:
+                    # supports werkzeug hash e.g. pbkdf2:sha256:...
+                    ok = check_password_hash(stored, password)
+                except Exception:
+                    ok = False
+                # Fallback for legacy plain-text (encourage migrating to hashes)
+                if ok or stored == password:
+                    session.permanent = True
+                    session['username'] = user.get('username', username)
                     session['role'] = user.get('role', '')
                     return redirect(url_for('dashboard'))
-                else:
-                    error = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
-            else:
-                error = 'ชื่อผู้ใช้ไม่พบในระบบ'
-
-        except Exception as e:
-            print("❌ ERROR login:", e)
+            error = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
+        except Exception:
             error = 'เกิดข้อผิดพลาดในการเชื่อมต่อกับระบบ'
-
     return render_template('login.html', error=error)
 
 
-@app.route('/dashboard')
-def dashboard():
-    if 'username' in session:
-        return render_template('dashboard.html', username=session['username'], role=session.get('role', ''))
+@app.route('/logout')
+@login_required
+def logout():
+    session.clear()
     return redirect(url_for('login'))
+
+
+@app.route('/pin-login', methods=['POST'])
+def pin_login():
+    if _rate_limited(_PIN_ATTEMPTS, MAX_PIN_ATTEMPTS, RATE_WINDOW_SEC):
+        return jsonify({"success": False, "error": "too_many_requests"}), 429
+    data = request.get_json(silent=True) or {}
+    pin = (data.get('pin') or '').strip()
+    try:
+        result = supabase.table("users").select("*").eq("pin", pin).single().execute()
+        user = result.data
+        if user:
+            session.permanent = True
+            session['username'] = user.get('username')
+            session['role'] = user.get('role', '')
+            return jsonify({"success": True})
+        return jsonify({"success": False})
+    except Exception as e:
+        app.logger.error(f"PIN LOGIN ERROR: {e}")
+        return jsonify({"success": False})
+
+
+# =============================================================
+# Page Views (UI)
+# =============================================================
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    return render_template('dashboard.html', username=session['username'], role=session.get('role', ''))
+
 
 @app.route('/record_sales')
+@login_required
 def record_sales():
-    if 'username' in session:
-        return render_template('record_sales.html')
-    return redirect(url_for('login'))
+    return render_template('record_sales.html')
+
 
 @app.route('/sale_summary')
+@login_required
 def sale_summary():
-    if 'username' in session:
-        return render_template('sale-summary.html')
-    return redirect(url_for('login'))
+    return render_template('sale-summary.html')
+
 
 @app.route('/record_customer')
+@login_required
 def record_customer():
-    if 'username' in session:
-        return render_template('record_customer.html')
-    return redirect(url_for('login'))
+    return render_template('record_customer.html')
+
 
 @app.route('/customer_list')
+@login_required
 def customer_list():
-    if 'username' in session:
-        return render_template('customer_list.html')
-    return redirect(url_for('login'))
+    return render_template('customer_list.html')
 
 
-@app.route('/api/sales')
-def api_sales():
-    try:
-        all_data = []
-        start = 0
-        limit = 1000
+@app.route('/oldsaledata')
+@login_required
+def oldsaledata():
+    return render_template('oldsaledata.html')
 
-        while True:
-            response = supabase.table("sales_records").select("*").range(start, start + limit - 1).execute()
-            batch = response.data
-            if not batch:
-                break
-            all_data.extend(batch)
-            if len(batch) < limit:
-                break
-            start += limit
 
-        # ✅ แปลง 'item' เป็น array 'items'
-        for r in all_data:
-            if 'item' in r:
-                try:
-                    r['items'] = json.loads(r['item'])
-                except:
-                    r['items'] = []
-        return jsonify(all_data)
+@app.route('/inventory')
+@login_required
+def inventory():
+    return render_template('inventory.html')
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
-@app.route('/api/save_sales', methods=['POST'])
-def save_sales():
-    data = request.get_json()
-    print("📥 ได้รับข้อมูลจาก frontend:", data)
+@app.route('/appointments')
+@login_required
+def appointments():
+    return render_template('appointments.html')
 
-    inserted_count = 0
-    try:
-        # 🔄 ถ้ามี delete ก่อน (กรณีแก้ไข)
-        if data and data[0].get('delete_before'):
-            delete_opd = data[0].get('opd')
-            delete_date = data[0].get('date')
-            print(f"🧽 ลบข้อมูลเดิม opd={delete_opd}, date={delete_date}")
-            supabase.table("sales_records").delete().match({
-                "opd": delete_opd,
-                "date": delete_date
-            }).execute()
-            data = data[1:]
 
-        for i, rec in enumerate(data):
-            print(f"🔍 กำลังบันทึกรายการที่ {i+1}: {rec}")
+@app.route('/sales_chart')
+@login_required
+def sales_chart():
+    return render_template('sales_chart.html')
 
-            # ✳️ เตรียม opd 4 หลัก
-            opd_4digit = rec.get('opd', '').zfill(4)
 
-            # 🟡 อัปเดตหรือเพิ่มใน customers
-            if opd_4digit and rec.get('name'):
-                customer_data = {
-                    "opd": opd_4digit,
-                    "name": rec.get('name', ''),
-                    "phone": rec.get('phone', ''),
-                    "birthMonth": rec.get('birthMonth', ''),
-                    "vip": rec.get('vip', ''),
-                    "note": rec.get('note', '')
-                }
-                supabase.table("customers").upsert(customer_data, on_conflict=["opd"]).execute()
+@app.route('/daily_sales_graph')
+@login_required
+def daily_sales_graph():
+    return render_template('daily_sales_graph.html')
 
-            # 🔵 บันทึกใน sales_records
-            rec['item'] = json.dumps(rec.get('items', []))
-            rec.pop('items', None)
-            rec.pop('id', None)
-            rec['opd'] = opd_4digit  # บังคับให้ใช้ opd 4 หลัก
 
-            response = supabase.table("sales_records").insert(rec).execute()
-            print("✅ บันทึกสำเร็จ:", response)
-            inserted_count += 1
+# =============================================================
+# API — Sales & Customers
+# =============================================================
+@app.route('/api/test')
+def test_route():
+    return jsonify({"status": "ok"})
 
-        return jsonify({"message": "บันทึกสำเร็จ", "inserted": inserted_count})
 
-    except Exception as e:
-        print("❌ ERROR เกิดขึ้นขณะบันทึก:", e)
-        return jsonify({"error": str(e)}), 500
-
-    
 @app.route('/api/customers')
+@login_required
 def api_customers():
     try:
         response = supabase.table("customers").select("*").execute()
@@ -171,69 +242,191 @@ def api_customers():
 
 
 @app.route('/api/update_customer', methods=['POST'])
+@login_required
 def update_customer():
-    data = request.json
-    opd = str(data.get('opd')).strip()
-    field = data.get('field')
+    data = request.get_json(force=True)
+    opd = normalize_opd(data.get('opd'))
+    field = (data.get('field') or '').strip()
     value = data.get('value')
 
-    print(f"🧾 กำลังอัปเดต opd = '{opd}' field = '{field}' value = '{value}'")
+    if field not in SAFE_CUSTOMER_FIELDS:
+        return jsonify({"error": "field_not_allowed"}), 400
 
     try:
-        # ✅ แก้ตรงนี้ให้ใช้ customers
         res = supabase.table("customers").update({field: value}).eq("opd", opd).execute()
-        print("🔍 UPDATE RESULT:", res)
-        return jsonify({
-            "message": "อัปเดตสำเร็จ",
-            "debug": res.data
-        })
+        return jsonify({"message": "อัปเดตสำเร็จ", "debug": res.data})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-
-
-
-@app.route('/api/delete_customer', methods=['POST'])
-def delete_customer():
-    data = request.json
-    opd = data.get('opd')
-    try:
-        supabase.table("sales_records").delete().eq("opd", opd).execute()
-        return jsonify({"message": "ลบสำเร็จ"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/add_customer', methods=['POST'])
+@login_required
 def add_customer():
-    data = request.json
-    opd = str(data.get("opd", "")).zfill(4)
-
+    data = request.get_json(force=True)
+    data = dict(data or {})
+    data['opd'] = normalize_opd(data.get('opd'))
     try:
-        check = supabase.table("customers").select("*").eq("opd", opd).execute()
+        check = supabase.table("customers").select("id").eq("opd", data['opd']).execute()
         if check.data:
             return jsonify({"error": "มี OPD นี้อยู่แล้ว"}), 400
-
-        supabase.table("customers").insert(data).execute()
+        # allow only known fields to be inserted (basic sanitation)
+        payload = {k: v for k, v in data.items() if k in (SAFE_CUSTOMER_FIELDS | {"opd"})}
+        supabase.table("customers").insert(payload).execute()
         return jsonify({"message": "เพิ่มลูกค้าสำเร็จ"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/logout')
-def logout():
-    session.pop('username', None)
-    session.pop('role', None)
-    return redirect(url_for('login'))
+@app.route('/api/delete_customer', methods=['POST'])
+@login_required
+def delete_customer_legacy():
+    # legacy behavior: delete sales by OPD only (keeps customer row)
+    data = request.get_json(force=True)
+    opd = normalize_opd(data.get('opd'))
+    try:
+        supabase.table("sales_records").delete().eq("opd", opd).execute()
+        return jsonify({"message": "ลบสำเร็จ (เฉพาะยอดขาย)"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-@app.route('/api/test')
-def test_route():
-    return jsonify({"status": "ok"})
+
+@app.route('/api/delete_customer_and_sales', methods=['POST'])
+@login_required
+def delete_customer_and_sales():
+    data = request.get_json(force=True)
+    opd = normalize_opd(data.get('opd'))
+    try:
+        supabase.table('sales_records').delete().eq('opd', opd).execute()
+        supabase.table('customers').delete().eq('opd', opd).execute()
+        return jsonify({"message": "ลบสำเร็จ"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/sales')
+@login_required
+def api_sales():
+    try:
+        opd = normalize_opd(request.args.get('opd', '').strip()) if request.args.get('opd') else ''
+        date = safe_date_str(request.args.get('date', '').strip()) if request.args.get('date') else ''
+        q = supabase.table("sales_records").select("*")
+        if opd:
+            q = q.eq("opd", opd)
+        if date:
+            q = q.eq("date", date)
+        # paginate manually (range cap)
+        start = 0
+        limit = 1000
+        all_data: List[Dict[str, Any]] = []
+        while True:
+            resp = q.range(start, start + limit - 1).execute()
+            batch = resp.data or []
+            all_data.extend(batch)
+            if len(batch) < limit:
+                break
+            start += limit
+        for r in all_data:
+            if 'item' in r:
+                try:
+                    r['items'] = json.loads(r['item'])
+                except Exception:
+                    r['items'] = []
+        return jsonify(all_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/save_sales', methods=['POST'])
+@login_required
+def save_sales():
+    # Accept a list of records. Each record may include `id` for update.
+    data = request.get_json(force=True)
+    if not isinstance(data, list):
+        return jsonify({"error": "payload_must_be_list"}), 400
+
+    inserted_count = 0
+    updated_count = 0
+
+    try:
+        for rec in data:
+            if not isinstance(rec, dict):
+                # skip malformed rows
+                continue
+            # normalize
+            date = safe_date_str(rec.get('date'))
+            opd_4 = normalize_opd(rec.get('opd'))
+
+            # upsert customers from sales info (optional fields)
+            if opd_4 and rec.get('name'):
+                customer_data = {
+                    'opd': opd_4,
+                    'name': rec.get('name', ''),
+                    'phone': rec.get('phone', ''),
+                    'birthMonth': rec.get('birthMonth', ''),
+                    'vip': rec.get('vip', ''),
+                    'note': rec.get('note', ''),
+                }
+                supabase.table('customers').upsert(customer_data, on_conflict=['opd']).execute()
+
+            # prepare record for sales_records
+            items = rec.get('items') or []
+            rec_db = {
+                'date': date,
+                'opd': opd_4,
+                'name': rec.get('name', ''),
+                'phone': rec.get('phone', ''),
+                'amount': rec.get('amount'),
+                'payment': rec.get('payment'),
+                'note': rec.get('note', ''),
+                'item': json.dumps(items, ensure_ascii=False),
+            }
+
+            # UPDATE if id provided
+            rec_id = rec.get('id')
+            if rec_id:
+                resp = supabase.table('sales_records').update(rec_db).eq('id', rec_id).execute()
+                # Some clients return data=None for update; treat as success if no error
+                updated_count += 1
+                continue
+
+            # Basic duplicate guard (same opd+date+amount+payment+item+note)
+            dup_q = (
+                supabase.table('sales_records')
+                .select('id')
+                .eq('opd', rec_db['opd'])
+                .eq('date', rec_db['date'])
+                .eq('item', rec_db['item'])
+            )
+            if rec_db.get('amount') is not None:
+                dup_q = dup_q.eq('amount', rec_db['amount'])
+            if rec_db.get('payment') is not None:
+                dup_q = dup_q.eq('payment', rec_db['payment'])
+            if rec_db.get('note'):
+                dup_q = dup_q.eq('note', rec_db['note'])
+
+            dup = dup_q.execute().data
+            if dup:
+                # skip insert if duplicate
+                continue
+
+            supabase.table('sales_records').insert(rec_db).execute()
+            inserted_count += 1
+
+        return jsonify({
+            "message": "บันทึกสำเร็จ",
+            "inserted": inserted_count,
+            "updated": updated_count,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/delete_sales_record', methods=['POST'])
+@login_required
 def delete_sales_record():
     try:
-        record_id = request.json.get('id')
+        payload = request.get_json(force=True) or {}
+        record_id = payload.get('id')
         if not record_id:
             return jsonify({"error": "Missing ID"}), 400
         supabase.table("sales_records").delete().eq("id", record_id).execute()
@@ -241,18 +434,21 @@ def delete_sales_record():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @app.route('/api/cleanup_duplicates')
+@login_required
 def cleanup_duplicates():
     try:
         response = supabase.table("sales_records").select("*").execute()
-        all_data = response.data
-        seen = defaultdict(list)
+        all_data = response.data or []
+        seen: Dict[Any, List[Dict[str, Any]]] = defaultdict(list)
         for row in all_data:
-            key = (row.get('opd'), row.get('date'), row.get('amount'))
+            key = (row.get('opd'), safe_date_str(row.get('date')), row.get('amount'), row.get('payment'), row.get('item'), row.get('note'))
             seen[key].append(row)
         deleted = 0
         for rows in seen.values():
             if len(rows) > 1:
+                # keep the first, delete the rest
                 ids_to_delete = [r['id'] for r in rows[1:] if 'id' in r]
                 if ids_to_delete:
                     supabase.table("sales_records").delete().in_("id", ids_to_delete).execute()
@@ -261,32 +457,23 @@ def cleanup_duplicates():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(debug=True)
 
-
+# =============================================================
+# API — Oldsale & Inventory (kept for compatibility)
+# =============================================================
 @app.route('/api/oldsaledata')
+@login_required
 def api_oldsaledata():
     try:
         response = supabase.table("oldsaledata").select("*").execute()
         return jsonify(response.data)
     except Exception as e:
-        print("❌ ERROR loading oldsaledata:", e)
+        app.logger.error(f"ERROR loading oldsaledata: {e}")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/oldsaledata')
-def oldsaledata():
-    if 'username' in session:
-        return render_template('oldsaledata.html')
-    return redirect(url_for('login'))
-
-@app.route('/inventory')
-def inventory():
-    if 'username' in session:
-        return render_template('inventory.html')
-    return redirect(url_for('login'))
 
 @app.route("/api/inventory")
+@login_required
 def api_inventory():
     try:
         res = supabase.table("inventory").select("*").execute()
@@ -294,47 +481,22 @@ def api_inventory():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @app.route("/api/save_inventory", methods=["POST"])
+@login_required
 def api_save_inventory():
-    data = request.json
+    data = request.get_json(force=True)
     try:
-        # optional: ตรวจสอบว่าไม่มีรายการซ้ำก่อน insert
+        # Optional: Add simple duplicate check if you have a unique key
         supabase.table("inventory").insert(data).execute()
         return jsonify({"message": "success"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
-    
-@app.route('/pin-login', methods=['POST'])
-def pin_login():
-    data = request.get_json()
-    pin = data.get('pin', '')
-    try:
-        result = supabase.table("users").select("*").eq("pin", pin).single().execute()
-        user = result.data
-        if user:
-            session['username'] = user['username']
-            session['role'] = user.get('role', '')
-            return jsonify({"success": True})
-        return jsonify({"success": False})
-    except Exception as e:
-        print("❌ PIN LOGIN ERROR:", e)
-        return jsonify({"success": False})
-    
-@app.route('/appointments')
-def appointments():
-    return render_template('appointments.html')
 
+
+# =============================================================
+# Main
+# =============================================================
 if __name__ == '__main__':
+    # In production, run behind a proper WSGI server and set SESSION_COOKIE_SECURE=true
     app.run(debug=True)
-
-
-@app.route('/sales_chart')
-def sales_chart():
-    return render_template('sales_chart.html')
-
-@app.route('/daily_sales_graph')
-def daily_sales_graph():
-    if 'username' in session:
-        return render_template('daily_sales_graph.html')
-    return redirect(url_for('login'))
