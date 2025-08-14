@@ -98,42 +98,7 @@
 <body>
   <div class="container">
 
-    <!-- 1) โอกาสเดือนนี้ (ขึ้นก่อนสุด) -->
-    <div class="section card">
-      <div class="headline">ภาพรวมลูกค้าเก่าที่มีโอกาสในเดือนนี้</div>
-      <div class="sub-muted">คัดลูกค้าที่น่าติดต่อในเดือนนี้อัตโนมัติตามเกณฑ์ภายใน</div>
-
-      <!-- แดชบอร์ดย่อย -->
-      <div id="oppKpis" class="mini-kpi" style="display:none;">
-        <div class="mini"><div class="k">จำนวนลูกค้าที่มีโอกาส</div><div class="v" id="oppN">-</div></div>
-        <div class="mini"><div class="k">เฉลี่ย/บิล (บาท)</div><div class="v" id="oppAOV">-</div></div>
-        <div class="mini"><div class="k">ไม่ได้มาเฉลี่ย (วัน)</div><div class="v" id="oppRec">-</div></div>
-        <div class="mini">
-          <div class="k">เสี่ยงสูงมาก</div>
-          <div class="v" id="oppVeryRisk">-</div>
-          <div class="bar"><i id="barVeryRisk" style="width:0%"></i></div>
-        </div>
-        <div class="mini">
-          <div class="k">เฝ้าระวัง</div>
-          <div class="v" id="oppWatch">-</div>
-          <div class="bar"><i id="barWatch" style="width:0%"></i></div>
-        </div>
-      </div>
-
-      <div class="sub-muted" id="oppShowInfo" style="margin:6px 0 2px;">แสดง 10 อันดับเร่งด่วนแรก</div>
-
-      <table id="opportunityTable">
-        <thead>
-          <tr>
-            <th>#</th><th>OPD</th><th>ชื่อ</th><th>เบอร์</th>
-            <th>ครั้ง</th><th>เฉลี่ย/บิล</th><th>ยอดรวม</th><th>ไม่ได้มา (วัน)</th><th>สถานะ</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-        <tfoot id="oppFooter"></tfoot>
-      </table>
-    </div>
-
+    
     <!-- 2) ฟิลเตอร์รวม (เวลา/ลูกค้า/สินค้า) -->
     <div class="section card">
       <div class="headline">ฟิลเตอร์การวิเคราะห์</div>
@@ -531,113 +496,8 @@
       return m;
     }
 
-    /* ===== โอกาสเดือนนี้ ===== */
-    let oppFullList = [];
-    let oppShowAll = false;
-
-    function isSameMonth(d1, d2){ const a=new Date(d1), b=new Date(d2); return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth(); }
-
-    function buildOpportunities(){
-      const mapAll = new Map();
-      for(const r of allSales){
-        const k=keyForCustomer(r);
-        if(!mapAll.has(k)) mapAll.set(k, {name:r.name||'-', phone:r.phone||'', opd:pad4(r.opd||''), bills:[]});
-        mapAll.get(k).bills.push(r);
-      }
-      const today = new Date();
-      for(const v of mapAll.values()){
-        v.bills.sort((a,b)=> a.date.localeCompare(b.date));
-        v.first = v.bills[0]?.date?.slice(0,10) || '';
-        v.last  = v.bills[v.bills.length-1]?.date?.slice(0,10) || '';
-        v.revenue = v.bills.reduce((s,x)=> s + recordAmount(x), 0);
-        v.aov = v.bills.length ? v.revenue / v.bills.length : 0;
-        v.recency = v.last ? Math.floor((today - new Date(v.last))/(1000*60*60*24)) : 9999;
-        const dates = v.bills.map(b=> new Date(b.date)).sort((a,b)=>a-b);
-        const gaps=[]; for(let i=1;i<dates.length;i++) gaps.push(Math.floor((dates[i]-dates[i-1])/(1000*60*60*24)));
-        v.gaps = gaps; v.medGap = gaps.length? quantile(gaps,0.5) : 45; v.myThreshold = Math.round(v.medGap*1.3);
-      }
-
-      oppFullList = [...mapAll.values()].filter(v=>{
-        const hasComeThisMonth = v.bills.some(b=> isSameMonth(b.date, today));
-        if(hasComeThisMonth) return false;
-        if(v.aov < 3000 || v.revenue < 5000) return false;
-        if(!(v.recency>45 && v.recency<=365)) return false;
-        if(v.revenue>100000) return false;
-
-        const veryRisk = v.recency > v.myThreshold*2;
-        const watchRisk= v.recency > v.myThreshold && v.recency <= v.myThreshold*2;
-        const likelyReturn = (v.bills.length>=3 || v.revenue>=15000) && v.recency>60 &&
-          ( (v.gaps.slice(-3).reduce((s,x)=>s+x,0)/(v.gaps.slice(-3).length||1)) <= 45 );
-        return veryRisk || watchRisk || likelyReturn;
-      }).map(v=>{
-        const score = (v.aov/1000)*0.4 + (v.revenue/10000)*0.3 + (v.recency/30)*0.3;
-        const riskLabel = v.recency>v.myThreshold*2 ? 'เสี่ยงสูงมาก' : (v.recency>v.myThreshold ? 'เฝ้าระวัง' : 'ปกติ');
-        const trendLabel = ((v.bills.length>=3 || v.revenue>=15000) && v.recency>60 &&
-          ( (v.gaps.slice(-3).reduce((s,x)=>s+x,0)/(v.gaps.slice(-3).length||1)) <= 45 )) ? 'แนวโน้มซื้อแม้หายไปนาน' : '';
-        return {...v, score, riskLabel, trendLabel};
-      }).sort((a,b)=> b.score-a.score);
-    }
-
-    function renderOpportunityDashboard(){
-      const list = oppFullList;
-      if(!list.length){ document.getElementById('oppKpis').style.display='none'; return; }
-      const N=list.length;
-      const avgAOV = Math.round(list.reduce((s,x)=>s+x.aov,0)/N);
-      const avgRec = Math.round(list.reduce((s,x)=>s+x.recency,0)/N);
-      const very = list.filter(x=>x.riskLabel==='เสี่ยงสูงมาก').length;
-      const watch = list.filter(x=>x.riskLabel==='เฝ้าระวัง').length;
-
-      document.getElementById('oppN').textContent = N.toLocaleString();
-      document.getElementById('oppAOV').textContent = avgAOV.toLocaleString();
-      document.getElementById('oppRec').textContent = avgRec.toLocaleString();
-      document.getElementById('oppVeryRisk').textContent = very.toLocaleString();
-      document.getElementById('oppWatch').textContent = watch.toLocaleString();
-      document.getElementById('barVeryRisk').style.width = (very*100/Math.max(1,N))+'%';
-      document.getElementById('barWatch').style.width = (watch*100/Math.max(1,N))+'%';
-      document.getElementById('oppKpis').style.display = 'grid';
-    }
-
-    function renderOpportunities(){
-      const list = oppFullList;
-      const showing = oppShowAll ? list : list.slice(0,10);
-
-      const tb = document.querySelector('#opportunityTable tbody');
-      tb.innerHTML = showing.map((v,i)=>{
-        const key = `${v.name}|${v.phone||''}`;
-        const riskTag = v.riskLabel==='เสี่ยงสูงมาก' ? `<span class="tag tag-red">${v.riskLabel}</span>`
-                      : v.riskLabel==='เฝ้าระวัง' ? `<span class="tag tag-amber">${v.riskLabel}</span>`
-                      : `<span class="tag tag-gray">${v.riskLabel}</span>`;
-        const trendTag = v.trendLabel? `<span class="tag tag-green">${v.trendLabel}</span>`:'';
-        const avgColor = v.aov<3000? 'crimson' : (v.aov<=9999? 'green' : varGold());
-        let totColor='#6b7280', totExtra='', totIcon='';
-        if(v.revenue<50000) totColor='crimson';
-        else if(v.revenue<=99999) totColor='green';
-        else { totColor=varGold(); totExtra='font-weight:bold;'; totIcon=' 💎'; }
-
-        return `<tr>
-          <td>${i+1}</td>
-          <td>${esc(v.opd)}</td>
-          <td><a class="link" href="javascript:;" onclick="openCustomerModal('${esc(key)}');event.stopPropagation();">${esc(v.name)}</a></td>
-          <td>${esc(v.phone||'-')}</td>
-          <td>${v.bills.length}</td>
-          <td style="color:${avgColor}">${Math.round(v.aov).toLocaleString()}</td>
-          <td style="color:${totColor};${totExtra}">${Math.round(v.revenue).toLocaleString()}${totIcon}</td>
-          <td>${v.recency}</td>
-          <td>${riskTag} ${trendTag}</td>
-        </tr>`;
-      }).join('') || `<tr><td colspan="9" class="sub-muted">ไม่พบลูกค้าที่เข้าเกณฑ์</td></tr>`;
-
-      const foot = document.getElementById('oppFooter');
-      if(list.length>10){
-        foot.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:12px">
-          <button id="btnToggleOpp" class="btn btn-primary" style="font-size:14px;padding:10px 16px">${oppShowAll? 'ย่อเหลือ 10 อันดับ':'ดูทั้งหมดเพิ่มเติม'}</button>
-        </td></tr>`;
-        document.getElementById('btnToggleOpp').onclick = ()=>{ oppShowAll=!oppShowAll; renderOpportunities(); };
-      }else{
-        foot.innerHTML = '';
-      }
-    }
-
+    
+    
     /* ===== RFM ===== */
     let rfmByKey = new Map(); // key -> ชื่อกลุ่มไทย
 
@@ -1047,19 +907,19 @@
 
     /* ===== เรนเดอร์รวม ===== */
     function renderAll(){
-      buildOpportunities();
-      renderOpportunityDashboard();
-      renderOpportunities();
+  // buildOpportunities();
+  // renderOpportunityDashboard();
+  // renderOpportunities();
 
-      renderRFM();
-      computeABC();
+  renderRFM();
+  computeABC();
 
-      renderRecencyDistribution();
-      renderSpendBands();
+  renderRecencyDistribution();
+  renderSpendBands();
 
-      buildFinalRows();
-      renderFinalTable();
-    }
+  buildFinalRows();
+  renderFinalTable();
+}
 
     /* ===== ค่าช่วงเร็ว ===== */
     function setQuickRange(preset){
