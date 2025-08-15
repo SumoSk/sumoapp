@@ -21,8 +21,8 @@
     body{font-family:'Prompt','Segoe UI',sans-serif;margin:0;background:var(--bg);color:#0f172a;padding:10px 10px 120px}
     .container{max-width:1280px;margin:16px auto;background:#fff;border-radius:16px;box-shadow:0 8px 24px rgba(2,8,23,.06);padding:14px}
 
-    /* หัวข้อหลัก (ใหญ่ขึ้น โดดเด่น) */
-    .headline{font-size:24px;font-weight:900;color:#0b7660;margin:0 0 10px}
+    /* หัวข้อหลัก (ปรับให้เล็กลงตามที่ขอ) */
+    .headline{font-size:18px;font-weight:800;color:#0b7660;margin:0 0 8px}
     .sub-muted{color:var(--muted);font-size:12px;margin-top:-2px}
 
     .section{margin:14px 0 18px}
@@ -36,7 +36,7 @@
     .btn-ghost{background:#f1f5f9;border-color:#e5e7eb;color:#0f172a}
     .btn-link{border:none;background:transparent;color:#0b7660;font-weight:700;cursor:pointer}
     .chips{display:flex;flex-wrap:wrap;gap:8px}
-    .chip{padding:6px 10px;border:1px solid #a7e1da;border-radius:999px;background:#fff;color:#0b7660;font-size:12px;cursor:pointer}
+    .chip{padding:8px 12px;border:1px solid #a7e1da;border-radius:999px;background:#fff;color:#0b7660;font-size:12px;cursor:pointer}
     .chip.active{background:#0b7660;color:#fff}
     .icon-btn{border:1px solid #d1d5db;background:#fff;border-radius:8px;cursor:pointer;font-size:13px;padding:4px 8px}
     .icon-btn:hover{background:#f8fafc}
@@ -81,6 +81,46 @@
     /* กริด 2 คอลัมน์สำหรับการ์ดสถิติย่อ */
     .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
+    /* ===== Modal เลือกช่วงวันที่ (กำหนดเอง) ===== */
+    .range-modal { position: fixed; inset: 0; z-index: 1200; display: none; }
+    .range-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.45); }
+    .range-modal__panel {
+      position: absolute; left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(92vw, 420px);
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.18);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .range-modal__header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; background: #e0f2f1; font-weight: 600; color: #004d40;
+    }
+    .range-modal__close {
+      background: transparent; border: none; font-size: 18px;
+      cursor: pointer; color: #004d40;
+    }
+    .range-modal__body { display: grid; gap: 12px; padding: 14px; }
+    .range-modal__body label { display: grid; gap: 6px; font-size: 13px; color: #335; }
+    .range-modal__body input[type="date"]{
+      -webkit-appearance: none; appearance: none;
+      width: 100%; padding: 8px 10px; font-size: 14px;
+      border: 1px solid #cfe7e5; border-radius: 10px; background: #fff;
+    }
+    .range-modal__footer {
+      display: flex; justify-content: flex-end; gap: 8px; padding: 12px 14px;
+      border-top: 1px solid #eee;
+    }
+    .btn-primary, .btn-secondary {
+      border: none; padding: 8px 14px; border-radius: 10px; font-size: 13px; cursor: pointer;
+    }
+    .btn-primary { background: #009688; color: #fff; }
+    .btn-primary:hover { background: #00796b; }
+    .btn-secondary { background: #eceff1; color: #37474f; }
+    .btn-secondary:hover { background: #e0e3e6; }
+
     @media (max-width:1000px){
       .mini-kpi{grid-template-columns:repeat(3,1fr)}
       .filter-grid{grid-template-columns:repeat(6,1fr)}
@@ -96,10 +136,8 @@
   </style>
 </head>
 <body>
-  <div class="container">
-
-    
-    <!-- 2) ฟิลเตอร์รวม (เวลา/ลูกค้า/สินค้า) -->
+  <div class="container">    
+    <!-- ฟิลเตอร์รวม (เวลา/ลูกค้า/สินค้า) -->
     <div class="section card">
       <div class="headline">ฟิลเตอร์การวิเคราะห์</div>
 
@@ -108,16 +146,12 @@
         <div class="filter-block span5">
           <div class="title">เลือกตามเวลา</div>
           <div class="filter-row">
-            <div class="span6">
-              <label>จากวันที่</label>
-              <input type="date" id="startDate" class="ipt"/>
-            </div>
-            <div class="span6">
-              <label>ถึงวันที่</label>
-              <input type="date" id="endDate" class="ipt"/>
-            </div>
+            <!-- ซ่อน input date ไว้ ใช้ modal แทน -->
+            <input type="date" id="startDate" class="ipt" style="display:none"/>
+            <input type="date" id="endDate" class="ipt" style="display:none"/>
+
             <div class="full chips" style="margin-top:6px">
-              <!-- ช่วงวันที่ตามปกติ -->
+              <span class="chip" id="openCustomRange">กำหนดเอง</span>
               <span class="chip" data-range="thisMonth">เดือนนี้</span>
               <span class="chip" data-range="2m">2 เดือน</span>
               <span class="chip" data-range="3m">3 เดือน</span>
@@ -126,17 +160,16 @@
               <span class="chip" data-range="all">ทั้งหมด</span>
             </div>
             <div class="full chips" style="margin-top:6px">
-              <!-- วันที่ไม่ได้มา (Recency) รวมในชุดเดียวกัน เลือกอย่างใดอย่างหนึ่ง -->
+              <!-- วันที่ไม่ได้มา (Recency) ชุดใหม่ -->
               <span class="chip" data-range="abs:0-30">ไม่ได้มา 0–30</span>
-              <span class="chip" data-range="abs:31-45">31–45</span>
-              <span class="chip" data-range="abs:46-60">46–60</span>
+              <span class="chip" data-range="abs:31-60">31–60</span>
               <span class="chip" data-range="abs:61-90">61–90</span>
-              <span class="chip" data-range="abs:91-180">91–180</span>
+              <span class="chip" data-range="abs:90-180">90–180</span>
               <span class="chip" data-range="abs:181-365">181–365</span>
               <span class="chip" data-range="abs:365+">1 ปีขึ้นไป</span>
             </div>
             <div class="full">
-              <label>ค้นหาในตาราง (ชื่อ/OPD/เบอร์)</label>
+              <label>ค้นหาในตาราง (ชื่อ/OPD)</label>
               <input type="text" id="qSearch" class="ipt" placeholder="พิมพ์คำเพื่อกรองตารางที่แสดง"/>
             </div>
             <div class="full" style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
@@ -216,7 +249,7 @@
       <div class="card">
         <div class="headline">RFM Segments</div>
         <div class="sub-muted" style="margin-bottom:6px">
-          RFM = Recency (ความสดใหม่), Frequency (ความถี่), Monetary (มูลค่า) — แบ่งกลุ่มลูกค้าเพื่อสื่อสารให้ “ตรงกลุ่ม” และ “คุ้มค่า”
+          RFM = Recency (ความสดใหม่), Frequency (ความถี่), Monetary (มูลค่า)
         </div>
         <table id="rfmTable">
           <thead>
@@ -282,10 +315,10 @@
             <th data-sort="num">#</th>
             <th data-sort="str">OPD</th>
             <th data-sort="str">ชื่อ</th>
-            <th data-sort="str">เบอร์</th>
             <th data-sort="num">จำนวนครั้ง</th>
             <th data-sort="num">เฉลี่ย/บิล</th>
             <th data-sort="num">ยอดรวม</th>
+            <th data-sort="num">บิลเดี่ยวสูงสุด</th>
             <th data-sort="num">ไม่ได้มา (วัน)</th>
             <th data-sort="str">RFM กลุ่ม</th>
             <th data-sort="str">ชั้น (ABC)</th>
@@ -302,6 +335,31 @@
     <div class="box" onclick="event.stopPropagation();">
       <button class="close" onclick="closeCustomerModal()">✖</button>
       <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Modal: เลือกช่วงเวลากำหนดเอง -->
+  <div id="rangeModal" class="range-modal" style="display:none;">
+    <div class="range-modal__backdrop" onclick="closeRangeModal()"></div>
+    <div class="range-modal__panel">
+      <div class="range-modal__header">
+        <div>เลือกช่วงวันที่</div>
+        <button class="range-modal__close" onclick="closeRangeModal()">✕</button>
+      </div>
+      <div class="range-modal__body">
+        <label>
+          จากวันที่
+          <input type="date" id="rangeStartModal">
+        </label>
+        <label>
+          ถึงวันที่
+          <input type="date" id="rangeEndModal">
+        </label>
+      </div>
+      <div class="range-modal__footer">
+        <button class="btn-secondary" onclick="closeRangeModal()">ยกเลิก</button>
+        <button class="btn-primary" onclick="applyRangeFromModal()">ตกลง</button>
+      </div>
     </div>
   </div>
 
@@ -357,7 +415,6 @@
     function recordAmount(r){
       const a = parseFloat(r.amount);
       if(!isNaN(a)) return a;
-      // สำรองกรณีข้อมูลเก่า
       let sum=0; (r.items||[]).forEach(s=>{
         const m = String(s).match(/ - (\d+(?:\.\d+)?) ชิ้น x (\d+(?:\.\d+)?) บาท$/);
         if(m){ sum += parseFloat(m[1])*parseFloat(m[2]); }
@@ -405,9 +462,9 @@
         v.revenue = v.bills.reduce((s,x)=> s + recordAmount(x), 0);
         v.aov = v.bills.length ? v.revenue / v.bills.length : 0;
         v.recency = v.last ? Math.floor((endAnchorDate - new Date(v.last))/(1000*60*60*24)) : 9999;
+        v.maxBill = v.bills.reduce((m,x)=> Math.max(m, recordAmount(x)||0 ), 0);
       }
 
-      // ถ้ามีฟิลเตอร์พิเศษค้างอยู่ ให้คำนวณ selectedKeys ใหม่ตามลูกค้าชุดล่าสุด
       if(appliedNote && typeof reconApplySpecial === 'function'){
         reconApplySpecial();
       }
@@ -496,8 +553,6 @@
       return m;
     }
 
-    
-    
     /* ===== RFM ===== */
     let rfmByKey = new Map(); // key -> ชื่อกลุ่มไทย
 
@@ -595,12 +650,11 @@
     /* ===== Recency Distribution ===== */
     const recencyBuckets = [
       {label:'0–30', min:0, max:30},
-      {label:'31–45', min:31, max:45},
-      {label:'46–60', min:46, max:60, warn:true},
-      {label:'61–90', min:61, max:90, warn:true},
-      {label:'91–180', min:91, max:180, warn:true},
-      {label:'181–365', min:181, max:365, warn:true},
-      {label:'365 ขึ้นไป', min:365, max:Infinity, warn:true}
+      {label:'31–60', min:31, max:60},
+      {label:'61–90', min:61, max:90},
+      {label:'90–180', min:90, max:180},
+      {label:'181–365', min:181, max:365},
+      {label:'365 ขึ้นไป', min:365, max:Infinity}
     ];
     function renderRecencyDistribution(){
       const cust = [...currentCustomers().values()];
@@ -611,14 +665,13 @@
         const pct = (n*100/totalN).toFixed(1);
         const avgAOV = n? Math.round(inBucket.reduce((s,x)=>s+(x.aov||0),0)/n) : 0;
         const sumRev = Math.round(inBucket.reduce((s,x)=>s+(x.revenue||0),0));
-        const warnStyle = b.warn? 'style="color:#b91c1c;font-weight:700"' : '';
-        return {b, n, pct, avgAOV, sumRev, inBucket, warnStyle};
+        return {b, n, pct, avgAOV, sumRev, inBucket};
       });
 
       const tb = document.querySelector('#recencyTable tbody');
       tb.innerHTML = rows.map(r=>{
         return `<tr>
-          <td ${r.warnStyle}>${r.b.label}</td>
+          <td>${r.b.label}</td>
           <td>${r.n.toLocaleString()}</td>
           <td>${r.pct}%</td>
           <td>${r.avgAOV.toLocaleString()}</td>
@@ -680,7 +733,7 @@
         let avgColor='#6b7280'; if(avg<3000) avgColor='crimson'; else if(avg<=9999) avgColor='green'; else avgColor=varGold();
         const rfm = rfmByKey.get(v.key) || '-';
         const abc = abcByKey.get(v.key) || '-';
-        return {v,visits,avg,total,recency:v.recency,recColor,totColor,totExtra,totIcon,avgColor, rfm, abc};
+        return {v,visits,avg,total,maxBill:Math.round(v.maxBill||0),recency:v.recency,recColor,totColor,totExtra,totIcon,avgColor, rfm, abc};
       });
     }
     function renderFinalTable(){
@@ -689,10 +742,10 @@
         switch(idx){
           case 1: return r.v.opd||'';
           case 2: return (r.v.name||'').toLowerCase();
-          case 3: return (r.v.phone||'').toLowerCase();
-          case 4: return r.visits||0;
-          case 5: return r.avg||0;
-          case 6: return r.total||0;
+          case 3: return r.visits||0;
+          case 4: return r.avg||0;
+          case 5: return r.total||0;
+          case 6: return r.maxBill||0;
           case 7: return r.recency||0;
           case 8: return (r.rfm||'').toLowerCase();
           case 9: return (r.abc||'').toLowerCase();
@@ -712,10 +765,10 @@
           <td>${i+1}</td>
           <td>${esc(r.v.opd)}</td>
           <td><a class="link" href="javascript:;" onclick="openCustomerModal('${esc(key)}');event.stopPropagation();">${esc(r.v.name)}</a></td>
-          <td>${esc(r.v.phone||'-')}</td>
           <td>${r.visits}</td>
           <td style="color:${r.avgColor}">${r.avg.toLocaleString()}</td>
           <td style="color:${r.totColor}; ${r.totExtra}">${Math.round(r.total).toLocaleString()}${r.totIcon}</td>
+          <td>${r.maxBill.toLocaleString()}</td>
           <td style="color:${r.recColor}">${r.recency}</td>
           <td>${esc(r.rfm)}</td>
           <td>${esc(r.abc)}</td>
@@ -738,7 +791,7 @@
     document.addEventListener('input', (e)=>{
       if(e.target && e.target.id==='qSearch'){
         const val = e.target.value.trim().toLowerCase();
-        ['opportunityTable','finalCustTable','rfmTable','abcTable','recencyTable','spendBandTable'].forEach(id=>{
+        ['finalCustTable','rfmTable','abcTable','recencyTable','spendBandTable'].forEach(id=>{
           document.querySelectorAll(`#${id} tbody tr`).forEach(tr=>{
             const txt = tr.textContent.toLowerCase(); tr.style.display = txt.includes(val)? '' : 'none';
           });
@@ -848,7 +901,7 @@
       if(box && !box.contains(e.target)) closeCustomerModal();
     });
 
-    /* ===== การใช้งานปุ่มตา (👁) ให้แทนที่ฟิลเตอร์เดิม และไปโชว์ที่รายชื่อ ===== */
+    /* ===== ปุ่มดูรายชื่อตามตารางย่อย ===== */
     function setSelectedByPredicate(pred){
       const keys=[];
       for(const [k,v] of customersMap){ if(pred(v)) keys.push(k); }
@@ -869,7 +922,7 @@
     function applyRecency(min,max,label){
       appliedNote = `— แสดงตาม: Recency ${label} วัน`;
       updateAppliedBanner();
-      selectedKeys = null; // replace previous selection
+      selectedKeys = null;
       const pred = v => v.recency>=min && v.recency<=max;
       reconApplySpecial = ()=> setSelectedByPredicate(pred);
       setSelectedByPredicate(pred);
@@ -878,8 +931,7 @@
     function applyABC(cls){
       appliedNote = `— แสดงตาม: ABC ชั้น ${cls}`;
       updateAppliedBanner();
-      selectedKeys = null; // replace previous
-      // recompute ABC on the current base set (time/product filters only)
+      selectedKeys = null;
       computeABC();
       const pred = v => (abcByKey.get(v.key) === cls);
       reconApplySpecial = ()=> { computeABC(); setSelectedByPredicate(pred); };
@@ -889,7 +941,7 @@
     function applyRFM(segTH){
       appliedNote = `— แสดงตาม: RFM: ${segTH}`;
       updateAppliedBanner();
-      selectedKeys = null; // replace previous
+      selectedKeys = null;
       computeRFM();
       const pred = v => (rfmByKey.get(v.key) === segTH);
       reconApplySpecial = ()=> { computeRFM(); setSelectedByPredicate(pred); };
@@ -899,7 +951,7 @@
     function applySpend(min,max,label){
       appliedNote = `— แสดงตาม: AOV ${label}`;
       updateAppliedBanner();
-      selectedKeys = null; // replace previous
+      selectedKeys = null;
       const pred = v => v.aov>=min && v.aov<=max;
       reconApplySpecial = ()=> setSelectedByPredicate(pred);
       setSelectedByPredicate(pred);
@@ -907,19 +959,13 @@
 
     /* ===== เรนเดอร์รวม ===== */
     function renderAll(){
-  // buildOpportunities();
-  // renderOpportunityDashboard();
-  // renderOpportunities();
-
-  renderRFM();
-  computeABC();
-
-  renderRecencyDistribution();
-  renderSpendBands();
-
-  buildFinalRows();
-  renderFinalTable();
-}
+      renderRFM();
+      computeABC();
+      renderRecencyDistribution();
+      renderSpendBands();
+      buildFinalRows();
+      renderFinalTable();
+    }
 
     /* ===== ค่าช่วงเร็ว ===== */
     function setQuickRange(preset){
@@ -942,7 +988,7 @@
       document.getElementById('endDate').value   = ymd(end);
     }
 
-    /* ===== โหมดชิป “วันที่ไม่ได้มา” ที่รวมอยู่ในชุดเดียวกัน ===== */
+    /* ===== โหมดชิป “วันที่ไม่ได้มา” ===== */
     let reconApplySpecial = null;
 
     function applyAbsentChip(range){
@@ -960,25 +1006,43 @@
       updateAppliedBanner();
 
       const pred = v => v.recency>=min && v.recency<=max;
-
-      // re-apply this predicate after date changes without touching chip UI
       reconApplySpecial = ()=> {
         appliedNote = `— แสดงตาม: วันที่ไม่ได้มา ${label} วัน`;
         updateAppliedBanner();
         setSelectedByPredicate(pred);
       };
 
-      // คำนวณจากข้อมูลทั้งหมดเพื่อความถูกต้องของ recency แต่ไม่แก้ active ของชิป
       setQuickRange('all');
       applyRange();
       setSelectedByPredicate(pred);
+    }
+
+    /* ===== Modal range actions ===== */
+    function openRangeModal(){
+      const s = document.getElementById('startDate').value;
+      const e = document.getElementById('endDate').value;
+      document.getElementById('rangeStartModal').value = s || '';
+      document.getElementById('rangeEndModal').value = e || '';
+      document.getElementById('rangeModal').style.display = 'block';
+    }
+    function closeRangeModal(){ document.getElementById('rangeModal').style.display = 'none'; }
+    function applyRangeFromModal(){
+      const s = document.getElementById('rangeStartModal').value;
+      const e = document.getElementById('rangeEndModal').value;
+      if(!s || !e){ alert('กรุณาเลือกวันที่เริ่มและสิ้นสุด'); return; }
+      if(new Date(s) > new Date(e)){ alert('วันเริ่มต้องไม่เกินวันสิ้นสุด'); return; }
+      document.getElementById('startDate').value = s;
+      document.getElementById('endDate').value = e;
+      closeRangeModal();
+      appliedNote=''; reconApplySpecial=null; updateAppliedBanner();
+      selectedKeys=null;
+      applyRange();
     }
 
     /* ===== ควบคุม UI ===== */
     document.getElementById('btnApply').addEventListener('click', applyRange);
     document.querySelectorAll('.chip[data-range]').forEach(chip=>{
       chip.addEventListener('click', ()=>{
-        // เคลียร์ active เฉพาะกลุ่มปุ่มเร็วทั้งหมด แล้วทำ active ที่ปุ่มที่คลิก
         document.querySelectorAll('.chip[data-range]').forEach(c=>c.classList.remove('active'));
         chip.classList.add('active');
         const preset = chip.getAttribute('data-range');
@@ -991,6 +1055,7 @@
         }
       });
     });
+    document.getElementById('openCustomRange').addEventListener('click', openRangeModal);
     document.getElementById('btnAddProduct').addEventListener('click', addProductSelect);
     document.getElementById('btnRunAdv').addEventListener('click', filterGeneral);
     document.getElementById('btnResetAdv').addEventListener('click', resetFilters);
@@ -1007,7 +1072,5 @@
       }
     })();
   </script>
-
-  {% include "floating_menu.html" %}
 </body>
 </html>
