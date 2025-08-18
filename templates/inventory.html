@@ -3,459 +3,487 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
   <title>คลังเวชภัณฑ์</title>
+
+  <!-- ฟอนต์: โหลดนิ่ง ลดการเด้ง -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
   <style>
-    body {
-      font-family: 'Prompt', sans-serif;
-      background: #f4f4f4;
-      padding: 20px;
-      padding-bottom: 120px;
+    html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+    body{
+      font-family:'Prompt',sans-serif;
+      background:#f4f4f4;
+      padding:20px; padding-bottom:120px;
+      font-size:13px; line-height:1.45;
+      margin:0;
     }
-    h2 {
-      text-align: center;
-      color: #00695c;
+    h2{ text-align:center; color:#00695c; margin:0 0 14px; }
+
+    /* Month nav */
+    .month-nav{
+      display:flex; justify-content:center; gap:10px; margin-bottom:16px; flex-wrap:wrap;
     }
-    .month-nav {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 16px;
+    .nav-btn{
+      background:#009688; color:#fff; border:none;
+      padding:8px 16px; font-size:15px; border-radius:8px;
+      display:flex; align-items:center; gap:8px; cursor:pointer;
+      transition:background .2s ease;
     }
-    .month-nav button {
-      background: #009688;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      font-size: 16px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
+    .nav-btn:hover{ background:#00796b; }
+    .nav-btn[disabled]{ opacity:.5; cursor:not-allowed; }
+    .nav-btn svg{ width:20px; height:20px; fill:currentColor; }
+
+    /* Table */
+    table{ border-collapse:collapse; width:100%; background:#fff; box-shadow:0 0 10px rgba(0,0,0,.05); }
+    th,td{ border:1px solid #ccc; padding:6px 8px; text-align:center; }
+    th{
+      background:#e0f2f1; color:#00695c; position:sticky; top:0; z-index:1;
     }
-    .month-nav button:hover {
-      background: #00796b;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      background: white;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 6px 8px;
-      text-align: center;
-    }
-    th {
-      background-color: #e0f2f1;
-      color: #00695c;
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-    td.name {
-      font-weight: bold;
-      text-align: left;
-    }
-    td input[type="number"] {
-      width: 80px;
-      padding: 4px;
-      font-size: 14px;
-      text-align: center;
-    }
-    .btn-bar {
-      margin-top: 20px;
-      text-align: center;
-    }
-    .btn-bar button {
-      padding: 10px 20px;
-      font-size: 15px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      background: #00796b;
-      color: white;
-      margin: 0 10px;
-    }
-    .btn-bar button:hover {
-      background: #004d40;
+    td.name{ font-weight:600; text-align:left; }
+    td input[type="number"]{
+      width:90px; min-width:70px; box-sizing:border-box;
+      padding:4px; font-size:14px; text-align:center;
     }
 
-    /* Popup */
-    #popupForm {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
-    #popupForm .form-box {
-      background: white;
-      padding: 20px 30px;
-      border-radius: 12px;
-      max-width: 400px;
-      width: 100%;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-    }
-    #popupForm h3 {
-      margin-top: 0;
-      color: #00695c;
-      text-align: center;
-    }
-    #popupForm label {
-      display: block;
-      margin: 10px 0 4px;
-      font-weight: bold;
-    }
-    #popupForm input {
-      width: 100%;
-      padding: 8px;
-      font-size: 15px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-    #popupForm .popup-actions {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 20px;
-    }
-    #popupForm button {
-      padding: 8px 16px;
-      font-size: 15px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    #popupForm .submit-btn {
-      background: #00796b;
-      color: white;
-    }
-    #popupForm .cancel-btn {
-      background: #ccc;
-    }
+    /* ค่าวันล่าสุด + diff ในช่องเดียวกัน */
+    .latest-cell .latest-val{ font-weight:600; }
+    .latest-cell .val-low{ color:#c62828; }           /* ค่าล่าสุดต่ำกว่าเกณฑ์ → แดง */
+    .latest-cell .diff-up{ color:#2e7d32; font-weight:600; }   /* ▲ เพิ่มขึ้น → เขียว */
+    .latest-cell .diff-down{ color:#c62828; font-weight:600; } /* ▼ ลดลง → แดง */
+    .latest-cell .diff-flat{ color:#555; }                      /* (0) หรือ (—) → เทา */
+    .latest-cell .sep{ display:inline-block; width:4px; }       /* เว้นนิดให้หายอึดอัด */
 
-.btn-single {
-  padding: 6px 12px;
-  font-size: 14px;
-  background-color: #009688;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-.btn-single:hover {
-  background-color: #00796b;
-}
+    .btn-bar{ margin-top:20px; text-align:center; }
+    .btn-bar .action-btn{
+      padding:10px 20px; font-size:15px; border:none; border-radius:8px;
+      cursor:pointer; background:#00796b; color:#fff; margin:0 10px;
+      transition:background .2s ease;
+    }
+    .btn-bar .action-btn:hover{ background:#004d40; }
 
-.floating-toggle {
-  position: fixed;
-  bottom: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 128, 128, 0);
-  width: 58px;
-  height: 58px;
-  border-radius: 50%;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  cursor: pointer;
-}
-.floating-menu {
-  position: fixed;
-  bottom: 90px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  border-radius: 16px;
-  padding: 10px;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-  z-index: 999;
-  max-height: 60vh;
-  overflow-y: auto;
-}
-.floating-menu a img {
-  width: 52px;
-  height: 52px;
-}
+    /* Popup (Add Item) */
+    #popupForm{
+      position:fixed; inset:0; background:rgba(0,0,0,.5);
+      display:none; justify-content:center; align-items:center; z-index:9999;
+    }
+    #popupForm .form-box{
+      background:#fff; padding:20px 30px; border-radius:12px;
+      max-width:400px; width:100%; box-shadow:0 8px 30px rgba(0,0,0,.2); position:relative;
+    }
+    #popupForm h3{ margin:0 0 10px; color:#00695c; text-align:center; }
+    #popupForm label{ display:block; margin:10px 0 4px; font-weight:600; }
+    #popupForm input{ width:100%; padding:8px; font-size:15px; border-radius:6px; border:1px solid #ccc; }
+    #popupForm .popup-actions{ display:flex; justify-content:space-between; margin-top:18px; gap:10px; }
+    #popupForm button{ padding:8px 16px; font-size:15px; border:none; border-radius:6px; cursor:pointer; }
+    .submit-btn{ background:#00796b; color:#fff; }
+    .cancel-btn{ background:#ccc; color:#000; }
 
+    /* Single save btn in table */
+    .btn-single{
+      padding:6px 12px; font-size:14px; background:#009688; color:#fff;
+      border:none; border-radius:8px; cursor:pointer; transition:background .2s ease;
+    }
+    .btn-single:hover{ background:#00796b; }
 
+    /* Floating menu */
+    .floating-toggle{
+      position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+      background:rgba(0,128,128,0); width:58px; height:58px; border-radius:50%;
+      box-shadow:0 4px 16px rgba(0,0,0,.1);
+      display:flex; justify-content:center; align-items:center;
+      z-index:1000; cursor:pointer;
+    }
+    .floating-toggle img{ width:60px; height:60px; }
+    .floating-menu{
+      position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
+      background:#fff; border-radius:16px; padding:10px; display:none;
+      flex-direction:column; align-items:center; gap:10px; box-shadow:0 6px 20px rgba(0,0,0,.2);
+      z-index:999; max-height:60vh; overflow-y:auto;
+    }
+    .floating-menu a img{ width:52px; height:52px; }
   </style>
 </head>
 <body>
 
-<h2>คลังเวชภัณฑ์</h2>
-<div class="month-nav">
-  <button onclick="prevMonth()"><span class="material-icons">chevron_left</span> ดูก่อนหน้า</button>
-  <button onclick="nextMonth()">ดูถัดไป <span class="material-icons">chevron_right</span></button>
-</div>
+  <h2>คลังเวชภัณฑ์</h2>
 
-<table>
-  <thead>
-    <tr id="tableHeader"></tr>
-  </thead>
-  <tbody id="tableBody"></tbody>
-</table>
+  <!-- Month Nav (SVG icons: ไม่พึ่งฟอนต์ภายนอก) -->
+  <div class="month-nav">
+    <button class="nav-btn" id="btnPrev" type="button" aria-label="ดูเดือนก่อนหน้า">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+      ดูก่อนหน้า
+    </button>
+    <button class="nav-btn" id="btnNext" type="button" aria-label="ดูเดือนถัดไป">
+      ดูถัดไป
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+    </button>
+  </div>
 
-<div class="btn-bar">
-  <button onclick="showAddPopup()">➕ เพิ่มเวชภัณฑ์ใหม่</button>
-  <button onclick="submitAll()">💾 บันทึกทั้งหมด</button>
-</div>
+  <table>
+    <thead>
+      <tr id="tableHeader"></tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
 
-<!-- ✅ Popup Form -->
-<div id="popupForm">
-  <div class="form-box">
-    <h3>เพิ่มเวชภัณฑ์ใหม่</h3>
-    <label>ชื่อเวชภัณฑ์</label>
-    <input type="text" id="newName" />
-    <label>จำนวน</label>
-    <input type="number" id="newQty" />
-    <label>วันที่</label>
-    <input type="date" id="newDate" />
-    <div class="popup-actions">
-      <button class="submit-btn" onclick="submitNewItem()">บันทึก</button>
-      <button class="cancel-btn" onclick="hideAddPopup()">ยกเลิก</button>
+  <div class="btn-bar">
+    <button class="action-btn" id="btnAdd" type="button">➕ เพิ่มเวชภัณฑ์ใหม่</button>
+    <button class="action-btn" id="btnSaveAll" type="button">💾 บันทึกทั้งหมด</button>
+  </div>
+
+  <!-- Popup Form -->
+  <div id="popupForm" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+    <div class="form-box" id="popupBox">
+      <h3 id="addTitle">เพิ่มเวชภัณฑ์ใหม่</h3>
+      <label for="newName">ชื่อเวชภัณฑ์</label>
+      <input type="text" id="newName" />
+      <label for="newQty">จำนวน</label>
+      <input type="number" id="newQty" min="0" step="1" inputmode="numeric" />
+      <label for="newDate">วันที่</label>
+      <input type="date" id="newDate" />
+      <div class="popup-actions">
+        <button class="submit-btn" id="popupSubmit" type="button">บันทึก</button>
+        <button class="cancel-btn" id="popupCancel" type="button">ยกเลิก</button>
+      </div>
     </div>
   </div>
-</div>
 
-<script>
-const fixedItemList = [ /* เหมือนเดิม 30 รายการ */ 
-  "Syringe 10", "Syringe 5", "Syringe 3", "Syringe 1",
-  "เข็ม 32", "เข็ม 30", "เข็ม 24", "เข็ม 18Gx1", "เข็ม 18Gx1 1/2",
-  "Cannula", "Medicut", "ผีเสื้อ 24", "ผีเสื้อ 25", "Set IV", "หลอด PRR",
-  "Nss 1000 ML", "Nss 100 ML", "Nss 5 ML", "SWI 5 ML", "ถุงมือ S",
-  "สำลีก้อน", "สำลีแผ่น", "ยาชา (ครีม)", "Swabs", "แอลกอฮอล์",
-  "ยาทาฝ้า", "ยาทาสิว", "อะโลเจล", "Scrub", "Milky"
-];
-let sortedItemList = [...fixedItemList];
-const groupedData = {};
-let allData = [], allDates = [], currentMonth = null;
+  <!-- Floating menu -->
+  <div id="floatingToggle" class="floating-toggle">
+    <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu">
+  </div>
+  <div id="floatingMenu" class="floating-menu">
+    <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}" alt=""></a>
+    <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}" alt=""></a>
+    <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}" alt=""></a>
+    <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}" alt=""></a>
+    <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}" alt=""></a>
+    <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}" alt=""></a>
+    <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}" alt=""></a>
+    <a href="#"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}" alt=""></a>
+    <a href="#"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}" alt=""></a>
+  </div>
 
-async function fetchData() {
-  const res = await fetch("/api/inventory");
-  allData = await res.json();
-  const dateSet = new Set(allData.map(d => d.date));
-  allDates = Array.from(dateSet).sort((a, b) => new Date(b) - new Date(a));
-  currentMonth = new Date(allDates[0]).getMonth();
-  groupByItem();
-  extendWithNewItems();
-  renderTable();
-}
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // ===== Fixed list & State =====
+    const fixedItemList = [
+      "Syringe 10","Syringe 5","Syringe 3","Syringe 1",
+      "เข็ม 32","เข็ม 30","เข็ม 24","เข็ม 18Gx1","เข็ม 18Gx1 1/2",
+      "Cannula","Medicut","ผีเสื้อ 24","ผีเสื้อ 25","Set IV","หลอด PRR",
+      "Nss 1000 ML","Nss 100 ML","Nss 5 ML","SWI 5 ML","ถุงมือ S",
+      "สำลีก้อน","สำลีแผ่น","ยาชา (ครีม)","Swabs","แอลกอฮอล์",
+      "ยาทาฝ้า","ยาทาสิว","อะโลเจล","Scrub","Milky"
+    ];
 
-function groupByItem() {
-  for (const row of allData) {
-    if (!groupedData[row.item_name]) groupedData[row.item_name] = {};
-    groupedData[row.item_name][row.date] = row.quantity;
-  }
-}
+    let sortedItemList = [...fixedItemList];
+    let allData = [];          // [{ item_name, date, quantity }]
+    let allDates = [];         // unique dates (YYYY-MM-DD) desc
+    let uniqueMonths = [];     // ['YYYY-MM'] desc
+    let currentMonthIdx = 0;   // index in uniqueMonths
+    let groupedData = {};      // { item_name: { 'YYYY-MM-DD': qty } }
 
-function extendWithNewItems() {
-  const allItems = new Set(allData.map(d => d.item_name));
-  const additionalItems = Array.from(allItems).filter(name => !fixedItemList.includes(name));
-  additionalItems.sort((a, b) => a.localeCompare(b, 'th'));
-  sortedItemList = [...fixedItemList, ...additionalItems];
-}
+    // ===== Helpers =====
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+    const escapeHtml = s => String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
+    const todayIso = () => new Date().toISOString().slice(0,10);
+    const monthOf = d => d.slice(0,7); // 'YYYY-MM'
 
-function getFilteredDates() {
-  return allDates.filter(d => new Date(d).getMonth() === currentMonth).slice(0, 3).reverse();
-}
+    function formatDateTH(dateStr){
+      const d = new Date(dateStr);
+      if (Number.isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('th-TH', { day:'2-digit', month:'2-digit', year:'2-digit' });
+    }
 
-function renderTable() {
-  const filteredDates = getFilteredDates();
-  const headerRow = document.getElementById("tableHeader");
-  const tbody = document.getElementById("tableBody");
-  headerRow.innerHTML = `<th>ลำดับ</th><th>ชื่อเวชภัณฑ์</th>` +
-    filteredDates.map(date => `<th>${formatDate(date)}</th>`).join('') +
-    `<th><input type='date' id='inputDate'></th><th>จัดการ</th>`;
-  tbody.innerHTML = "";
-  sortedItemList.forEach((name, index) => {
-    const preview = filteredDates.map(d => `<td>${groupedData[name]?.[d] ?? '-'}</td>`).join('');
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${index + 1}</td><td class='name'>${name}</td>` +
-      preview +
-      `<td><input type='number' name='${name}'></td>
-       <td><button class="btn-single" onclick='submitSingle("${name}")'>บันทึก</button></td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-function formatDate(dateStr) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "2-digit" });
-}
-
-function submitSingle(itemName) {
-  const inputDate = document.getElementById("inputDate").value;
-  const input = document.querySelector(`input[name='${itemName}']`);
-  if (!inputDate || !input.value) return alert("กรุณากรอกข้อมูลให้ครบ");
-
-  const qty = parseFloat(input.value);
-
-  // ตรวจซ้ำ
-  const isDuplicate = allData.some(entry =>
-    entry.item_name === itemName &&
-    entry.date === inputDate &&
-    parseFloat(entry.quantity) === qty
-  );
-
-  if (isDuplicate) {
-    alert(`⚠️ ข้อมูลซ้ำ:
-เวชภัณฑ์: ${itemName}
-วันที่: ${inputDate}
-จำนวน: ${qty}`);
-    return;
-  }
-
-  const payload = [{ item_name: itemName, date: inputDate, quantity: qty }];
-  saveData(payload);
-}
-
-
-
-function submitAll() {
-  const inputDate = document.getElementById("inputDate").value;
-  if (!inputDate) return alert("กรุณาเลือกวันที่ก่อนบันทึก");
-
-  const payload = [];
-  const duplicateList = [];
-
-  document.querySelectorAll("input[type='number']").forEach(input => {
-    if (input.value !== '') {
-      const name = input.name;
-      const qty = parseFloat(input.value);
-
-      const isDuplicate = allData.some(entry =>
-        entry.item_name === name &&
-        entry.date === inputDate &&
-        parseFloat(entry.quantity) === qty
-      );
-
-      if (isDuplicate) {
-        duplicateList.push(`- ${name} | ${inputDate} | ${qty}`);
-      } else {
-        payload.push({ item_name: name, date: inputDate, quantity: qty });
+    function buildGrouped(){
+      groupedData = {};
+      for (const row of allData) {
+        (groupedData[row.item_name] ??= {})[row.date] = Number(row.quantity||0);
       }
     }
+
+    function extendWithNewItems(){
+      const allItems = new Set(allData.map(d => d.item_name));
+      const extra = Array.from(allItems).filter(n => !fixedItemList.includes(n));
+      extra.sort((a,b) => a.localeCompare(b, 'th'));
+      sortedItemList = [...fixedItemList, ...extra];
+    }
+
+    function computeCalendars(){
+      const dateSet = new Set(allData.map(d => d.date));
+      allDates = Array.from(dateSet).sort((a,b) => new Date(b) - new Date(a));
+
+      const monthSet = new Set(allDates.map(d => monthOf(d)));
+      uniqueMonths = Array.from(monthSet).sort((a,b) => a < b ? 1 : (a > b ? -1 : 0)); // desc
+
+      if (uniqueMonths.length === 0) {
+        const t = todayIso().slice(0,7);
+        uniqueMonths = [t];
+      }
+      currentMonthIdx = 0; // เริ่มที่เดือนล่าสุดเสมอ
+    }
+
+    function getSelectedMonth(){ return uniqueMonths[currentMonthIdx]; }
+    function getFilteredDates(){
+      const ym = getSelectedMonth();
+      const dates = allDates.filter(d => d.startsWith(ym)).sort(); // asc
+      return dates.slice(-3); // 3 วันที่ล่าสุดของเดือนนั้น (ซ้าย->ขวา)
+    }
+
+    function defaultInputDateForMonth(){
+      const ym = getSelectedMonth();
+      const dates = allDates.filter(d => d.startsWith(ym)).sort();
+      if (dates.length) return dates[dates.length - 1]; // ล่าสุดในเดือน
+      return ym + '-01';
+    }
+
+    // เกณฑ์สีแดงของ "ค่าวันล่าสุด" ตามลำดับแถว (1-based)
+    function lowThresholdForIndex(idx1){
+      if (idx1>=1 && idx1<=10) return 30;
+      if (idx1>=11 && idx1<=14) return 10;
+      if (idx1===18) return 10;
+      if (idx1===20) return 2;
+      return null;
+    }
+
+    // ===== Fetch & Init =====
+    async function fetchData(){
+      try{
+        const res = await fetch('/api/inventory', { headers:{ 'Accept':'application/json' }});
+        if (!res.ok) throw new Error('bad status');
+        allData = await res.json();
+        // normalize
+        allData = (Array.isArray(allData) ? allData : []).map(r => ({
+          item_name: r.item_name ?? '',
+          date: r.date ?? todayIso(),
+          quantity: Number(r.quantity ?? 0)
+        }));
+      }catch(e){
+        allData = [];
+      }
+      computeCalendars();
+      buildGrouped();
+      extendWithNewItems();
+      renderTable();
+      updateNavButtons();
+    }
+
+    // ===== Rendering =====
+    function renderTable(){
+      const headerRow = $('#tableHeader');
+      const tbody = $('#tableBody');
+      if (!headerRow || !tbody) return;
+
+      const filteredDates = getFilteredDates();
+      const inputDateDefault = defaultInputDateForMonth();
+
+      headerRow.innerHTML =
+        `<th>ลำดับ</th><th>ชื่อเวชภัณฑ์</th>` +
+        filteredDates.map(d => `<th>${formatDateTH(d)}</th>`).join('') +
+        `<th><input type="date" id="inputDate" value="${inputDateDefault}"></th><th>จัดการ</th>`;
+
+      tbody.innerHTML = '';
+      sortedItemList.forEach((name, idx) => {
+        const vals = filteredDates.map(d => groupedData[name]?.[d]);
+        const cells = [];
+
+        // วนคอลัมน์วันที่
+        for (let i=0;i<filteredDates.length;i++){
+          const v = vals[i];
+          const isLatest = (i === filteredDates.length - 1);
+          if (!isLatest){
+            cells.push(`<td>${Number.isFinite(v) ? v : '-'}</td>`);
+          } else {
+            // คอลัมน์ล่าสุด: แสดงค่า + diff (เทียบคอลัมน์ก่อนหน้า)
+            const prev = vals.length>=2 ? vals[filteredDates.length - 2] : undefined;
+            let diffHtml = `<span class="diff-flat">(—)</span>`;
+            if (Number.isFinite(v) && Number.isFinite(prev)){
+              const diff = v - prev;
+              diffHtml =
+                diff > 0 ? `<span class="diff-up">(▲ ${diff})</span>` :
+                diff < 0 ? `<span class="diff-down">(▼ ${Math.abs(diff)})</span>` :
+                           `<span class="diff-flat">(0)</span>`;
+            } else if (Number.isFinite(v) && !Number.isFinite(prev)){
+              // มีค่าใหม่ แต่ไม่มีค่าก่อนหน้า
+              diffHtml = `<span class="diff-flat">(—)</span>`;
+            }
+
+            // สีแดงของ "ค่าวันล่าสุด" ตามเกณฑ์ลำดับแถว
+            const idx1 = idx + 1;
+            const thr = lowThresholdForIndex(idx1);
+            const valClass = (Number.isFinite(v) && thr !== null && v < thr) ? 'val-low' : '';
+            const vText = Number.isFinite(v) ? v : '-';
+
+            cells.push(
+              `<td class="latest-cell"><span class="latest-val ${valClass}">${vText}</span><span class="sep"></span>${diffHtml}</td>`
+            );
+          }
+        }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          `<td>${idx+1}</td>` +
+          `<td class="name">${escapeHtml(name)}</td>` +
+          cells.join('') +
+          `<td><input type="number" min="0" step="1" inputmode="numeric" data-item="${escapeHtml(name)}"></td>` +
+          `<td><button class="btn-single" type="button" data-item="${escapeHtml(name)}">บันทึก</button></td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateNavButtons(){
+      const prev = $('#btnPrev'), next = $('#btnNext');
+      // ควบคุมเดือนจาก uniqueMonths (เรียงจากใหม่->เก่า)
+      if (prev) prev.disabled = currentMonthIdx >= (uniqueMonths.length - 1);
+      if (next) next.disabled = currentMonthIdx <= 0;
+    }
+
+    // ===== Save logic =====
+    function isDuplicateEntry(itemName, date, qty){
+      return allData.some(entry => entry.item_name === itemName && entry.date === date && Number(entry.quantity) === Number(qty));
+    }
+
+    async function saveData(payload){
+      try{
+        const res = await fetch('/api/save_inventory', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if(!res.ok) throw new Error('bad status');
+        await res.json();
+        alert('✅ บันทึกสำเร็จ');
+        await fetchData(); // refresh table + state
+      }catch(e){
+        alert('❌ เกิดข้อผิดพลาด');
+      }
+    }
+
+    // ===== Events =====
+    // Month nav
+    $('#btnPrev')?.addEventListener('click', () => {
+      if (currentMonthIdx < uniqueMonths.length - 1){
+        currentMonthIdx++;
+        renderTable();
+        updateNavButtons();
+      }
+    });
+    $('#btnNext')?.addEventListener('click', () => {
+      if (currentMonthIdx > 0){
+        currentMonthIdx--;
+        renderTable();
+        updateNavButtons();
+      }
+    });
+
+    // Single row save (event delegation)
+    $('#tableBody')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-single');
+      if (!btn) return;
+      const itemName = btn.dataset.item;
+      const inputDateEl = $('#inputDate');
+      const inputEl = $('#tableBody').querySelector(`input[data-item="${CSS.escape(itemName)}"]`);
+      const inputDate = inputDateEl?.value || '';
+      const qtyStr = inputEl?.value?.trim();
+
+      if (!inputDate || !qtyStr){ alert('กรุณากรอกข้อมูลให้ครบ'); return; }
+      const nQty = Number(qtyStr);
+      if (Number.isNaN(nQty) || nQty < 0){ alert('จำนวนไม่ถูกต้อง'); return; }
+
+      if (isDuplicateEntry(itemName, inputDate, nQty)){
+        alert(`⚠️ ข้อมูลซ้ำ:\nเวชภัณฑ์: ${itemName}\nวันที่: ${inputDate}\nจำนวน: ${nQty}`);
+        return;
+      }
+      saveData([{ item_name:itemName, date:inputDate, quantity:nQty }]);
+    });
+
+    // Save all
+    $('#btnSaveAll')?.addEventListener('click', () => {
+      const inputDate = $('#inputDate')?.value || '';
+      if (!inputDate){ alert('กรุณาเลือกวันที่ก่อนบันทึก'); return; }
+
+      const payload = [];
+      const duplicateList = [];
+
+      $$('#tableBody input[type="number"]').forEach(input => {
+        const val = input.value.trim();
+        if (val === '') return;
+        const name = input.dataset.item;
+        const qty = Number(val);
+        if (Number.isNaN(qty) || qty < 0) return;
+
+        if (isDuplicateEntry(name, inputDate, qty)){
+          duplicateList.push(`- ${name} | ${inputDate} | ${qty}`);
+        }else{
+          payload.push({ item_name:name, date:inputDate, quantity:qty });
+        }
+      });
+
+      if (duplicateList.length){
+        alert(`⚠️ มีข้อมูลซ้ำ ${duplicateList.length} รายการ ไม่ได้บันทึก:\n\n${duplicateList.join('\n')}`);
+      }
+      if (!payload.length){
+        alert('ไม่มีข้อมูลใหม่ที่ต้องบันทึก');
+        return;
+      }
+      saveData(payload);
+    });
+
+    // Popup (Add item)
+    const popup = $('#popupForm');
+    function showAddPopup(){
+      $('#newName').value = '';
+      $('#newQty').value = '';
+      $('#newDate').value = $('#inputDate')?.value || todayIso();
+      popup.style.display = 'flex';
+      setTimeout(() => $('#newName')?.focus(), 10);
+    }
+    function hideAddPopup(){ popup.style.display = 'none'; }
+
+    $('#btnAdd')?.addEventListener('click', showAddPopup);
+    $('#popupCancel')?.addEventListener('click', hideAddPopup);
+    $('#popupSubmit')?.addEventListener('click', () => {
+      const name = $('#newName').value.trim();
+      const qty = Number($('#newQty').value);
+      const date = $('#newDate').value;
+
+      if (!name || !Number.isFinite(qty) || qty < 0 || !date){
+        alert('กรุณากรอกข้อมูลให้ครบ'); return;
+      }
+      if (isDuplicateEntry(name, date, qty)){
+        alert('⚠️ ข้อมูลนี้มีอยู่แล้วในระบบ (ชื่อ, วันที่, จำนวน ตรงกัน)');
+        return;
+      }
+      saveData([{ item_name:name, date, quantity:qty }]);
+      hideAddPopup();
+    });
+    // ปิดด้วยคลิกพื้นหลัง
+    $('#popupForm')?.addEventListener('click', (e) => { if (e.target === e.currentTarget) hideAddPopup(); });
+    // ปิดด้วย ESC
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideAddPopup(); });
+
+    // Floating menu
+    const floatingToggle = $('#floatingToggle');
+    const floatingMenu = $('#floatingMenu');
+    function toggleFloatingMenu(){
+      if (!floatingMenu) return;
+      floatingMenu.style.display = (floatingMenu.style.display === 'flex') ? 'none' : 'flex';
+    }
+    floatingToggle?.addEventListener('click', (e) => { e.stopPropagation(); toggleFloatingMenu(); });
+    document.addEventListener('click', (e) => {
+      if (!floatingToggle || !floatingMenu) return;
+      if (!floatingToggle.contains(e.target) && !floatingMenu.contains(e.target)){
+        floatingMenu.style.display = 'none';
+      }
+    });
+
+    // Start
+    fetchData();
   });
-
-  if (duplicateList.length > 0) {
-    alert(`⚠️ มีข้อมูลซ้ำ ${duplicateList.length} รายการ ไม่ได้บันทึก:\n\n${duplicateList.join('\n')}`);
-  }
-
-  if (payload.length === 0) {
-    alert("ไม่มีข้อมูลใหม่ที่ต้องบันทึก");
-    return;
-  }
-
-  saveData(payload);
-}
-
-
-function saveData(payload) {
-  fetch("/api/save_inventory", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  })
-    .then(res => res.json())
-    .then(() => {
-      alert("✅ บันทึกสำเร็จ");
-      fetchData();
-    })
-    .catch(() => alert("❌ เกิดข้อผิดพลาด"));
-}
-
-function prevMonth() {
-  if (currentMonth > 0) {
-    currentMonth--;
-    renderTable();
-  }
-}
-
-function nextMonth() {
-  if (currentMonth < 11) {
-    currentMonth++;
-    renderTable();
-  }
-}
-
-// 🟢 Popup Functions
-function showAddPopup() {
-  document.getElementById("popupForm").style.display = "flex";
-}
-function hideAddPopup() {
-  document.getElementById("popupForm").style.display = "none";
-}
-
-function submitNewItem() {
-  const name = document.getElementById("newName").value.trim();
-  const qty = parseFloat(document.getElementById("newQty").value);
-  const date = document.getElementById("newDate").value;
-
-  if (!name || isNaN(qty) || !date) {
-    return alert("กรุณากรอกข้อมูลให้ครบ");
-  }
-
-  // 🔍 ตรวจซ้ำจากชื่อ-วันที่-จำนวน
-  const isDuplicate = allData.some(entry =>
-    entry.item_name === name &&
-    entry.date === date &&
-    parseFloat(entry.quantity) === qty
-  );
-
-  if (isDuplicate) {
-    return alert("⚠️ ข้อมูลนี้มีอยู่แล้วในระบบ (ชื่อ, วันที่, จำนวน ตรงกัน)");
-  }
-
-  const payload = [{ item_name: name, quantity: qty, date }];
-  saveData(payload);
-  hideAddPopup();
-}
-
-fetchData();
-
-function toggleFloatingMenu() {
-  const menu = document.getElementById("floatingMenu");
-  menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
-}
-
-document.addEventListener('click', function(e) {
-  const toggle = document.getElementById("floatingToggle");
-  const menu = document.getElementById("floatingMenu");
-  if (!toggle.contains(e.target) && !menu.contains(e.target)) {
-    menu.style.display = "none";
-  }
-});
-</script>
-<div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
-  <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu" style="width:60px;height:60px;">
-</div>
-
-<div id="floatingMenu" class="floating-menu">
-  <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}"></a>
-  <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}"></a>
-  <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}"></a>
-  <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}"></a>
-  <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}"></a>
-  <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}"></a>
-  <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}"></a>
-  <a href="#"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}"></a>
-  <a href="#"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}"></a>
-</div>
-
+  </script>
 </body>
 </html>
