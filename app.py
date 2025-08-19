@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import json
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta
 from collections import defaultdict, deque
 from typing import Any, Dict, List
 
@@ -224,6 +224,18 @@ def daily_sales_graph():
     return render_template('daily_sales_graph.html')
 
 
+@app.route('/crm')
+@login_required
+def crm():
+    return render_template('crm.html')
+
+
+@app.route('/staff')
+@login_required
+def staff():
+    return render_template('staff.html')
+
+
 # =============================================================
 # API — Sales & Customers
 # =============================================================
@@ -235,10 +247,41 @@ def test_route():
 @app.route('/api/customers')
 @login_required
 def api_customers():
+    """
+    ดึงลูกค้าทั้งหมด + แนบฟิลด์จากวิวสรุป Sales Pitch:
+      - sales_pitch_compact  : ล่าสุด 2 รายการ (สำหรับโชว์ในตาราง)
+      - sales_pitch_full     : รวมทั้งหมด (แสดงใน modal)
+      - pitch_count          : จำนวนรายการทั้งหมด
+    """
     try:
-        # จะ select * ก็ได้ ถ้าอยากจำกัดฟิลด์เปลี่ยนเป็น select(...) เฉพาะที่ใช้
-        response = supabase.table("customers").select("*").execute()
-        return jsonify(response.data)
+        # 1) customers
+        cust_res = supabase.table("customers").select("*").execute()
+        customers = cust_res.data or []
+
+        # 2) pitch latest 2 (compact)
+        lat_res = supabase.table("v_customer_pitch_latest2").select("*").execute()
+        latest_map: Dict[str, str] = {}
+        for r in lat_res.data or []:
+            latest_map[str(r.get("opd") or "")] = r.get("pitch_latest2") or ""
+
+        # 3) full summary (all)
+        sum_res = supabase.table("v_customer_pitch_summary").select("*").execute()
+        summary_map: Dict[str, Dict[str, Any]] = {}
+        for r in sum_res.data or []:
+            summary_map[str(r.get("opd") or "")] = {
+                "pitch_summary": r.get("pitch_summary") or "",
+                "pitch_count": r.get("pitch_count") or 0,
+            }
+
+        # 4) merge
+        for c in customers:
+            opd = str(c.get("opd") or "")
+            sm = summary_map.get(opd, {})
+            c["sales_pitch_compact"] = latest_map.get(opd, "")
+            c["sales_pitch_full"] = sm.get("pitch_summary", "")
+            c["pitch_count"] = sm.get("pitch_count", 0)
+
+        return jsonify(customers)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -268,7 +311,8 @@ def add_customer():
     data = dict(data or {})
     data['opd'] = normalize_opd(data.get('opd'))
     try:
-        check = supabase.table("customers").select("id").eq("opd", data['opd']).execute()
+        # ถ้าตารางมีคอลัมน์ id อยู่ก็จะ select ได้; ถ้าไม่มีสามารถเปลี่ยนเป็น select("opd") ได้
+        check = supabase.table("customers").select("opd").eq("opd", data['opd']).execute()
         if check.data:
             return jsonify({"error": "มี OPD นี้อยู่แล้ว"}), 400
         # allow only known fields to be inserted (basic sanitation)
@@ -365,7 +409,7 @@ def save_sales():
                     'name': rec.get('name', ''),
                     'phone': rec.get('phone', ''),
                     'birthMonth': rec.get('birthMonth', ''),
-                    # 'vip': rec.get('vip', ''),  # ⬅️ ตัดทิ้ง
+                    # 'vip': rec.get('vip', ''),  # ⬅️ ไม่มีแล้ว
                     'note': rec.get('note', ''),
                     'profile': rec.get('profile', ''),  # ⬅️ เพิ่ม
                 }
@@ -387,7 +431,7 @@ def save_sales():
             # UPDATE if id provided
             rec_id = rec.get('id')
             if rec_id:
-                resp = supabase.table('sales_records').update(rec_db).eq('id', rec_id).execute()
+                supabase.table('sales_records').update(rec_db).eq('id', rec_id).execute()
                 updated_count += 1
                 continue
 
@@ -461,6 +505,176 @@ def cleanup_duplicates():
 
 
 # =============================================================
+# API — Sales Pitch (NEW)
+# =============================================================
+@app.route('/api/pitches')
+@login_required
+def get_pitches():
+    """ดึงรายการ pitch ทั้งหมดของลูกค้า (ล่าสุดก่อน)"""
+    opd = normalize_opd(request.args.get("opd", ""))
+    if not opd:
+        return jsonify({"error": "missing opd"}), 400
+    try:
+        res = (
+            supabase.table("customer_pitch_logs")
+            .select("*")
+            .eq("opd", opd)
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return jsonify(res.data or [])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/add_pitch', methods=['POST'])
+@login_required
+def add_pitch():
+    """เพิ่มบันทึก pitch ใหม่ (append)"""
+    data = request.get_json(force=True) or {}
+    opd = normalize_opd(data.get("opd"))
+    content = (data.get("content") or "").strip()
+    channel = data.get("channel")
+    outcome = data.get("outcome")
+    author = session.get("username") or data.get("author")
+
+    if not opd or not content:
+        return jsonify({"error": "opd and content required"}), 400
+
+    try:
+        ins = {
+            "opd": opd,
+            "content": content,
+            "channel": channel,
+            "outcome": outcome,
+            "author": author,
+        }
+        r = supabase.table("customer_pitch_logs").insert(ins).execute()
+        row = (r.data or [{}])[0]
+        return jsonify({"message": "ok", "id": row.get("id"), "created_at": row.get("created_at")})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/add_pitches_bulk', methods=['POST'])
+@login_required
+def add_pitches_bulk():
+    """
+    รับหลายรายการในครั้งเดียว (batch)
+    Payload: [{date:'YYYY-MM-DD', opd:'0123', promotion:'...', outcome:'...', content:'...', channel:'call'}]
+    หมายเหตุ: ถ้ายังไม่ได้เพิ่มคอลัมน์ promotion ใน DB ฟิลด์นี้จะถูกละเลย (ไม่ทำให้พัง)
+    """
+    try:
+        rows = request.get_json(force=True)
+        if not isinstance(rows, list):
+            return jsonify({"error": "payload_must_be_list"}), 400
+
+        author = session.get('username', '')
+
+        to_insert = []
+        for r in rows:
+            date_str = (r.get('date') or '')[:10]
+            if not date_str:
+                date_str = datetime.utcnow().strftime('%Y-%m-%d')
+            # ใส่เวลา 12:00 UTC เพื่อกัน timezone ตัดวัน
+            created_at_iso = f"{date_str}T12:00:00Z"
+
+            rec = {
+                "opd": normalize_opd(r.get('opd')),
+                "content": r.get('content') or '',
+                "channel": r.get('channel') or None,
+                "outcome": r.get('outcome') or None,
+                "author": author or None,
+                "created_at": created_at_iso,
+            }
+            # ถ้าตารางมีคอลัมน์ promotion จะเก็บได้เอง (ถ้าไม่มี Supabase จะ error)
+            # ดังนั้นใส่แบบระมัดระวัง:
+            if 'promotion' in r and r.get('promotion'):
+                rec["promotion"] = r.get('promotion')
+            to_insert.append(rec)
+
+        if not to_insert:
+            return jsonify({"error": "empty"}), 400
+
+        supabase.table('customer_pitch_logs').insert(to_insert).execute()
+        return jsonify({"inserted": len(to_insert), "message": "ok"})
+    except Exception as e:
+        # บางกรณีอาจ error เพราะคอลัมน์ promotion ไม่มี ให้ลองตัดทิ้งแล้ว insert ใหม่
+        msg = str(e)
+        if 'promotion' in msg.lower():
+            try:
+                cleaned = [{k:v for k,v in r.items() if k != 'promotion'} for r in to_insert]
+                supabase.table('customer_pitch_logs').insert(cleaned).execute()
+                return jsonify({"inserted": len(cleaned), "message": "ok (promotion skipped)"}), 200
+            except Exception as e2:
+                return jsonify({"error": str(e2)}), 500
+        return jsonify({"error": msg}), 500
+
+
+@app.route('/api/pitches_by_date')
+@login_required
+def pitches_by_date():
+    """
+    ดึงประวัติ Pitch ตามช่วงวัน (ใช้ created_at)
+    Query:
+      from=YYYY-MM-DD  to=YYYY-MM-DD
+      q=keyword (optional)  outcome=...  channel=...
+    Return: list of logs (เรียงใหม่→เก่า)
+    """
+    try:
+        q_from = (request.args.get('from') or '').strip()
+        q_to = (request.args.get('to') or '').strip()
+        kw = (request.args.get('q') or '').strip().lower()
+        outcome = (request.args.get('outcome') or '').strip()
+        channel = (request.args.get('channel') or '').strip()
+
+        if not q_from or not q_to:
+            today = datetime.utcnow().strftime('%Y-%m-%d')
+            q_to = q_to or today
+            q_from = q_from or today
+
+        qry = (
+            supabase.table('customer_pitch_logs')
+            .select('*')
+            .gte('created_at', f'{q_from}T00:00:00Z')
+            .lte('created_at', f'{q_to}T23:59:59Z')
+            .order('created_at', desc=True)
+        )
+        if outcome:
+            qry = qry.eq('outcome', outcome)
+        if channel:
+            qry = qry.eq('channel', channel)
+
+        resp = qry.execute()
+        rows = resp.data or []
+
+        # กรอง keyword ฝั่งแอป (รวม promotion ด้วยถ้ามี)
+        if kw:
+            tmp = []
+            for r in rows:
+                s = ' '.join([
+                    str(r.get('opd') or ''),
+                    str(r.get('content') or ''),
+                    str(r.get('outcome') or ''),
+                    str(r.get('channel') or ''),
+                    str(r.get('author') or ''),
+                    str(r.get('promotion') or ''),
+                ]).lower()
+                if kw in s:
+                    tmp.append(r)
+            rows = tmp
+
+        # แนบ date ช่วย (YYYY-MM-DD)
+        for r in rows:
+            ts = str(r.get('created_at') or '')
+            r['date'] = ts[:10] if ts else None
+
+        return jsonify(rows)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# =============================================================
 # API — Oldsale & Inventory (kept for compatibility)
 # =============================================================
 @app.route('/api/oldsaledata')
@@ -502,14 +716,3 @@ def api_save_inventory():
 if __name__ == '__main__':
     # In production, run behind a proper WSGI server and set SESSION_COOKIE_SECURE=true
     app.run(debug=True)
-
-@app.route('/crm')
-@login_required
-def crm():
-    return render_template('crm.html')
-
-
-@app.route('/staff')
-@login_required
-def staff():
-    return render_template('staff.html')

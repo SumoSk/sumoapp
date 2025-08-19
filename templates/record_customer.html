@@ -64,11 +64,20 @@
     .chip{ display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:999px; font-size:11px; background:#ecfeff; color:#155e75; border:1px solid #cffafe; }
 
     .table-wrap{ overflow:auto; }
-    table{ width:100%; border-collapse:separate; border-spacing:0; min-width:940px; font-size: 11px; }
+
+    /* ===== TABLE BALANCE & CLAMP ===== */
+    table#customerTable{
+      width:100%;
+      border-collapse:separate; border-spacing:0;
+      table-layout: fixed;
+      min-width: 1040px; /* กว้างขึ้นเล็กน้อยเพราะเพิ่ม Sales Pitch */
+      font-size: 11px;
+    }
     thead th{
       position:sticky; top:0; z-index:1; background:#f0fdfa; color:#0f766e;
       font-weight:700; font-size:11px; text-align:left; padding:7px 8px; border-bottom:1px solid var(--line);
       cursor: pointer; white-space: nowrap;
+      overflow:hidden; text-overflow:ellipsis;
     }
     thead th .sort{ font-size:10px; opacity:.7; margin-left:4px; }
     /* ซ่อนหัวคอลัมน์โทรศัพท์ */
@@ -76,37 +85,44 @@
 
     tbody td{
       background:#fff; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     }
     tbody tr:hover td{ background:#fafafa; }
-    td .cell{ display:flex; align-items:flex-start; gap:8px; }
-    td .cell input, td .cell textarea{
+
+    /* โครงในเซลล์ให้ยืดหยุ่น แต่ไม่ดันคอลัมน์ */
+    td .cell{
+      display:flex; align-items:center; gap:8px; min-width:0;
+    }
+    td .cell input, 
+    td .cell textarea{
       width:100%; border:none; border-bottom:1px dashed transparent; padding:3px 0;
       background:transparent; font-size:11px; color:var(--text);
+      min-width:0;
     }
     td .cell textarea{ resize:vertical; line-height:1.35; }
     td .cell input[readonly], td .cell textarea[readonly]{ opacity:.95; }
     td .cell input.editing, td .cell textarea.editing{ background:#fff; border-bottom-color:#cbd5e1; outline:none; }
+
     .actions{ display:flex; gap:6px; flex-wrap:nowrap; }
-    .sel-col{ width:34px; text-align:center; }
-    .col-profile{ min-width: 340px; }
+    .sel-col{ width:36px; text-align:center; }
 
     /* ซ่อนคอลัมน์โทรศัพท์ปกติ, โชว์เฉพาะตอนแก้ไขแถวนั้น */
     td.phone-col{ display:none; }
     tr.editing td.phone-col{ display:table-cell; }
 
     /* ให้ชื่อคลิกได้ (ตอน read-only) */
-    #customerTable input[data-key="name"][readonly]{ cursor:pointer; }
+    #customerTable input[data-key="name"][readonly]{ cursor:pointer; overflow:hidden; text-overflow:ellipsis; }
 
     .empty{ text-align:center; padding:26px 12px; color:#6b7280; }
     .skeleton{ height:10px; width:100%; background:linear-gradient(90deg, #f1f5f9, #e2e8f0, #f1f5f9); background-size:200% 100%; animation: shimmer 1.2s infinite linear; border-radius:6px; }
     @keyframes shimmer{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
     .row-skeleton td{ padding:7px; }
 
-    /* Modal สั้น ๆ */
+    /* ===== Modal สั้น ๆ ===== */
     .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:60; }
     .modal.open{ display:flex; }
     .modal .backdrop{ position:absolute; inset:0; background: rgba(15,23,42,.45); backdrop-filter: blur(2px); }
-    .modal .dialog{ position:relative; width:min(520px, 92vw); background:#fff; border-radius:16px; border:1px solid var(--line); box-shadow: 0 20px 60px rgba(2,8,23,.35); overflow:hidden; font-size: 11px; }
+    .modal .dialog{ position:relative; width:min(620px, 92vw); background:#fff; border-radius:16px; border:1px solid var(--line); box-shadow: 0 20px 60px rgba(2,8,23,.35); overflow:hidden; font-size: 11px; }
     .dialog header{ padding:10px 12px; border-bottom:1px solid var(--line); font-weight:700; display:flex; align-items:center; justify-content:space-between; }
     .dialog .body{ padding:12px; }
     .dialog .viewer{ white-space:pre-wrap; line-height:1.5; color:#0f172a; }
@@ -125,7 +141,91 @@
     @media (max-width: 768px){
       .toolbar{ grid-template-columns: 1fr; }
       .left-tools{ grid-template-columns: 1fr; }
+      .container{ margin: 12px auto 120px auto; }
+
+      /* ซ่อนคอลัมน์หมายเหตุ (หัว+ตัว) ในจอเล็ก ลดความแออัด */
+      #customerTable thead th[data-key="note"],
+      #customerTable tbody td:nth-child(8){
+        display:none;
+      }
+
+      .btn{ padding:5px 8px; font-size:10px; }
+      .btn-icon{ padding:5px; }
     }
+
+    /* ====== คุม “สัดส่วนคอลัมน์” ด้วย clamp() ====== */
+
+    /* OPD */
+    #customerTable th[data-key="opd"],
+    #customerTable td:nth-child(2){ width: 78px; }
+
+    /* ชื่อ */
+    #customerTable th[data-key="name"],
+    #customerTable td:nth-child(3){ width: clamp(140px, 22vw, 220px); }
+
+    /* Sales Pitch (ใหม่) */
+    #customerTable th[data-key="salesPitch"],
+    #customerTable td:nth-child(4){ width: clamp(200px, 28vw, 340px); }
+    .pitch-preview{
+      display:flex; gap:8px; align-items:flex-start; min-width:0;
+    }
+    .pitch-text{
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+      overflow:hidden; white-space:normal; line-height:1.35;
+      color:#334155;
+    }
+    .badge{
+      background:#ecfeff; color:#155e75; border:1px solid #a5f3fc;
+      font-size:10px; padding:1px 6px; border-radius:999px; flex:0 0 auto;
+    }
+    .btn-mini{
+      border:1px solid var(--line); background:#fff; border-radius:8px; padding:4px 6px; cursor:pointer;
+      display:inline-flex; align-items:center; gap:4px; flex:0 0 auto;
+    }
+
+    /* โทรศัพท์ (ซ่อนหัว) */
+    #customerTable th[data-key="phone"],
+    #customerTable td.phone-col{ width: 120px; }
+
+    /* เดือนเกิด (index เปลี่ยนเป็นคอลัมน์ที่ 6) */
+    #customerTable th[data-key="birthMonth"],
+    #customerTable td:nth-child(6){ width: 80px; }
+    #customerTable input[data-key="birthMonth"]{ width: 4.5ch; flex:0 0 auto; min-width:0; text-align:center; }
+
+    /* โปรไฟล์ */
+    #customerTable th[data-key="profile"],
+    #customerTable td.col-profile{ width: clamp(220px, 35vw, 360px); min-width:220px; }
+    #customerTable textarea[data-key="profile"][readonly]{
+      height: 2.6em; line-height:1.3; overflow:hidden; resize:none; white-space:normal;
+    }
+
+    /* หมายเหตุ (index เปลี่ยนเป็นคอลัมน์ที่ 8) */
+    #customerTable th[data-key="note"],
+    #customerTable td:nth-child(8){ width: clamp(120px, 22vw, 220px); }
+
+    /* คอลัมน์ปุ่มจัดการ */
+    #customerTable th:last-child,
+    #customerTable td:last-child{ width: 120px; }
+
+    /* ปรับระยะ/ความกว้าง input เฉพาะช่อง */
+    #customerTable td:nth-child(2) .cell input{  /* OPD */
+      width: 6.5ch; flex:0 0 auto; min-width:0; text-align:center;
+    }
+    #customerTable td:nth-child(2) .cell{ gap:4px; }   /* OPD */
+    #customerTable td:nth-child(3) .cell{ gap:6px; }   /* ชื่อ */
+    #customerTable td:nth-child(6) .cell{ gap:4px; }   /* เดือนเกิด */
+
+    /* ปุ่มไอคอน “ดูหมายเหตุ” ให้ขนาดคงที่ ไม่ดันแถว */
+    .icon-only-btn{
+      border:none; background:#fff; 
+      border:1px solid var(--line);
+      width:28px; height:28px; 
+      border-radius:8px; 
+      display:inline-flex; justify-content:center; align-items:center;
+      cursor:pointer;
+      flex:0 0 auto;
+    }
+    .icon-only-btn svg{ width:16px; height:16px; }
   </style>
 </head>
 <body>
@@ -148,7 +248,7 @@
         <div class="left-tools">
           <div class="search">
             <span class="icon">🔎</span>
-            <input id="searchInput" type="text" placeholder="ค้นหา: ชื่อ / เบอร์ / OPD / โปรไฟล์ / หมายเหตุ / เดือนเกิด">
+            <input id="searchInput" type="text" placeholder="ค้นหา: ชื่อ / เบอร์ / OPD / โปรไฟล์ / หมายเหตุ / เดือนเกิด / Sales Pitch">
             <span id="clearSearch" class="clear" title="ล้างคำค้น">✖</span>
           </div>
           <select id="monthFilter" class="month-filter" title="กรองตามเดือนเกิด">
@@ -177,6 +277,7 @@
               <th class="sel-col"><input type="checkbox" id="selectAll" title="เลือกทั้งหมด"></th>
               <th data-key="opd">OPD <span class="sort">↕</span></th>
               <th data-key="name">ชื่อ <span class="sort">↕</span></th>
+              <th data-key="salesPitch">Sales Pitch</th>
               <th data-key="phone"><!-- hidden by CSS --></th>
               <th data-key="birthMonth">เดือนเกิด <span class="sort">↕</span></th>
               <th data-key="profile" class="col-profile">โปรไฟล์ <span class="sort">↕</span></th>
@@ -186,9 +287,9 @@
           </thead>
           <tbody id="tbody">
             <!-- Skeleton -->
-            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
-            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
-            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -216,6 +317,29 @@
         <button id="copyPeekBtn" class="btn btn-ghost">คัดลอก</button>
         <button class="btn btn-primary" data-close="modal">ปิด</button>
       </footer>
+    </div>
+  </div>
+
+  <!-- Pitch Modal -->
+  <div id="pitchModal" class="modal" aria-hidden="true">
+    <div class="backdrop" data-close="modal"></div>
+    <div class="dialog">
+      <header>
+        <span id="pitchTitle">Sales Pitch</span>
+        <button class="btn btn-icon btn-ghost" data-close="modal" title="ปิด">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M6 18L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <div class="body">
+        <div id="pitchList" class="viewer" style="max-height:46vh; overflow:auto; border:1px solid var(--line); padding:8px; border-radius:8px; background:#f8fafc;"></div>
+        <div style="margin-top:10px; display:grid; gap:6px;">
+          <textarea id="pitchInput" rows="3" placeholder="เพิ่มบันทึกการติดต่อ (เนื้อหาสำคัญ / ข้อเสนอ / การตอบกลับ)"></textarea>
+          <div style="display:flex; gap:6px; align-items:center; justify-content:flex-end;">
+            <button class="btn btn-ghost" data-close="modal">ยกเลิก</button>
+            <button id="addPitchBtn" class="btn btn-primary">บันทึก Sales Pitch</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -268,10 +392,10 @@
     const saveSortPref = (key,asc)=>localStorage.setItem('cust_sort', JSON.stringify({key,asc}));
     const loadSortPref = ()=>{ try{return JSON.parse(localStorage.getItem('cust_sort'))||{key:'opd',asc:true}}catch{return {key:'opd',asc:true}} };
     const toCSV = (rows)=> {
-      const header = ['OPD','ชื่อ','เบอร์โทร','เดือนเกิด','โปรไฟล์','หมายเหตุ'];
+      const header = ['OPD','ชื่อ','เบอร์โทร','เดือนเกิด','โปรไฟล์','หมายเหตุ','Sales Pitch (ล่าสุด 2 รายการ)'];
       const escape = v => `"${String(v??'').replaceAll('"','""')}"`;
       const lines = [header.map(escape).join(',')];
-      for(const r of rows) lines.push([r.opd,r.name,r.phone,r.birthMonth,r.profile,r.note].map(escape).join(','));
+      for(const r of rows) lines.push([r.opd,r.name,r.phone,r.birthMonth,r.profile,r.note,r.sales_pitch_compact||''].map(escape).join(','));
       return lines.join('\n');
     };
     const download = (filename, text)=>{
@@ -288,7 +412,7 @@
     const formatPhone = raw => {
       const d = String(raw||'').replace(/\D/g,'');
       if(d.length===10) return d.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-      if(d.length===9) return d.replace(/(\d{2})(\d{3})(\d{4})/, '$1-$2-$3');
+      if(d.length===9)  return d.replace(/(\d{2})(\d{3})(\d{4})/, '$1-$2-$3');
       return raw||'';
     };
 
@@ -297,6 +421,10 @@
     let viewRecords = [];
     let sortState = loadSortPref();
     let selected = new Set();
+
+    // Pitch modal state
+    let currentPitchOPD = '';
+    let currentPitchName = '';
 
     // ===== Elements =====
     const tbody = $('#tbody');
@@ -316,13 +444,18 @@
     const peekTitle = $('#peekTitle');
     const peekContent = $('#peekContent');
     const copyPeekBtn = $('#copyPeekBtn');
+    const pitchModal = $('#pitchModal');
+    const pitchTitle = $('#pitchTitle');
+    const pitchList = $('#pitchList');
+    const pitchInput = $('#pitchInput');
+    const addPitchBtn = $('#addPitchBtn');
 
     // ===== Load =====
     function skeletonOn(){
       tbody.innerHTML = `
-        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
-        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
-        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
       `;
     }
 
@@ -340,11 +473,14 @@
               map.set(opd, {
                 opd,
                 name: r.name||'',
-                phone: formatPhone(r.phone||''),   // ใช้แสดง (แต่ซ่อน)
-                phoneRaw,                           // เก็บค่าเดิมไว้สำหรับ matching
+                phone: formatPhone(r.phone||''),
+                phoneRaw,
                 birthMonth: normalizeMonth(r.birthMonth||''),
                 profile: r.profile||'',
                 note: r.note||'',
+                sales_pitch_compact: r.sales_pitch_compact || '',
+                sales_pitch_full: r.sales_pitch_full || '',
+                pitch_count: Number(r.pitch_count||0),
               });
             }
           }
@@ -354,7 +490,7 @@
         })
         .catch(err=>{
           console.error(err);
-          tbody.innerHTML = `<tr><td colspan="8"><div class="empty">⚠️ ไม่สามารถโหลดข้อมูลจากเซิร์ฟเวอร์</div></td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="9"><div class="empty">⚠️ ไม่สามารถโหลดข้อมูลจากเซิร์ฟเวอร์</div></td></tr>`;
           showToast('ไม่สามารถโหลดข้อมูลจากเซิร์ฟเวอร์','error');
         });
     }
@@ -371,7 +507,8 @@
           r.opd.toLowerCase().includes(kw) ||
           String(r.note).toLowerCase().includes(kw) ||
           String(r.birthMonth).toLowerCase().includes(kw) ||
-          String(r.profile).toLowerCase().includes(kw)
+          String(r.profile).toLowerCase().includes(kw) ||
+          String(r.sales_pitch_compact).toLowerCase().includes(kw)
         );
         return byMonth && match;
       });
@@ -392,7 +529,7 @@
 
     // ==== cell templates ====
     function cellStaticCopy(text){
-      return `<td><div class="cell"><input value="${text}" readonly title="คลิกเพื่อคัดลอก OPD"></div></td>`;
+      return `<td class="sel-col-fix"><div class="cell"><input value="${text}" readonly title="คลิกเพื่อคัดลอก OPD"></div></td>`;
     }
     function cellPhoneHidden(phone){
       const safe = phone||'';
@@ -400,6 +537,21 @@
         <td class="phone-col" data-col="phone">
           <div class="cell">
             <input value="${safe}" data-key="phone" readonly title="${safe}" style="display:none">
+          </div>
+        </td>
+      `;
+    }
+    function cellPitch(r){
+      const preview = r.sales_pitch_compact || '—';
+      const count = Number(r.pitch_count||0);
+      return `
+        <td>
+          <div class="pitch-preview">
+            <button class="btn-mini" data-pitch-open data-opd="${r.opd}" data-name="${(r.name||'').replace(/"/g,'&quot;')}">
+              💬 ดู/เพิ่ม
+            </button>
+            <span class="badge" title="จำนวนบันทึกทั้งหมด">${count}</span>
+            <div class="pitch-text" title="${(preview||'').replace(/"/g,'&quot;')}">${preview||'—'}</div>
           </div>
         </td>
       `;
@@ -429,7 +581,7 @@
 
     function renderTable(rows){
       if(rows.length===0){
-        tbody.innerHTML = `<tr><td colspan="8"><div class="empty">ไม่พบข้อมูลที่ตรงกับคำค้นหา</div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9"><div class="empty">ไม่พบข้อมูลที่ตรงกับคำค้นหา</div></td></tr>`;
         return;
       }
       tbody.innerHTML = '';
@@ -441,6 +593,7 @@
           <td class="sel-col"><input type="checkbox" data-select-row value="${r.opd}" ${selected.has(r.opd)?'checked':''}></td>
           ${cellStaticCopy(r.opd)}
           <td><div class="cell"><input value="${r.name||''}" data-key="name" readonly title="${r.name||''}"></div></td>
+          ${cellPitch(r)}
           ${cellPhoneHidden(r.phone)}
           <td><div class="cell"><input value="${r.birthMonth||''}" data-key="birthMonth" readonly title="${r.birthMonth||''}"></div></td>
           ${cellProfile(r.profile)}
@@ -468,9 +621,18 @@
 
     // ===== Event Delegation =====
     tbody.addEventListener('click', (e)=>{
-      const btn = e.target.closest('button[data-action]');
       const row = e.target.closest('tr');
 
+      // เปิด Pitch Modal
+      const pitchBtn = e.target.closest('[data-pitch-open]');
+      if(pitchBtn){
+        const opd = pitchBtn.getAttribute('data-opd');
+        const name = pitchBtn.getAttribute('data-name') || '';
+        openPitchModal(opd, name);
+        return;
+      }
+
+      const btn = e.target.closest('button[data-action]');
       // คลิกดูหมายเหตุ
       const noteBtn = e.target.closest('[data-note-view]');
       if(noteBtn){
@@ -537,7 +699,6 @@
       const phoneFormatted = (phoneInput?.value || '').trim();
       const phoneDigits = phoneFormatted.replace(/\D/g,'');
 
-      // พยายามเปิดด้วย key ทั้งสองรูปแบบ (กันเคส format ต่างกัน)
       const modalEl = document.getElementById('customer-modal');
       const tryOpen = (key)=>{
         const before = modalEl ? modalEl.style.display : '';
@@ -583,7 +744,6 @@
         inp.classList.toggle('editing', editable);
       });
 
-      // โทรศัพท์: ไม่มีไอคอนแล้ว -> โชว์ input เมื่อแก้ไขเท่านั้น
       if(phoneInput){
         phoneInput.style.display = editable ? '' : 'none';
       }
@@ -642,7 +802,7 @@
     (function initSortHeaders(){
       $$('#customerTable thead th[data-key]').forEach(th=>{
         const key = th.getAttribute('data-key');
-        if (!key) return;
+        if (!key || key === 'salesPitch') return; // คอลัมน์ pitch ไม่ sort
         const sortSpan = th.querySelector('.sort');
         th.addEventListener('click', ()=>{
           if(sortState.key===key){ sortState.asc = !sortState.asc; } else { sortState.key=key; sortState.asc=true; }
@@ -688,17 +848,13 @@
       showToast('ส่งออก CSV แล้ว');
     };
 
-    // ===== Modal Peek (สั้น) =====
+    // ===== Peek Modal (หมายเหตุ) =====
     function openPeek(title, content){
-      const peekModal = $('#peekModal');
       $('#peekTitle').textContent = title || 'ดูข้อมูล';
       $('#peekContent').textContent = content || '';
       peekModal.classList.add('open'); peekModal.setAttribute('aria-hidden','false');
     }
-    function closePeek(){
-      const peekModal = $('#peekModal');
-      peekModal.classList.remove('open'); peekModal.setAttribute('aria-hidden','true');
-    }
+    function closePeek(){ peekModal.classList.remove('open'); peekModal.setAttribute('aria-hidden','true'); }
     $('#copyPeekBtn').onclick = ()=>{
       navigator.clipboard.writeText($('#peekContent').textContent||'');
       showToast('คัดลอกแล้ว');
@@ -706,7 +862,76 @@
     $('#peekModal').addEventListener('click', (e)=>{ if(e.target.dataset.close==='modal') closePeek(); });
     $('#peekModal').querySelector('[data-close="modal"]').onclick = closePeek;
 
-    // ===== Add Modal =====
+    // ===== Pitch Modal =====
+    function openPitchModal(opd, name){
+      currentPitchOPD = opd;
+      currentPitchName = name || '';
+      pitchTitle.textContent = `Sales Pitch — OPD ${opd} ${name ? `(${name})` : ''}`;
+      pitchInput.value = '';
+      pitchModal.classList.add('open'); pitchModal.setAttribute('aria-hidden','false');
+      loadPitches(opd);
+    }
+    function closePitchModal(){
+      pitchModal.classList.remove('open'); pitchModal.setAttribute('aria-hidden','true');
+    }
+    pitchModal.addEventListener('click', (e)=>{ if(e.target.dataset.close==='modal') closePitchModal(); });
+    pitchModal.querySelector('[data-close="modal"]').onclick = closePitchModal;
+
+    function loadPitches(opd){
+      pitchList.textContent = 'กำลังโหลด...';
+      fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`)
+        .then(r=>r.json())
+        .then(list=>{
+          if(!Array.isArray(list) || list.length===0){
+            pitchList.innerHTML = '<div style="color:#64748b;">ยังไม่มีบันทึก</div>';
+            return;
+          }
+          const html = list.map(x=>{
+            const ts = (x.created_at||'').replace('T',' ').slice(0,16);
+            const who = x.author ? ` • โดย ${x.author}` : '';
+            return `<div style="padding:6px 0; border-bottom:1px dashed #e5e7eb;"><div style="color:#0f766e; font-weight:600;">${ts}${who}</div><div>${(x.content||'').replace(/</g,'&lt;')}</div></div>`;
+          }).join('');
+          pitchList.innerHTML = html;
+        })
+        .catch(()=>{ pitchList.textContent = 'โหลดข้อมูลไม่สำเร็จ'; });
+    }
+
+    addPitchBtn.addEventListener('click', ()=>{
+      const content = (pitchInput.value||'').trim();
+      if(!content){ showToast('กรุณาพิมพ์เนื้อหา Pitch','warn'); pitchInput.focus(); return; }
+      const opd = currentPitchOPD;
+      fetch('/api/add_pitch', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({opd, content})
+      })
+      .then(r=>r.json())
+      .then(d=>{
+        if(d.error){ showToast(d.error,'error'); return; }
+        showToast('บันทึก Sales Pitch แล้ว ✅');
+        pitchInput.value='';
+        loadPitches(opd);
+        // อัปเดตแถวบนตารางแบบเร็ว (เพิ่ม count + ปรับ compact)
+        const rec = rawRecords.find(x=>x.opd===opd);
+        if(rec){
+          rec.pitch_count = Number(rec.pitch_count||0) + 1;
+          // สร้าง compact จากรายการล่าสุด 2 รายการ (โหลดใหม่มาก็ได้ แต่นี่ทำแบบเร็ว)
+          fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`)
+            .then(r=>r.json())
+            .then(list=>{
+              const two = (list||[]).slice(0,2).map(x=>{
+                const ts = (x.created_at||'').replace('T',' ').slice(0,16);
+                return `${ts} — ${x.content||''}`;
+              }).join('\n');
+              rec.sales_pitch_compact = two;
+              applyPipeline(); // re-render
+            }).catch(()=>applyPipeline());
+        }
+      })
+      .catch(()=> showToast('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้','error'));
+    });
+
+    // ===== Add Modal (customer) =====
     const f_opd = $('#f_opd'), f_name = $('#f_name'), f_phone = $('#f_phone'), f_birth = $('#f_birthMonth'), f_profile = $('#f_profile'), f_note = $('#f_note');
     const addModalTitle = $('#modalTitle');
     function openModal(){
@@ -745,7 +970,7 @@
       .then(r=>r.json())
       .then(d=>{
         if(d && d.message){
-          rawRecords.push(payload);
+          rawRecords.push({...payload, sales_pitch_compact:'', sales_pitch_full:'', pitch_count:0});
           applyPipeline();
           closeModal();
           showToast('เพิ่มลูกค้าสำเร็จ ✅');
