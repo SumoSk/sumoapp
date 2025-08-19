@@ -2,171 +2,308 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-
-  <!-- ✅ iOS Home Screen Fullscreen + Icon -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Palmy Clinic">
-
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo.jpg') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-
   <title>เข้าสู่ระบบ</title>
 
+  <!-- ฟอนต์ไทยลื่นตา + กันเด้งตอนโหลด -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+
   <style>
-    * {
-      box-sizing: border-box;
+    :root{
+      --bg1:#f5efe7;
+      --bg2:#e9dccb;
+      --primary:#d4af37;
+      --primary-700:#b99128;
+      --teal:#0f766e;
+      --text:#2a2a2a;
+      --muted:#6b7280;
+      --error:#c0392b;
+      --ring: rgba(212,175,55,.35);
     }
 
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to bottom, #f8e6b3, #eac36e);
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+    html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+    @supports (-webkit-touch-callout:none){
+      html{ -webkit-text-size-adjust:100% !important; }
+    }
+    *{ box-sizing:border-box; }
+
+    body{
+      font-family:'Prompt','Segoe UI',system-ui,-apple-system,sans-serif;
+      margin:0; min-height:100vh;
+      color:var(--text);
+      display:flex; justify-content:center; align-items:center;
+      background:
+        radial-gradient(1200px 700px at 90% -10%, #fff7e1 0%, transparent 60%),
+        radial-gradient(900px 600px at -10% 110%, #dff3ee 0%, transparent 60%),
+        linear-gradient(to bottom, var(--bg1), var(--bg2));
+      padding:24px env(safe-area-inset-right,0) 24px env(safe-area-inset-left,0);
+    }
+    body.no-scroll{ overflow:hidden; }
+
+    .card{
+      width:100%; max-width:420px;
+      background:rgba(255,255,255,.66);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius:18px;
+      box-shadow: 0 20px 45px rgba(0,0,0,.15);
+      padding:28px 22px 24px;
+      position:relative;
     }
 
-    .login-box {
-      background-color: rgba(255, 255, 255, 0.95);
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-      max-width: 420px;
-      width: 90%;
-      text-align: center;
+    .brand{
+      display:flex; flex-direction:column; align-items:center; gap:8px;
+      margin-bottom:10px;
+    }
+    .brand .logo{
+      width:96px; height:96px; border-radius:18px; object-fit:cover;
+      box-shadow: 0 8px 24px rgba(0,0,0,.12);
+      cursor:pointer;
+      transition: transform .15s ease;
+    }
+    .brand .logo:active{ transform: scale(.98); }
+    .brand h1{
+      margin:6px 0 0; font-size:20px; font-weight:600; color:var(--teal);
+      letter-spacing:.2px;
+    }
+    .brand .subtitle{
+      font-size:12px; color:var(--muted); margin-top:-2px;
     }
 
-    .logo {
-      max-width: 130px;
-      margin-bottom: 20px;
-      border-radius: 8px;
+    form{ margin-top:14px; }
+    .field{ margin-bottom:14px; position:relative; }
+    .field label{
+      font-size:12px; font-weight:600; color:#374151; display:block; margin:0 0 6px;
+    }
+    .field input{
+      width:100%; font-size:15px; padding:12px 40px 12px 40px;
+      border:1px solid #d1d5db; border-radius:10px; background:#fff;
+      transition: box-shadow .15s ease, border-color .15s ease;
+      outline: none; -webkit-appearance: none;
+    }
+    .field input:focus{
+      border-color:var(--primary);
+      box-shadow: 0 0 0 4px var(--ring);
+    }
+    .field .icon{
+      position:absolute; left:12px; top:50%; transform:translateY(-50%);
+      width:18px; height:18px; opacity:.75;
     }
 
-    h2 {
-      margin-bottom: 25px;
-      color: #333;
+    .toggle-password{
+      position:absolute; right:10px; top:50%; transform:translateY(-50%);
+      font-size:12px; color:#6b7280; background:transparent; border:none;
+      cursor:pointer; padding:6px 8px; border-radius:8px;
+    }
+    .toggle-password:focus{ outline:none; box-shadow:0 0 0 3px rgba(0,0,0,.08); }
+
+    .remember{
+      display:flex; align-items:center; gap:10px;
+      margin:6px 0 16px;
+      font-size:13px; color:#374151;
+    }
+    .remember input[type="checkbox"]{ width:16px; height:16px; margin-right:6px; }
+
+    .btn{
+      width:100%; padding:12px 14px; border:none; border-radius:10px;
+      font-size:16px; font-weight:600; cursor:pointer;
+      color:#fff; background: linear-gradient(to bottom right, var(--primary), var(--primary-700));
+      box-shadow: 0 8px 18px rgba(212,175,55,.35);
+      transition: transform .06s ease, filter .15s ease;
+    }
+    .btn:hover{ filter:brightness(1.03); }
+    .btn:active{ transform: translateY(1px); }
+
+    .hint{ text-align:center; font-size:12px; color:var(--muted); margin-top:10px; }
+
+    .error{
+      background:#ffecec; border:1px solid #ef7d7d; color:#a12626;
+      padding:10px 12px; margin:12px 0 4px; border-radius:10px; font-size:13px;
     }
 
-    label {
-      float: left;
-      font-weight: bold;
-      margin-bottom: 6px;
-      color: #444;
+    /* PIN Modal */
+    .overlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; z-index:90;
+    }
+    .modal{
+      position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+      width:92%; max-width:360px;
+      background:#fff; border-radius:18px; padding:20px 18px 18px; text-align:center;
+      box-shadow: 0 24px 60px rgba(0,0,0,.3);
+      display:none; z-index:100;
+    }
+    .modal h3{ margin:4px 0 12px; color:#111827; font-size:18px; }
+    .pin-display{
+      font-size:28px; letter-spacing:10px; margin:6px 0 14px; min-height:34px;
+    }
+    .pad{
+      display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;
+    }
+    .pad button{
+      padding:14px 0; font-size:18px; border-radius:12px; border:none; cursor:pointer;
+      color:#fff; background:var(--teal);
+      box-shadow: 0 8px 18px rgba(15,118,110,.25);
+      transition: transform .06s ease, filter .15s ease;
+    }
+    .pad button:active{ transform: translateY(1px); }
+    .pad .alt{ background:#9ca3af; box-shadow:none; }
+    .modal .close-x{
+      position:absolute; right:12px; top:10px; border:none; background:transparent;
+      font-size:20px; cursor:pointer; color:#6b7280;
     }
 
-    input[type="text"],
-    input[type="password"] {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 18px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 15px;
+    @keyframes shake {
+      0%{ transform: translateX(0); }
+      20%{ transform: translateX(-6px); }
+      40%{ transform: translateX(6px); }
+      60%{ transform: translateX(-4px); }
+      80%{ transform: translateX(4px); }
+      100%{ transform: translateX(0); }
     }
+    .shake{ animation: shake .35s; }
 
-    .remember-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: -12px;
-      margin-bottom: 18px;
-      font-size: 14px;
-    }
-
-    .remember-row input[type="checkbox"] {
-      margin-right: 6px;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      background-color: #d4af37;
-      color: #fff;
-      font-size: 16px;
-      font-weight: bold;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-
-    button:hover {
-      background-color: #b99128;
-    }
-
-    .toggle-password {
-      position: absolute;
-      right: 20px;
-      top: 9px;
-      cursor: pointer;
-      color: #888;
-      font-size: 13px;
-    }
-
-    .password-container {
-      position: relative;
-    }
-
-    .error {
-      background-color: #ffe0e0;
-      border: 1px solid #e74c3c;
-      color: #c0392b;
-      padding: 10px;
-      margin-bottom: 20px;
-      border-radius: 6px;
-    }
-
-    @media (max-width: 480px) {
-      .login-box {
-        padding: 25px;
-      }
-      h2 {
-        font-size: 18px;
-      }
+    @media (prefers-reduced-motion: reduce){
+      .btn,.brand .logo,.pad button{ transition:none }
     }
   </style>
 </head>
 <body>
-  <div class="login-box">
-    <img src="{{ url_for('static', filename='logo.jpg') }}" alt="โลโก้" class="logo">
-    <h2>Dr.Palmy Clinic System</h2>
+
+  <main class="card" aria-labelledby="title">
+    <section class="brand">
+      <img src="{{ url_for('static', filename='logo.jpg') }}" alt="โลโก้คลินิก" class="logo" id="logoBtn">
+      <h1 id="title">Dr.Palmy Clinic System</h1>
+      <div class="subtitle">เข้าสู่ระบบเพื่อใช้งานระบบภายใน</div>
+    </section>
+
     {% if error %}
       <div class="error">{{ error }}</div>
     {% endif %}
-    <form method="POST">
-      <label for="username">ชื่อผู้ใช้:</label>
-      <input type="text" name="username" id="username" required>
 
-      <label for="password">รหัสผ่าน:</label>
-      <div class="password-container">
-        <input type="password" name="password" id="password" required>
-        <span class="toggle-password" onclick="togglePassword()">แสดง</span>
+    <form method="POST" novalidate>
+      <div class="field">
+        <label for="username">ชื่อผู้ใช้</label>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c2.761 0 5-2.239 5-5S14.761 2 12 2 7 4.239 7 7s2.239 5 5 5zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5z"/></svg>
+        <input type="text" name="username" id="username" autocomplete="username" required>
       </div>
 
-      <div class="remember-row">
-        <label><input type="checkbox" name="remember"> จดจำฉันไว้</label>
+      <div class="field">
+        <label for="password">รหัสผ่าน</label>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 8V7a5 5 0 10-10 0v1H5v14h14V8h-2zm-8 0V7a3 3 0 116 0v1H9zm3 5a2 2 0 110 4 2 2 0 010-4z"/></svg>
+        <input type="password" name="password" id="password" autocomplete="current-password" required>
+        <button type="button" class="toggle-password" id="togglePw">แสดง</button>
       </div>
 
-      <button type="submit">เข้าสู่ระบบ</button>
+      <div class="remember">
+        <label style="display:flex;align-items:center;">
+          <input type="checkbox" name="remember">
+          จดจำฉันไว้
+        </label>
+      </div>
+
+      <button class="btn" type="submit">เข้าสู่ระบบ</button>
+      <!-- ลบข้อความ/ลิงก์ที่บอกว่ามี PIN ออกแล้ว -->
     </form>
+  </main>
+
+  <!-- PIN MODAL (ยังมีอยู่ แต่ไม่มีข้อความ/ปุ่มที่สื่อว่ามี PIN) -->
+  <div class="overlay" id="pinOverlay" aria-hidden="true"></div>
+  <div class="modal" id="pinModal" role="dialog" aria-modal="true" aria-labelledby="pinTitle" aria-describedby="pinDesc">
+    <button class="close-x" type="button" id="pinClose" aria-label="ปิด">&times;</button>
+    <h3 id="pinTitle">ใส่รหัส</h3>
+    <div id="pinDesc" class="hint" style="margin-top:-4px;margin-bottom:6px;">กรอกรหัส 6 หลัก</div>
+    <div class="pin-display" id="pinDisplay">○ ○ ○ ○ ○ ○</div>
+    <div class="pad" id="pinPad"></div>
   </div>
 
   <script>
-    function togglePassword() {
-      const pw = document.getElementById('password');
-      const toggle = document.querySelector('.toggle-password');
-      if (pw.type === "password") {
-        pw.type = "text";
-        toggle.textContent = "ซ่อน";
-      } else {
-        pw.type = "password";
-        toggle.textContent = "แสดง";
+  (function(){
+    const d = document;
+    const $ = (sel,root=d)=>root.querySelector(sel);
+
+    // Toggle password
+    const pw = $('#password');
+    const togglePw = $('#togglePw');
+    togglePw.addEventListener('click', ()=>{
+      const show = pw.type === 'password';
+      pw.type = show ? 'text' : 'password';
+      togglePw.textContent = show ? 'ซ่อน' : 'แสดง';
+      pw.focus({preventScroll:true});
+    });
+
+    // PIN modal (ซ่อนไว้ ไม่บอกผู้ใช้)
+    const overlay = $('#pinOverlay');
+    const modal = $('#pinModal');
+    const pinDisplay = $('#pinDisplay');
+    const logoBtn = $('#logoBtn');      // เปิดด้วยการแตะโลโก้เท่านั้น (ไม่มีข้อความบอก)
+    const pinClose = $('#pinClose');
+
+    let pinInput = '';
+
+    function updatePinDisplay(){
+      let s=''; for(let i=0;i<6;i++){ s += (i<pinInput.length ? '● ' : '○ '); }
+      pinDisplay.textContent = s.trim();
+    }
+    function openPin(){
+      pinInput=''; updatePinDisplay();
+      overlay.style.display='block';
+      modal.style.display='block';
+      document.body.classList.add('no-scroll');
+    }
+    function closePin(){
+      overlay.style.display='none';
+      modal.style.display='none';
+      document.body.classList.remove('no-scroll');
+    }
+
+    logoBtn.addEventListener('click', openPin);
+    overlay.addEventListener('click', closePin);
+    pinClose.addEventListener('click', closePin);
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closePin(); });
+
+    // ปุ่ม PIN (สร้างแบบไดนามิก)
+    const pad = $('#pinPad');
+    ['1','2','3','4','5','6','7','8','9','ลบ','0'].forEach(txt=>{
+      const b = d.createElement('button');
+      b.type='button'; b.textContent=txt;
+      if(txt==='ลบ'){ b.classList.add('alt'); }
+      b.addEventListener('click', ()=> handleKey(txt));
+      pad.appendChild(b);
+    });
+
+    function handleKey(k){
+      if(k==='ลบ'){ if(pinInput.length){ pinInput=pinInput.slice(0,-1); updatePinDisplay(); } return; }
+      if(pinInput.length<6){
+        pinInput += k; updatePinDisplay();
+        if(pinInput.length===6){ setTimeout(submitPin, 80); }
       }
     }
+
+    function submitPin(){
+      fetch('/pin-login', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ pin: pinInput })
+      })
+      .then(res=>res.json())
+      .then(data=>{
+        if(data && data.success){ window.location.href='/dashboard'; }
+        else{
+          pinDisplay.classList.add('shake');
+          setTimeout(()=> pinDisplay.classList.remove('shake'), 380);
+          pinInput=''; updatePinDisplay();
+        }
+      })
+      .catch(()=> alert('เกิดข้อผิดพลาด'));
+    }
+  })();
   </script>
 </body>
 </html>

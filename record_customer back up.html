@@ -1,528 +1,788 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>บันทึกข้อมูลลูกค้า</title>
   <style>
-
-    .floating-toggle {
-    position: fixed;
-    bottom: env(safe-area-inset-bottom, 18px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 128, 128, 0);
-    width: 58px;
-    height: 58px;
-    border-radius: 50%;
-    box-shadow: 0 4px 16px rgba(251, 251, 251, 0);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    cursor: pointer;
-  }
-
-  .floating-menu {
-    position: fixed;
-    bottom: 90px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: white;
-    border-radius: 16px;
-    padding: 10px;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-    z-index: 999;
-    max-height: 60vh;
-    overflow-y: auto;
-  }
-
-  .floating-menu a img {
-    width: 52px;
-    height: 52px;
-  }
-
-
-    body {
-      font-family: 'Prompt', 'Segoe UI', sans-serif;
-      margin: 0;
-      background-color: white;
-      padding: 10px;
-       padding-bottom: 120px;
+    :root{
+      --bg:#f7faf9; --card:#ffffff; --muted:#6b7280; --text:#0f172a;
+      --primary:#0ea5a4; --primary-600:#0c8e8d; --ring:#9fe8e7;
+      --line:#e5e7eb; --danger:#ef4444; --warn:#f59e0b; --success:#22c55e;
+      --radius:14px;
     }
-    .search-container {
-   position: fixed;
-  bottom: 120px; /* ✅ เว้นระยะไม่ให้ชน floating-dock */
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  max-width: 600px;
-  background: rgb(235, 255, 245); /* ✅ เขียวอ่อนโปร่ง */
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: "Prompt","Segoe UI",system-ui,-apple-system,sans-serif;
+      color:var(--text); background:var(--bg);
+      font-size: 11px; /* ขนาดเล็ก */
+    }
 
-  border-radius: 20px;
-  padding: 12px 14px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 999;
+    .container{ max-width:1100px; margin: 18px auto 140px auto; padding: 0 12px; }
+    header.appbar{
+      position:sticky; top:0; z-index:50; backdrop-filter: blur(8px);
+      background: color-mix(in oklab, var(--bg) 70%, white 30%); border-bottom:1px solid var(--line);
     }
-    .search-container label {
-      font-weight: bold;
-      font-size: 14px;
-      display: block;
-      margin-bottom: 8px;
-      text-align: center;
+    .appbar-inner{
+      max-width:1100px; margin:0 auto; padding: 8px 12px; display:flex; align-items:center; gap:8px;
     }
-    .search-container input {
-      width: 100%;
-  padding: 10px 16px 10px 40px;
-  font-size: 12px;
-  border: none;
-  border-radius: 30px;
-  background-color: rgb(255, 255, 255); /* ✅ โปร่งนิดๆ */
-  background-image: url('https://cdn-icons-png.flaticon.com/512/622/622669.png');
-  background-size: 18px;
-  background-repeat: no-repeat;
-  background-position: 12px center;
-  box-sizing: border-box;
-  color: #222;
-  outline: none;
+    .title{ font-weight:700; font-size: clamp(14px, 2vw, 17px); display:flex; align-items:center; gap:6px; }
+    .grow{flex:1}
+    .btn{
+      appearance:none; border:none; border-radius:10px; padding:6px 9px; cursor:pointer; font-weight:600;
+      display:inline-flex; align-items:center; gap:6px; transition: transform .08s ease, box-shadow .2s ease, background .2s ease;
+      font-size:11px;
     }
-       templates/sale-summary.html
-    #addCustomerBtn {
-      display: block;
-      margin: 0 auto 15px auto;
-      padding: 10px 20px;
-      background-color: #4caf50;
-      color: white;
-      font-size: 14px;
-      font-weight: bold;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    table {
-      width: 95%;
-      margin: auto;
-      border-collapse: collapse;
-      background-color: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    th, td {
-      border: 1px solid #eee;
-      padding: 10px;
-      text-align: left;
-      font-size: 14px;
-      color: #222;
-      vertical-align: top;
-    }
-    th {
-      background-color: #e0f7fa;
-      color: #00796b;
-      cursor: pointer;
-    }
-    th .arrow {
-      font-size: 12px;
-      margin-left: 5px;
-      color: #666;
-    }
-    input[readonly] {
-      background-color: transparent;
-      color: #222;
-    }
-    input {
-      width: 100%;
-      padding: 6px;
-      font-size: 14px;
-      border: none;
-      border-bottom: 1px solid #ccc;
-      box-sizing: border-box;
-    }
-    button {
-      margin-top: 5px;
-      margin-right: 5px;
-      padding: 4px 10px;
-      font-size: 12px;
-      border: none;
-      border-radius: 6px;
-      color: white;
-      cursor: pointer;
-    }
-    .edit-btn { background-color: #0288d1; }
-    .save-btn { background-color: #4caf50; }
-    .delete-btn { background-color: #e53935; }
+    .btn:active{ transform: translateY(1px); }
+    .btn-primary{ background:var(--primary); color:white; box-shadow: 0 6px 18px rgba(14,165,164,.15);}
+    .btn-primary:hover{ background:var(--primary-600); }
+    .btn-ghost{ background:transparent; color:var(--text); }
+    .btn-danger{ background:var(--danger); color:#fff; }
+    .btn-icon{ padding:6px; border-radius:8px; }
+    .btn-icon svg{ width:16px; height:16px; }
 
+    .card{
+      background:var(--card); border:1px solid var(--line); border-radius: var(--radius);
+      box-shadow: 0 8px 22px rgba(2,8,23,.05);
+    }
 
-       .floating-dock {
-  position: fixed;
-  bottom: env(safe-area-inset-bottom, 16px); /* ✅ ไม่ให้ติดแถบดำ */
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  border-radius: 16px;
-  padding: 6px 6px env(safe-area-inset-bottom, 16px); /* ✅ เว้นขอบล่างด้วย */
-  display: flex;
-  gap: 6px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-  z-index: 1000;
-  max-width: 95vw;
-}
+    .toolbar{
+      display:grid; grid-template-columns: 1fr auto; gap:8px; padding: 8px; align-items:center;
+      border-bottom:1px solid var(--line);
+    }
+    .left-tools{ display:grid; grid-template-columns: 1fr 140px; gap:8px; align-items:center; }
+    .search{ position:relative; }
+    .search input{
+      width:100%; padding:8px 30px 8px 30px; border:1px solid var(--line); border-radius: 10px;
+      outline:none; background:#fff; font-size:11px;
+    }
+    .search input:focus{ border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring); }
+    .search .icon{ position:absolute; left:9px; top:50%; transform:translateY(-50%); opacity:.6; font-size:14px; }
+    .search .clear{ position:absolute; right:6px; top:50%; transform:translateY(-50%); opacity:.6; cursor:pointer; font-size:14px; }
+    .month-filter{ border:1px solid var(--line); border-radius:10px; padding:7px 9px; background:#fff; font-size:11px; }
+    .right-tools{ display:flex; gap:6px; align-items:center; justify-content:flex-end; flex-wrap:wrap; }
+    .chip{ display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:999px; font-size:11px; background:#ecfeff; color:#155e75; border:1px solid #cffafe; }
 
-.icon-button {
-  width: 64px;                 /* ✅ ลดขนาดบนจอเล็กได้ */
-  height: 64px;
-  padding: 4px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s ease;
-  text-decoration: none;
-  flex: 0 0 auto;              /* ✅ ไม่ยืด ไม่หด */
-}
+    .table-wrap{ overflow:auto; }
+    table{ width:100%; border-collapse:separate; border-spacing:0; min-width:940px; font-size: 11px; }
+    thead th{
+      position:sticky; top:0; z-index:1; background:#f0fdfa; color:#0f766e;
+      font-weight:700; font-size:11px; text-align:left; padding:7px 8px; border-bottom:1px solid var(--line);
+      cursor: pointer; white-space: nowrap;
+    }
+    thead th .sort{ font-size:10px; opacity:.7; margin-left:4px; }
+    tbody td{
+      background:#fff; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top;
+    }
+    tbody tr:hover td{ background:#fafafa; }
+    td .cell{ display:flex; align-items:flex-start; gap:8px; }
+    td .cell input, td .cell textarea{
+      width:100%; border:none; border-bottom:1px dashed transparent; padding:3px 0;
+      background:transparent; font-size:11px; color:var(--text);
+    }
+    td .cell textarea{ resize:vertical; line-height:1.35; }
+    td .cell input[readonly], td .cell textarea[readonly]{ opacity:.95; }
+    td .cell input.editing, td .cell textarea.editing{ background:#fff; border-bottom-color:#cbd5e1; outline:none; }
+    .actions{ display:flex; gap:6px; flex-wrap:nowrap; }
+    .sel-col{ width:34px; text-align:center; }
+    .col-profile{ min-width: 340px; } /* โปรไฟล์กว้างขึ้น */
 
-.icon-button:hover {
-  transform: scale(1.1);
-}
+    /* ปุ่มไอคอนในเซลล์ */
+    .icon-only-btn{
+      border:1px solid var(--line); background:#fff; border-radius:8px; padding:6px;
+      width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+    }
+    .icon-only-btn:hover{ background:#f8fafc; }
 
-.icon-button img {
-  width: 60px;
-  height: 60px;
-  object-fit: contain;
-}
+    .empty{ text-align:center; padding:26px 12px; color:#6b7280; }
+    .skeleton{ height:10px; width:100%; background:linear-gradient(90deg, #f1f5f9, #e2e8f0, #f1f5f9); background-size:200% 100%; animation: shimmer 1.2s infinite linear; border-radius:6px; }
+    @keyframes shimmer{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .row-skeleton td{ padding:7px; }
 
-@media (max-width: 768px) {
-  .icon-button {
-    width: 48px;
-    height: 48px;
-  }
+    /* Modal พรีวิวข้อความสั้น ๆ (หมายเหตุ) */
+    .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:60; }
+    .modal.open{ display:flex; }
+    .modal .backdrop{ position:absolute; inset:0; background: rgba(15,23,42,.45); backdrop-filter: blur(2px); }
+    .modal .dialog{ position:relative; width:min(520px, 92vw); background:#fff; border-radius:16px; border:1px solid var(--line); box-shadow: 0 20px 60px rgba(2,8,23,.35); overflow:hidden; font-size: 11px; }
+    .dialog header{ padding:10px 12px; border-bottom:1px solid var(--line); font-weight:700; display:flex; align-items:center; justify-content:space-between; }
+    .dialog .body{ padding:12px; }
+    .dialog .viewer{ white-space:pre-wrap; line-height:1.5; color:#0f172a; }
+    .dialog footer{ padding:10px 12px; border-top:1px solid var(--line); display:flex; gap:8px; justify-content:flex-end; }
 
-  .icon-button img {
-    width: 48px;
-    height: 48px;
-  }
-}
+    .toast-wrap{ position:fixed; right:12px; bottom:12px; display:grid; gap:8px; z-index:80; }
+    .toast{ background:#fff; border:1px solid var(--line); border-left:5px solid var(--success); padding:7px 9px; border-radius:12px; min-width:210px; box-shadow:0 12px 30px rgba(2,8,23,.15); display:flex; align-items:flex-start; gap:8px; font-size:11px; }
+    .toast.warn{ border-left-color:var(--warn); }
+    .toast.error{ border-left-color:var(--danger); }
 
-@media (max-width: 1024px) {
-  .floating-dock {
-    position: fixed;
-    bottom: 0;
-    padding-bottom: env(safe-area-inset-bottom); /* รองรับ iPhone/iPad ที่มีแถบล่าง */
-  }
-}
+    /* Floating Toggle/Menu (คงเดิม) */
+    .floating-toggle{ position: fixed; bottom: env(safe-area-inset-bottom, 18px); left: 16px; width: 58px; height: 58px; border-radius: 14px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:#ffffff; border:1px solid var(--line); box-shadow:0 12px 30px rgba(2,8,23,.12); z-index:70; }
+    .floating-toggle img{ width:36px; height:36px; }
+    .floating-menu{ position:fixed; bottom:92px; left:16px; background:#fff; border:1px solid var(--line); border-radius:16px; padding:10px; display:none; flex-direction:column; align-items:center; gap:8px; box-shadow: 0 16px 40px rgba(2,8,23,.18); z-index:70; max-height: 60vh; overflow:auto; }
+    .floating-menu a img{ width:52px; height:52px; }
+
+    /* Scroll to Top */
+    .scroll-top{ position:fixed; right:16px; bottom:16px; z-index:65; width:38px; height:38px; border-radius:10px; border:1px solid var(--line); background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 10px 24px rgba(2,8,23,.12); opacity:0; pointer-events:none; transition:.2s; }
+    .scroll-top.show{ opacity:1; pointer-events:auto; }
+    .scroll-top span{ font-size:16px; }
+    
+    @media (max-width: 768px){
+      .toolbar{ grid-template-columns: 1fr; }
+      .left-tools{ grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
-      <div class="search-container">
-        <input type="text" id="searchInput" placeholder="ค้นหาชื่อลูกค้า...">
+
+  <!-- Header -->
+  <header class="appbar">
+    <div class="appbar-inner">
+      <div class="title">📇 บันทึกข้อมูลลูกค้า</div>
+      <div class="grow"></div>
+      <button id="openAddModalBtn" class="btn btn-primary">➕ เพิ่มลูกค้า</button>
+      <button id="refreshBtn" class="btn btn-ghost" title="รีเฟรชข้อมูล">⟳ รีเฟรช</button>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <div class="container">
+    <div class="card">
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="left-tools">
+          <div class="search">
+            <span class="icon">🔎</span>
+            <input id="searchInput" type="text" placeholder="ค้นหา: ชื่อ / เบอร์ / OPD / โปรไฟล์ / หมายเหตุ / เดือนเกิด">
+            <span id="clearSearch" class="clear" title="ล้างคำค้น">✖</span>
+          </div>
+          <select id="monthFilter" class="month-filter" title="กรองตามเดือนเกิด">
+            <option value="">เดือนเกิด: ทั้งหมด</option>
+            <option>01</option><option>02</option><option>03</option><option>04</option>
+            <option>05</option><option>06</option><option>07</option><option>08</option>
+            <option>09</option><option>10</option><option>11</option><option>12</option>
+          </select>
+        </div>
+        <div class="right-tools">
+          <div class="chip" id="totalChip">ลูกค้าทั้งหมด: 0</div>
+          <button id="bulkDeleteBtn" class="btn btn-icon" title="ลบที่เลือก">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+          <button id="exportBtn" class="btn btn-icon" title="ส่งออก CSV">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a 2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <table id="customerTable">
+          <thead>
+            <tr>
+              <th class="sel-col"><input type="checkbox" id="selectAll" title="เลือกทั้งหมด"></th>
+              <th data-key="opd">OPD <span class="sort">↕</span></th>
+              <th data-key="name">ชื่อ <span class="sort">↕</span></th>
+              <th data-key="phone">เบอร์โทร <span class="sort">↕</span></th>
+              <th data-key="birthMonth">เดือนเกิด <span class="sort">↕</span></th>
+              <th data-key="profile" class="col-profile">โปรไฟล์ <span class="sort">↕</span></th>
+              <th data-key="note">หมายเหตุ <span class="sort">↕</span></th>
+              <th style="width:120px">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <!-- Skeleton -->
+            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- ไม่มี pagination: แสดงทั้งหมดต่อกัน -->
+    </div>
   </div>
 
-  <button id="addCustomerBtn">➕ เพิ่มลูกค้าใหม่</button>
+  <!-- Toast -->
+  <div class="toast-wrap" id="toastWrap"></div>
 
-<div id="customerForm" style="display:none; max-width: 400px; margin: 20px auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-  <h3 style="margin-top: 0;">➕ เพิ่มลูกค้าใหม่</h3>
-  <input type="text" id="new_opd" placeholder="เลข OPD (4 หลัก)" style="margin-bottom: 10px;">
-  <input type="text" id="new_name" placeholder="ชื่อ" style="margin-bottom: 10px;">
-  <input type="text" id="new_phone" placeholder="เบอร์โทร" style="margin-bottom: 10px;">
-  <input type="text" id="new_birthMonth" placeholder="เดือนเกิด" style="margin-bottom: 10px;">
-  <input type="text" id="new_vip" placeholder="VIP" style="margin-bottom: 10px;">
-  <input type="text" id="new_note" placeholder="หมายเหตุ" style="margin-bottom: 10px;">
-  <button onclick="submitNewCustomer()" class="save-btn" style="width: 100%;">✅ บันทึกลูกค้า</button>
+  <!-- View Modal (ดูหมายเหตุ) -->
+  <div id="peekModal" class="modal" aria-hidden="true">
+    <div class="backdrop" data-close="modal"></div>
+    <div class="dialog">
+      <header>
+        <span id="peekTitle">ดูข้อมูล</span>
+        <button class="btn btn-icon btn-ghost" data-close="modal" title="ปิด">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M6 18L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <div class="body">
+        <div id="peekContent" class="viewer"></div>
+      </div>
+      <footer>
+        <button id="copyPeekBtn" class="btn btn-ghost">คัดลอก</button>
+        <button class="btn btn-primary" data-close="modal">ปิด</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Add Modal -->
+  <div id="addModal" class="modal" aria-hidden="true">
+    <div class="backdrop" data-close="modal"></div>
+    <div class="dialog">
+      <header>
+        <span id="modalTitle">➕ เพิ่มลูกค้าใหม่</span>
+        <button class="btn btn-icon btn-ghost" data-close="modal" title="ปิด">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M6 18L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <div class="body">
+        <div class="field"><label>เลข OPD (4 หลัก)</label><input id="f_opd" type="text" placeholder="เช่น 0123" inputmode="numeric" maxlength="4"></div>
+        <div class="field"><label>ชื่อ</label><input id="f_name" type="text" placeholder="ชื่อ-สกุล"></div>
+        <div class="field"><label>เบอร์โทร</label><input id="f_phone" type="text" placeholder="0xx-xxx-xxxx"></div>
+        <div class="field"><label>เดือนเกิด</label><input id="f_birthMonth" type="text" placeholder="01..12 (สองหลัก)"></div>
+        <div class="field">
+          <label>โปรไฟล์ (บันทึกว่าเขาเป็นใคร / ข้อมูลสำคัญ)</label>
+          <textarea id="f_profile" placeholder="เช่น อาชีพ ความสนใจ ประวัติการติดต่อ ฯลฯ"></textarea>
+        </div>
+        <div class="field"><label>หมายเหตุ</label><input id="f_note" type="text" placeholder="รายละเอียดเพิ่มเติม"></div>
+      </div>
+      <footer>
+        <button class="btn btn-ghost" data-close="modal">ยกเลิก</button>
+        <button id="saveCustomerBtn" class="btn btn-primary">บันทึก</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Floating toggle & menu (คงเดิม) -->
+  <div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
+    <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu">
+  </div>
+  <div id="floatingMenu" class="floating-menu" aria-hidden="true">
+  <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}" alt="Dashboard"></a>
+  <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}" alt="Sale summary"></a>
+  <a href="{{ url_for('crm') }}"><img src="{{ url_for('static', filename='icon/icon_crm.png') }}" alt="CRM"></a>
+  <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}" alt="Record sales"></a>
+  <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}" alt="Customer list"></a>
+  <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}" alt="Record customer"></a>
+  <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}" alt="Old customers"></a>
+  <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}" alt="Inventory"></a>
+  <a href="{{ url_for('staff') }}"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}" alt="Staff"></a>
+  <a href="{{ url_for('appointments') }}"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}" alt="Appointments"></a>
 </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th onclick="sortTable(0, 'opd', this)">OPD <span class="arrow">↕</span></th>
-        <th onclick="sortTable(1, 'name', this)">ชื่อ <span class="arrow">↕</span></th>
-        <th onclick="sortTable(2, 'phone', this)">เบอร์โทร <span class="arrow">↕</span></th>
-        <th onclick="sortTable(3, 'birthMonth', this)">เดือนเกิด <span class="arrow">↕</span></th>
-        <th onclick="sortTable(4, 'vip', this)">VIP <span class="arrow">↕</span></th>
-        <th onclick="sortTable(5, 'note', this)">หมายเหตุ <span class="arrow">↕</span></th>
-        <th>จัดการ</th>
-      </tr>
-    </thead>
-    <tbody id="customerTableBody"></tbody>
-  </table>
+  <!-- Scroll to Top -->
+  <button id="scrollTop" class="scroll-top" title="กลับขึ้นบน"><span>↑</span></button>
 
   <script>
-    document.getElementById('addCustomerBtn').addEventListener('click', () => {
-  document.getElementById('customerForm').style.display = 'block';
-});
+    // ===== Utils =====
+    const $ = (q, p=document)=>p.querySelector(q);
+    const $$ = (q, p=document)=>Array.from(p.querySelectorAll(q));
+    const toastWrap = $('#toastWrap');
+    const showToast = (msg, type='ok')=>{
+      const el = document.createElement('div');
+      el.className = 'toast' + (type==='warn' ? ' warn' : type==='error' ? ' error' : '');
+      el.innerHTML = `<div>💡</div><div>${msg}</div>`;
+      toastWrap.appendChild(el);
+      setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(6px)'; }, 2200);
+      setTimeout(()=>{ el.remove(); }, 2800);
+    };
+    const pad4 = s => String(s||'').trim().padStart(4,'0');
+    const debounce = (fn,ms=250)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms);} };
+    const saveSortPref = (key,asc)=>localStorage.setItem('cust_sort', JSON.stringify({key,asc}));
+    const loadSortPref = ()=>{ try{return JSON.parse(localStorage.getItem('cust_sort'))||{key:'opd',asc:true}}catch{return {key:'opd',asc:true}} };
+    const toCSV = (rows)=> {
+      const header = ['OPD','ชื่อ','เบอร์โทร','เดือนเกิด','โปรไฟล์','หมายเหตุ'];
+      const escape = v => `"${String(v??'').replaceAll('"','""')}"`;
+      const lines = [header.map(escape).join(',')];
+      for(const r of rows) lines.push([r.opd,r.name,r.phone,r.birthMonth,r.profile,r.note].map(escape).join(','));
+      return lines.join('\n');
+    };
+    const download = (filename, text)=>{
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8;'}));
+      a.download = filename; a.click(); URL.revokeObjectURL(a.href);
+    };
+    const normalizeMonth = m => {
+      const s = String(m||'').trim();
+      if(/^\d{1,2}$/.test(s)) return s.padStart(2,'0');
+      const map = {'ม.ค.':'01','มกราคม':'01','ก.พ.':'02','กุมภาพันธ์':'02','มี.ค.':'03','มีนาคม':'03','เม.ย.':'04','เมษายน':'04','พ.ค.':'05','พฤษภาคม':'05','มิ.ย.':'06','มิถุนายน':'06','ก.ค.':'07','กรกฎาคม':'07','ส.ค.':'08','สิงหาคม':'08','ก.ย.':'09','กันยายน':'09','ต.ค.':'10','ตุลาคม':'10','พ.ย.':'11','พฤศจิกายน':'11','ธ.ค.':'12','ธันวาคม':'12'};
+      return map[s] || s;
+    };
+    const formatPhone = raw => {
+      const d = String(raw||'').replace(/\D/g,'');
+      if(d.length===10) return d.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+      if(d.length===9) return d.replace(/(\d{2})(\d{3})(\d{4})/, '$1-$2-$3');
+      return raw||'';
+    };
 
-function submitNewCustomer() {
-  const opd = document.getElementById("new_opd").value.trim().padStart(4, '0');
-  const name = document.getElementById("new_name").value.trim();
-  const phone = document.getElementById("new_phone").value.trim();
-  const birthMonth = document.getElementById("new_birthMonth").value.trim();
-  const vip = document.getElementById("new_vip").value.trim();
-  const note = document.getElementById("new_note").value.trim();
+    // ===== State =====
+    let rawRecords = [];
+    let viewRecords = [];
+    let sortState = loadSortPref();
+    let selected = new Set();
 
-  if (!opd) return alert("❗ ต้องกรอกเลข OPD");
+    // ===== Elements =====
+    const tbody = $('#tbody');
+    const totalChip = $('#totalChip');
+    const searchInput = $('#searchInput');
+    const clearSearch = $('#clearSearch');
+    const monthFilter = $('#monthFilter');
+    const selectAll = $('#selectAll');
+    const openAddModalBtn = $('#openAddModalBtn');
+    const refreshBtn = $('#refreshBtn');
+    const addModal = $('#addModal');
+    const saveCustomerBtn = $('#saveCustomerBtn');
+    const bulkDeleteBtn = $('#bulkDeleteBtn');
+    const exportBtn = $('#exportBtn');
+    const scrollTopBtn = $('#scrollTop');
+    const peekModal = $('#peekModal');
+    const peekTitle = $('#peekTitle');
+    const peekContent = $('#peekContent');
+    const copyPeekBtn = $('#copyPeekBtn');
 
-  // ตรวจสอบซ้ำ
-  fetch("/api/customers")
-    .then(res => res.json())
-    .then(data => {
-      const exists = data.some(c => String(c.opd).padStart(4, '0') === opd);
-      if (exists) return alert("🚫 มี OPD นี้อยู่ในระบบแล้ว");
+    // ===== Load =====
+    function skeletonOn(){
+      tbody.innerHTML = `
+        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+      `;
+    }
 
-      const payload = { opd, name, phone, birthMonth, vip, note };
-      return fetch("/api/add_customer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+    function loadData(){
+      skeletonOn();
+      fetch('/api/customers')
+        .then(r=>r.json())
+        .then(data=>{
+          const map = new Map();
+          for (const r of data||[]){
+            const opd = pad4(r.opd);
+            if(!opd) continue;
+            if(!map.has(opd)){
+              map.set(opd, {
+                opd,
+                name: r.name||'',
+                phone: formatPhone(r.phone||''),
+                birthMonth: normalizeMonth(r.birthMonth||''),
+                profile: r.profile||'',
+                note: r.note||'',
+              });
+            }
+          }
+          rawRecords = Array.from(map.values());
+          applyPipeline();
+          showToast('โหลดข้อมูลลูกค้าเรียบร้อย');
+        })
+        .catch(err=>{
+          console.error(err);
+          tbody.innerHTML = `<tr><td colspan="8"><div class="empty">⚠️ ไม่สามารถโหลดข้อมูลจากเซิร์ฟเวอร์</div></td></tr>`;
+          showToast('ไม่สามารถโหลดข้อมูลจากเซิร์ฟเวอร์','error');
+        });
+    }
+
+    function applyPipeline(){
+      const kw = searchInput.value.toLowerCase().trim();
+      const m = monthFilter.value;
+      viewRecords = rawRecords.filter(r=>{
+        const byMonth = !m || normalizeMonth(r.birthMonth)===m;
+        if(!kw) return byMonth;
+        const match = (
+          r.name.toLowerCase().includes(kw) ||
+          r.phone.toLowerCase().includes(kw) ||
+          r.opd.toLowerCase().includes(kw) ||
+          String(r.note).toLowerCase().includes(kw) ||
+          String(r.birthMonth).toLowerCase().includes(kw) ||
+          String(r.profile).toLowerCase().includes(kw)
+        );
+        return byMonth && match;
       });
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data && data.message) {
-        alert("✅ เพิ่มลูกค้าสำเร็จ");
 
-        // 🧹 เคลียร์ช่องกรอกทุกช่องในฟอร์ม
-        document.querySelectorAll("#customerForm input").forEach(input => input.value = "");
+      const {key, asc} = sortState;
+      viewRecords.sort((a,b)=>{
+        let av = String(a[key]??'').toLowerCase();
+        let bv = String(b[key]??'').toLowerCase();
+        const an = parseFloat(av), bn = parseFloat(bv);
+        if(!isNaN(an) && !isNaN(bn)) return asc ? an - bn : bn - an;
+        return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+      });
 
-        // 🔄 โหลดหน้าใหม่เพื่อแสดงลูกค้า
-        location.reload();
-      } else {
-        alert("❌ เพิ่มไม่สำเร็จ: " + (data?.error || "ไม่ทราบสาเหตุ"));
+      renderTable(viewRecords);
+      totalChip.textContent = `ลูกค้าทั้งหมด: ${rawRecords.length}`;
+      selectAll.checked = viewRecords.length>0 && viewRecords.every(r=>selected.has(r.opd));
+    }
+
+    // ==== cell templates ====
+    function cellStaticCopy(text){
+      return `<td><div class="cell"><input value="${text}" readonly title="คลิกเพื่อคัดลอก OPD"></div></td>`;
+    }
+
+    // โทรศัพท์: แสดงเป็นไอคอน, input จริงซ่อนไว้ (ไว้ใช้ตอนแก้ไข)
+    function cellPhone(phone){
+      const safe = phone||'';
+      const tel = safe.replace(/\D/g,'');
+      return `
+        <td>
+          <div class="cell">
+            <button class="icon-only-btn" data-phone="${tel}" title="โทรออก">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.34 1.78.65 2.63a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.45-1.18a2 2 0 0 1 2.11-.45c.85.31 1.73.53 2.63.65A2 2 0 0 1 22 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <input value="${safe}" data-key="phone" readonly style="display:none" title="${safe}">
+          </div>
+        </td>
+      `;
+    }
+
+    // โปรไฟล์ (multiline)
+    function cellProfile(value){
+      const safeVal = value==null ? '' : value;
+      const title = String(safeVal).replaceAll('"','&quot;');
+      return `<td class="col-profile"><div class="cell"><textarea rows="2" data-key="profile" readonly title="${title}">${safeVal}</textarea></div></td>`;
+    }
+
+    // หมายเหตุ: แสดงเป็นไอคอนตา + textarea ซ่อนไว้ (edit เท่านั้น)
+    function cellNote(value){
+      const safeVal = value==null ? '' : value;
+      const title = String(safeVal).replaceAll('"','&quot;');
+      return `
+        <td>
+          <div class="cell">
+            <button class="icon-only-btn" data-note-view title="ดูหมายเหตุ">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z" stroke="currentColor" stroke-width="2"/>
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </button>
+            <textarea rows="2" data-key="note" readonly style="display:none" title="${title}">${safeVal}</textarea>
+          </div>
+        </td>
+      `;
+    }
+
+    function renderTable(rows){
+      if(rows.length===0){
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty">ไม่พบข้อมูลที่ตรงกับคำค้นหา</div></td></tr>`;
+        return;
       }
-    })
-    .catch(err => {
-      console.error("❌ ERROR:", err);
-      alert("⚠️ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์");
-    });
+      tbody.innerHTML = '';
+      for(const r of rows){
+        const tr = document.createElement('tr');
+        tr.dataset.opd = r.opd;
+
+        tr.innerHTML = `
+          <td class="sel-col"><input type="checkbox" data-select-row value="${r.opd}" ${selected.has(r.opd)?'checked':''}></td>
+          ${cellStaticCopy(r.opd)}
+          <td><div class="cell"><input value="${r.name||''}" data-key="name" readonly title="${r.name||''}"></div></td>
+          ${cellPhone(r.phone)}
+          <td><div class="cell"><input value="${r.birthMonth||''}" data-key="birthMonth" readonly title="${r.birthMonth||''}"></div></td>
+          ${cellProfile(r.profile)}
+          ${cellNote(r.note)}
+          <td>
+            <div class="actions">
+              <button class="btn btn-icon" data-action="edit" title="แก้ไข">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M4 20h4l10-10a2.828 2.828 0 1 0-4-4L4 16v4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="btn btn-icon btn-primary" data-action="save" title="บันทึก" style="display:none">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v16H4zM8 4v8h8V4" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="btn btn-icon btn-ghost" data-action="cancel" title="ยกเลิก" style="display:none">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+              <button class="btn btn-icon btn-danger" data-action="del" title="ลบ">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // ===== Event Delegation =====
+    tbody.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button[data-action]');
+      const row = e.target.closest('tr');
+
+      // ----- คลิกไอคอนโทรศัพท์: แสดงเบอร์อย่างเดียว (ไม่โทรออก)
+const phoneBtn = e.target.closest('[data-phone]');
+if (phoneBtn) {
+  const tr = phoneBtn.closest('tr');
+  const telRaw = phoneBtn.getAttribute('data-phone') || '';
+  const display = tr.querySelector('input[data-key="phone"]')?.value || telRaw;
+  openPeek('เบอร์โทร', display);   // ใช้ modal เดิมสำหรับดู/คัดลอก
+  return; // กันไม่ให้ไหลไป action อื่น
 }
 
-
-  let records = [];
-  let maxOPD = "0000";
-
-  fetch("/api/customers")
-    .then(res => res.json())
-    .then(data => {
-      console.log("📦 ข้อมูลที่โหลดได้จาก customers:", data); // ✅ เพิ่มบรรทัดนี้
-      records = data;
-      const customerMap = {};
-      data.forEach(r => {
-        if (!r.opd) return;
-        const opd = String(r.opd).padStart(4, '0');
-        if (!customerMap[opd]) {
-          customerMap[opd] = {
-            name: r.name || '',
-            phone: r.phone || '',
-            birthMonth: r.birthMonth || '',
-            vip: r.vip || '',
-            note: r.note || ''
-          };
-        }
-        if (opd > maxOPD) maxOPD = opd;
-      });
-
-      Object.keys(customerMap).sort().forEach(opd => {
-        addRow(opd, customerMap[opd]);
-      });
-    })
-    .catch(err => {
-      console.error("❌ โหลดข้อมูลลูกค้าจาก Supabase ไม่สำเร็จ:", err);
-    });
-
-  const tableBody = document.getElementById('customerTableBody');
-
-  function createEditableCell(opd, key, value) {
-    const cell = document.createElement('td');
-    const wrapper = document.createElement('div');
-    wrapper.style.display = 'flex';
-    wrapper.style.alignItems = 'center';
-    wrapper.style.gap = '6px';
-
-    const input = document.createElement('input');
-    input.value = value;
-    input.readOnly = true;
-    input.dataset.key = key;
-    input.dataset.opd = opd;
-    input.style.backgroundColor = 'transparent';
-    input.style.flex = '1';
-
-    const editBtn = document.createElement('button');
-    editBtn.textContent = 'แก้ไข';
-    editBtn.className = 'edit-btn';
-    editBtn.onclick = () => {
-      input.readOnly = false;
-      input.dataset.original = input.value;
-      input.style.backgroundColor = 'white';
-      editBtn.style.display = 'none';
-      saveBtn.style.display = 'inline-block';
-    };
-
-    const saveBtn = document.createElement('button');
-    saveBtn.textContent = 'บันทึก';
-    saveBtn.className = 'save-btn';
-    saveBtn.style.display = 'none';
-    saveBtn.onclick = () => {
-      const newValue = input.value;
-      const originalValue = input.dataset.original;
-      if (newValue !== originalValue) {
-        if (confirm(`คุณต้องการบันทึกการเปลี่ยนแปลง "${key}" สำหรับ OPD ${opd} ใช่หรือไม่?`)) {
-          fetch("/api/update_customer", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ opd: opd.toString(), field: key, value: newValue })
-          })
-            .then(res => res.json())
-            .then(data => {
-              if (data.message === "อัปเดตสำเร็จ") {
-                alert(`✅ บันทึก ${key} ของ OPD ${opd} แล้ว`);
-              } else {
-                alert("❌ บันทึกไม่สำเร็จ: " + (data.error || "ไม่ทราบสาเหตุ"));
-              }
-            })
-            .catch(err => {
-              console.error("Error:", err);
-              alert("🚫 เกิดปัญหาในการเชื่อมต่อเซิร์ฟเวอร์");
-            });
-        } else {
-          input.value = originalValue;
-        }
+      // ----- ดูหมายเหตุ (ไอคอนตา)
+      const noteBtn = e.target.closest('[data-note-view]');
+      if(noteBtn){
+        const tr = noteBtn.closest('tr');
+        const ta = tr.querySelector('textarea[data-key="note"]');
+        openPeek('หมายเหตุ', ta ? ta.value : '');
+        return;
       }
-      input.readOnly = true;
-      input.style.backgroundColor = 'transparent';
-      editBtn.style.display = 'inline-block';
-      saveBtn.style.display = 'none';
+
+      if(!btn || !row) return;
+      const action = btn.getAttribute('data-action');
+      const opd = row.dataset.opd;
+
+      if(action==='edit'){
+        setRowEditable(row, true);
+      }else if(action==='cancel'){
+        restoreSnapshot(row);
+        setRowEditable(row, false);
+      }else if(action==='save'){
+        const changes = diffSnapshot(row);
+        if(Object.keys(changes).length===0){ setRowEditable(row,false); return; }
+        Promise.all(Object.entries(changes).map(([field,value])=> updateField(opd, field, value)))
+          .then(results=>{
+            if(results.every(Boolean)){
+              const rec = rawRecords.find(x=>x.opd===opd);
+              if(rec) Object.assign(rec, changes);
+              showToast(`บันทึกข้อมูล OPD ${opd} แล้ว ✅`);
+              setRowEditable(row, false, true);
+            }else{
+              showToast('บันทึกรายการบางส่วนไม่สำเร็จ','error');
+            }
+          })
+          .catch(()=> showToast('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้','error'));
+      }else if(action==='del'){
+        if(!confirm(`ลบ OPD ${opd} ?`)) return;
+        fetch('/api/delete_customer', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({opd:String(opd)})
+        })
+        .then(r=>r.json())
+        .then(d=>{
+          if(d.message){
+            rawRecords = rawRecords.filter(x=>x.opd!==opd);
+            selected.delete(opd);
+            applyPipeline();
+            showToast(`ลบข้อมูล OPD ${opd} แล้ว`,'warn');
+          }else{
+            showToast(`ลบไม่สำเร็จ: ${d.error||'ไม่ทราบสาเหตุ'}`,'error');
+          }
+        })
+        .catch(()=> showToast('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์','error'));
+      }
+    });
+
+    // select row
+    tbody.addEventListener('change', (e)=>{
+      const chk = e.target.closest('input[data-select-row]');
+      if(!chk) return;
+      const opd = chk.value;
+      if(chk.checked) selected.add(opd); else selected.delete(opd);
+      selectAll.checked = viewRecords.length>0 && viewRecords.every(r=>selected.has(r.opd));
+    });
+
+    // ----- Helpers for edit state & snapshot -----
+    function setRowEditable(row, editable, clearSnap=false){
+      const inputs = $$('input[data-key], textarea[data-key]', row);
+      const phoneBtn = row.querySelector('[data-phone]');
+      const phoneInput = row.querySelector('input[data-key="phone"]');
+      const noteBtn = row.querySelector('[data-note-view]');
+      const noteTA = row.querySelector('textarea[data-key="note"]');
+
+      if(editable){
+        row.dataset.snapshot = JSON.stringify(takeSnapshot(row));
+      }else if(clearSnap){
+        delete row.dataset.snapshot;
+      }
+
+      inputs.forEach(inp=>{
+        inp.readOnly = !editable;
+        inp.classList.toggle('editing', editable);
+      });
+
+      // สลับแสดงผลเฉพาะคอลัมน์พิเศษ
+      if(phoneBtn && phoneInput){
+        phoneBtn.style.display = editable ? 'none' : '';
+        phoneInput.style.display = editable ? '' : 'none';
+      }
+      if(noteBtn && noteTA){
+        noteBtn.style.display = editable ? 'none' : '';
+        noteTA.style.display = editable ? '' : 'none';
+      }
+
+      row.querySelector('[data-action="edit"]').style.display = editable ? 'none' : '';
+      row.querySelector('[data-action="save"]').style.display = editable ? '' : 'none';
+      row.querySelector('[data-action="cancel"]').style.display = editable ? '' : 'none';
+    }
+    function takeSnapshot(row){
+      const obj = {};
+      $$('input[data-key], textarea[data-key]', row).forEach(inp=> obj[inp.dataset.key] = inp.value);
+      return obj;
+    }
+    function restoreSnapshot(row){
+      const snap = row.dataset.snapshot ? JSON.parse(row.dataset.snapshot) : null;
+      if(!snap) return;
+      $$('input[data-key], textarea[data-key]', row).forEach(inp=>{
+        const k = inp.dataset.key;
+        if(k in snap) inp.value = snap[k];
+      });
+    }
+    function diffSnapshot(row){
+      const snap = row.dataset.snapshot ? JSON.parse(row.dataset.snapshot) : null;
+      const diff = {};
+      $$('input[data-key], textarea[data-key]', row).forEach(inp=>{
+        const k = inp.dataset.key, v = inp.value;
+        if(!snap || snap[k] !== v) diff[k] = v;
+      });
+      return diff;
+    }
+
+    function updateField(opd, field, value){
+      return fetch('/api/update_customer', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({opd:String(opd), field, value})
+      })
+      .then(r=>r.json())
+      .then(d=>{
+        if(d.message) return true;
+        showToast(`บันทึกไม่สำเร็จ (${field}): ${d.error||'ไม่ทราบสาเหตุ'}`, 'error');
+        return false;
+      })
+      .catch(()=>{ showToast('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้','error'); return false; });
+    }
+
+    // ===== Sorting (thead) =====
+    (function initSortHeaders(){
+      $$('#customerTable thead th[data-key]').forEach(th=>{
+        const key = th.getAttribute('data-key');
+        const sortSpan = th.querySelector('.sort');
+        th.addEventListener('click', ()=>{
+          if(sortState.key===key){ sortState.asc = !sortState.asc; } else { sortState.key=key; sortState.asc=true; }
+          $$('#customerTable thead th .sort').forEach(s=>s.textContent='↕');
+          sortSpan.textContent = sortState.asc ? '🔼' : '🔽';
+          saveSortPref(sortState.key, sortState.asc);
+          applyPipeline();
+        });
+      });
+    })();
+
+    // ===== Search/Filter/SelectAll =====
+    searchInput.addEventListener('input', debounce(applyPipeline, 200));
+    clearSearch.addEventListener('click', ()=>{ searchInput.value=''; applyPipeline(); });
+    monthFilter.addEventListener('change', applyPipeline);
+    selectAll.onchange = ()=>{
+      if(selectAll.checked){ viewRecords.forEach(r=> selected.add(r.opd)); }
+      else{ viewRecords.forEach(r=> selected.delete(r.opd)); }
+      applyPipeline();
     };
 
-    wrapper.appendChild(input);
-    wrapper.appendChild(editBtn);
-    wrapper.appendChild(saveBtn);
-    cell.appendChild(wrapper);
-    return cell;
-  }
+    // ===== Bulk Delete & Export =====
+    bulkDeleteBtn.onclick = ()=>{
+      if(selected.size===0){ showToast('ยังไม่ได้เลือกรายการ','warn'); return; }
+      if(!confirm(`ลบ ${selected.size} รายการที่เลือก?`)) return;
+      const ops = Array.from(selected);
+      Promise.all(ops.map(opd => fetch('/api/delete_customer', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({opd:String(opd)})
+      }).then(r=>r.json())))
+      .then(results=>{
+        const ok = results.filter(d=>d.message).length;
+        rawRecords = rawRecords.filter(r=>!selected.has(r.opd));
+        selected.clear();
+        applyPipeline();
+        showToast(`ลบสำเร็จ ${ok} รายการ`,'warn');
+      })
+      .catch(()=> showToast('ลบแบบกลุ่มไม่สำเร็จ','error'));
+    };
+    exportBtn.onclick = ()=>{
+      const csv = toCSV(viewRecords);
+      download(`customers_${new Date().toISOString().slice(0,10)}.csv`, csv);
+      showToast('ส่งออก CSV แล้ว');
+    };
 
-  function createStaticCell(opd) {
-    const cell = document.createElement('td');
-    const input = document.createElement('input');
-    input.value = opd;
-    input.disabled = true;
-    cell.appendChild(input);
-    return cell;
-  }
+    // ===== Modal Add =====
+    const f_opd = $('#f_opd'), f_name = $('#f_name'), f_phone = $('#f_phone'), f_birth = $('#f_birthMonth'), f_profile = $('#f_profile'), f_note = $('#f_note');
+    const addModalTitle = $('#modalTitle');
+    function openModal(){
+      f_opd.value=''; f_name.value=''; f_phone.value=''; f_birth.value=''; f_profile.value=''; f_note.value='';
+      addModalTitle.textContent = '➕ เพิ่มลูกค้าใหม่';
+      addModal.classList.add('open'); addModal.setAttribute('aria-hidden','false');
+      setTimeout(()=> f_opd.focus(), 50);
+    }
+    function closeModal(){
+      addModal.classList.remove('open'); addModal.setAttribute('aria-hidden','true');
+    }
+    openAddModalBtn.onclick = openModal;
+    addModal.addEventListener('click', (e)=>{ if(e.target.dataset.close==='modal') closeModal(); });
+    $('[data-close="modal"]').onclick = closeModal;
 
-  function addRow(opd, data = { name: '', phone: '', birthMonth: '', vip: '', note: '' }) {
-    const row = document.createElement('tr');
-    row.appendChild(createStaticCell(opd));
-    row.appendChild(createEditableCell(opd, 'name', data.name));
-    row.appendChild(createEditableCell(opd, 'phone', data.phone));
-    row.appendChild(createEditableCell(opd, 'birthMonth', data.birthMonth));
-    row.appendChild(createEditableCell(opd, 'vip', data.vip));
-    row.appendChild(createEditableCell(opd, 'note', data.note));
+    f_phone.addEventListener('blur', ()=>{ f_phone.value = formatPhone(f_phone.value); });
 
-    const actionCell = document.createElement('td');
-    const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = 'ลบ';
-    deleteBtn.className = 'delete-btn';
-    deleteBtn.onclick = () => confirmDelete(opd, deleteBtn);
-    actionCell.appendChild(deleteBtn);
-    row.appendChild(actionCell);
+    saveCustomerBtn.onclick = ()=>{
+      const opd = pad4(f_opd.value);
+      const payload = {
+        opd,
+        name: f_name.value.trim(),
+        phone: formatPhone(f_phone.value.trim()),
+        birthMonth: normalizeMonth(f_birth.value.trim()),
+        profile: f_profile.value.trim(),
+        note: f_note.value.trim(),
+      };
+      if(!opd || opd==='0000'){ showToast('กรุณากรอกเลข OPD 4 หลัก','warn'); f_opd.focus(); return; }
+      if(rawRecords.some(x=>x.opd===opd)){ showToast('มี OPD นี้อยู่แล้วในระบบ','warn'); return; }
 
-    tableBody.appendChild(row);
-  }
-
-  
-
-  document.getElementById("searchInput").addEventListener("input", function () {
-    const keyword = this.value.toLowerCase();
-    const rows = tableBody.querySelectorAll("tr");
-    rows.forEach(row => {
-      const name = row.children[1].querySelector("input").value.toLowerCase();
-      row.style.display = name.includes(keyword) ? "" : "none";
-    });
-  });
-
-  function confirmDelete(opd, btn) {
-    if (!confirm(`คุณต้องการลบข้อมูล OPD ${opd} ใช่หรือไม่?`)) return;
-    fetch("/api/delete_customer", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ opd: opd.toString() })
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.message === "ลบสำเร็จ") {
-          alert(`🗑️ ลบข้อมูล OPD ${opd} เรียบร้อยแล้ว`);
-          btn.closest('tr').remove();
-        } else {
-          alert("❌ ลบไม่สำเร็จ: " + (data.error || "ไม่ทราบสาเหตุ"));
+      fetch('/api/add_customer', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      })
+      .then(r=>r.json())
+      .then(d=>{
+        if(d && d.message){
+          rawRecords.push(payload);
+          applyPipeline();
+          closeModal();
+          showToast('เพิ่มลูกค้าสำเร็จ ✅');
+        }else{
+          showToast(`เพิ่มไม่สำเร็จ: ${d?.error || 'ไม่ทราบสาเหตุ'}`, 'error');
         }
       })
-      .catch(err => {
-        console.error("Error:", err);
-        alert("🚫 เกิดปัญหาในการเชื่อมต่อเซิร์ฟเวอร์");
-      });
-  }
+      .catch(()=> showToast('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์','error'));
+    };
 
-  let sortState = {};
-  function sortTable(columnIndex, keyName, thElement) {
-    const rows = Array.from(tableBody.querySelectorAll("tr"));
-    const ascending = !sortState[keyName];
-    rows.sort((a, b) => {
-      const aVal = a.children[columnIndex].querySelector("input").value.toLowerCase();
-      const bVal = b.children[columnIndex].querySelector("input").value.toLowerCase();
-      const aNum = parseFloat(aVal);
-      const bNum = parseFloat(bVal);
-      const aIsNum = !isNaN(aNum);
-      const bIsNum = !isNaN(bNum);
-      if (aIsNum && bIsNum) {
-        return ascending ? aNum - bNum : bNum - aNum;
-      } else {
-        return ascending ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-      }
-    });
-    tableBody.innerHTML = "";
-    rows.forEach(row => tableBody.appendChild(row));
-    document.querySelectorAll("th .arrow").forEach(el => el.textContent = "↕");
-    thElement.querySelector(".arrow").textContent = ascending ? "🔼" : "🔽";
-    sortState[keyName] = ascending;
-  }
-
-  function toggleFloatingMenu() {
-    const menu = document.getElementById("floatingMenu");
-    menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
-  }
-
-  // ปิดเมนูถ้าแตะที่อื่น
-  document.addEventListener('click', function(e) {
-    const toggle = document.getElementById("floatingToggle");
-    const menu = document.getElementById("floatingMenu");
-    if (!toggle.contains(e.target) && !menu.contains(e.target)) {
-      menu.style.display = "none";
+    // ===== Peek modal =====
+    function openPeek(title, content){
+      peekTitle.textContent = title || 'ดูข้อมูล';
+      peekContent.textContent = content || '';
+      peekModal.classList.add('open'); peekModal.setAttribute('aria-hidden','false');
     }
-  });
+    function closePeek(){
+      peekModal.classList.remove('open'); peekModal.setAttribute('aria-hidden','true');
+    }
+    copyPeekBtn.onclick = ()=>{
+      navigator.clipboard.writeText(peekContent.textContent||'');
+      showToast('คัดลอกแล้ว');
+    };
+    peekModal.addEventListener('click', (e)=>{ if(e.target.dataset.close==='modal') closePeek(); });
+    peekModal.querySelector('[data-close="modal"]').onclick = closePeek;
 
+    // ===== Refresh & Scroll Top & Floating menu =====
+    refreshBtn.onclick = ()=>{ loadData(); };
 
-</script>
+    function toggleFloatingMenu(){
+      const menu = document.getElementById('floatingMenu');
+      menu.style.display = (menu.style.display==='flex' ? 'none' : 'flex');
+    }
+    window.toggleFloatingMenu = toggleFloatingMenu;
+    document.addEventListener('click', function(e){
+      const toggle = document.getElementById('floatingToggle');
+      const menu = document.getElementById('floatingMenu');
+      if(toggle && menu && !toggle.contains(e.target) && !menu.contains(e.target)) menu.style.display='none';
+    });
 
+    window.addEventListener('scroll', ()=>{
+      if(window.scrollY > 200) scrollTopBtn.classList.add('show'); else scrollTopBtn.classList.remove('show');
+    });
+    scrollTopBtn.addEventListener('click', ()=> window.scrollTo({top:0, behavior:'smooth'}));
 
-<div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
-  <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu" style="width:60px;height:60px;">
-</div>
-
-  <div id="floatingMenu" class="floating-menu">
-  <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}"></a>
-  <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}"></a>
-  <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}"></a>
-  <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}"></a>
-  <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}"></a>
-  <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}"></a>
-  <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}"></a>
-  <a href="#"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}"></a>
-  <a href="#"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}"></a>
-</div>
-
+    // ===== Init =====
+    loadData();
+  </script>
 </body>
 </html>

@@ -255,17 +255,18 @@
   <div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
     <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu">
   </div>
-  <div id="floatingMenu" class="floating-menu">
-    <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}" alt="dashboard"></a>
-    <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}" alt="sale summary"></a>
-    <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}" alt="record sales"></a>
-    <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}" alt="customer list"></a>
-    <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}" alt="customer history"></a>
-    <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}" alt="old customers"></a>
-    <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}" alt="inventory"></a>
-    <a href="#"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}" alt="staff"></a>
-    <a href="#"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}" alt="appointments"></a>
-  </div>
+  <div id="floatingMenu" class="floating-menu" aria-hidden="true">
+  <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}" alt="Dashboard"></a>
+  <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}" alt="Sale summary"></a>
+  <a href="{{ url_for('crm') }}"><img src="{{ url_for('static', filename='icon/icon_crm.png') }}" alt="CRM"></a>
+  <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}" alt="Record sales"></a>
+  <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}" alt="Customer list"></a>
+  <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}" alt="Record customer"></a>
+  <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}" alt="Old customers"></a>
+  <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}" alt="Inventory"></a>
+  <a href="{{ url_for('staff') }}"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}" alt="Staff"></a>
+  <a href="{{ url_for('appointments') }}"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}" alt="Appointments"></a>
+</div>
 
   <!-- Scroll to Top -->
   <button id="scrollTop" class="scroll-top" title="กลับขึ้นบน"><span>↑</span></button>

@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}App{% endblock %}</title>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+  {% block content %}{% endblock %}
+
+  {# วางไว้ท้าย <body> เพื่อให้ DOM พร้อมก่อน #}
+  {% include "floating_menu.html" %}
+</body>
+</html>

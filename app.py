@@ -502,3 +502,14 @@ def api_save_inventory():
 if __name__ == '__main__':
     # In production, run behind a proper WSGI server and set SESSION_COOKIE_SECURE=true
     app.run(debug=True)
+
+@app.route('/crm')
+@login_required
+def crm():
+    return render_template('crm.html')
+
+
+@app.route('/staff')
+@login_required
+def staff():
+    return render_template('staff.html')
