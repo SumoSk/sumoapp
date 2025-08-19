@@ -1,0 +1,49 @@
+{# รวมเมนูและโมดอล (ถ้าไฟล์เหล่านี้คุณทำไว้อยู่แล้ว) #}
+{% include "floating_menu.html" %}
+{% include "customer_modal.html" %}
+
+{# โหลดประวัติขายให้ popup ใช้ได้ทุกหน้า #}
+<script>
+  if (!window.__all_records_loading) {
+    window.__all_records_loading = true;
+    fetch('/api/sales')
+      .then(r => r.json())
+      .then(d => { window.allCustomerRecords = Array.isArray(d) ? d : []; })
+      .catch(() => { window.allCustomerRecords = []; });
+  }
+</script>
+
+{# Auto-Linker: แปลง input[data-key=name]/[data-key=phone] ให้กดชื่อแล้วเปิด popup ได้ #}
+<script>
+(function autoLinkCustomerNames(){
+  const normalizePhone = (s)=>String(s||'').replace(/\D/g,'');
+  function run(){
+    document.querySelectorAll('tr').forEach(row=>{
+      const nameInput = row.querySelector('input[data-key="name"], textarea[data-key="name"]');
+      const phoneInput = row.querySelector('input[data-key="phone"], textarea[data-key="phone"]');
+      if (!nameInput) return;
+      const already = nameInput.previousElementSibling && nameInput.previousElementSibling.classList?.contains('customer-link');
+      if (already) return;
+      const name = (nameInput.value || nameInput.textContent || '').trim();
+      const phone = phoneInput ? normalizePhone(phoneInput.value || phoneInput.textContent) : '';
+      if (!name) return;
+      const span = document.createElement('span');
+      span.className = 'customer-link';
+      span.textContent = name;
+      if (phone) span.setAttribute('data-phone', phone);
+      span.setAttribute('data-name', name);
+      span.title = 'ดูประวัติลูกค้า';
+      const cell = nameInput.closest('.cell') || nameInput.parentElement;
+      if (cell) {
+        cell.insertBefore(span, nameInput);
+        if (nameInput.readOnly || nameInput.getAttribute('readonly') !== null) {
+          nameInput.style.display = 'none';
+        }
+      }
+    });
+  }
+  run();
+  const mo = new MutationObserver(()=>{ clearTimeout(window.__autolink_timer); window.__autolink_timer=setTimeout(run,120); });
+  mo.observe(document.body, {childList:true, subtree:true});
+})();
+</script>

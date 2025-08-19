@@ -14,9 +14,10 @@
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; font-family: "Prompt","Segoe UI",system-ui,-apple-system,sans-serif;
+      font-family:'Prompt','Segoe UI',system-ui,-apple-system,sans-serif;
       color:var(--text); background:var(--bg);
-      font-size: 11px; /* ขนาดเล็ก */
+      font-size: 11px;
+      margin:0;
     }
 
     .container{ max-width:1100px; margin: 18px auto 140px auto; padding: 0 12px; }
@@ -24,9 +25,7 @@
       position:sticky; top:0; z-index:50; backdrop-filter: blur(8px);
       background: color-mix(in oklab, var(--bg) 70%, white 30%); border-bottom:1px solid var(--line);
     }
-    .appbar-inner{
-      max-width:1100px; margin:0 auto; padding: 8px 12px; display:flex; align-items:center; gap:8px;
-    }
+    .appbar-inner{ max-width:1100px; margin:0 auto; padding: 8px 12px; display:flex; align-items:center; gap:8px; }
     .title{ font-weight:700; font-size: clamp(14px, 2vw, 17px); display:flex; align-items:center; gap:6px; }
     .grow{flex:1}
     .btn{
@@ -72,6 +71,9 @@
       cursor: pointer; white-space: nowrap;
     }
     thead th .sort{ font-size:10px; opacity:.7; margin-left:4px; }
+    /* ซ่อนหัวคอลัมน์โทรศัพท์ */
+    thead th[data-key="phone"]{ display:none; }
+
     tbody td{
       background:#fff; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top;
     }
@@ -86,21 +88,21 @@
     td .cell input.editing, td .cell textarea.editing{ background:#fff; border-bottom-color:#cbd5e1; outline:none; }
     .actions{ display:flex; gap:6px; flex-wrap:nowrap; }
     .sel-col{ width:34px; text-align:center; }
-    .col-profile{ min-width: 340px; } /* โปรไฟล์กว้างขึ้น */
+    .col-profile{ min-width: 340px; }
 
-    /* ปุ่มไอคอนในเซลล์ */
-    .icon-only-btn{
-      border:1px solid var(--line); background:#fff; border-radius:8px; padding:6px;
-      width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer;
-    }
-    .icon-only-btn:hover{ background:#f8fafc; }
+    /* ซ่อนคอลัมน์โทรศัพท์ปกติ, โชว์เฉพาะตอนแก้ไขแถวนั้น */
+    td.phone-col{ display:none; }
+    tr.editing td.phone-col{ display:table-cell; }
+
+    /* ให้ชื่อคลิกได้ (ตอน read-only) */
+    #customerTable input[data-key="name"][readonly]{ cursor:pointer; }
 
     .empty{ text-align:center; padding:26px 12px; color:#6b7280; }
     .skeleton{ height:10px; width:100%; background:linear-gradient(90deg, #f1f5f9, #e2e8f0, #f1f5f9); background-size:200% 100%; animation: shimmer 1.2s infinite linear; border-radius:6px; }
     @keyframes shimmer{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
     .row-skeleton td{ padding:7px; }
 
-    /* Modal พรีวิวข้อความสั้น ๆ (หมายเหตุ) */
+    /* Modal สั้น ๆ */
     .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:60; }
     .modal.open{ display:flex; }
     .modal .backdrop{ position:absolute; inset:0; background: rgba(15,23,42,.45); backdrop-filter: blur(2px); }
@@ -115,17 +117,11 @@
     .toast.warn{ border-left-color:var(--warn); }
     .toast.error{ border-left-color:var(--danger); }
 
-    /* Floating Toggle/Menu (คงเดิม) */
-    .floating-toggle{ position: fixed; bottom: env(safe-area-inset-bottom, 18px); left: 16px; width: 58px; height: 58px; border-radius: 14px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:#ffffff; border:1px solid var(--line); box-shadow:0 12px 30px rgba(2,8,23,.12); z-index:70; }
-    .floating-toggle img{ width:36px; height:36px; }
-    .floating-menu{ position:fixed; bottom:92px; left:16px; background:#fff; border:1px solid var(--line); border-radius:16px; padding:10px; display:none; flex-direction:column; align-items:center; gap:8px; box-shadow: 0 16px 40px rgba(2,8,23,.18); z-index:70; max-height: 60vh; overflow:auto; }
-    .floating-menu a img{ width:52px; height:52px; }
-
     /* Scroll to Top */
     .scroll-top{ position:fixed; right:16px; bottom:16px; z-index:65; width:38px; height:38px; border-radius:10px; border:1px solid var(--line); background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 10px 24px rgba(2,8,23,.12); opacity:0; pointer-events:none; transition:.2s; }
     .scroll-top.show{ opacity:1; pointer-events:auto; }
     .scroll-top span{ font-size:16px; }
-    
+
     @media (max-width: 768px){
       .toolbar{ grid-template-columns: 1fr; }
       .left-tools{ grid-template-columns: 1fr; }
@@ -181,7 +177,7 @@
               <th class="sel-col"><input type="checkbox" id="selectAll" title="เลือกทั้งหมด"></th>
               <th data-key="opd">OPD <span class="sort">↕</span></th>
               <th data-key="name">ชื่อ <span class="sort">↕</span></th>
-              <th data-key="phone">เบอร์โทร <span class="sort">↕</span></th>
+              <th data-key="phone"><!-- hidden by CSS --></th>
               <th data-key="birthMonth">เดือนเกิด <span class="sort">↕</span></th>
               <th data-key="profile" class="col-profile">โปรไฟล์ <span class="sort">↕</span></th>
               <th data-key="note">หมายเหตุ <span class="sort">↕</span></th>
@@ -190,13 +186,13 @@
           </thead>
           <tbody id="tbody">
             <!-- Skeleton -->
-            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
-            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
-            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
           </tbody>
         </table>
       </div>
-      <!-- ไม่มี pagination: แสดงทั้งหมดต่อกัน -->
+      <!-- ไม่มี pagination -->
     </div>
   </div>
 
@@ -250,23 +246,6 @@
       </footer>
     </div>
   </div>
-
-  <!-- Floating toggle & menu (คงเดิม) -->
-  <div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
-    <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu">
-  </div>
-  <div id="floatingMenu" class="floating-menu" aria-hidden="true">
-  <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}" alt="Dashboard"></a>
-  <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}" alt="Sale summary"></a>
-  <a href="{{ url_for('crm') }}"><img src="{{ url_for('static', filename='icon/icon_crm.png') }}" alt="CRM"></a>
-  <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}" alt="Record sales"></a>
-  <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}" alt="Customer list"></a>
-  <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}" alt="Record customer"></a>
-  <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}" alt="Old customers"></a>
-  <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}" alt="Inventory"></a>
-  <a href="{{ url_for('staff') }}"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}" alt="Staff"></a>
-  <a href="{{ url_for('appointments') }}"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}" alt="Appointments"></a>
-</div>
 
   <!-- Scroll to Top -->
   <button id="scrollTop" class="scroll-top" title="กลับขึ้นบน"><span>↑</span></button>
@@ -341,9 +320,9 @@
     // ===== Load =====
     function skeletonOn(){
       tbody.innerHTML = `
-        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
-        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
-        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
       `;
     }
 
@@ -357,10 +336,12 @@
             const opd = pad4(r.opd);
             if(!opd) continue;
             if(!map.has(opd)){
+              const phoneRaw = String(r.phone||'');
               map.set(opd, {
                 opd,
                 name: r.name||'',
-                phone: formatPhone(r.phone||''),
+                phone: formatPhone(r.phone||''),   // ใช้แสดง (แต่ซ่อน)
+                phoneRaw,                           // เก็บค่าเดิมไว้สำหรับ matching
                 birthMonth: normalizeMonth(r.birthMonth||''),
                 profile: r.profile||'',
                 note: r.note||'',
@@ -386,7 +367,7 @@
         if(!kw) return byMonth;
         const match = (
           r.name.toLowerCase().includes(kw) ||
-          r.phone.toLowerCase().includes(kw) ||
+          (r.phone||'').toLowerCase().includes(kw) ||
           r.opd.toLowerCase().includes(kw) ||
           String(r.note).toLowerCase().includes(kw) ||
           String(r.birthMonth).toLowerCase().includes(kw) ||
@@ -413,33 +394,21 @@
     function cellStaticCopy(text){
       return `<td><div class="cell"><input value="${text}" readonly title="คลิกเพื่อคัดลอก OPD"></div></td>`;
     }
-
-    // โทรศัพท์: แสดงเป็นไอคอน, input จริงซ่อนไว้ (ไว้ใช้ตอนแก้ไข)
-    function cellPhone(phone){
+    function cellPhoneHidden(phone){
       const safe = phone||'';
-      const tel = safe.replace(/\D/g,'');
       return `
-        <td>
+        <td class="phone-col" data-col="phone">
           <div class="cell">
-            <button class="icon-only-btn" data-phone="${tel}" title="โทรออก">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.34 1.78.65 2.63a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.45-1.18a2 2 0 0 1 2.11-.45c.85.31 1.73.53 2.63.65A2 2 0 0 1 22 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
-            <input value="${safe}" data-key="phone" readonly style="display:none" title="${safe}">
+            <input value="${safe}" data-key="phone" readonly title="${safe}" style="display:none">
           </div>
         </td>
       `;
     }
-
-    // โปรไฟล์ (multiline)
     function cellProfile(value){
       const safeVal = value==null ? '' : value;
       const title = String(safeVal).replaceAll('"','&quot;');
       return `<td class="col-profile"><div class="cell"><textarea rows="2" data-key="profile" readonly title="${title}">${safeVal}</textarea></div></td>`;
     }
-
-    // หมายเหตุ: แสดงเป็นไอคอนตา + textarea ซ่อนไว้ (edit เท่านั้น)
     function cellNote(value){
       const safeVal = value==null ? '' : value;
       const title = String(safeVal).replaceAll('"','&quot;');
@@ -472,7 +441,7 @@
           <td class="sel-col"><input type="checkbox" data-select-row value="${r.opd}" ${selected.has(r.opd)?'checked':''}></td>
           ${cellStaticCopy(r.opd)}
           <td><div class="cell"><input value="${r.name||''}" data-key="name" readonly title="${r.name||''}"></div></td>
-          ${cellPhone(r.phone)}
+          ${cellPhoneHidden(r.phone)}
           <td><div class="cell"><input value="${r.birthMonth||''}" data-key="birthMonth" readonly title="${r.birthMonth||''}"></div></td>
           ${cellProfile(r.profile)}
           ${cellNote(r.note)}
@@ -502,17 +471,7 @@
       const btn = e.target.closest('button[data-action]');
       const row = e.target.closest('tr');
 
-      // ----- คลิกไอคอนโทรศัพท์: แสดงเบอร์อย่างเดียว (ไม่โทรออก)
-const phoneBtn = e.target.closest('[data-phone]');
-if (phoneBtn) {
-  const tr = phoneBtn.closest('tr');
-  const telRaw = phoneBtn.getAttribute('data-phone') || '';
-  const display = tr.querySelector('input[data-key="phone"]')?.value || telRaw;
-  openPeek('เบอร์โทร', display);   // ใช้ modal เดิมสำหรับดู/คัดลอก
-  return; // กันไม่ให้ไหลไป action อื่น
-}
-
-      // ----- ดูหมายเหตุ (ไอคอนตา)
+      // คลิกดูหมายเหตุ
       const noteBtn = e.target.closest('[data-note-view]');
       if(noteBtn){
         const tr = noteBtn.closest('tr');
@@ -567,6 +526,33 @@ if (phoneBtn) {
       }
     });
 
+    // คลิกชื่อ (readonly) เพื่อเปิด Customer Popup
+    tbody.addEventListener('click', (e)=>{
+      const nameInput = e.target.closest('input[data-key="name"]');
+      if (!nameInput || !nameInput.readOnly) return;
+
+      const tr = nameInput.closest('tr');
+      const phoneInput = tr.querySelector('input[data-key="phone"]');
+      const name = (nameInput.value || '').trim();
+      const phoneFormatted = (phoneInput?.value || '').trim();
+      const phoneDigits = phoneFormatted.replace(/\D/g,'');
+
+      // พยายามเปิดด้วย key ทั้งสองรูปแบบ (กันเคส format ต่างกัน)
+      const modalEl = document.getElementById('customer-modal');
+      const tryOpen = (key)=>{
+        const before = modalEl ? modalEl.style.display : '';
+        if (typeof window.openCustomerModal === 'function') openCustomerModal(key);
+        const after = modalEl ? modalEl.style.display : '';
+        return before !== 'flex' && after === 'flex';
+      };
+
+      if (!tryOpen(`${name}|${phoneFormatted}`)) {
+        if (!tryOpen(`${name}|${phoneDigits}`)) {
+          showToast('ไม่พบประวัติลูกค้ารายนี้','warn');
+        }
+      }
+    });
+
     // select row
     tbody.addEventListener('change', (e)=>{
       const chk = e.target.closest('input[data-select-row]');
@@ -579,15 +565,17 @@ if (phoneBtn) {
     // ----- Helpers for edit state & snapshot -----
     function setRowEditable(row, editable, clearSnap=false){
       const inputs = $$('input[data-key], textarea[data-key]', row);
-      const phoneBtn = row.querySelector('[data-phone]');
       const phoneInput = row.querySelector('input[data-key="phone"]');
+      const phoneCell = row.querySelector('td.phone-col');
       const noteBtn = row.querySelector('[data-note-view]');
       const noteTA = row.querySelector('textarea[data-key="note"]');
 
       if(editable){
         row.dataset.snapshot = JSON.stringify(takeSnapshot(row));
-      }else if(clearSnap){
-        delete row.dataset.snapshot;
+        row.classList.add('editing');
+      }else{
+        row.classList.remove('editing');
+        if(clearSnap) delete row.dataset.snapshot;
       }
 
       inputs.forEach(inp=>{
@@ -595,11 +583,14 @@ if (phoneBtn) {
         inp.classList.toggle('editing', editable);
       });
 
-      // สลับแสดงผลเฉพาะคอลัมน์พิเศษ
-      if(phoneBtn && phoneInput){
-        phoneBtn.style.display = editable ? 'none' : '';
+      // โทรศัพท์: ไม่มีไอคอนแล้ว -> โชว์ input เมื่อแก้ไขเท่านั้น
+      if(phoneInput){
         phoneInput.style.display = editable ? '' : 'none';
       }
+      if(phoneCell){
+        phoneCell.style.display = editable ? 'table-cell' : '';
+      }
+
       if(noteBtn && noteTA){
         noteBtn.style.display = editable ? 'none' : '';
         noteTA.style.display = editable ? '' : 'none';
@@ -651,11 +642,12 @@ if (phoneBtn) {
     (function initSortHeaders(){
       $$('#customerTable thead th[data-key]').forEach(th=>{
         const key = th.getAttribute('data-key');
+        if (!key) return;
         const sortSpan = th.querySelector('.sort');
         th.addEventListener('click', ()=>{
           if(sortState.key===key){ sortState.asc = !sortState.asc; } else { sortState.key=key; sortState.asc=true; }
-          $$('#customerTable thead th .sort').forEach(s=>s.textContent='↕');
-          sortSpan.textContent = sortState.asc ? '🔼' : '🔽';
+          $$('#customerTable thead th .sort').forEach(s=>{ if(s) s.textContent='↕'; });
+          if (sortSpan) sortSpan.textContent = sortState.asc ? '🔼' : '🔽';
           saveSortPref(sortState.key, sortState.asc);
           applyPipeline();
         });
@@ -696,7 +688,25 @@ if (phoneBtn) {
       showToast('ส่งออก CSV แล้ว');
     };
 
-    // ===== Modal Add =====
+    // ===== Modal Peek (สั้น) =====
+    function openPeek(title, content){
+      const peekModal = $('#peekModal');
+      $('#peekTitle').textContent = title || 'ดูข้อมูล';
+      $('#peekContent').textContent = content || '';
+      peekModal.classList.add('open'); peekModal.setAttribute('aria-hidden','false');
+    }
+    function closePeek(){
+      const peekModal = $('#peekModal');
+      peekModal.classList.remove('open'); peekModal.setAttribute('aria-hidden','true');
+    }
+    $('#copyPeekBtn').onclick = ()=>{
+      navigator.clipboard.writeText($('#peekContent').textContent||'');
+      showToast('คัดลอกแล้ว');
+    };
+    $('#peekModal').addEventListener('click', (e)=>{ if(e.target.dataset.close==='modal') closePeek(); });
+    $('#peekModal').querySelector('[data-close="modal"]').onclick = closePeek;
+
+    // ===== Add Modal =====
     const f_opd = $('#f_opd'), f_name = $('#f_name'), f_phone = $('#f_phone'), f_birth = $('#f_birthMonth'), f_profile = $('#f_profile'), f_note = $('#f_note');
     const addModalTitle = $('#modalTitle');
     function openModal(){
@@ -746,36 +756,8 @@ if (phoneBtn) {
       .catch(()=> showToast('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์','error'));
     };
 
-    // ===== Peek modal =====
-    function openPeek(title, content){
-      peekTitle.textContent = title || 'ดูข้อมูล';
-      peekContent.textContent = content || '';
-      peekModal.classList.add('open'); peekModal.setAttribute('aria-hidden','false');
-    }
-    function closePeek(){
-      peekModal.classList.remove('open'); peekModal.setAttribute('aria-hidden','true');
-    }
-    copyPeekBtn.onclick = ()=>{
-      navigator.clipboard.writeText(peekContent.textContent||'');
-      showToast('คัดลอกแล้ว');
-    };
-    peekModal.addEventListener('click', (e)=>{ if(e.target.dataset.close==='modal') closePeek(); });
-    peekModal.querySelector('[data-close="modal"]').onclick = closePeek;
-
-    // ===== Refresh & Scroll Top & Floating menu =====
+    // ===== Refresh & Scroll Top =====
     refreshBtn.onclick = ()=>{ loadData(); };
-
-    function toggleFloatingMenu(){
-      const menu = document.getElementById('floatingMenu');
-      menu.style.display = (menu.style.display==='flex' ? 'none' : 'flex');
-    }
-    window.toggleFloatingMenu = toggleFloatingMenu;
-    document.addEventListener('click', function(e){
-      const toggle = document.getElementById('floatingToggle');
-      const menu = document.getElementById('floatingMenu');
-      if(toggle && menu && !toggle.contains(e.target) && !menu.contains(e.target)) menu.style.display='none';
-    });
-
     window.addEventListener('scroll', ()=>{
       if(window.scrollY > 200) scrollTopBtn.classList.add('show'); else scrollTopBtn.classList.remove('show');
     });
@@ -784,5 +766,20 @@ if (phoneBtn) {
     // ===== Init =====
     loadData();
   </script>
+
+  {% include "customer_modal.html" %}
+
+  <script>
+    // โหลดประวัติขายทั้งหมดครั้งเดียว (ใช้กับ openCustomerModal)
+    if (!window.__all_records_loading) {
+      window.__all_records_loading = true;
+      fetch('/api/sales')
+        .then(r => r.json())
+        .then(d => { window.allCustomerRecords = Array.isArray(d) ? d : []; })
+        .catch(() => { window.allCustomerRecords = []; });
+    }
+  </script>
+
+  {% include "_bootstrap_inject.html" %}
 </body>
 </html>
