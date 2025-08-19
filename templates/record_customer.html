@@ -16,7 +16,7 @@
     body{
       margin:0; font-family: "Prompt","Segoe UI",system-ui,-apple-system,sans-serif;
       color:var(--text); background:var(--bg);
-      font-size: 11px; /* ⬅️ เล็กลงทั้งหน้า */
+      font-size: 11px; /* ขนาดเล็ก */
     }
 
     .container{ max-width:1100px; margin: 18px auto 140px auto; padding: 0 12px; }
@@ -63,7 +63,6 @@
     .month-filter{ border:1px solid var(--line); border-radius:10px; padding:7px 9px; background:#fff; font-size:11px; }
     .right-tools{ display:flex; gap:6px; align-items:center; justify-content:flex-end; flex-wrap:wrap; }
     .chip{ display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:999px; font-size:11px; background:#ecfeff; color:#155e75; border:1px solid #cffafe; }
-    .muted{ color:var(--muted); }
 
     .table-wrap{ overflow:auto; }
     table{ width:100%; border-collapse:separate; border-spacing:0; min-width:940px; font-size: 11px; }
@@ -87,25 +86,28 @@
     td .cell input.editing, td .cell textarea.editing{ background:#fff; border-bottom-color:#cbd5e1; outline:none; }
     .actions{ display:flex; gap:6px; flex-wrap:nowrap; }
     .sel-col{ width:34px; text-align:center; }
-    /* โปรไฟล์ให้กว้างขึ้น */
-    .col-profile{ min-width: 340px; } /* ⬅️ ที่ว่างเยอะขึ้น */
+    .col-profile{ min-width: 340px; } /* โปรไฟล์กว้างขึ้น */
 
-    .empty{ text-align:center; padding:26px 12px; color:var(--muted); }
+    /* ปุ่มไอคอนในเซลล์ */
+    .icon-only-btn{
+      border:1px solid var(--line); background:#fff; border-radius:8px; padding:6px;
+      width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+    }
+    .icon-only-btn:hover{ background:#f8fafc; }
+
+    .empty{ text-align:center; padding:26px 12px; color:#6b7280; }
     .skeleton{ height:10px; width:100%; background:linear-gradient(90deg, #f1f5f9, #e2e8f0, #f1f5f9); background-size:200% 100%; animation: shimmer 1.2s infinite linear; border-radius:6px; }
     @keyframes shimmer{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
     .row-skeleton td{ padding:7px; }
 
+    /* Modal พรีวิวข้อความสั้น ๆ (หมายเหตุ) */
     .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:60; }
     .modal.open{ display:flex; }
     .modal .backdrop{ position:absolute; inset:0; background: rgba(15,23,42,.45); backdrop-filter: blur(2px); }
-    .modal .dialog{ position:relative; width:min(560px, 94vw); background:#fff; border-radius:16px; border:1px solid var(--line); box-shadow: 0 20px 60px rgba(2,8,23,.35); overflow:hidden; font-size: 11px; }
+    .modal .dialog{ position:relative; width:min(520px, 92vw); background:#fff; border-radius:16px; border:1px solid var(--line); box-shadow: 0 20px 60px rgba(2,8,23,.35); overflow:hidden; font-size: 11px; }
     .dialog header{ padding:10px 12px; border-bottom:1px solid var(--line); font-weight:700; display:flex; align-items:center; justify-content:space-between; }
-    .dialog .body{ padding:12px; display:grid; gap:8px; }
-    .field{ display:grid; gap:4px; }
-    .field label{ font-size:11px; color:#334155; }
-    .field input, .field textarea{ padding:7px 9px; border:1px solid var(--line); border-radius:10px; outline:none; font-size:11px; }
-    .field textarea{ resize:vertical; min-height: 90px; }
-    .field input:focus, .field textarea:focus{ border-color:var(--primary); box-shadow: 0 0 0 3px var(--ring); }
+    .dialog .body{ padding:12px; }
+    .dialog .viewer{ white-space:pre-wrap; line-height:1.5; color:#0f172a; }
     .dialog footer{ padding:10px 12px; border-top:1px solid var(--line); display:flex; gap:8px; justify-content:flex-end; }
 
     .toast-wrap{ position:fixed; right:12px; bottom:12px; display:grid; gap:8px; z-index:80; }
@@ -166,7 +168,7 @@
             <svg viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           </button>
           <button id="exportBtn" class="btn btn-icon" title="ส่งออก CSV">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a 2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </div>
       </div>
@@ -200,6 +202,26 @@
 
   <!-- Toast -->
   <div class="toast-wrap" id="toastWrap"></div>
+
+  <!-- View Modal (ดูหมายเหตุ) -->
+  <div id="peekModal" class="modal" aria-hidden="true">
+    <div class="backdrop" data-close="modal"></div>
+    <div class="dialog">
+      <header>
+        <span id="peekTitle">ดูข้อมูล</span>
+        <button class="btn btn-icon btn-ghost" data-close="modal" title="ปิด">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M6 18L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <div class="body">
+        <div id="peekContent" class="viewer"></div>
+      </div>
+      <footer>
+        <button id="copyPeekBtn" class="btn btn-ghost">คัดลอก</button>
+        <button class="btn btn-primary" data-close="modal">ปิด</button>
+      </footer>
+    </div>
+  </div>
 
   <!-- Add Modal -->
   <div id="addModal" class="modal" aria-hidden="true">
@@ -266,7 +288,7 @@
     const saveSortPref = (key,asc)=>localStorage.setItem('cust_sort', JSON.stringify({key,asc}));
     const loadSortPref = ()=>{ try{return JSON.parse(localStorage.getItem('cust_sort'))||{key:'opd',asc:true}}catch{return {key:'opd',asc:true}} };
     const toCSV = (rows)=> {
-      const header = ['OPD','ชื่อ','เบอร์โทร','เดือนเกิด','โปรไฟล์','หมายเหตุ']; // ⬅️ ไม่มี VIP แล้ว
+      const header = ['OPD','ชื่อ','เบอร์โทร','เดือนเกิด','โปรไฟล์','หมายเหตุ'];
       const escape = v => `"${String(v??'').replaceAll('"','""')}"`;
       const lines = [header.map(escape).join(',')];
       for(const r of rows) lines.push([r.opd,r.name,r.phone,r.birthMonth,r.profile,r.note].map(escape).join(','));
@@ -310,6 +332,10 @@
     const bulkDeleteBtn = $('#bulkDeleteBtn');
     const exportBtn = $('#exportBtn');
     const scrollTopBtn = $('#scrollTop');
+    const peekModal = $('#peekModal');
+    const peekTitle = $('#peekTitle');
+    const peekContent = $('#peekContent');
+    const copyPeekBtn = $('#copyPeekBtn');
 
     // ===== Load =====
     function skeletonOn(){
@@ -363,7 +389,7 @@
           r.opd.toLowerCase().includes(kw) ||
           String(r.note).toLowerCase().includes(kw) ||
           String(r.birthMonth).toLowerCase().includes(kw) ||
-          String(r.profile).toLowerCase().includes(kw) // ⬅️ ค้นหาในโปรไฟล์
+          String(r.profile).toLowerCase().includes(kw)
         );
         return byMonth && match;
       });
@@ -382,6 +408,55 @@
       selectAll.checked = viewRecords.length>0 && viewRecords.every(r=>selected.has(r.opd));
     }
 
+    // ==== cell templates ====
+    function cellStaticCopy(text){
+      return `<td><div class="cell"><input value="${text}" readonly title="คลิกเพื่อคัดลอก OPD"></div></td>`;
+    }
+
+    // โทรศัพท์: แสดงเป็นไอคอน, input จริงซ่อนไว้ (ไว้ใช้ตอนแก้ไข)
+    function cellPhone(phone){
+      const safe = phone||'';
+      const tel = safe.replace(/\D/g,'');
+      return `
+        <td>
+          <div class="cell">
+            <button class="icon-only-btn" data-phone="${tel}" title="โทรออก">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.34 1.78.65 2.63a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.45-1.18a2 2 0 0 1 2.11-.45c.85.31 1.73.53 2.63.65A2 2 0 0 1 22 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <input value="${safe}" data-key="phone" readonly style="display:none" title="${safe}">
+          </div>
+        </td>
+      `;
+    }
+
+    // โปรไฟล์ (multiline)
+    function cellProfile(value){
+      const safeVal = value==null ? '' : value;
+      const title = String(safeVal).replaceAll('"','&quot;');
+      return `<td class="col-profile"><div class="cell"><textarea rows="2" data-key="profile" readonly title="${title}">${safeVal}</textarea></div></td>`;
+    }
+
+    // หมายเหตุ: แสดงเป็นไอคอนตา + textarea ซ่อนไว้ (edit เท่านั้น)
+    function cellNote(value){
+      const safeVal = value==null ? '' : value;
+      const title = String(safeVal).replaceAll('"','&quot;');
+      return `
+        <td>
+          <div class="cell">
+            <button class="icon-only-btn" data-note-view title="ดูหมายเหตุ">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z" stroke="currentColor" stroke-width="2"/>
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </button>
+            <textarea rows="2" data-key="note" readonly style="display:none" title="${title}">${safeVal}</textarea>
+          </div>
+        </td>
+      `;
+    }
+
     function renderTable(rows){
       if(rows.length===0){
         tbody.innerHTML = `<tr><td colspan="8"><div class="empty">ไม่พบข้อมูลที่ตรงกับคำค้นหา</div></td></tr>`;
@@ -395,11 +470,11 @@
         tr.innerHTML = `
           <td class="sel-col"><input type="checkbox" data-select-row value="${r.opd}" ${selected.has(r.opd)?'checked':''}></td>
           ${cellStaticCopy(r.opd)}
-          ${cellEditable('name', r.name)}
-          ${cellEditable('phone', r.phone, false, {dblTel:true, copy:true})}
-          ${cellEditable('birthMonth', r.birthMonth)}
-          ${cellEditable('profile', r.profile, false, {multiline:true})}
-          ${cellEditable('note', r.note)}
+          <td><div class="cell"><input value="${r.name||''}" data-key="name" readonly title="${r.name||''}"></div></td>
+          ${cellPhone(r.phone)}
+          <td><div class="cell"><input value="${r.birthMonth||''}" data-key="birthMonth" readonly title="${r.birthMonth||''}"></div></td>
+          ${cellProfile(r.profile)}
+          ${cellNote(r.note)}
           <td>
             <div class="actions">
               <button class="btn btn-icon" data-action="edit" title="แก้ไข">
@@ -421,30 +496,28 @@
       }
     }
 
-    // ==== cell templates ====
-    function cellStaticCopy(text){
-      return `<td><div class="cell"><input value="${text}" readonly title="คลิกเพื่อคัดลอก OPD"></div></td>`;
-    }
-    function cellEditable(key, value, _unused=false, opts={}){
-      const safeVal = value==null ? '' : value;
-      const title = String(safeVal).replaceAll('"','&quot;');
-      const isProfile = opts.multiline || key==='profile';
-      const inputEl = isProfile
-        ? `<textarea rows="2" data-key="${key}" readonly class="${key==='profile'?'col-profile':''}" title="${title}">${safeVal}</textarea>`
-        : `<input value="${safeVal}" data-key="${key}" readonly title="${title}" ${opts.copy?'data-copy':''} ${opts.dblTel?'data-dbltel':''}>`;
-      return `<td class="${key==='profile'?'col-profile':''}"><div class="cell">${inputEl}</div></td>`;
-    }
-
     // ===== Event Delegation =====
     tbody.addEventListener('click', (e)=>{
       const btn = e.target.closest('button[data-action]');
       const row = e.target.closest('tr');
 
-      // copy OPD / เบอร์แบบ readonly
-      const inp = e.target.closest('input[readonly]');
-      if(inp){
-        const needsCopy = inp.matches('[data-copy]') || inp.closest('td') === row?.children[1];
-        if(needsCopy){ navigator.clipboard.writeText(inp.value); showToast('คัดลอกแล้ว'); }
+      // ----- คลิกไอคอนโทรศัพท์: แสดงเบอร์อย่างเดียว (ไม่โทรออก)
+const phoneBtn = e.target.closest('[data-phone]');
+if (phoneBtn) {
+  const tr = phoneBtn.closest('tr');
+  const telRaw = phoneBtn.getAttribute('data-phone') || '';
+  const display = tr.querySelector('input[data-key="phone"]')?.value || telRaw;
+  openPeek('เบอร์โทร', display);   // ใช้ modal เดิมสำหรับดู/คัดลอก
+  return; // กันไม่ให้ไหลไป action อื่น
+}
+
+      // ----- ดูหมายเหตุ (ไอคอนตา)
+      const noteBtn = e.target.closest('[data-note-view]');
+      if(noteBtn){
+        const tr = noteBtn.closest('tr');
+        const ta = tr.querySelector('textarea[data-key="note"]');
+        openPeek('หมายเหตุ', ta ? ta.value : '');
+        return;
       }
 
       if(!btn || !row) return;
@@ -480,7 +553,7 @@
         })
         .then(r=>r.json())
         .then(d=>{
-          if(d.message==='ลบสำเร็จ'){
+          if(d.message){
             rawRecords = rawRecords.filter(x=>x.opd!==opd);
             selected.delete(opd);
             applyPipeline();
@@ -502,26 +575,35 @@
       selectAll.checked = viewRecords.length>0 && viewRecords.every(r=>selected.has(r.opd));
     });
 
-    // dblclick โทรออก (เฉพาะ input[data-dbltel] และยัง readonly)
-    tbody.addEventListener('dblclick', (e)=>{
-      const inp = e.target.closest('input[data-dbltel]');
-      if(!inp || !inp.readOnly) return;
-      const tel = inp.value.replace(/\D/g,'');
-      if(tel.length>=9) window.location.href = 'tel:' + tel;
-    });
-
-    // snapshot & editing helpers
+    // ----- Helpers for edit state & snapshot -----
     function setRowEditable(row, editable, clearSnap=false){
-      const fields = $$('input[data-key], textarea[data-key]', row);
+      const inputs = $$('input[data-key], textarea[data-key]', row);
+      const phoneBtn = row.querySelector('[data-phone]');
+      const phoneInput = row.querySelector('input[data-key="phone"]');
+      const noteBtn = row.querySelector('[data-note-view]');
+      const noteTA = row.querySelector('textarea[data-key="note"]');
+
       if(editable){
         row.dataset.snapshot = JSON.stringify(takeSnapshot(row));
       }else if(clearSnap){
         delete row.dataset.snapshot;
       }
-      fields.forEach(inp=>{
+
+      inputs.forEach(inp=>{
         inp.readOnly = !editable;
         inp.classList.toggle('editing', editable);
       });
+
+      // สลับแสดงผลเฉพาะคอลัมน์พิเศษ
+      if(phoneBtn && phoneInput){
+        phoneBtn.style.display = editable ? 'none' : '';
+        phoneInput.style.display = editable ? '' : 'none';
+      }
+      if(noteBtn && noteTA){
+        noteBtn.style.display = editable ? 'none' : '';
+        noteTA.style.display = editable ? '' : 'none';
+      }
+
       row.querySelector('[data-action="edit"]').style.display = editable ? 'none' : '';
       row.querySelector('[data-action="save"]').style.display = editable ? '' : 'none';
       row.querySelector('[data-action="cancel"]').style.display = editable ? '' : 'none';
@@ -557,7 +639,7 @@
       })
       .then(r=>r.json())
       .then(d=>{
-        if(d.message==='อัปเดตสำเร็จ') return true;
+        if(d.message) return true;
         showToast(`บันทึกไม่สำเร็จ (${field}): ${d.error||'ไม่ทราบสาเหตุ'}`, 'error');
         return false;
       })
@@ -565,21 +647,19 @@
     }
 
     // ===== Sorting (thead) =====
-    function initSortHeaders(){
+    (function initSortHeaders(){
       $$('#customerTable thead th[data-key]').forEach(th=>{
         const key = th.getAttribute('data-key');
-        if(key === sortState.key){
-          th.querySelector('.sort').textContent = sortState.asc ? '🔼' : '🔽';
-        }
+        const sortSpan = th.querySelector('.sort');
         th.addEventListener('click', ()=>{
           if(sortState.key===key){ sortState.asc = !sortState.asc; } else { sortState.key=key; sortState.asc=true; }
           $$('#customerTable thead th .sort').forEach(s=>s.textContent='↕');
-          th.querySelector('.sort').textContent = sortState.asc ? '🔼' : '🔽';
+          sortSpan.textContent = sortState.asc ? '🔼' : '🔽';
           saveSortPref(sortState.key, sortState.asc);
           applyPipeline();
         });
       });
-    }
+    })();
 
     // ===== Search/Filter/SelectAll =====
     searchInput.addEventListener('input', debounce(applyPipeline, 200));
@@ -601,7 +681,7 @@
         body: JSON.stringify({opd:String(opd)})
       }).then(r=>r.json())))
       .then(results=>{
-        const ok = results.filter(d=>d.message==='ลบสำเร็จ').length;
+        const ok = results.filter(d=>d.message).length;
         rawRecords = rawRecords.filter(r=>!selected.has(r.opd));
         selected.clear();
         applyPipeline();
@@ -665,10 +745,25 @@
       .catch(()=> showToast('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์','error'));
     };
 
-    // ===== Refresh =====
+    // ===== Peek modal =====
+    function openPeek(title, content){
+      peekTitle.textContent = title || 'ดูข้อมูล';
+      peekContent.textContent = content || '';
+      peekModal.classList.add('open'); peekModal.setAttribute('aria-hidden','false');
+    }
+    function closePeek(){
+      peekModal.classList.remove('open'); peekModal.setAttribute('aria-hidden','true');
+    }
+    copyPeekBtn.onclick = ()=>{
+      navigator.clipboard.writeText(peekContent.textContent||'');
+      showToast('คัดลอกแล้ว');
+    };
+    peekModal.addEventListener('click', (e)=>{ if(e.target.dataset.close==='modal') closePeek(); });
+    peekModal.querySelector('[data-close="modal"]').onclick = closePeek;
+
+    // ===== Refresh & Scroll Top & Floating menu =====
     refreshBtn.onclick = ()=>{ loadData(); };
 
-    // ===== Floating menu toggle (คงเดิม) =====
     function toggleFloatingMenu(){
       const menu = document.getElementById('floatingMenu');
       menu.style.display = (menu.style.display==='flex' ? 'none' : 'flex');
@@ -680,28 +775,12 @@
       if(toggle && menu && !toggle.contains(e.target) && !menu.contains(e.target)) menu.style.display='none';
     });
 
-    // ===== Scroll Top =====
     window.addEventListener('scroll', ()=>{
       if(window.scrollY > 200) scrollTopBtn.classList.add('show'); else scrollTopBtn.classList.remove('show');
     });
     scrollTopBtn.addEventListener('click', ()=> window.scrollTo({top:0, behavior:'smooth'}));
 
     // ===== Init =====
-    (function initSortHeaders(){
-      $$('#customerTable thead th[data-key]').forEach(th=>{
-        const key = th.getAttribute('data-key');
-        if(key === sortState.key){
-          th.querySelector('.sort').textContent = sortState.asc ? '🔼' : '🔽';
-        }
-        th.addEventListener('click', ()=>{
-          if(sortState.key===key){ sortState.asc = !sortState.asc; } else { sortState.key=key; sortState.asc=true; }
-          $$('#customerTable thead th .sort').forEach(s=>s.textContent='↕');
-          th.querySelector('.sort').textContent = sortState.asc ? '🔼' : '🔽';
-          saveSortPref(sortState.key, sortState.asc);
-          applyPipeline();
-        });
-      });
-    })();
     loadData();
   </script>
 </body>
