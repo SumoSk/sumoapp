@@ -71,7 +71,8 @@ def _rate_limited(bucket: Dict[str, deque], max_events: int, window_sec: int) ->
 # =============================================================
 # Helpers
 # =============================================================
-SAFE_CUSTOMER_FIELDS = {"name", "phone", "birthMonth", "vip", "note"}
+# ⬇️ อนุญาตเฉพาะฟิลด์เหล่านี้ (ไม่มี vip และเพิ่ม profile)
+SAFE_CUSTOMER_FIELDS = {"name", "phone", "birthMonth", "note", "profile"}
 
 
 def login_required(view_func):
@@ -235,6 +236,7 @@ def test_route():
 @login_required
 def api_customers():
     try:
+        # จะ select * ก็ได้ ถ้าอยากจำกัดฟิลด์เปลี่ยนเป็น select(...) เฉพาะที่ใช้
         response = supabase.table("customers").select("*").execute()
         return jsonify(response.data)
     except Exception as e:
@@ -363,8 +365,9 @@ def save_sales():
                     'name': rec.get('name', ''),
                     'phone': rec.get('phone', ''),
                     'birthMonth': rec.get('birthMonth', ''),
-                    'vip': rec.get('vip', ''),
+                    # 'vip': rec.get('vip', ''),  # ⬅️ ตัดทิ้ง
                     'note': rec.get('note', ''),
+                    'profile': rec.get('profile', ''),  # ⬅️ เพิ่ม
                 }
                 supabase.table('customers').upsert(customer_data, on_conflict=['opd']).execute()
 
@@ -385,7 +388,6 @@ def save_sales():
             rec_id = rec.get('id')
             if rec_id:
                 resp = supabase.table('sales_records').update(rec_db).eq('id', rec_id).execute()
-                # Some clients return data=None for update; treat as success if no error
                 updated_count += 1
                 continue
 
