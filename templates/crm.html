@@ -16,7 +16,7 @@
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      font-family:'Prompt','Segoe UI',system-ui,-apple-system,sans-serif;
+      font-family:'Prompt','Segoe UI',sans-serif; /* ฟอนต์ตามที่ขอ */
       color:var(--text); background:var(--bg);
       font-size: 12px; margin:0;
     }
@@ -60,6 +60,7 @@
     .plan-title{ font-weight:800; font-size:14px; }
     .plan-sub{ color:#64748b; font-weight:500; }
     .plan-actions{ display:flex; gap:8px; align-items:center; }
+    .plan-footer{ padding:10px 12px; border-top:1px solid var(--line); display:flex; gap:8px; justify-content:flex-end; }
 
     .table-wrap{ overflow:auto; }
     table{ width:100%; border-collapse:separate; border-spacing:0; min-width:980px; }
@@ -97,6 +98,9 @@
     .history-head{ font-weight:700; color:#0f766e; }
     .outcome-badge{ padding:2px 6px; border-radius:999px; font-size:11px; border:1px solid #e2e8f0; background:#f8fafc; }
 
+    .sortable{ cursor:pointer; user-select:none; display:inline-flex; align-items:center; gap:6px; }
+    .sort-ind{ font-size:11px; color:#0f766e; opacity:.8; }
+
     @media (max-width: 820px){
       .history-row{ grid-template-columns: 66px 1fr 1fr; }
       .hide-sm{ display:none; }
@@ -129,16 +133,17 @@
     <div class="section card" id="newPlanCard" style="display:none;">
       <div class="plan-header">
         <div>
-          <div class="plan-title" id="planTitle">รายละเอียดการ Sale Pitch วันที่ —</div>
-          <div class="plan-sub">เลือกวัน แล้วเพิ่มรายการลูกค้าที่จะติดต่อ จากนั้นกด “บันทึกทั้งหมด”</div>
+          <!-- ตัดคำว่า “รายละเอียดการ” -->
+          <div class="plan-title" id="planTitle">Sale Pitch วันที่ —</div>
+          <!-- ลบคำอธิบายย่อย -->
+          <div class="plan-sub" style="display:none;"></div>
         </div>
         <div class="plan-actions">
           <label class="field" style="min-width: 180px;">
             <span style="font-weight:700;">วันที่</span>
             <input id="planDate" type="date" class="input">
           </label>
-          <button id="addRowBtn" class="btn btn-ghost">+ เพิ่มคนถัดไป</button>
-          <button id="saveAllBtn" class="btn btn-primary">💾 บันทึกทั้งหมด</button>
+          <!-- ปุ่มถูกย้ายไปด้านล่าง -->
         </div>
       </div>
 
@@ -154,16 +159,20 @@
               <th style="width:48px;">#</th>
               <th style="min-width: 280px;">ชื่อ (พิมพ์เพื่อค้นหา)</th>
               <th class="hide-sm">โปรโมชันที่นำเสนอ</th>
-              <th>รายละเอียด</th>
+              <th>Outcome</th>
               <th class="hide-sm">คอมเมนต์</th>
               <th class="hide-sm" style="width:120px;">ช่องทาง</th>
               <th style="width:68px;">ลบ</th>
             </tr>
           </thead>
-          <tbody id="planTbody">
-            <!-- dynamic rows -->
-          </tbody>
+          <tbody id="planTbody"></tbody>
         </table>
+      </div>
+
+      <!-- ปุ่มด้านล่างดราฟ -->
+      <div class="plan-footer">
+        <button id="addRowBtn" class="btn btn-ghost">+ เพิ่มคนถัดไป</button>
+        <button id="saveAllBtn" class="btn btn-primary">💾 บันทึกทั้งหมด</button>
       </div>
     </div>
 
@@ -196,9 +205,7 @@
         </div>
       </div>
 
-      <div id="historyWrap">
-        <!-- dynamic day cards -->
-      </div>
+      <div id="historyWrap"></div>
     </div>
 
   </div>
@@ -249,9 +256,9 @@
     ];
     const CHANNELS = ['call','line','visit','facebook','instagram','other'];
 
-    let customers = [];           // raw list
-    let customerIndex = new Map();// key (display) -> {opd,name,phone}
-    let customerByOPD = new Map();// opd -> customer
+    let customers = [];
+    let customerIndex = new Map();
+    let customerByOPD = new Map();
 
     // ========= Elements =========
     const newPlanBtn = $('#newPlanBtn');
@@ -274,14 +281,9 @@
 
     // ========= Draft LocalStorage =========
     const DRAFT_KEY = 'crm_pitch_draft_v1';
-    const loadDraft = ()=>{
-      try{ return JSON.parse(localStorage.getItem(DRAFT_KEY)) || null; }catch{return null;}
-    };
+    const loadDraft = ()=>{ try{ return JSON.parse(localStorage.getItem(DRAFT_KEY)) || null; }catch{return null;} };
     const saveDraft = debounce(()=>{
-      const draft = {
-        date: planDate.value || todayISO(),
-        rows: getRowsPayload(true) // include invalid for restore
-      };
+      const draft = { date: planDate.value || todayISO(), rows: getRowsPayload(true) };
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
     }, 300);
     const clearDraft = ()=> localStorage.removeItem(DRAFT_KEY);
@@ -295,8 +297,7 @@
       // history default range: last 14 days
       const to = todayISO();
       const from = new Date(Date.now() - 13*24*3600*1000).toISOString().slice(0,10);
-      histFrom.value = from;
-      histTo.value = to;
+      histFrom.value = from; histTo.value = to;
 
       await loadCustomers();
       buildCustomerDatalist();
@@ -306,16 +307,12 @@
       newPlanCard.style.display = 'block';
       planDate.value = draft?.date || todayISO();
       updatePlanTitle();
-      if(draft?.rows?.length){
-        draft.rows.forEach(addRowFromDraft);
-      }else{
-        addEmptyRow();
-      }
+      if(draft?.rows?.length){ draft.rows.forEach(addRowFromDraft); } else { addEmptyRow(); }
 
       // initial history
       await reloadHistory();
 
-      // KPIs (optional quick calc from history loaded)
+      // KPIs
       updateKPIsFromHistoryCache();
     })();
 
@@ -332,9 +329,7 @@
           customerIndex.set(label, {opd, name, phone});
           customerByOPD.set(opd, {opd, name, phone});
         });
-      }catch{
-        showToast('โหลดรายชื่อลูกค้าไม่สำเร็จ','error');
-      }
+      }catch{ showToast('โหลดรายชื่อลูกค้าไม่สำเร็จ','error'); }
     }
     function buildCustomerDatalist(){
       const dl = $('#customerList');
@@ -343,7 +338,7 @@
 
     function updatePlanTitle(){
       const d = planDate.value || todayISO();
-      planTitle.textContent = `รายละเอียดการ Sale Pitch วันที่ ${fmtThaiDate(d)}`;
+      planTitle.textContent = `Sale Pitch วันที่ ${fmtThaiDate(d)}`;
     }
 
     // ========= Plan Rows =========
@@ -376,7 +371,6 @@
       `;
       planTbody.appendChild(tr);
 
-      // events
       const custInput = tr.querySelector('.input-cust');
       const meta = tr.querySelector('.cust-meta');
       custInput.addEventListener('change', ()=>{
@@ -407,12 +401,10 @@
       const tr = planTbody.lastElementChild;
       const custInput = tr.querySelector('.input-cust');
       const meta = tr.querySelector('.cust-meta');
-      // attempt to map back
       if(row.opd && customerByOPD.has(row.opd)){
         const c = customerByOPD.get(row.opd);
         const label = `${c.name||c.opd} — ${c.opd}${c.phone?` / ${c.phone}`:''}`;
-        custInput.value = label;
-        tr.dataset.opd = c.opd;
+        custInput.value = label; tr.dataset.opd = c.opd;
         meta.textContent = `OPD ${c.opd}${c.phone?` • ${c.phone}`:''}`;
       }else if(row.customer_label){
         custInput.value = row.customer_label;
@@ -450,7 +442,7 @@
       return rows;
     }
 
-    // ========= Events: Plan section =========
+    // ========= Plan events =========
     newPlanBtn.addEventListener('click', ()=>{
       newPlanCard.style.display = 'block';
       if(!planDate.value) planDate.value = todayISO();
@@ -458,7 +450,6 @@
       showToast('พร้อมสร้างบันทึกใหม่');
     });
     planDate.addEventListener('change', ()=>{ updatePlanTitle(); saveDraft(); });
-
     addRowBtn.addEventListener('click', ()=>{ addEmptyRow(); });
 
     clearDraftBtn.addEventListener('click', ()=>{
@@ -474,11 +465,9 @@
       const rows = getRowsPayload();
       if(!rows.length){ showToast('ยังไม่มีรายการให้บันทึก','warn'); return; }
 
-      // validate
       const invalids = rows.filter(r=> !r.opd || !r.outcome);
       if(invalids.length){
         showToast('กรุณาเลือกชื่อลูกค้าจากรายการ (ให้ขึ้น OPD ใต้ช่อง) และเลือกผลลัพธ์','warn');
-        // highlight invalid inputs
         $$('#planTbody > tr').forEach(tr=>{
           const custInput = tr.querySelector('.input-cust');
           if(!tr.dataset.opd) custInput.classList.add('invalid');
@@ -491,23 +480,14 @@
         const res = await fetch('/api/add_pitches_bulk', {
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body: JSON.stringify(rows.map(r=>({
-            date: r.date,
-            opd: r.opd,
-            promotion: r.promotion,
-            outcome: r.outcome,
-            content: r.content,
-            channel: r.channel
-          })))
+          body: JSON.stringify(rows.map(r=>({ date:r.date, opd:r.opd, promotion:r.promotion, outcome:r.outcome, content:r.content, channel:r.channel })))
         });
         const d = await res.json();
         if(res.ok){
           showToast(`บันทึกสำเร็จ ${d.inserted||rows.length} รายการ ✅`);
-          // clear success rows; keep failed if any
           planTbody.innerHTML = '';
           addEmptyRow();
           clearDraft();
-          // refresh history + KPI
           await reloadHistory();
           updateKPIsFromHistoryCache();
         }else{
@@ -520,8 +500,19 @@
       }
     });
 
-    // ========= History =========
-    let historyCache = []; // flat list of items within range
+    // ========= History (with Outcome frequency sort by clicking header) =========
+    let historyCache = [];
+    let outcomeFreqMap = {}; // นับความถี่ outcome ทั้งช่วง
+    const dayOutcomeOrder = new Map(); // dayISO -> '', 'desc', 'asc'
+
+    function buildOutcomeFreq(){
+      const freq = {};
+      for(const x of historyCache){
+        const k = x.outcome || '';
+        freq[k] = (freq[k]||0) + 1;
+      }
+      outcomeFreqMap = freq;
+    }
 
     async function reloadHistory(){
       const from = histFrom.value || todayISO();
@@ -544,20 +535,21 @@
         if(!Array.isArray(list)) throw new Error('invalid');
         historyCache = list;
 
-        // group by date (YYYY-MM-DD)
+        buildOutcomeFreq();
+
+        // group by date
         const groups = new Map();
         for(const x of list){
           const d = (x.created_at||x.date||'').slice(0,10);
           if(!groups.has(d)) groups.set(d, []);
           groups.get(d).push(x);
         }
-        // sort day desc
         const days = Array.from(groups.keys()).sort((a,b)=> b.localeCompare(a));
-        // render
         const frag = document.createDocumentFragment();
         days.forEach(day=>{
-          const items = groups.get(day).sort((a,b)=> (b.created_at||'').localeCompare(a.created_at||''));
-          const card = renderDayCard(day, items);
+          // ไม่เปลี่ยนค่าที่ผู้ใช้เคยเลือก เริ่มต้นไม่มีการเรียง
+          if(!dayOutcomeOrder.has(day)) dayOutcomeOrder.set(day, '');
+          const card = renderDayCard(day, groups.get(day));
           frag.appendChild(card);
         });
         historyWrap.innerHTML = '';
@@ -570,47 +562,99 @@
       }
     }
 
+    function isInterested(outcomeText){
+  return /^สนใจ/.test(String(outcomeText || '').trim());
+}
+
+    function sortItemsByOutcomeFreq(items, order){
+      if(!order) {
+        // ปกติ: เวลาใหม่ก่อน
+        return [...items].sort((a,b)=> (b.created_at||'').localeCompare(a.created_at||''));
+      }
+      return [...items].sort((a,b)=>{
+        const fa = outcomeFreqMap[a.outcome||'']||0;
+        const fb = outcomeFreqMap[b.outcome||'']||0;
+        if(fa === fb) return (b.created_at||'').localeCompare(a.created_at||'');
+        return order === 'desc' ? (fb - fa) : (fa - fb);
+      });
+    }
+
     function renderDayCard(dayISO, items){
+      const order = dayOutcomeOrder.get(dayISO) || '';
+      const itemsSorted = sortItemsByOutcomeFreq(items, order);
+
       const div = document.createElement('div');
       div.className = 'day-card';
       const total = items.length;
-      const opened = (dayISO === todayISO()); // today open by default
+      const interested = items.filter(x=> isInterested(x.outcome)).length;
+      const notInterested = total - interested;
+      const opened = (dayISO === todayISO());
       div.innerHTML = `
         <div class="day-head" data-toggle>
           <div class="day-title">${fmtThaiDate(dayISO)}</div>
           <div class="day-meta">
             <span class="badge">ทั้งหมด: ${total}</span>
+            <span class="badge">สนใจ: ${interested}</span>
+            <span class="badge">ไม่สนใจ: ${notInterested}</span>
           </div>
         </div>
         <div class="day-body ${opened?'open':''}">
           <div class="history-row history-head">
-            <div>เวลา</div><div>ลูกค้า</div><div class="hide-sm">โปรโมชัน</div><div>Outcome</div><div class="hide-sm">คอมเมนต์</div><div class="hide-sm">ช่องทาง</div>
+            <div>เวลา</div>
+            <div>ลูกค้า</div>
+            <div class="hide-sm">โปรโมชัน</div>
+            <div class="sortable" data-sort-outcome>
+              Outcome
+              <span class="sort-ind" data-sort-ind>${order===''?'↕':order==='desc'?'▼ มาก→น้อย':'▲ น้อย→มาก'}</span>
+            </div>
+            <div class="hide-sm">คอมเมนต์</div>
+            <div class="hide-sm">ช่องทาง</div>
           </div>
-          ${items.map(x=>{
-            const time = (x.created_at||'').slice(11,16);
-            const opd = pad4(x.opd||'');
-            const name = x.customer_name || (customerByOPD.get(opd)?.name) || opd;
-            const promo = x.promotion || '';
-            const outcome = x.outcome || '';
-            const content = (x.content||'').replace(/</g,'&lt;');
-            const channel = x.channel || '';
-            return `
-              <div class="history-row">
-                <div>${time||'-'}</div>
-                <div>${name} <span style="color:#64748b;">• OPD ${opd}</span></div>
-                <div class="hide-sm">${promo||'—'}</div>
-                <div><span class="outcome-badge">${outcome||'-'}</span></div>
-                <div class="hide-sm">${content||'—'}</div>
-                <div class="hide-sm">${channel||'-'}</div>
-              </div>
-            `;
-          }).join('')}
+          <div class="rows" data-rows>
+            ${itemsSorted.map(renderHistoryRow).join('')}
+          </div>
         </div>
       `;
-      div.querySelector('[data-toggle]').addEventListener('click', ()=>{
+      // toggle open/close
+      div.querySelector('[data-toggle]').addEventListener('click', (e)=>{
+        // อย่าพับเมื่อคลิกหัวตารางเพื่อเรียง
+        if(e.target.closest('[data-sort-outcome]')) return;
         div.querySelector('.day-body').classList.toggle('open');
       });
+      // click to sort by outcome freq
+      div.querySelector('[data-sort-outcome]').addEventListener('click', ()=>{
+        const current = dayOutcomeOrder.get(dayISO) || '';
+        const next = current==='' ? 'desc' : (current==='desc' ? 'asc' : '');
+        dayOutcomeOrder.set(dayISO, next);
+
+        const rowsWrap = div.querySelector('[data-rows]');
+        const ind = div.querySelector('[data-sort-ind]');
+        ind.textContent = next==='' ? '↕' : (next==='desc'?'▼ มาก→น้อย':'▲ น้อย→มาก');
+
+        const sorted = sortItemsByOutcomeFreq(items, next);
+        rowsWrap.innerHTML = sorted.map(renderHistoryRow).join('');
+      });
       return div;
+    }
+
+    function renderHistoryRow(x){
+      const time = (x.created_at||'').slice(11,16);
+      const opd = pad4(x.opd||'');
+      const name = x.customer_name || (customerByOPD.get(opd)?.name) || opd;
+      const promo = x.promotion || '';
+      const outcome = x.outcome || '';
+      const content = String(x.content||'').replace(/</g,'&lt;');
+      const channel = x.channel || '';
+      return `
+        <div class="history-row">
+          <div>${time||'-'}</div>
+          <div>${name} <span style="color:#64748b;">• OPD ${opd}</span></div>
+          <div class="hide-sm">${promo||'—'}</div>
+          <div><span class="outcome-badge">${outcome||'-'}</span></div>
+          <div class="hide-sm">${content||'—'}</div>
+          <div class="hide-sm">${channel||'-'}</div>
+        </div>
+      `;
     }
 
     // history controls
@@ -649,14 +693,13 @@
       showToast('ส่งออก CSV แล้ว');
     });
 
-    // ========= KPIs (basic from history cache) =========
+    // ========= KPIs =========
     function updateKPIsFromHistoryCache(){
       const today = todayISO();
       const now = new Date();
-      const startOfWeek = new Date(now); // assume Mon as start? use 7-day window instead for simplicity
-      const dow = now.getDay(); // 0 Sun..6 Sat
+      const dow = now.getDay();
       const diffToMon = (dow + 6) % 7;
-      startOfWeek.setDate(now.getDate() - diffToMon);
+      const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - diffToMon);
       const sow = startOfWeek.toISOString().slice(0,10);
       const som = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
 
@@ -667,15 +710,12 @@
         if(d>=sow) w++;
         if(d>=som) m++;
       }
-      kpiToday.textContent = t;
-      kpiWeek.textContent = w;
-      kpiMonth.textContent = m;
+      kpiToday.textContent = t; kpiWeek.textContent = w; kpiMonth.textContent = m;
     }
   </script>
 
 {% endblock %}
 
-  {# วางไว้ท้าย <body> เพื่อให้ DOM พร้อมก่อน #}
   {% include "floating_menu.html" %}
 </body>
 </html>
