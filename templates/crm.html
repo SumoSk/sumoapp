@@ -16,9 +16,9 @@
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      font-family:'Prompt','Segoe UI',sans-serif; /* ฟอนต์ตามที่ขอ */
+      font-family:'Prompt','Segoe UI',sans-serif;
       color:var(--text); background:var(--bg);
-      font-size: 12px; margin:0;
+      font-size:12px; margin:0;
     }
     .container{ max-width:1180px; margin:18px auto 100px; padding:0 12px; }
     .appbar{
@@ -28,26 +28,19 @@
     .appbar-inner{ max-width:1180px; margin:0 auto; padding:10px 12px; display:flex; align-items:center; gap:10px; }
     .title{ font-weight:800; font-size: clamp(16px,2.2vw,20px); display:flex; align-items:center; gap:8px; }
 
-    .btn{
-      appearance:none; border:none; border-radius:10px; padding:7px 10px; cursor:pointer; font-weight:700;
-      display:inline-flex; align-items:center; gap:6px; transition:.15s; font-size:12px;
-    }
+    .btn{ appearance:none; border:none; border-radius:10px; padding:7px 10px; cursor:pointer; font-weight:700;
+      display:inline-flex; align-items:center; gap:6px; transition:.15s; font-size:12px; }
     .btn:active{ transform: translateY(1px); }
     .btn-primary{ background:var(--primary); color:#fff; box-shadow:0 6px 18px rgba(14,165,164,.15); }
     .btn-primary:hover{ background:var(--primary-600); }
     .btn-ghost{ background:#fff; color:var(--text); border:1px solid var(--line); }
-    .btn-danger{ background:var(--danger); color:#fff; }
     .btn-icon{ padding:6px; border-radius:8px; }
 
-    .card{
-      background:var(--card); border:1px solid var(--line); border-radius: var(--radius);
-      box-shadow: 0 8px 22px rgba(2,8,23,.05);
-    }
+    .card{ background:var(--card); border:1px solid var(--line); border-radius: var(--radius);
+      box-shadow: 0 8px 22px rgba(2,8,23,.05); }
     .section{ margin-top:14px; }
 
-    .toolbar{
-      display:flex; flex-wrap:wrap; gap:8px; padding:10px; border-bottom:1px solid var(--line); align-items:center;
-    }
+    .toolbar{ display:flex; flex-wrap:wrap; gap:8px; padding:10px; border-bottom:1px solid var(--line); align-items:center; }
 
     .field{ display:grid; gap:4px; }
     .input, select, textarea{
@@ -58,7 +51,6 @@
     /* ===== New Plan Table ===== */
     .plan-header{ padding:10px 12px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; justify-content:space-between; }
     .plan-title{ font-weight:800; font-size:14px; }
-    .plan-sub{ color:#64748b; font-weight:500; }
     .plan-actions{ display:flex; gap:8px; align-items:center; }
     .plan-footer{ padding:10px 12px; border-top:1px solid var(--line); display:flex; gap:8px; justify-content:flex-end; }
 
@@ -72,10 +64,8 @@
     tbody tr:hover td{ background:#fafafa; }
     .row-actions{ display:flex; gap:6px; }
 
-    .badge{
-      display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border-radius:999px;
-      font-size:11px; background:#ecfeff; color:#155e75; border:1px solid #a5f3fc;
-    }
+    .badge{ display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border-radius:999px;
+      font-size:11px; background:#ecfeff; color:#155e75; border:1px solid #a5f3fc; }
     .kpis{ display:flex; gap:8px; flex-wrap:wrap; }
 
     .toast-wrap{ position:fixed; right:12px; bottom:12px; display:grid; gap:8px; z-index:80; }
@@ -86,26 +76,50 @@
     /* ===== History Section ===== */
     .history-toolbar{ padding:10px; display:flex; flex-wrap:wrap; gap:8px; border-bottom:1px solid var(--line); align-items:center; }
     .day-card{ border-top:1px solid var(--line); }
-    .day-head{
-      padding:10px 12px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; background:#fff;
-    }
+    .day-head{ padding:10px 12px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; background:#fff; }
     .day-head:hover{ background:#f8fafc; }
     .day-title{ font-weight:800; }
     .day-meta{ color:#64748b; display:flex; gap:8px; align-items:center; }
     .day-body{ padding:6px 12px 12px; display:none; }
     .day-body.open{ display:block; }
-    .history-row{ display:grid; grid-template-columns: 78px 1fr 1.1fr 1fr 2fr 0.8fr; gap:8px; padding:8px 0; border-bottom:1px dashed var(--line); }
+
+    /* เพิ่มคอลัมน์ actions (สุดท้าย) */
+    .history-row{
+  display:grid;
+  grid-template-columns: 78px 1fr 1.1fr 1fr 2fr 0.8fr 92px; /* เดิม 64px */
+  gap:8px; padding:8px 0; border-bottom:1px dashed var(--line);
+}
+/* จัดปุ่มในคอลัมน์ actions ให้อยู่แถวเดียว */
+.history-row [data-cell="actions"]{
+  display:flex;
+  gap:6px;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:nowrap;
+}
+
     .history-head{ font-weight:700; color:#0f766e; }
     .outcome-badge{ padding:2px 6px; border-radius:999px; font-size:11px; border:1px solid #e2e8f0; background:#f8fafc; }
 
     .sortable{ cursor:pointer; user-select:none; display:inline-flex; align-items:center; gap:6px; }
     .sort-ind{ font-size:11px; color:#0f766e; opacity:.8; }
 
+    /* ไอคอนเล็ก */
+    .icon-btn{
+      appearance:none; border:1px solid var(--line); background:#fff; color:#0f172a;
+      border-radius:8px; padding:3px 6px; font-size:12px; cursor:pointer;
+    }
+    .icon-btn + .icon-btn{ margin-left:6px; }
+    .icon-btn:hover{ box-shadow:0 0 0 3px var(--ring); }
+    .icon-save{ border-color:#a7f3d0; }
+    .icon-cancel{ border-color:#fecaca; }
+
     @media (max-width: 820px){
-      .history-row{ grid-template-columns: 66px 1fr 1fr; }
+      .history-row{ grid-template-columns: 66px 1fr 1fr 64px; }
       .hide-sm{ display:none; }
       table{ min-width:860px; }
     }
+
   </style>
   {% endblock %}
 </head>
@@ -133,17 +147,13 @@
     <div class="section card" id="newPlanCard" style="display:none;">
       <div class="plan-header">
         <div>
-          <!-- ตัดคำว่า “รายละเอียดการ” -->
           <div class="plan-title" id="planTitle">Sale Pitch วันที่ —</div>
-          <!-- ลบคำอธิบายย่อย -->
-          <div class="plan-sub" style="display:none;"></div>
         </div>
         <div class="plan-actions">
           <label class="field" style="min-width: 180px;">
             <span style="font-weight:700;">วันที่</span>
             <input id="planDate" type="date" class="input">
           </label>
-          <!-- ปุ่มถูกย้ายไปด้านล่าง -->
         </div>
       </div>
 
@@ -169,7 +179,6 @@
         </table>
       </div>
 
-      <!-- ปุ่มด้านล่างดราฟ -->
       <div class="plan-footer">
         <button id="addRowBtn" class="btn btn-ghost">+ เพิ่มคนถัดไป</button>
         <button id="saveAllBtn" class="btn btn-primary">💾 บันทึกทั้งหมด</button>
@@ -451,30 +460,23 @@
     });
     planDate.addEventListener('change', ()=>{ updatePlanTitle(); saveDraft(); });
     addRowBtn.addEventListener('click', ()=>{ addEmptyRow(); });
-
     clearDraftBtn.addEventListener('click', ()=>{
       if(confirm('ล้าง Draft ทั้งหมด?')){
-        clearDraft();
-        planTbody.innerHTML = '';
-        addEmptyRow();
-        showToast('ล้าง Draft แล้ว','warn');
+        clearDraft(); planTbody.innerHTML = ''; addEmptyRow(); showToast('ล้าง Draft แล้ว','warn');
       }
     });
-
     saveAllBtn.addEventListener('click', async ()=>{
       const rows = getRowsPayload();
       if(!rows.length){ showToast('ยังไม่มีรายการให้บันทึก','warn'); return; }
-
       const invalids = rows.filter(r=> !r.opd || !r.outcome);
       if(invalids.length){
-        showToast('กรุณาเลือกชื่อลูกค้าจากรายการ (ให้ขึ้น OPD ใต้ช่อง) และเลือกผลลัพธ์','warn');
+        showToast('กรุณาเลือกชื่อลูกค้าจากรายการ และเลือกผลลัพธ์','warn');
         $$('#planTbody > tr').forEach(tr=>{
           const custInput = tr.querySelector('.input-cust');
           if(!tr.dataset.opd) custInput.classList.add('invalid');
         });
         return;
       }
-
       saveAllBtn.disabled = true; saveAllBtn.textContent = 'กำลังบันทึก...';
       try{
         const res = await fetch('/api/add_pitches_bulk', {
@@ -485,24 +487,16 @@
         const d = await res.json();
         if(res.ok){
           showToast(`บันทึกสำเร็จ ${d.inserted||rows.length} รายการ ✅`);
-          planTbody.innerHTML = '';
-          addEmptyRow();
-          clearDraft();
-          await reloadHistory();
-          updateKPIsFromHistoryCache();
-        }else{
-          showToast(d.error||'บันทึกไม่สำเร็จ','error');
-        }
-      }catch(e){
-        showToast('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้','error');
-      }finally{
-        saveAllBtn.disabled = false; saveAllBtn.textContent = '💾 บันทึกทั้งหมด';
-      }
+          planTbody.innerHTML=''; addEmptyRow(); clearDraft();
+          await reloadHistory(); updateKPIsFromHistoryCache();
+        }else{ showToast(d.error||'บันทึกไม่สำเร็จ','error'); }
+      }catch{ showToast('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้','error'); }
+      finally{ saveAllBtn.disabled=false; saveAllBtn.textContent='💾 บันทึกทั้งหมด'; }
     });
 
-    // ========= History (with Outcome frequency sort by clicking header) =========
+    // ========= History (sortable Outcome + actions) =========
     let historyCache = [];
-    let outcomeFreqMap = {}; // นับความถี่ outcome ทั้งช่วง
+    let outcomeFreqMap = {};      // ความถี่ Outcome
     const dayOutcomeOrder = new Map(); // dayISO -> '', 'desc', 'asc'
 
     function buildOutcomeFreq(){
@@ -524,8 +518,7 @@
       historyWrap.innerHTML = '<div style="padding:12px;">กำลังโหลด...</div>';
       try{
         const url = new URL('/api/pitches_by_date', window.location.origin);
-        url.searchParams.set('from', from);
-        url.searchParams.set('to', to);
+        url.searchParams.set('from', from); url.searchParams.set('to', to);
         if(q) url.searchParams.set('q', q);
         if(outcome) url.searchParams.set('outcome', outcome);
         if(channel) url.searchParams.set('channel', channel);
@@ -537,7 +530,6 @@
 
         buildOutcomeFreq();
 
-        // group by date
         const groups = new Map();
         for(const x of list){
           const d = (x.created_at||x.date||'').slice(0,10);
@@ -547,30 +539,24 @@
         const days = Array.from(groups.keys()).sort((a,b)=> b.localeCompare(a));
         const frag = document.createDocumentFragment();
         days.forEach(day=>{
-          // ไม่เปลี่ยนค่าที่ผู้ใช้เคยเลือก เริ่มต้นไม่มีการเรียง
           if(!dayOutcomeOrder.has(day)) dayOutcomeOrder.set(day, '');
           const card = renderDayCard(day, groups.get(day));
           frag.appendChild(card);
         });
-        historyWrap.innerHTML = '';
-        historyWrap.appendChild(frag);
-        if(!days.length){
-          historyWrap.innerHTML = '<div style="padding:12px; color:#64748b;">ยังไม่มีข้อมูลในช่วงนี้</div>';
-        }
+        historyWrap.innerHTML=''; historyWrap.appendChild(frag);
+        if(!days.length){ historyWrap.innerHTML = '<div style="padding:12px; color:#64748b;">ยังไม่มีข้อมูลในช่วงนี้</div>'; }
       }catch{
         historyWrap.innerHTML = '<div style="padding:12px; color:#b91c1c;">โหลดประวัติไม่สำเร็จ (ตรวจสอบ API /api/pitches_by_date)</div>';
       }
     }
 
     function isInterested(outcomeText){
-  return /^สนใจ/.test(String(outcomeText || '').trim());
-}
+      // นับ “สนใจ” เฉพาะที่ขึ้นต้นด้วยคำว่า “สนใจ”
+      return /^สนใจ/.test(String(outcomeText || '').trim());
+    }
 
     function sortItemsByOutcomeFreq(items, order){
-      if(!order) {
-        // ปกติ: เวลาใหม่ก่อน
-        return [...items].sort((a,b)=> (b.created_at||'').localeCompare(a.created_at||''));
-      }
+      if(!order) return [...items].sort((a,b)=> (b.created_at||'').localeCompare(a.created_at||''));
       return [...items].sort((a,b)=>{
         const fa = outcomeFreqMap[a.outcome||'']||0;
         const fb = outcomeFreqMap[b.outcome||'']||0;
@@ -604,33 +590,30 @@
             <div>ลูกค้า</div>
             <div class="hide-sm">โปรโมชัน</div>
             <div class="sortable" data-sort-outcome>
-              Outcome
-              <span class="sort-ind" data-sort-ind>${order===''?'↕':order==='desc'?'▼ มาก→น้อย':'▲ น้อย→มาก'}</span>
+              Outcome <span class="sort-ind" data-sort-ind>${order===''?'↕':order==='desc'?'▼ มาก→น้อย':'▲ น้อย→มาก'}</span>
             </div>
             <div class="hide-sm">คอมเมนต์</div>
             <div class="hide-sm">ช่องทาง</div>
+            <div>จัดการ</div>
           </div>
           <div class="rows" data-rows>
             ${itemsSorted.map(renderHistoryRow).join('')}
           </div>
         </div>
       `;
-      // toggle open/close
+      // toggle open/close (ยกเว้นคลิกที่ตัว sort)
       div.querySelector('[data-toggle]').addEventListener('click', (e)=>{
-        // อย่าพับเมื่อคลิกหัวตารางเพื่อเรียง
         if(e.target.closest('[data-sort-outcome]')) return;
         div.querySelector('.day-body').classList.toggle('open');
       });
-      // click to sort by outcome freq
+      // sort outcome
       div.querySelector('[data-sort-outcome]').addEventListener('click', ()=>{
         const current = dayOutcomeOrder.get(dayISO) || '';
         const next = current==='' ? 'desc' : (current==='desc' ? 'asc' : '');
         dayOutcomeOrder.set(dayISO, next);
-
         const rowsWrap = div.querySelector('[data-rows]');
         const ind = div.querySelector('[data-sort-ind]');
         ind.textContent = next==='' ? '↕' : (next==='desc'?'▼ มาก→น้อย':'▲ น้อย→มาก');
-
         const sorted = sortItemsByOutcomeFreq(items, next);
         rowsWrap.innerHTML = sorted.map(renderHistoryRow).join('');
       });
@@ -645,17 +628,125 @@
       const outcome = x.outcome || '';
       const content = String(x.content||'').replace(/</g,'&lt;');
       const channel = x.channel || '';
+      const id = x.id || `${x.created_at||''}|${opd}`; // fallback หาก API ยังไม่ส่ง id
+
       return `
-        <div class="history-row">
-          <div>${time||'-'}</div>
-          <div>${name} <span style="color:#64748b;">• OPD ${opd}</span></div>
-          <div class="hide-sm">${promo||'—'}</div>
-          <div><span class="outcome-badge">${outcome||'-'}</span></div>
-          <div class="hide-sm">${content||'—'}</div>
-          <div class="hide-sm">${channel||'-'}</div>
+        <div class="history-row" data-row data-id="${id}">
+          <div data-cell="time">${time||'-'}</div>
+          <div data-cell="name">${name} <span style="color:#64748b;">• OPD ${opd}</span></div>
+          <div class="hide-sm" data-cell="promotion">${promo||''}</div>
+          <div data-cell="outcome"><span class="outcome-badge">${outcome||''}</span></div>
+          <div class="hide-sm" data-cell="content">${content||''}</div>
+          <div class="hide-sm" data-cell="channel">${channel||''}</div>
+          <div data-cell="actions">
+            <button class="icon-btn" title="แก้ไข" data-action="edit">✏️</button>
+            <button class="icon-btn" title="ลบ" data-action="delete">🗑️</button>
+          </div>
         </div>
       `;
     }
+
+    // ===== Inline edit / delete handlers =====
+    function enterEditMode(rowEl){
+      if(rowEl.dataset.editing === '1') return;
+      rowEl.dataset.editing = '1';
+      const get = s => rowEl.querySelector(`[data-cell="${s}"]`);
+
+      const promoVal   = (get('promotion')?.textContent.trim() === '—') ? '' : get('promotion')?.textContent.trim();
+      const outcomeVal = (get('outcome')?.textContent || '').replace(/<[^>]*>/g,'').trim();
+      const contentVal = (get('content')?.textContent.trim() === '—') ? '' : get('content')?.textContent.trim();
+      const channelVal = (get('channel')?.textContent.trim() === '—') ? '' : get('channel')?.textContent.trim();
+
+      if(get('promotion')) get('promotion').innerHTML = `<input class="input" data-edit="promotion" value="${promoVal||''}">`;
+      get('outcome').innerHTML = `<select class="input" data-edit="outcome">
+        ${OUTCOMES.map(o=> `<option ${o===outcomeVal?'selected':''}>${o}</option>`).join('')}
+      </select>`;
+      if(get('content')) get('content').innerHTML = `<input class="input" data-edit="content" value="${contentVal||''}" placeholder="คอมเมนต์">`;
+      if(get('channel')) get('channel').innerHTML = `<select class="input" data-edit="channel">
+        ${CHANNELS.map(c=> `<option value="${c}" ${c===channelVal?'selected':''}>${c}</option>`).join('')}
+      </select>`;
+
+      get('actions').innerHTML = `
+        <button class="icon-btn icon-save" title="บันทึก" data-action="save">💾</button> <button class="icon-btn icon-cancel" title="ยกเลิก" data-action="cancel">↩️</button>
+      `;
+    }
+
+    function exitEditMode(rowEl, original){
+      rowEl.dataset.editing = '0';
+      const get = s => rowEl.querySelector(`[data-cell="${s}"]`);
+      if(original){
+        if(get('promotion')) get('promotion').textContent = original.promotion||'—';
+        get('outcome').innerHTML = `<span class="outcome-badge">${original.outcome||'-'}</span>`;
+        if(get('content')) get('content').textContent = original.content||'—';
+        if(get('channel')) get('channel').textContent = original.channel||'-';
+      }
+      get('actions').innerHTML = `
+        <button class="icon-btn" title="แก้ไข" data-action="edit">✏️</button> <button class="icon-btn" title="ลบ" data-action="delete">🗑️</button>
+      `;
+    }
+
+    async function saveRow(rowEl){
+      const id = rowEl.dataset.id;
+      const get = s => rowEl.querySelector(`[data-edit="${s}"]`);
+      const payload = {
+        id,
+        promotion: get('promotion')?.value?.trim() || '',
+        outcome: get('outcome')?.value || '',
+        content: get('content')?.value?.trim() || '',
+        channel: get('channel')?.value || ''
+      };
+      try{
+        const res = await fetch('/api/update_pitch', {
+          method:'PUT',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        if(!res.ok) throw 0;
+        showToast('บันทึกการแก้ไขแล้ว ✅');
+        await reloadHistory();
+      }catch{
+        showToast('แก้ไขไม่สำเร็จ','error');
+      }
+    }
+
+    async function deleteRow(rowEl){
+      const id = rowEl.dataset.id;
+      if(!confirm('ลบรายการนี้หรือไม่?')) return;
+      try{
+        const res = await fetch(`/api/delete_pitch?id=${encodeURIComponent(id)}`, { method:'DELETE' });
+        if(!res.ok) throw 0;
+        showToast('ลบแล้ว ✅');
+        rowEl.remove();
+      }catch{
+        showToast('ลบไม่สำเร็จ','error');
+      }
+    }
+
+    // ใช้ event delegation ที่ historyWrap
+    historyWrap.addEventListener('click', (e)=>{
+      const btn = e.target.closest('[data-action]');
+      if(!btn) return;
+      const row = e.target.closest('[data-row]');
+      if(!row) return;
+
+      const action = btn.dataset.action;
+      if(action==='edit'){
+        // เก็บของเดิมไว้สำหรับ cancel
+        row._original = {
+          promotion: row.querySelector('[data-cell="promotion"]')?.textContent.trim(),
+          outcome: row.querySelector('[data-cell="outcome"]')?.textContent.replace(/<[^>]*>/g,'').trim(),
+          content: row.querySelector('[data-cell="content"]')?.textContent.trim(),
+          channel: row.querySelector('[data-cell="channel"]')?.textContent.trim()
+        };
+        enterEditMode(row);
+      }else if(action==='cancel'){
+        exitEditMode(row, row._original);
+      }else if(action==='save'){
+        saveRow(row);
+      }else if(action==='delete'){
+        deleteRow(row);
+      }
+    });
 
     // history controls
     reloadHistoryBtn.addEventListener('click', reloadHistory);

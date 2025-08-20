@@ -74,7 +74,6 @@ def _rate_limited(bucket: Dict[str, deque], max_events: int, window_sec: int) ->
 # ⬇️ อนุญาตเฉพาะฟิลด์เหล่านี้ (ไม่มี vip และเพิ่ม profile)
 SAFE_CUSTOMER_FIELDS = {"name", "phone", "birthMonth", "note", "profile"}
 
-
 def login_required(view_func):
     def wrapper(*args, **kwargs):
         if "username" not in session:
@@ -83,12 +82,10 @@ def login_required(view_func):
     wrapper.__name__ = view_func.__name__
     return wrapper
 
-
 def normalize_opd(opd: Any) -> str:
     if opd is None:
         return ""
     return str(opd).strip().zfill(4)
-
 
 def safe_date_str(d: Any) -> str:
     # Expect 'YYYY-MM-DD...' and keep first 10 chars
@@ -96,6 +93,12 @@ def safe_date_str(d: Any) -> str:
         return ""
     return str(d)[:10]
 
+# --- NEW: sanitize helper — แปลง -, – , — ให้เป็นค่าว่าง ---
+def _clean_dash(v):
+    if v is None:
+        return None
+    s = str(v).strip()
+    return "" if s in {"-", "–", "—"} else s
 
 # =============================================================
 # Auth Views
@@ -133,13 +136,11 @@ def login():
             error = 'เกิดข้อผิดพลาดในการเชื่อมต่อกับระบบ'
     return render_template('login.html', error=error)
 
-
 @app.route('/logout')
 @login_required
 def logout():
     session.clear()
     return redirect(url_for('login'))
-
 
 @app.route('/pin-login', methods=['POST'])
 def pin_login():
@@ -160,7 +161,6 @@ def pin_login():
         app.logger.error(f"PIN LOGIN ERROR: {e}")
         return jsonify({"success": False})
 
-
 # =============================================================
 # Page Views (UI)
 # =============================================================
@@ -169,72 +169,60 @@ def pin_login():
 def dashboard():
     return render_template('dashboard.html', username=session['username'], role=session.get('role', ''))
 
-
 @app.route('/record_sales')
 @login_required
 def record_sales():
     return render_template('record_sales.html')
-
 
 @app.route('/sale_summary')
 @login_required
 def sale_summary():
     return render_template('sale-summary.html')
 
-
 @app.route('/record_customer')
 @login_required
 def record_customer():
     return render_template('record_customer.html')
-
 
 @app.route('/customer_list')
 @login_required
 def customer_list():
     return render_template('customer_list.html')
 
-
 @app.route('/oldsaledata')
 @login_required
 def oldsaledata():
     return render_template('oldsaledata.html')
-
 
 @app.route('/inventory')
 @login_required
 def inventory():
     return render_template('inventory.html')
 
-
 @app.route('/appointments')
 @login_required
 def appointments():
     return render_template('appointments.html')
-
 
 @app.route('/sales_chart')
 @login_required
 def sales_chart():
     return render_template('sales_chart.html')
 
-
 @app.route('/daily_sales_graph')
 @login_required
 def daily_sales_graph():
     return render_template('daily_sales_graph.html')
-
 
 @app.route('/crm')
 @login_required
 def crm():
     return render_template('crm.html')
 
-
 @app.route('/staff')
 @login_required
 def staff():
     return render_template('staff.html')
-
 
 # =============================================================
 # API — Sales & Customers
@@ -242,7 +230,6 @@ def staff():
 @app.route('/api/test')
 def test_route():
     return jsonify({"status": "ok"})
-
 
 @app.route('/api/customers')
 @login_required
@@ -285,7 +272,6 @@ def api_customers():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/api/update_customer', methods=['POST'])
 @login_required
 def update_customer():
@@ -303,7 +289,6 @@ def update_customer():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/api/add_customer', methods=['POST'])
 @login_required
 def add_customer():
@@ -311,17 +296,14 @@ def add_customer():
     data = dict(data or {})
     data['opd'] = normalize_opd(data.get('opd'))
     try:
-        # ถ้าตารางมีคอลัมน์ id อยู่ก็จะ select ได้; ถ้าไม่มีสามารถเปลี่ยนเป็น select("opd") ได้
         check = supabase.table("customers").select("opd").eq("opd", data['opd']).execute()
         if check.data:
             return jsonify({"error": "มี OPD นี้อยู่แล้ว"}), 400
-        # allow only known fields to be inserted (basic sanitation)
         payload = {k: v for k, v in data.items() if k in (SAFE_CUSTOMER_FIELDS | {"opd"})}
         supabase.table("customers").insert(payload).execute()
         return jsonify({"message": "เพิ่มลูกค้าสำเร็จ"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/api/delete_customer', methods=['POST'])
 @login_required
@@ -335,7 +317,6 @@ def delete_customer_legacy():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/api/delete_customer_and_sales', methods=['POST'])
 @login_required
 def delete_customer_and_sales():
@@ -347,7 +328,6 @@ def delete_customer_and_sales():
         return jsonify({"message": "ลบสำเร็จ"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/api/sales')
 @login_required
@@ -380,7 +360,6 @@ def api_sales():
         return jsonify(all_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/api/save_sales', methods=['POST'])
 @login_required
@@ -466,7 +445,6 @@ def save_sales():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/api/delete_sales_record', methods=['POST'])
 @login_required
 def delete_sales_record():
@@ -479,7 +457,6 @@ def delete_sales_record():
         return jsonify({"message": "ลบสำเร็จ"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/api/cleanup_duplicates')
 @login_required
@@ -503,7 +480,6 @@ def cleanup_duplicates():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 # =============================================================
 # API — Sales Pitch (NEW)
 # =============================================================
@@ -526,19 +502,18 @@ def get_pitches():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/api/add_pitch', methods=['POST'])
 @login_required
 def add_pitch():
     """เพิ่มบันทึก pitch ใหม่ (append)"""
     data = request.get_json(force=True) or {}
     opd = normalize_opd(data.get("opd"))
-    content = (data.get("content") or "").strip()
+    content = _clean_dash(data.get("content") or "")
     channel = data.get("channel")
     outcome = data.get("outcome")
     author = session.get("username") or data.get("author")
 
-    if not opd or not content:
+    if not opd or content is None:
         return jsonify({"error": "opd and content required"}), 400
 
     try:
@@ -549,12 +524,13 @@ def add_pitch():
             "outcome": outcome,
             "author": author,
         }
+        if 'promotion' in data:
+            ins["promotion"] = _clean_dash(data.get("promotion"))
         r = supabase.table("customer_pitch_logs").insert(ins).execute()
         row = (r.data or [{}])[0]
         return jsonify({"message": "ok", "id": row.get("id"), "created_at": row.get("created_at")})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/api/add_pitches_bulk', methods=['POST'])
 @login_required
@@ -564,6 +540,8 @@ def add_pitches_bulk():
     Payload: [{date:'YYYY-MM-DD', opd:'0123', promotion:'...', outcome:'...', content:'...', channel:'call'}]
     หมายเหตุ: ถ้ายังไม่ได้เพิ่มคอลัมน์ promotion ใน DB ฟิลด์นี้จะถูกละเลย (ไม่ทำให้พัง)
     """
+    # ให้แน่ใจว่า to_insert มีอยู่แม้ throw ก่อน
+    to_insert: List[Dict[str, Any]] = []
     try:
         rows = request.get_json(force=True)
         if not isinstance(rows, list):
@@ -571,7 +549,6 @@ def add_pitches_bulk():
 
         author = session.get('username', '')
 
-        to_insert = []
         for r in rows:
             date_str = (r.get('date') or '')[:10]
             if not date_str:
@@ -579,18 +556,18 @@ def add_pitches_bulk():
             # ใส่เวลา 12:00 UTC เพื่อกัน timezone ตัดวัน
             created_at_iso = f"{date_str}T12:00:00Z"
 
-            rec = {
+            rec: Dict[str, Any] = {
                 "opd": normalize_opd(r.get('opd')),
-                "content": r.get('content') or '',
+                "content": _clean_dash(r.get('content') or ''),
                 "channel": r.get('channel') or None,
                 "outcome": r.get('outcome') or None,
                 "author": author or None,
                 "created_at": created_at_iso,
             }
-            # ถ้าตารางมีคอลัมน์ promotion จะเก็บได้เอง (ถ้าไม่มี Supabase จะ error)
-            # ดังนั้นใส่แบบระมัดระวัง:
-            if 'promotion' in r and r.get('promotion'):
-                rec["promotion"] = r.get('promotion')
+            # แนบ promotion เฉพาะถ้ามีใน payload
+            if 'promotion' in r and r.get('promotion') is not None:
+                rec["promotion"] = _clean_dash(r.get('promotion'))
+
             to_insert.append(rec)
 
         if not to_insert:
@@ -599,9 +576,8 @@ def add_pitches_bulk():
         supabase.table('customer_pitch_logs').insert(to_insert).execute()
         return jsonify({"inserted": len(to_insert), "message": "ok"})
     except Exception as e:
-        # บางกรณีอาจ error เพราะคอลัมน์ promotion ไม่มี ให้ลองตัดทิ้งแล้ว insert ใหม่
         msg = str(e)
-        if 'promotion' in msg.lower():
+        if 'promotion' in msg.lower() and to_insert:
             try:
                 cleaned = [{k:v for k,v in r.items() if k != 'promotion'} for r in to_insert]
                 supabase.table('customer_pitch_logs').insert(cleaned).execute()
@@ -609,7 +585,6 @@ def add_pitches_bulk():
             except Exception as e2:
                 return jsonify({"error": str(e2)}), 500
         return jsonify({"error": msg}), 500
-
 
 @app.route('/api/pitches_by_date')
 @login_required
@@ -673,6 +648,67 @@ def pitches_by_date():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# ===== NEW: Update / Delete Pitch for inline editing =====
+@app.route('/api/update_pitch', methods=['PUT'])
+@login_required
+def update_pitch():
+    """
+    อัปเดตรายการ pitch ที่บันทึกไว้แล้ว
+    Body JSON: { id, promotion?, outcome?, content?, channel? }
+    """
+    data = request.get_json(force=True) or {}
+    rec_id = data.get('id')
+    if not rec_id:
+        return jsonify({"error": "missing id"}), 400
+
+    allowed = {'promotion', 'outcome', 'content', 'channel'}
+    payload = {k: _clean_dash(v) for k, v in data.items() if k in allowed}
+
+    if not payload:
+        return jsonify({"error": "no_fields_to_update"}), 400
+
+    try:
+        res = supabase.table('customer_pitch_logs').update(payload).eq('id', rec_id).execute()
+        if not res.data:
+            return jsonify({"error": "not_found"}), 404
+        return jsonify({"message": "updated", "row": res.data[0]})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/delete_pitch', methods=['DELETE'])
+@login_required
+def delete_pitch():
+    """
+    ลบรายการ pitch
+    ใช้ได้ทั้ง query string ?id=... หรือ ส่ง JSON {"id": ...}
+    """
+    rec_id = request.args.get('id')
+    if not rec_id:
+        body = request.get_json(silent=True) or {}
+        rec_id = body.get('id') if isinstance(body, dict) else None
+    if not rec_id:
+        return jsonify({"error": "missing id"}), 400
+
+    try:
+        res = supabase.table('customer_pitch_logs').delete().eq('id', rec_id).execute()
+        # Supabase จะคืน [] หากไม่มีแถวที่ลบ
+        if res.data is not None and len(res.data) == 0:
+            pass
+        return jsonify({"message": "deleted"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# --- NEW: one-off cleanup endpoint เพื่อล้างค่าขีดที่บันทึกค้างใน DB ---
+@app.route('/api/cleanup_pitch_dash', methods=['POST', 'GET'])
+@login_required
+def cleanup_pitch_dash():
+    try:
+        supabase.table('customer_pitch_logs').update({'content': ''}).in_('content', ['-', '–', '—']).execute()
+        supabase.table('customer_pitch_logs').update({'promotion': ''}).in_('promotion', ['-', '–', '—']).execute()
+        return jsonify({"message": "cleaned"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 # =============================================================
 # API — Oldsale & Inventory (kept for compatibility)
@@ -687,7 +723,6 @@ def api_oldsaledata():
         app.logger.error(f"ERROR loading oldsaledata: {e}")
         return jsonify({"error": str(e)}), 500
 
-
 @app.route("/api/inventory")
 @login_required
 def api_inventory():
@@ -697,18 +732,15 @@ def api_inventory():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route("/api/save_inventory", methods=["POST"])
 @login_required
 def api_save_inventory():
     data = request.get_json(force=True)
     try:
-        # Optional: Add simple duplicate check if you have a unique key
         supabase.table("inventory").insert(data).execute()
         return jsonify({"message": "success"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 # =============================================================
 # Main
