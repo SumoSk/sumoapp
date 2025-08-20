@@ -138,6 +138,22 @@ table{ font-size: calc(11px * var(--shrink)); }
 *[style*="font-size:10px"]{  font-size: calc(10px * var(--shrink)) !important; }
 *[style*="font-size:13.5px"]{ font-size: calc(13.5px * var(--shrink)) !important; }
 
+/* บังคับใช้ Prompt ทุก element รวมถึงปุ่ม/อินพุตที่ปกติไม่สืบทอดฟอนต์ */
+html, body, button, input, select, textarea,
+table, th, td, .btn, .month-btn, .current-range,
+.search-panel input, .summary-card, .day-header, .day-total {
+  font-family: 'Prompt', 'Segoe UI', Tahoma, sans-serif !important;
+}
+
+/* ทำให้การเรนเดอร์ฟอนต์สวยขึ้น */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+
   </style>
 </head>
 <body>
