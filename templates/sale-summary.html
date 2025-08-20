@@ -6,10 +6,10 @@
   <meta name="format-detection" content="telephone=no">
   <title>สรุปยอดขายประจำเดือน</title>
 
-  <!-- ฟอนต์: เร่งโหลด + กันเด้ง -->
+  <!-- ฟอนต์: เร่งโหลด + กันเด้ง + subset ไทย -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap&subset=thai" rel="stylesheet" />
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -19,7 +19,7 @@
 
     html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
     body{
-      font-family:'Prompt','Segoe UI',sans-serif;
+      font-family:'Prompt','Segoe UI',Tahoma,sans-serif;
       margin:0; background:#f7f7f7; padding:10px;
       font-size:11px; line-height:1.45;
     }
@@ -38,7 +38,7 @@
     .search-panel input{
       font-size:0.92rem; line-height:1.35;
     }
-    .month-btn{ background:#009688; color:#fff; border:none; border-radius:999px; padding:6px 12px; cursor:pointer; }
+    .month-btn{ background:#009688; color:#fff; border:none; border-radius:999px; padding:6px 8px; cursor:pointer; }
     .month-btn:disabled{ opacity:.5; cursor:not-allowed; }
     .month-btn.ghost{ background:#78909c; }
     #monthPicker{ position:absolute; left:-9999px; width:0; height:0; }
@@ -71,7 +71,7 @@
       position:fixed; bottom:120px; left:50%; transform:translateX(-50%);
       z-index:1001; display:flex; align-items:center; gap:8px;
       width:90%; max-width:600px; justify-content:center;
-      pointer-events:none; /* ป้องกันชนกับคลิกด้านล่าง ยกเว้น element ข้างในจะเปิดเอง */
+      pointer-events:none;
     }
     .search-fab{
       pointer-events:auto;
@@ -96,6 +96,7 @@
     .search-panel input{
       width:100%; border:none; outline:none; background:#fff;
       border-radius:20px; padding:8px 12px; font-size:11px; color:#222;
+      font-family:'Prompt','Segoe UI',Tahoma,sans-serif !important;
     }
     .search-close{
       border:none; background:#fff; border-radius:50%; width:28px; height:28px; cursor:pointer;
@@ -107,58 +108,43 @@
     @supports (-webkit-touch-callout: none) {
       html{ -webkit-text-size-adjust:100% !important; }
     }
+
     /* ===== Global font shrink switch ===== */
-:root{
-  /* ปรับได้: 1 = ขนาดเดิม, 0.9 = ย่อ 10%, 0.85 = ย่อ 15% */
-  --shrink: .90;
-}
+    :root{
+      /* ปรับได้: 1 = ขนาดเดิม, 0.9 = ย่อ 10%, 0.85 = ย่อ 15% */
+      --shrink:.90;
+    }
+    body{ font-size: calc(11px * var(--shrink)); }
+    h2{ font-size: calc(14px * var(--shrink)); }
+    .month-btn,
+    .current-range,
+    .summary-card,
+    .btn,
+    table,
+    .search-panel input{
+      font-size: calc(0.92rem * var(--shrink));
+    }
+    table{ font-size: calc(11px * var(--shrink)); }
+    .month-summary{ font-size: calc(12px * var(--shrink)); }
+    .compare{ font-size: calc(11px * var(--shrink)); }
+    *[style*="font-size:10px"]{  font-size: calc(10px * var(--shrink)) !important; }
+    *[style*="font-size:13.5px"]{ font-size: calc(13.5px * var(--shrink)) !important; }
 
-/* ข้อความหลัก */
-body{ font-size: calc(11px * var(--shrink)); }
-
-/* หัวข้อ */
-h2{ font-size: calc(14px * var(--shrink)); }
-
-/* ปุ่ม/แถบเดือน/ตาราง/ช่องค้นหา */
-.month-btn,
-.current-range,
-.summary-card,
-.btn,
-table,
-.search-panel input{
-  font-size: calc(0.92rem * var(--shrink));
-}
-
-/* ตาราง + แถวสรุป */
-table{ font-size: calc(11px * var(--shrink)); }
-.month-summary{ font-size: calc(12px * var(--shrink)); }
-.compare{ font-size: calc(11px * var(--shrink)); }
-
-/* ย่อจุดที่ใช้ inline-style (เช่น 10px/13.5px) ให้ตามมาด้วย */
-*[style*="font-size:10px"]{  font-size: calc(10px * var(--shrink)) !important; }
-*[style*="font-size:13.5px"]{ font-size: calc(13.5px * var(--shrink)) !important; }
-
-/* บังคับใช้ Prompt ทุก element รวมถึงปุ่ม/อินพุตที่ปกติไม่สืบทอดฟอนต์ */
-html, body, button, input, select, textarea,
-table, th, td, .btn, .month-btn, .current-range,
-.search-panel input, .summary-card, .day-header, .day-total {
-  font-family: 'Prompt', 'Segoe UI', Tahoma, sans-serif !important;
-}
-
-/* ทำให้การเรนเดอร์ฟอนต์สวยขึ้น */
-html {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-}
-
-
+    /* บังคับใช้ Prompt ทุก element รวมถึงปุ่ม/อินพุต */
+    html, body, button, input, select, textarea,
+    table, th, td, .btn, .month-btn, .current-range,
+    .summary-card, .day-header, .day-total {
+      font-family: 'Prompt','Segoe UI',Tahoma,sans-serif !important;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      font-synthesis: none;
+    }
   </style>
 </head>
 <body>
 
-  <!-- Floating Search: ไอคอนแว่นขยาย -->
+  <!-- Floating Search -->
   <div class="search-wrap" id="searchWrap" aria-label="ค้นหา">
     <button class="search-fab" id="searchFab" title="ค้นหา">
       <img alt="search" src="https://cdn-icons-png.flaticon.com/512/622/622669.png" />
@@ -188,22 +174,22 @@ html {
     </div>
   </div>
 
-  <!-- Floating toggle/menu (Jinja URLs เหมือนเดิม) -->
+  <!-- Floating toggle/menu (Jinja URLs) -->
   <div id="floatingToggle" class="floating-toggle">
     <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu" style="width:60px;height:60px;" />
   </div>
-<div id="floatingMenu" class="floating-menu" aria-hidden="true">
-  <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}" alt="Dashboard"></a>
-  <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}" alt="Sale summary"></a>
-  <a href="{{ url_for('crm') }}"><img src="{{ url_for('static', filename='icon/icon_crm.png') }}" alt="CRM"></a>
-  <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}" alt="Record sales"></a>
-  <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}" alt="Customer list"></a>
-  <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}" alt="Record customer"></a>
-  <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}" alt="Old customers"></a>
-  <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}" alt="Inventory"></a>
-  <a href="{{ url_for('staff') }}"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}" alt="Staff"></a>
-  <a href="{{ url_for('appointments') }}"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}" alt="Appointments"></a>
-</div>
+  <div id="floatingMenu" class="floating-menu" aria-hidden="true">
+    <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}" alt="Dashboard"></a>
+    <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}" alt="Sale summary"></a>
+    <a href="{{ url_for('crm') }}"><img src="{{ url_for('static', filename='icon/icon_crm.png') }}" alt="CRM"></a>
+    <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}" alt="Record sales"></a>
+    <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}" alt="Customer list"></a>
+    <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}" alt="Record customer"></a>
+    <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}" alt="Old customers"></a>
+    <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}" alt="Inventory"></a>
+    <a href="{{ url_for('staff') }}"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}" alt="Staff"></a>
+    <a href="{{ url_for('appointments') }}"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}" alt="Appointments"></a>
+  </div>
 
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
@@ -215,7 +201,7 @@ html {
     </div>
   </div>
 
-  <!-- Modal เลือกช่วงเวลา (เริ่ม-สิ้นสุด) -->
+  <!-- Modal เลือกช่วงเวลา -->
   <div id="month-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;justify-content:center;align-items:center;">
     <div id="month-modal-box" style="background:#fff;padding:16px;border-radius:12px;width:100%;max-width:340px;box-sizing:border-box;position:relative;">
       <button type="button" id="monthCloseBtn" aria-label="ปิด" style="position:absolute;top:8px;right:10px;border:none;background:none;font-size:20px;cursor:pointer;">&times;</button>
@@ -341,7 +327,6 @@ html {
     // ===== Rendering switch =====
     function renderView(){
       if (isRangeActive()) renderSelectedRange(); else renderSelectedMonth();
-      // รีเซ็ตผลค้นหาเมื่อเปลี่ยนมุมมอง และพับช่อง
       const input = document.getElementById('searchInput');
       if (input){ input.value=''; onSearch(); }
       toggleSearch(false);
@@ -579,7 +564,7 @@ html {
       }
     }
 
-    // ===== Row builder (มีหมายเหตุสีแดงตัวเล็ก) =====
+    // ===== Row builder =====
     function buildRow(r, subIndex){
       const tr = document.createElement('tr');
 
@@ -588,16 +573,17 @@ html {
       tr.appendChild(tdIndex);
 
       const tdName = document.createElement('td');
-tdName.innerHTML = `
-  <div>
-    <strong class="open-customer" 
-      style="cursor:pointer;color:#008080;" 
-      data-key="${encodeURIComponent((r.name||'')+'|'+(r.phone||''))}">
-      ${escapeHtml(r.name||'')}
-    </strong>
-    <div style="font-size:10px;color:#777;">${escapeHtml(r.opd||'-')}</div>
-  </div>`;
-tr.appendChild(tdName);
+      tdName.innerHTML = `
+        <div>
+          <strong class="open-customer" 
+            style="cursor:pointer;color:#008080;" 
+            data-key="${encodeURIComponent((r.name||'')+'|'+(r.phone||''))}">
+            ${escapeHtml(r.name||'')}
+          </strong>
+          <!-- แสดงเลข OPD ล้วน ๆ ไม่มีคำว่า OPD: -->
+          <div style="font-size:10px;color:#777;">${escapeHtml(r.opd||'-')}</div>
+        </div>`;
+      tr.appendChild(tdName);
 
       const tdPhone = document.createElement('td');
       const phoneSafe = escapeAttr(r.phone || '');
@@ -614,8 +600,8 @@ tr.appendChild(tdName);
         return `<li>${escapeHtml(item)}</li>`;
       }).join('');
       const noteHtml = (r.note && String(r.note).trim())
-  ? `<li style="color:#888; font-size:9px;">📝 ${escapeHtml(r.note)}</li>`
-  : '';
+        ? `<li style="color:#888; font-size:9px;">📝 ${escapeHtml(r.note)}</li>`
+        : '';
 
       const tdItems = document.createElement('td');
       tdItems.innerHTML = `<ul style='margin:0; padding-left:16px;'>${itemsUl}${noteHtml}</ul>`;
@@ -702,7 +688,6 @@ tr.appendChild(tdName);
       const t = e.target;
       if(!(wrap.contains(t))) toggleSearch(false);
     });
-    // กด ESC ปิดช่องค้นหา
     document.addEventListener('keydown', (e)=>{
       if(e.key === 'Escape' && wrap.classList.contains('open')){ document.getElementById('searchInput').value=''; onSearch(); toggleSearch(false); }
     });
