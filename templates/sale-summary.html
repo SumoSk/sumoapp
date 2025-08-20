@@ -107,6 +107,37 @@
     @supports (-webkit-touch-callout: none) {
       html{ -webkit-text-size-adjust:100% !important; }
     }
+    /* ===== Global font shrink switch ===== */
+:root{
+  /* ปรับได้: 1 = ขนาดเดิม, 0.9 = ย่อ 10%, 0.85 = ย่อ 15% */
+  --shrink: .90;
+}
+
+/* ข้อความหลัก */
+body{ font-size: calc(11px * var(--shrink)); }
+
+/* หัวข้อ */
+h2{ font-size: calc(14px * var(--shrink)); }
+
+/* ปุ่ม/แถบเดือน/ตาราง/ช่องค้นหา */
+.month-btn,
+.current-range,
+.summary-card,
+.btn,
+table,
+.search-panel input{
+  font-size: calc(0.92rem * var(--shrink));
+}
+
+/* ตาราง + แถวสรุป */
+table{ font-size: calc(11px * var(--shrink)); }
+.month-summary{ font-size: calc(12px * var(--shrink)); }
+.compare{ font-size: calc(11px * var(--shrink)); }
+
+/* ย่อจุดที่ใช้ inline-style (เช่น 10px/13.5px) ให้ตามมาด้วย */
+*[style*="font-size:10px"]{  font-size: calc(10px * var(--shrink)) !important; }
+*[style*="font-size:13.5px"]{ font-size: calc(13.5px * var(--shrink)) !important; }
+
   </style>
 </head>
 <body>
@@ -541,8 +572,16 @@
       tr.appendChild(tdIndex);
 
       const tdName = document.createElement('td');
-      tdName.innerHTML = `<div><strong class="open-customer" style="cursor:pointer;color:#0277bd;" data-key="${encodeURIComponent((r.name||'')+'|'+(r.phone||''))}">${escapeHtml(r.name||'')}</strong><div style="font-size:10px;color:#777;">OPD: ${escapeHtml(r.opd||'-')}</div></div>`;
-      tr.appendChild(tdName);
+tdName.innerHTML = `
+  <div>
+    <strong class="open-customer" 
+      style="cursor:pointer;color:#008080;" 
+      data-key="${encodeURIComponent((r.name||'')+'|'+(r.phone||''))}">
+      ${escapeHtml(r.name||'')}
+    </strong>
+    <div style="font-size:10px;color:#777;">${escapeHtml(r.opd||'-')}</div>
+  </div>`;
+tr.appendChild(tdName);
 
       const tdPhone = document.createElement('td');
       const phoneSafe = escapeAttr(r.phone || '');
@@ -559,8 +598,8 @@
         return `<li>${escapeHtml(item)}</li>`;
       }).join('');
       const noteHtml = (r.note && String(r.note).trim())
-        ? `<li style="color:#c62828; font-size:10px;">📝 ${escapeHtml(r.note)}</li>`
-        : '';
+  ? `<li style="color:#888; font-size:9px;">📝 ${escapeHtml(r.note)}</li>`
+  : '';
 
       const tdItems = document.createElement('td');
       tdItems.innerHTML = `<ul style='margin:0; padding-left:16px;'>${itemsUl}${noteHtml}</ul>`;
