@@ -375,26 +375,24 @@ def save_sales():
     try:
         for rec in data:
             if not isinstance(rec, dict):
-                # skip malformed rows
                 continue
+
             # normalize
             date = safe_date_str(rec.get('date'))
             opd_4 = normalize_opd(rec.get('opd'))
 
-            # upsert customers from sales info (optional fields)
+            # ✅ upsert ข้อมูลลูกค้าแบบไม่ยุ่งกับ customers.note
             if opd_4 and rec.get('name'):
                 customer_data = {
                     'opd': opd_4,
                     'name': rec.get('name', ''),
                     'phone': rec.get('phone', ''),
                     'birthMonth': rec.get('birthMonth', ''),
-                    # 'vip': rec.get('vip', ''),  # ⬅️ ไม่มีแล้ว
-                    'note': rec.get('note', ''),
-                    'profile': rec.get('profile', ''),  # ⬅️ เพิ่ม
+                    'profile': rec.get('profile', ''),  # หมายเหตุประจำลูกค้าถ้าอยากแก้ ให้แก้ผ่าน /api/update_customer เท่านั้น
                 }
                 supabase.table('customers').upsert(customer_data, on_conflict=['opd']).execute()
 
-            # prepare record for sales_records
+            # บันทึกยอดขาย (note ของ "บิล" อยู่ในตารางนี้เท่านั้น)
             items = rec.get('items') or []
             rec_db = {
                 'date': date,
@@ -403,7 +401,7 @@ def save_sales():
                 'phone': rec.get('phone', ''),
                 'amount': rec.get('amount'),
                 'payment': rec.get('payment'),
-                'note': rec.get('note', ''),
+                'note': rec.get('note', ''),           # ← note ของบิล
                 'item': json.dumps(items, ensure_ascii=False),
             }
 
@@ -414,7 +412,7 @@ def save_sales():
                 updated_count += 1
                 continue
 
-            # Basic duplicate guard (same opd+date+amount+payment+item+note)
+            # Duplicate guard (ใช้ opd+date+item+amount+payment+note)
             dup_q = (
                 supabase.table('sales_records')
                 .select('id')
@@ -431,7 +429,6 @@ def save_sales():
 
             dup = dup_q.execute().data
             if dup:
-                # skip insert if duplicate
                 continue
 
             supabase.table('sales_records').insert(rec_db).execute()
@@ -444,6 +441,7 @@ def save_sales():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/delete_sales_record', methods=['POST'])
 @login_required
@@ -748,3 +746,74 @@ def api_save_inventory():
 if __name__ == '__main__':
     # In production, run behind a proper WSGI server and set SESSION_COOKIE_SECURE=true
     app.run(debug=True)
+@app.route('/api/reccord_sale')
+@login_required
+def api_reccord_sale():
+    """
+    ดึงยอดขายสำหรับโมดัลลูกค้า (ใช้กับ front ที่เรียก reccord_sale)
+    Query (optional):
+      - name: ชื่อลูกค้า (ilike)
+      - phone: เบอร์ (ilike)
+      - opd: OPD (จะ zfill เป็น 4 ให้)
+      - since: YYYY-MM-DD (>=)
+      - until: YYYY-MM-DD (<=)
+      - limit: จำนวนสูงสุด (default 2000)
+    Return: list[{ id, date, opd, name, phone, amount, payment, note, items[] }]
+    """
+    try:
+        name  = (request.args.get('name') or '').strip()
+        phone = (request.args.get('phone') or '').strip()
+        opd_q = normalize_opd(request.args.get('opd')) if request.args.get('opd') else ''
+        since = safe_date_str(request.args.get('since')) if request.args.get('since') else ''
+        until = safe_date_str(request.args.get('until')) if request.args.get('until') else ''
+        try:
+            limit = max(1, min(20000, int(request.args.get('limit', '2000'))))
+        except Exception:
+            limit = 2000
+
+        q = supabase.table("sales_records").select("*")
+        if opd_q:
+            q = q.eq("opd", opd_q)
+        if name:
+            q = q.ilike("name", f"%{name}%")
+        if phone:
+            q = q.ilike("phone", f"%{phone}%")
+        if since:
+            q = q.gte("date", since)
+        if until:
+            q = q.lte("date", until)
+
+        # เรียงใหม่ -> เก่า
+        q = q.order("date", desc=True)
+
+        # ดึงแบบหน้า ๆ (range) เพื่อกัน response ใหญ่เกิน
+        out: List[Dict[str, Any]] = []
+        start = 0
+        page_size = 1000
+        while start < limit:
+            resp = q.range(start, start + min(page_size, limit - start) - 1).execute()
+            batch = resp.data or []
+            if not batch:
+                break
+            for r in batch:
+                # parse items
+                try:
+                    r['items'] = json.loads(r.get('item') or '[]')
+                except Exception:
+                    r['items'] = []
+                # normalize basic fields used by front
+                r['opd']  = normalize_opd(r.get('opd'))
+                r['date'] = safe_date_str(r.get('date'))
+            out.extend(batch)
+            if len(batch) < page_size:
+                break
+            start += page_size
+
+        # truncate เผื่อกรณีหน้าแรกใหญ่พอดี
+        if len(out) > limit:
+            out = out[:limit]
+
+        return jsonify(out)
+    except Exception as e:
+        app.logger.error(f"/api/reccord_sale error: {e}")
+        return jsonify({"error": str(e)}), 500

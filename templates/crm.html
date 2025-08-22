@@ -23,7 +23,11 @@
     .container{ max-width:1180px; margin:18px auto 100px; padding:0 12px; }
     .appbar{
       position:sticky; top:0; z-index:40; backdrop-filter: blur(8px);
-      background: color-mix(in oklab, var(--bg) 70%, white 30%); border-bottom:1px solid var(--line);
+      /* fallback */
+      background: rgba(255,255,255,.7);
+      /* progressive enhance */
+      background: color-mix(in oklab, var(--bg) 70%, white 30%);
+      border-bottom:1px solid var(--line);
     }
     .appbar-inner{ max-width:1180px; margin:0 auto; padding:10px 12px; display:flex; align-items:center; gap:10px; }
     .title{ font-weight:800; font-size: clamp(16px,2.2vw,20px); display:flex; align-items:center; gap:8px; }
@@ -47,6 +51,7 @@
       width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:10px; outline:none; font-size:12px; background:#fff;
     }
     .input:focus, select:focus, textarea:focus{ border-color:var(--primary); box-shadow:0 0 0 3px var(--ring); }
+    .invalid{ border-color:#f87171 !important; box-shadow:0 0 0 3px rgba(248,113,113,.25) !important; }
 
     /* ===== New Plan Table ===== */
     .plan-header{ padding:10px 12px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; justify-content:space-between; }
@@ -83,20 +88,18 @@
     .day-body{ padding:6px 12px 12px; display:none; }
     .day-body.open{ display:block; }
 
-    /* เพิ่มคอลัมน์ actions (สุดท้าย) */
     .history-row{
-  display:grid;
-  grid-template-columns: 78px 1fr 1.1fr 1fr 2fr 0.8fr 92px; /* เดิม 64px */
-  gap:8px; padding:8px 0; border-bottom:1px dashed var(--line);
-}
-/* จัดปุ่มในคอลัมน์ actions ให้อยู่แถวเดียว */
-.history-row [data-cell="actions"]{
-  display:flex;
-  gap:6px;
-  align-items:center;
-  justify-content:center;
-  flex-wrap:nowrap;
-}
+      display:grid;
+      grid-template-columns: 78px 1fr 1.1fr 1fr 2fr 0.8fr 92px;
+      gap:8px; padding:8px 0; border-bottom:1px dashed var(--line);
+    }
+    .history-row [data-cell="actions"]{
+      display:flex;
+      gap:6px;
+      align-items:center;
+      justify-content:center;
+      flex-wrap:nowrap;
+    }
 
     .history-head{ font-weight:700; color:#0f766e; }
     .outcome-badge{ padding:2px 6px; border-radius:999px; font-size:11px; border:1px solid #e2e8f0; background:#f8fafc; }
@@ -104,7 +107,6 @@
     .sortable{ cursor:pointer; user-select:none; display:inline-flex; align-items:center; gap:6px; }
     .sort-ind{ font-size:11px; color:#0f766e; opacity:.8; }
 
-    /* ไอคอนเล็ก */
     .icon-btn{
       appearance:none; border:1px solid var(--line); background:#fff; color:#0f172a;
       border-radius:8px; padding:3px 6px; font-size:12px; cursor:pointer;
@@ -114,12 +116,25 @@
     .icon-save{ border-color:#a7f3d0; }
     .icon-cancel{ border-color:#fecaca; }
 
+    /* ===== Customer Modal ===== */
+    #customer-modal{
+      position:fixed; inset:0; display:none;
+      align-items:center; justify-content:center;
+      background:rgba(2,8,23,.45); z-index:200;
+    }
+    #customer-modal .panel{
+      background:#fff; border:1px solid var(--line);
+      border-radius:14px; width:min(860px, 94vw); max-height:82vh;
+      overflow:auto; padding:18px 20px; box-shadow:0 22px 50px rgba(2,8,23,.3); position:relative;
+    }
+    .customer-link{ cursor:pointer; color:#0ea5a4; font-weight:700; }
+    .customer-link:hover{ text-decoration:underline; }
+
     @media (max-width: 820px){
       .history-row{ grid-template-columns: 66px 1fr 1fr 64px; }
       .hide-sm{ display:none; }
       table{ min-width:860px; }
     }
-
   </style>
   {% endblock %}
 </head>
@@ -224,6 +239,13 @@
 
   <datalist id="customerList"><!-- options injected --></datalist>
 
+  <!-- Customer Modal -->
+  <div id="customer-modal" aria-hidden="true">
+    <div class="panel">
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
   <script>
     // ========= Utils =========
     const $ = (q, p=document)=>p.querySelector(q);
@@ -237,17 +259,11 @@
       setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(6px)'; }, 2200);
       setTimeout(()=>{ el.remove(); }, 2800);
     };
-
-    const fmtThaiDate = (iso)=> {
-      try{
-        const d = new Date(iso);
-        return d.toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
-      }catch{ return iso; }
-    };
+    const fmtThaiDate = (iso)=> { try{ const d = new Date(iso); return d.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});}catch{return iso;} };
     const todayISO = ()=> new Date().toISOString().slice(0,10);
-
     const debounce = (fn,ms=300)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms);} };
-    const pad4 = s => String(s||'').trim().padStart(4,'0');
+    const pad4 = s => String(s ?? '').trim().padStart(4,'0');
+    const esc = s => String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;");
 
     // ========= Data (customers + enums) =========
     const OUTCOMES = [
@@ -299,17 +315,19 @@
 
     // ========= Init =========
     (async function init(){
-      // fill selects
-      histOutcome.innerHTML = ['','(ทั้งหมด)', ...OUTCOMES].map((v,i)=> i===0 ? `<option value="">ทั้งหมด</option>` : `<option>${v}</option>`).join('');
-      histChannel.innerHTML = ['ทั้งหมด', ...CHANNELS].map((c,i)=> `<option value="${i===0?'':c}">${i===0?'ทั้งหมด':c}</option>`).join('');
+      // ฟิลเตอร์ History: ค่าเริ่มต้น = แสดงทั้งหมด
+      histOutcome.innerHTML = [`<option value="">ทั้งหมด</option>`, ...OUTCOMES.map(o=>`<option>${o}</option>`)].join('');
+      histChannel.innerHTML = [`<option value="">ทั้งหมด</option>`, ...CHANNELS.map(c=> `<option value="${c}">${c}</option>`)].join('');
 
-      // history default range: last 14 days
-      const to = todayISO();
-      const from = new Date(Date.now() - 13*24*3600*1000).toISOString().slice(0,10);
-      histFrom.value = from; histTo.value = to;
+      // ให้ช่องวันที่ว่าง (ทั้งหมด)
+      histFrom.value = '';
+      histTo.value   = '';
 
       await loadCustomers();
       buildCustomerDatalist();
+
+      // โหลดประวัติจาก reccord_sale ไว้ใช้ใน modal
+      await loadCustomerRecords();
 
       // restore draft if any
       const draft = loadDraft();
@@ -328,27 +346,26 @@
     async function loadCustomers(){
       try{
         const res = await fetch('/api/customers');
+        if(!res.ok) throw 0;
         const data = await res.json();
         customers = Array.isArray(data) ? data : [];
         customers.forEach(c=>{
-          const opd = pad4(c.opd);
-          const phone = String(c.phone||'');
-          const name = String(c.name||'').trim();
+          const opd = pad4(c?.opd);
+          const phone = String(c?.phone ?? '');
+          const name = String(c?.name ?? '').trim();
           const label = name ? `${name} — ${opd}${phone?` / ${phone}`:''}` : opd;
-          customerIndex.set(label, {opd, name, phone});
-          customerByOPD.set(opd, {opd, name, phone});
+          if(label) customerIndex.set(label, {opd, name, phone});
+          if(opd) customerByOPD.set(opd, {opd, name, phone});
         });
       }catch{ showToast('โหลดรายชื่อลูกค้าไม่สำเร็จ','error'); }
     }
     function buildCustomerDatalist(){
       const dl = $('#customerList');
-      dl.innerHTML = Array.from(customerIndex.keys()).sort((a,b)=>a.localeCompare(b,'th')).map(k=> `<option value="${k}"></option>`).join('');
+      const keys = Array.from(customerIndex.keys());
+      keys.sort((a,b)=> a.localeCompare(b,'th') );
+      dl.innerHTML = keys.map(k=> `<option value="${k}"></option>`).join('');
     }
-
-    function updatePlanTitle(){
-      const d = planDate.value || todayISO();
-      planTitle.textContent = `Sale Pitch วันที่ ${fmtThaiDate(d)}`;
-    }
+    function updatePlanTitle(){ const d = planDate.value || todayISO(); planTitle.textContent = `Sale Pitch วันที่ ${fmtThaiDate(d)}`; }
 
     // ========= Plan Rows =========
     function addEmptyRow(){
@@ -412,7 +429,7 @@
       const meta = tr.querySelector('.cust-meta');
       if(row.opd && customerByOPD.has(row.opd)){
         const c = customerByOPD.get(row.opd);
-        const label = `${c.name||c.opd} — ${c.opd}${c.phone?` / ${c.phone}`:''}`;
+        const label = `${(c.name||c.opd)||''} — ${c.opd}${c.phone?` / ${c.phone}`:''}`;
         custInput.value = label; tr.dataset.opd = c.opd;
         meta.textContent = `OPD ${c.opd}${c.phone?` • ${c.phone}`:''}`;
       }else if(row.customer_label){
@@ -429,9 +446,7 @@
       tr.querySelector('.sel-channel').value = row.channel||'call';
     }
 
-    function reindexRows(){
-      $$('#planTbody > tr').forEach((tr,i)=> tr.firstElementChild.textContent = String(i+1));
-    }
+    function reindexRows(){ $$('#planTbody > tr').forEach((tr,i)=> tr.firstElementChild.textContent = String(i+1)); }
 
     function getRowsPayload(includeInvalid=false){
       const date = planDate.value || todayISO();
@@ -451,6 +466,13 @@
       return rows;
     }
 
+    // ===== Helper: โปรโมชันของ "คนแรก"
+    function getFirstPromoFromPlan(){
+      const firstRow = $('#planTbody > tr');
+      if(!firstRow) return '';
+      return firstRow.querySelector('.input-promo')?.value || '';
+    }
+
     // ========= Plan events =========
     newPlanBtn.addEventListener('click', ()=>{
       newPlanCard.style.display = 'block';
@@ -459,12 +481,23 @@
       showToast('พร้อมสร้างบันทึกใหม่');
     });
     planDate.addEventListener('change', ()=>{ updatePlanTitle(); saveDraft(); });
-    addRowBtn.addEventListener('click', ()=>{ addEmptyRow(); });
+
+    // ★★ เพิ่มคน: คัดลอกโปรโมชันจากแถวแรก
+    addRowBtn.addEventListener('click', ()=>{
+      const firstPromo = getFirstPromoFromPlan();
+      addEmptyRow();
+      const last = planTbody.lastElementChild;
+      const promoInput = last?.querySelector('.input-promo');
+      if(promoInput && firstPromo) promoInput.value = firstPromo;
+      saveDraft();
+    });
+
     clearDraftBtn.addEventListener('click', ()=>{
       if(confirm('ล้าง Draft ทั้งหมด?')){
         clearDraft(); planTbody.innerHTML = ''; addEmptyRow(); showToast('ล้าง Draft แล้ว','warn');
       }
     });
+
     saveAllBtn.addEventListener('click', async ()=>{
       const rows = getRowsPayload();
       if(!rows.length){ showToast('ยังไม่มีรายการให้บันทึก','warn'); return; }
@@ -496,8 +529,8 @@
 
     // ========= History (sortable Outcome + actions) =========
     let historyCache = [];
-    let outcomeFreqMap = {};      // ความถี่ Outcome
-    const dayOutcomeOrder = new Map(); // dayISO -> '', 'desc', 'asc'
+    let outcomeFreqMap = {};
+    const dayOutcomeOrder = new Map();
 
     function buildOutcomeFreq(){
       const freq = {};
@@ -509,8 +542,8 @@
     }
 
     async function reloadHistory(){
-      const from = histFrom.value || todayISO();
-      const to = histTo.value || todayISO();
+      const from = (histFrom.value || '').trim();
+      const to   = (histTo.value   || '').trim();
       const q = (histQ.value||'').trim();
       const outcome = histOutcome.value || '';
       const channel = histChannel.value || '';
@@ -518,13 +551,23 @@
       historyWrap.innerHTML = '<div style="padding:12px;">กำลังโหลด...</div>';
       try{
         const url = new URL('/api/pitches_by_date', window.location.origin);
-        url.searchParams.set('from', from); url.searchParams.set('to', to);
-        if(q) url.searchParams.set('q', q);
+
+        if(!from && !to){
+          url.searchParams.set('from', '1970-01-01');
+          url.searchParams.set('to',   '9999-12-31');
+        }else{
+          if(from) url.searchParams.set('from', from);
+          if(to)   url.searchParams.set('to',   to);
+        }
+
+        if(q)       url.searchParams.set('q', q);
         if(outcome) url.searchParams.set('outcome', outcome);
         if(channel) url.searchParams.set('channel', channel);
 
         const res = await fetch(url);
+        if(!res.ok) throw 0;
         const list = await res.json();
+
         if(!Array.isArray(list)) throw new Error('invalid');
         historyCache = list;
 
@@ -550,10 +593,7 @@
       }
     }
 
-    function isInterested(outcomeText){
-      // นับ “สนใจ” เฉพาะที่ขึ้นต้นด้วยคำว่า “สนใจ”
-      return /^สนใจ/.test(String(outcomeText || '').trim());
-    }
+    function isInterested(outcomeText){ return /^สนใจ/.test(String(outcomeText || '').trim()); }
 
     function sortItemsByOutcomeFreq(items, order){
       if(!order) return [...items].sort((a,b)=> (b.created_at||'').localeCompare(a.created_at||''));
@@ -601,12 +641,10 @@
           </div>
         </div>
       `;
-      // toggle open/close (ยกเว้นคลิกที่ตัว sort)
       div.querySelector('[data-toggle]').addEventListener('click', (e)=>{
         if(e.target.closest('[data-sort-outcome]')) return;
         div.querySelector('.day-body').classList.toggle('open');
       });
-      // sort outcome
       div.querySelector('[data-sort-outcome]').addEventListener('click', ()=>{
         const current = dayOutcomeOrder.get(dayISO) || '';
         const next = current==='' ? 'desc' : (current==='desc' ? 'asc' : '');
@@ -624,20 +662,24 @@
       const time = (x.created_at||'').slice(11,16);
       const opd = pad4(x.opd||'');
       const name = x.customer_name || (customerByOPD.get(opd)?.name) || opd;
+      const phone = customerByOPD.get(opd)?.phone || x.customer_phone || '';
       const promo = x.promotion || '';
       const outcome = x.outcome || '';
       const content = String(x.content||'').replace(/</g,'&lt;');
       const channel = x.channel || '';
-      const id = x.id || `${x.created_at||''}|${opd}`; // fallback หาก API ยังไม่ส่ง id
+      const id = x.id || `${x.created_at||''}|${opd}`;
 
       return `
         <div class="history-row" data-row data-id="${id}">
           <div data-cell="time">${time||'-'}</div>
-          <div data-cell="name">${name} <span style="color:#64748b;">• OPD ${opd}</span></div>
-          <div class="hide-sm" data-cell="promotion">${promo||''}</div>
-          <div data-cell="outcome"><span class="outcome-badge">${outcome||''}</span></div>
+          <div data-cell="name">
+            <span class="customer-link" data-name="${esc(name)}" data-phone="${esc(phone)}">${esc(name)}</span>
+            <span style="color:#64748b;">• OPD ${opd}</span>
+          </div>
+          <div class="hide-sm" data-cell="promotion">${esc(promo)||''}</div>
+          <div data-cell="outcome"><span class="outcome-badge">${esc(outcome)||''}</span></div>
           <div class="hide-sm" data-cell="content">${content||''}</div>
-          <div class="hide-sm" data-cell="channel">${channel||''}</div>
+          <div class="hide-sm" data-cell="channel">${esc(channel)||''}</div>
           <div data-cell="actions">
             <button class="icon-btn" title="แก้ไข" data-action="edit">✏️</button>
             <button class="icon-btn" title="ลบ" data-action="delete">🗑️</button>
@@ -657,11 +699,11 @@
       const contentVal = (get('content')?.textContent.trim() === '—') ? '' : get('content')?.textContent.trim();
       const channelVal = (get('channel')?.textContent.trim() === '—') ? '' : get('channel')?.textContent.trim();
 
-      if(get('promotion')) get('promotion').innerHTML = `<input class="input" data-edit="promotion" value="${promoVal||''}">`;
+      if(get('promotion')) get('promotion').innerHTML = `<input class="input" data-edit="promotion" value="${esc(promoVal)||''}">`;
       get('outcome').innerHTML = `<select class="input" data-edit="outcome">
         ${OUTCOMES.map(o=> `<option ${o===outcomeVal?'selected':''}>${o}</option>`).join('')}
       </select>`;
-      if(get('content')) get('content').innerHTML = `<input class="input" data-edit="content" value="${contentVal||''}" placeholder="คอมเมนต์">`;
+      if(get('content')) get('content').innerHTML = `<input class="input" data-edit="content" value="${esc(contentVal)||''}" placeholder="คอมเมนต์">`;
       if(get('channel')) get('channel').innerHTML = `<select class="input" data-edit="channel">
         ${CHANNELS.map(c=> `<option value="${c}" ${c===channelVal?'selected':''}>${c}</option>`).join('')}
       </select>`;
@@ -722,7 +764,7 @@
       }
     }
 
-    // ใช้ event delegation ที่ historyWrap
+    // ใช้ event delegation สำหรับ history edit/delete
     historyWrap.addEventListener('click', (e)=>{
       const btn = e.target.closest('[data-action]');
       if(!btn) return;
@@ -731,7 +773,6 @@
 
       const action = btn.dataset.action;
       if(action==='edit'){
-        // เก็บของเดิมไว้สำหรับ cancel
         row._original = {
           promotion: row.querySelector('[data-cell="promotion"]')?.textContent.trim(),
           outcome: row.querySelector('[data-cell="outcome"]')?.textContent.replace(/<[^>]*>/g,'').trim(),
@@ -756,9 +797,7 @@
     histOutcome.addEventListener('change', reloadHistory);
     histChannel.addEventListener('change', reloadHistory);
 
-    toggleAllBtn.addEventListener('click', ()=>{
-      $$('#historyWrap .day-body').forEach(b=> b.classList.toggle('open'));
-    });
+    toggleAllBtn.addEventListener('click', ()=>{ $$('#historyWrap .day-body').forEach(b=> b.classList.toggle('open')); });
 
     exportCsvBtn.addEventListener('click', ()=>{
       if(!historyCache.length){ showToast('ไม่มีข้อมูลในช่วงที่เลือก','warn'); return; }
@@ -773,8 +812,8 @@
         const outcome = String(x.outcome||'').replaceAll('"','""');
         const content = String(x.content||'').replaceAll('"','""');
         const channel = String(x.channel||'').replaceAll('"','""');
-        const esc = v=> `"${v}"`;
-        lines.push([d,t,opd,name,promo,outcome,content,channel].map(esc).join(','));
+        const escq = v=> `"${v}"`;
+        lines.push([d,t,opd,name,promo,outcome,content,channel].map(escq).join(','));
       }
       const csv = lines.join('\n');
       const a = document.createElement('a');
@@ -803,10 +842,186 @@
       }
       kpiToday.textContent = t; kpiWeek.textContent = w; kpiMonth.textContent = m;
     }
+
+    /* ==================== Customer Modal & Records Loader ==================== */
+    let _recordsLoaded = false;
+    async function loadCustomerRecords(){
+      try{
+        // ปรับ path ตามหลังบ้าน: /api/reccord_sale
+        const res = await fetch('/api/reccord_sale');
+        if(!res.ok) throw 0;
+        const data = await res.json();
+        window.allCustomerRecords = Array.isArray(data) ? data : [];
+        _recordsLoaded = true;
+      }catch(e){
+        window.allCustomerRecords = [];
+        _recordsLoaded = false;
+        showToast('โหลดประวัติ reccord_sale ไม่สำเร็จ','error');
+      }
+    }
+    async function ensureRecordsLoaded(){
+      if(_recordsLoaded) return true;
+      await loadCustomerRecords();
+      return _recordsLoaded;
+    }
+
+    (function () {
+      // ===== Helpers =====
+      window.formatDate ||= function (d) {
+        if (!d) return '-';
+        const x = new Date(d); if (isNaN(x)) return d;
+        const dd = String(x.getDate()).padStart(2,'0');
+        const mm = String(x.getMonth()+1).padStart(2,'0');
+        const yy = x.getFullYear();
+        return `${dd}/${mm}/${yy}`;
+      };
+      window.escapeHTML ||= (s)=>String(s||'')
+        .replaceAll('&','&amp;').replaceAll('<','&lt;')
+        .replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
+
+      function showModal(){ document.getElementById('customer-modal').style.display='flex'; }
+      function hideModal(){ document.getElementById('customer-modal').style.display='none'; }
+      window.closeCustomerModal = hideModal;
+
+      // close when click outside panel
+      document.getElementById('customer-modal').addEventListener('click', e=>{
+        const panel=document.querySelector('#customer-modal .panel');
+        if(!panel.contains(e.target)) hideModal();
+      });
+      document.addEventListener('keydown', e=>{ if(e.key==='Escape') hideModal(); });
+
+      function buildKey(name, phone){ return `${name||''}|${phone||''}`; }
+
+      // Hook: any ".customer-link" will open modal
+      document.addEventListener('click', async function(e){
+        const el = e.target.closest('.customer-link');
+        if(!el) return;
+        const name = el.getAttribute('data-name') || el.textContent.trim();
+        const phone = el.getAttribute('data-phone') || '';
+        if(!(await ensureRecordsLoaded())) return;
+        openCustomerModal(buildKey(name, phone));
+      });
+
+      // ฟังก์ชันหลัก
+      window.openCustomerModal = function(key) {
+        const recs = (window.allCustomerRecords||[]).filter(r => `${r.name}|${r.phone||''}` === key);
+        if(!recs.length){
+          const [nm, ph] = key.split('|');
+          document.getElementById("modal-content").innerHTML = `
+            <div style="position:absolute; top:10px; right:10px;">
+              <button onclick="closeCustomerModal()" title="ปิด" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">❌</button>
+            </div>
+            <h3 style="font-size:18px;margin-bottom:4px;">📇 ${escapeHTML(nm||'-')}</h3>
+            <div>📞 <strong>เบอร์:</strong> ${escapeHTML(ph||'-')}</div>
+            <div style="margin-top:10px;color:#64748b;">ไม่พบประวัติการซื้อ</div>`;
+          showModal();
+          return;
+        }
+
+        const first = recs[0];
+        const customer = { name:first.name, phone:first.phone||'-', opd:first.opd||'-' };
+
+        const latestRecord = recs.reduce((latest,r)=> 
+          new Date(r.date) > new Date(latest.date)? r:latest, recs[0]);
+
+        const lastDate = new Date(latestRecord.date);
+        const today = new Date();
+        const daysAbsent = Math.floor((today - lastDate)/(1000*60*60*24));
+
+        const totalVisits = recs.length;
+        const paidRecords = recs.filter(r => parseFloat(r.amount||0) > 0);
+        const paidVisits = paidRecords.length;
+        const totalAmount = paidRecords.reduce((s,r)=>s+parseFloat(r.amount||0),0);
+        const average = paidVisits>0 ? Math.round(totalAmount/paidVisits) : 0;
+
+        const allItems = {};
+        recs.forEach(r => {
+          (r.items||[]).forEach(item=>{
+            let name = item;
+            const m = item.match(/\((.*?)\)/); name = m? m[1] : item.split(" - ")[0];
+            const q = item.match(/- (\d+) ชิ้น/); const qty = q? parseInt(q[1]) : 1;
+            allItems[name] = (allItems[name]||0) + qty;
+          });
+        });
+
+        const categoryMap = {
+          "โบทอค":["Aestox 50 u","Aestox 100 u","Allergan 50 u","Allergan 100 u","เฉพาะจุด","แบ่งไว้แล้ว","Nabota"],
+          "ฟิลเลอร์":["Neuramis สีดำ","Neuramis สีทอง","E.P.T.Q ระบุสีด้วย","Restylane ระบุสีด้วย"],
+          "งานผิว":["Meso Chanel","P - Cell","Aquatic","Hestina","Exosome","Rejuran","Belotero Revive","Sculptra","Juvelook","Aesthefill","Mesowink","AlphaArbutin","PRP","Biocollagen","Transamine"],
+          "ดริปผิว":["Snow White","Super Aurawhite","Vitamin Mix","Brain Booster","Energy Booster"],
+          "ทรีทเม้นท์":["ทรีทเมนต์หน้าใส","ทรีทเมนต์สิว","ทรีทเมนต์ฝ้า"],
+          "Fat/Hifu":["Bromi","Sisi","HIFU","HIFU แถม"],
+          "อื่นๆ":["ยาฉีดสลายฝ้า","ครีมทาฝ้า","ยาทานฝ้า","ไหมลิฟท์กรอบหน้า","ไหม PDO","ไหม Collagen","จ่ายเงิน/จองสินค้า"],
+          "โปรโมชั่น/อีเว้นพิเศษ":["สลายฟิลเลอร์","ไหม PDO","ปั่น RF","ไหมลิฟท์กรอบหน้า","ผลักวิตามิน"]
+        };
+
+        const categorizedItems = {};
+        for (const [cat, names] of Object.entries(categoryMap)) {
+          names.forEach(n => {
+            if (allItems[n]) {
+              (categorizedItems[cat] ||= []).push(`${n} : ${allItems[n]}`);
+              delete allItems[n];
+            }
+          });
+        }
+        if (Object.keys(allItems).length) {
+          (categorizedItems["อื่นๆ"] ||= []);
+          for (const [n,q] of Object.entries(allItems)) categorizedItems["อื่นๆ"].push(`${n} : ${q}`);
+        }
+
+        const itemSummary = Object.entries(categorizedItems)
+          .map(([cat,items])=>`<div style="margin-bottom:6px;"><strong>${cat}</strong>: ${items.join(" | ")}</div>`).join("");
+
+        const historyHtml = recs
+          .slice().sort((a,b)=>b.date.localeCompare(a.date))
+          .map(r=>{
+            const items = (r.items||[]).map(item=>{
+              const m = item.match(/\((.*?)\)/);
+              const name = m? m[1] : item.split(" - ")[0];
+              const q = item.match(/- (\d+) ชิ้น/); const qty = q? parseInt(q[1]) : 1;
+              return `<li>${escapeHTML(name)} : ${qty}</li>`;
+            }).join("");
+            const noteText = r.note ? `<div style="margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${escapeHTML(r.note)}</div>` : "";
+            return `
+              <div style="margin-bottom:16px;">
+                <div style="margin-bottom:4px;font-weight:bold;">📅 ${formatDate(r.date)}</div>
+                <ul style="padding-left:16px;margin:0;">${items}</ul>
+                <div style="margin-top:4px;color:#00796b;">💵 ยอด: ${parseFloat(r.amount||0).toLocaleString()} บาท</div>
+                ${noteText}
+                <hr style="margin: 10px auto; border: 0; border-top: 1px dashed #999; width: 60%;">
+              </div>`;
+          }).join("");
+
+        const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
+
+        document.getElementById("modal-content").innerHTML = `
+          <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
+            <button onclick="closeCustomerModal()" title="ปิดหน้าต่าง" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">❌</button>
+          </div>
+
+          <h3 style="font-size:18px;margin-bottom:4px;">📇 ${escapeHTML(customer.name)}</h3>
+          <div>🆔 <strong>OPD:</strong> ${escapeHTML(customer.opd)}</div>
+          <div>📞 <strong>เบอร์:</strong> ${escapeHTML(customer.phone)}</div>
+          <div>📅 <strong>วันล่าสุด:</strong> ${formatDate(latestRecord.date)} ${daysAbsentText}</div>
+          <div style="color:#00796b;"><strong>💰 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท</div>
+          <div>🔁 มาใช้บริการ: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
+          <div>💳 <strong>เฉลี่ยต่อครั้ง:</strong> ${Math.round(average).toLocaleString()} บาท</div>
+
+          <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
+          <div style="font-weight:bold;">📦 สรุปรายการซื้อทั้งหมด:</div>
+          <div style="margin:6px 0 12px;">${itemSummary}</div>
+          <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
+          <div style="font-weight:bold;margin-bottom:6px;">🛍️ ประวัติการซื้อย้อนหลัง:</div>
+          ${historyHtml}
+          <div style="margin-top:10px;font-weight:bold;color:#b8860b;">💰 รวมทั้งหมด: ${totalAmount.toLocaleString()} บาท</div>`;
+        showModal();
+      };
+    })();
+    /* ==================== End Customer Modal & Records Loader ==================== */
   </script>
 
 {% endblock %}
+{% include "floating_menu.html" %}
 
-  {% include "floating_menu.html" %}
 </body>
 </html>
