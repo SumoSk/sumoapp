@@ -45,9 +45,13 @@
     .current-range{ font-size:11px; color:#333; padding:2px 8px; background:#e8f5e9; border-radius:999px; }
 
     /* Table */
-    table{ width:100%; border-collapse:collapse; margin-top:8px; font-size:11px; }
+    table{ width:100%; border-collapse:collapse; margin-top:8px; font-size:11px; table-layout:auto; } /* ✨ ปล่อยให้ขยายตามเนื้อหา */
     thead th{ position:sticky; top:0; background:#f0f0f0; z-index:1; }
-    th,td{ border:1px solid #ccc; padding:3px; }
+    th,td{ border:1px solid #ccc; padding:3px; white-space:normal; word-break:break-word; max-width:none; } /* ✨ ไม่ตัดคำ */
+
+    /* (ตัวเลือก) ขยายคอลัมน์ "รายการ" ให้กินพื้นที่มากขึ้น */
+    thead th:nth-child(4), tbody td:nth-child(4){ width:50%; }
+
     tbody tr:nth-child(even){ background:#fafafa; }
     .day-header td{ background:#eef; font-weight:bold; }
     .day-total td{ background:#e0f7fa; font-weight:bold; text-align:right; }
@@ -111,7 +115,6 @@
 
     /* ===== Global font shrink switch ===== */
     :root{
-      /* ปรับได้: 1 = ขนาดเดิม, 0.9 = ย่อ 10%, 0.85 = ย่อ 15% */
       --shrink:.90;
     }
     body{ font-size: calc(11px * var(--shrink)); }
@@ -130,7 +133,7 @@
     *[style*="font-size:10px"]{  font-size: calc(10px * var(--shrink)) !important; }
     *[style*="font-size:13.5px"]{ font-size: calc(13.5px * var(--shrink)) !important; }
 
-    /* บังคับใช้ Prompt ทุก element รวมถึงปุ่ม/อินพุต */
+    /* บังคับใช้ Prompt ทุก element */
     html, body, button, input, select, textarea,
     table, th, td, .btn, .month-btn, .current-range,
     .summary-card, .day-header, .day-total {
@@ -420,18 +423,9 @@
         </ul>
       </div>`;
 
-      summaryDiv.innerHTML = `<button class="btn" id="toggleSummaryBtn" type="button" aria-expanded="false">📦 สรุปรายการขายแยกหมวดหมู่</button><div id="summaryContent" style="display:none;">${summaryHTML}${paymentHtml}</div>`;
+      /* ✨ ไม่มีปุ่มเพิ่มเติม/พับ-กาง: แสดงเนื้อหาเต็มเลย */
+      summaryDiv.innerHTML = `${summaryHTML}${paymentHtml}`;
       reviewSection.appendChild(summaryDiv);
-
-      const tbtn = document.getElementById('toggleSummaryBtn');
-      const scnt = document.getElementById('summaryContent');
-      if (tbtn && scnt){
-        tbtn.addEventListener('click', ()=> {
-          const show = scnt.style.display === 'none';
-          scnt.style.display = show ? '' : 'none';
-          tbtn.setAttribute('aria-expanded', String(show));
-        });
-      }
 
       // Chart
       const monthTotals = monthsInRange.map(m=> ({ m, total: (groupedByMonth[m]||[]).reduce((s,r)=> s + parseCurrency(r.amount), 0) }));
@@ -538,18 +532,9 @@
         </ul>
       </div>`;
 
-      summaryDiv.innerHTML = `<button class="btn" id="toggleSummaryBtn" type="button" aria-expanded="false">📦 สรุปรายการขายแยกหมวดหมู่</button><div id="summaryContent" style="display:none;">${summaryHTML}${paymentHtml}</div>`;
+      /* ✨ ไม่มีปุ่มเพิ่มเติม/พับ-กาง: แสดงเนื้อหาเต็มเลย */
+      summaryDiv.innerHTML = `${summaryHTML}${paymentHtml}`;
       document.getElementById('reviewSection').appendChild(summaryDiv);
-
-      const tbtn = document.getElementById('toggleSummaryBtn');
-      const scnt = document.getElementById('summaryContent');
-      if (tbtn && scnt){
-        tbtn.addEventListener('click', ()=> {
-          const show = scnt.style.display === 'none';
-          scnt.style.display = show ? '' : 'none';
-          tbtn.setAttribute('aria-expanded', String(show));
-        });
-      }
 
       // Chart
       const canvasContainer = document.createElement('div'); canvasContainer.style.marginTop='30px'; canvasContainer.style.height='220px';
@@ -580,7 +565,6 @@
             data-key="${encodeURIComponent((r.name||'')+'|'+(r.phone||''))}">
             ${escapeHtml(r.name||'')}
           </strong>
-          <!-- แสดงเลข OPD ล้วน ๆ ไม่มีคำว่า OPD: -->
           <div style="font-size:10px;color:#777;">${escapeHtml(r.opd||'-')}</div>
         </div>`;
       tr.appendChild(tdName);
@@ -594,22 +578,28 @@
         data-showing='false'>📞</span>`;
       tr.appendChild(tdPhone);
 
+      /* รายการ: แสดงเฉพาะรายการ ไม่ใส่หมายเหตุที่นี่ */
       const itemsUl = (r.items||[]).map(item=>{
         const m = item.match(/^(.*?) ?(?:\((.*?)\))? - (\d+) ชิ้น/);
-        if(m){ const main=m[1], sub=m[2], qty=m[3]; return `<li>${sub? `${escapeHtml(main)} (${escapeHtml(sub)}` : escapeHtml(main)}${sub?')':''} - ${qty} ชิ้น</li>`; }
+        if(m){ const main=m[1], sub=m[2], qty=m[3];
+          return `<li>${sub? `${escapeHtml(main)} (${escapeHtml(sub)}` : escapeHtml(main)}${sub?')':''} - ${qty} ชิ้น</li>`;
+        }
         return `<li>${escapeHtml(item)}</li>`;
       }).join('');
-      const noteHtml = (r.note && String(r.note).trim())
-        ? `<li style="color:#888; font-size:9px;">📝 ${escapeHtml(r.note)}</li>`
-        : '';
-
       const tdItems = document.createElement('td');
-      tdItems.innerHTML = `<ul style='margin:0; padding-left:16px;'>${itemsUl}${noteHtml}</ul>`;
+      tdItems.innerHTML = `<ul style='margin:0; padding-left:16px;'>${itemsUl}</ul>`;
       tr.appendChild(tdItems);
 
+      /* ยอดขาย + หมายเหตุ (ย้ายมาตรงนี้ใต้ยอดขายตามคำขอ) */
       const tdAmt = document.createElement('td');
       const amt = parseCurrency(r.amount);
-      tdAmt.textContent = `${amt.toLocaleString()} บาท${r.payment ? ` (${r.payment})` : ''}`;
+      tdAmt.innerHTML = `
+        <div>${amt.toLocaleString()} บาท${r.payment ? ` (${r.payment})` : ''}</div>
+        ${
+          r.note && String(r.note).trim()
+            ? `<div style="color:#888; font-size:10px; margin-top:4px;">📝 ${escapeHtml(r.note)}</div>`
+            : ''
+        }`;
       tr.appendChild(tdAmt);
 
       return tr;
@@ -834,7 +824,7 @@
       const recs = allMonths.flatMap(m=> groupedByMonth[m] || []);
       if(!recs.length){ alert('ไม่มีข้อมูลให้ดาวน์โหลด'); return; }
 
-      const filename = isRangeActive() ? `ยอดขาย_${rangeStart}_ถึง_${rangeEnd}.xlsx` : `ยอดขาย_${selectedMonth||'ทั้งหมด'}.xlsx`;
+      const filename = isRangeActive ? `ยอดขาย_${rangeStart}_ถึง_${rangeEnd}.xlsx` : `ยอดขาย_${selectedMonth||'ทั้งหมด'}.xlsx`;
 
       const sortedRecs = recs.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
       const ws_data = [];
