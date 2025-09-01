@@ -817,3 +817,177 @@ def api_reccord_sale():
     except Exception as e:
         app.logger.error(f"/api/reccord_sale error: {e}")
         return jsonify({"error": str(e)}), 500
+
+# ===== TAX MODULE =====
+from math import isfinite
+
+def th_tax_brackets(amount: float) -> float:
+    """
+    คำนวณภาษีเงินได้บุคคลธรรมดาแบบก้าวหน้า (อัตราปัจจุบัน)
+    รับค่า amount = เงินได้สุทธิเพื่อคำนวณภาษี
+    คืนค่า: ภาษีทั้งปี (บาท)
+    """
+    if amount is None or amount <= 0:
+        return 0.0
+
+    bands = [
+        (150000, 0.00),
+        (150000, 0.05),
+        (200000, 0.10),
+        (250000, 0.15),
+        (250000, 0.20),
+        (1000000, 0.25),   # 1,000,001 - 2,000,000 (ช่วงกว้าง 1,000,000)
+        (3000000, 0.30),   # 2,000,001 - 5,000,000 (ช่วงกว้าง 3,000,000)
+        (float('inf'), 0.35),
+    ]
+    remain = amount
+    tax = 0.0
+    thresholds = [150000, 300000, 500000, 750000, 1000000, 2000000, 5000000]
+
+    prev_cap = 0.0
+    for cap, rate in [
+        (150000, 0.00),
+        (300000, 0.05),
+        (500000, 0.10),
+        (750000, 0.15),
+        (1000000, 0.20),
+        (2000000, 0.25),
+        (5000000, 0.30),
+        (float('inf'), 0.35),
+    ]:
+        slab_width = (cap - prev_cap) if isfinite(cap) else max(0.0, remain)
+        chunk = max(0.0, min(remain, slab_width))
+        tax += chunk * rate
+        remain -= chunk
+        prev_cap = cap
+        if remain <= 0:
+            break
+    return round(tax, 2)
+
+
+def compute_tax_from_gross_sales_yearly(gross_year: float, social_sec: float = 0.0) -> dict:
+    """
+    คิดภาษีจาก 'ยอดขายทั้งปี' (รายได้ ม.40(8))
+    - หักค่าใช้จ่ายเหมา 60%
+    - หักค่าลดหย่อนส่วนตัว 60,000
+    - หักประกันสังคม (ถ้าส่ง) สูงสุด 9,000 (ค่าเริ่มต้น 0 ตามที่ผู้ใช้แจ้งว่าไม่มี)
+    """
+    if not gross_year or gross_year <= 0:
+        return {
+            "gross_year": 0.0,
+            "expense_lump": 0.0,
+            "net_after_expense": 0.0,
+            "allowance_personal": 60000.0,
+            "social_security": 0.0,
+            "taxable_income": 0.0,
+            "tax_year": 0.0,
+            "tax_month_avg": 0.0,
+            "effective_rate": 0.0,
+        }
+
+    expense_lump = round(gross_year * 0.60, 2)
+    net_after_expense = max(0.0, round(gross_year - expense_lump, 2))
+
+    allowance_personal = 60000.0
+    social_security = min(max(social_sec or 0.0, 0.0), 9000.0)
+
+    taxable_income = max(0.0, round(net_after_expense - allowance_personal - social_security, 2))
+    tax_year = th_tax_brackets(taxable_income)
+    tax_month_avg = round(tax_year / 12.0, 2) if tax_year > 0 else 0.0
+    effective_rate = round((tax_year / gross_year) * 100.0, 4) if gross_year > 0 else 0.0
+
+    return {
+        "gross_year": round(gross_year, 2),
+        "expense_lump": expense_lump,
+        "net_after_expense": net_after_expense,
+        "allowance_personal": allowance_personal,
+        "social_security": social_security,
+        "taxable_income": taxable_income,
+        "tax_year": tax_year,
+        "tax_month_avg": tax_month_avg,
+        "effective_rate": effective_rate,
+    }
+
+
+@app.route('/tax')
+@login_required
+def tax_page():
+    # หน้า UI
+    return render_template('tax.html', username=session['username'])
+
+
+@app.route('/api/tax_summary')
+@login_required
+def api_tax_summary():
+    """
+    รับ year=YYYY (บังคับ)
+    ดึง sales_records ของปีนั้น (ใช้ field 'date' แบบ YYYY-MM-DD) -> sum(amount) รายเดือนและทั้งปี
+    คำนวณภาษีตามกติกาที่ผู้ใช้แจ้ง (ไม่มีคู่สมรส/บุตร/สิทธิเพิ่มเติม)
+    Query param เพิ่มเติม:
+      - sso (float) = ยอดประกันสังคมทั้งปี (ถ้ามี ใส่มา; ไม่ใส่ = 0)
+    """
+    try:
+        year_str = (request.args.get('year') or '').strip()
+        if not year_str.isdigit() or len(year_str) != 4:
+            return jsonify({"error": "year_required_as_YYYY"}), 400
+        year = int(year_str)
+
+        # optional social security
+        try:
+            sso = float(request.args.get('sso', '0') or '0')
+        except Exception:
+            sso = 0.0
+
+        # รวมยอดขายรายเดือน
+        month_sum = {m: 0.0 for m in range(1, 13)}
+        total = 0.0
+
+        # ดึงทีละหน้าเพื่อกัน response ใหญ่
+        q = (
+            supabase.table("sales_records")
+            .select("amount,date")
+            .gte("date", f"{year}-01-01")
+            .lte("date", f"{year}-12-31")
+            .order("date", desc=False)
+        )
+        start = 0
+        page = 1000
+        while True:
+            resp = q.range(start, start + page - 1).execute()
+            batch = resp.data or []
+            if not batch:
+                break
+            for r in batch:
+                amt = r.get('amount')
+                d = r.get('date') or ''
+                if amt is None:
+                    continue
+                try:
+                    y, m, _ = str(d)[:10].split('-')
+                    if int(y) == year:
+                        m_i = int(m)
+                        month_sum[m_i] = round(month_sum[m_i] + float(amt), 2)
+                        total = round(total + float(amt), 2)
+                except Exception:
+                    continue
+            if len(batch) < page:
+                break
+            start += page
+
+        tax = compute_tax_from_gross_sales_yearly(total, social_sec=sso)
+
+        # แพ็คผลรายเดือน (แปลงเป็น list เพื่อ JS ใช้ง่าย)
+        months = []
+        for m in range(1, 13):
+            months.append({
+                "month": m,
+                "gross": month_sum[m],
+            })
+
+        return jsonify({
+            "year": year,
+            "months": months,
+            "summary": tax,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

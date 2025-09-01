@@ -1,16 +1,776 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>{% block title %}App{% endblock %}</title>
-  {% block head %}{% endblock %}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="format-detection" content="telephone=no">
+  <title>สรุปยอดขายประจำเดือน</title>
+
+  <!-- ฟอนต์: เร่งโหลด + กันเด้ง + subset ไทย -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap&subset=thai" rel="stylesheet" />
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    :root{ --teal:#00796b; --muted:#555; --teal-700:#006a60; --gray:#607d8b; }
+    html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+    body{ font-family:'Prompt','Segoe UI',Tahoma,sans-serif; margin:0; background:#f7f7f7; padding:10px; font-size:11px; line-height:1.45; }
+    h2{ text-align:center; color:var(--teal); font-size:14px; margin:0; }
+
+    /* Container */
+    .container{ max-width:1000px; margin:20px auto; background:#fff; border-radius:12px; padding:15px; box-shadow:0 2px 10px rgba(0,0,0,.05); }
+
+    /* Month nav */
+    .month-nav{ display:flex; gap:10px; align-items:center; justify-content:center; margin:10px 0 6px; flex-wrap:wrap; }
+    .month-btn,.current-range,.summary-card,.btn,table,.search-panel input{ font-size:0.92rem; line-height:1.35; }
+    .month-btn{ background:#009688; color:#fff; border:none; border-radius:999px; padding:6px 8px; cursor:pointer; }
+    .month-btn:disabled{ opacity:.5; cursor:not-allowed; }
+    .month-btn.ghost{ background:#78909c; }
+    #monthPicker{ position:absolute; left:-9999px; width:0; height:0; }
+    .current-range{ font-size:11px; color:#333; padding:2px 8px; background:#e8f5e9; border-radius:999px; }
+
+    /* Table */
+    table{ width:100%; border-collapse:collapse; margin-top:8px; font-size:11px; table-layout:auto; } 
+    thead th{ position:sticky; top:0; background:#f0f0f0; z-index:1; }
+    th,td{ border:1px solid #ccc; padding:3px; white-space:normal; word-break:break-word; max-width:none; }
+
+    /* (ตัวเลือก) ขยายคอลัมน์ "รายการ" ให้กินพื้นที่มากขึ้น */
+    thead th:nth-child(4), tbody td:nth-child(4){ width:50%; }
+
+    tbody tr:nth-child(even){ background:#fafafa; }
+    .day-header td{ background:#eef; font-weight:bold; }
+    .day-total td{ background:#e0f7fa; font-weight:bold; text-align:right; }
+
+    /* Summary row (month/range) */
+    .month-summary{ text-align:center; font-size:12px; color:#0d47a1; padding:4px 0; background:#e3f2fd; border-radius:6px; }
+    .compare{ text-align:center; margin-top:2px; font-size:11px; }
+
+    /* Summary card */
+    .summary-card{ margin-top:12px; padding:8px; background:#f6f6f6; border:1px solid #ddd; border-radius:8px; font-size:11px; line-height:1.4em; }
+    .btn{ display:inline-block; padding:5px 10px; background:#43a047; color:#fff; border:none; border-radius:6px; cursor:pointer; text-decoration:none; font-size:11px; }
+    .btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+    /* Floating toggle/menu — ขนาดเดิม (ห้ามย่อ) */
+    .floating-toggle{ position:fixed; bottom:env(safe-area-inset-bottom, 18px); left:50%; transform:translateX(-50%); background:rgba(0,0,0,0); width:58px; height:58px; border-radius:50%; display:flex; justify-content:center; align-items:center; z-index:1000; cursor:pointer; }
+    .floating-menu{ position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:#fff; border-radius:16px; padding:10px; display:none; flex-direction:column; align-items:center; gap:10px; box-shadow:0 6px 20px rgba(0,0,0,.2); z-index:999; max-height:60vh; overflow-y:auto; }
+    .floating-menu a img{ width:52px; height:52px; }
+
+    /* ===== Floating Search: ไอคอน → ขยายเป็นช่อง ===== */
+    .search-wrap{ position:fixed; bottom:120px; left:50%; transform:translateX(-50%); z-index:1001; display:flex; align-items:center; gap:8px; width:90%; max-width:600px; justify-content:center; pointer-events:none; }
+    .search-fab{ pointer-events:auto; display:flex; align-items:center; justify-content:center; width:48px; height:48px; border-radius:50%; background:#00a884; box-shadow:0 6px 18px rgba(0,0,0,.18); border:none; cursor:pointer; }
+    .search-fab img{ width:22px; height:22px; filter:invert(100%); }
+    .search-panel{ pointer-events:auto; display:flex; align-items:center; gap:6px; background:#ebfff5; border-radius:28px; padding:6px 10px; box-shadow:0 4px 12px rgba(0,0,0,.1); width:0; max-width:0; overflow:hidden; transition:max-width .25s ease, padding .25s ease, opacity .2s; opacity:0; }
+    .search-wrap.open .search-panel{ max-width:600px; width:calc(100% - 70px); opacity:1; padding:6px 10px; }
+    .search-panel input{ width:100%; border:none; outline:none; background:#fff; border-radius:20px; padding:8px 12px; font-size:11px; color:#222; font-family:'Prompt','Segoe UI',Tahoma,sans-serif !important; }
+    .search-close{ border:none; background:#fff; border-radius:50%; width:28px; height:28px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 3px rgba(0,0,0,.12); }
+    .search-close:before{ content:'×'; font-size:18px; line-height:1; }
+
+    /* iOS tweak */
+    @supports (-webkit-touch-callout: none) { html{ -webkit-text-size-adjust:100% !important; } }
+
+    /* ===== Global font shrink switch ===== */
+    :root{ --shrink:.90; }
+    body{ font-size: calc(11px * var(--shrink)); }
+    h2{ font-size: calc(14px * var(--shrink)); }
+    .month-btn,.current-range,.summary-card,.btn,table,.search-panel input{ font-size: calc(0.92rem * var(--shrink)); }
+    table{ font-size: calc(11px * var(--shrink)); }
+    .month-summary{ font-size: calc(12px * var(--shrink)); }
+    .compare{ font-size: calc(11px * var(--shrink)); }
+    *[style*="font-size:10px"]{  font-size: calc(10px * var(--shrink)) !important; }
+    *[style*="font-size:13.5px"]{ font-size: calc(13.5px * var(--shrink)) !important; }
+
+    /* บังคับใช้ Prompt ทุก element */
+    html,body,button,input,select,textarea,table,th,td,.btn,.month-btn,.current-range,.summary-card,.day-header,.day-total {
+      font-family: 'Prompt','Segoe UI',Tahoma,sans-serif !important; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; font-synthesis: none;
+    }
+  </style>
 </head>
 <body>
 
-  {% block content %}{% endblock %}
+  <!-- Floating Search -->
+  <div class="search-wrap" id="searchWrap" aria-label="ค้นหา">
+    <button class="search-fab" id="searchFab" title="ค้นหา">
+      <img alt="search" src="https://cdn-icons-png.flaticon.com/512/622/622669.png" />
+    </button>
+    <div class="search-panel" id="searchPanel" role="search">
+      <input type="text" id="searchInput" placeholder="พิมพ์คำค้น..." aria-label="ช่องค้นหา" />
+      <button class="search-close" id="searchCloseBtn" title="ปิดค้นหา" aria-label="ปิดค้นหา"></button>
+    </div>
+  </div>
 
-  {# วางไว้ท้าย <body> เพื่อให้ DOM พร้อมก่อน #}
-  {% include "floating_menu.html" %}
+  <div class="container">
+    <h2>สรุปยอดขายประจำเดือน</h2>
+
+    <!-- แถบเลือกเดือน -->
+    <div class="month-nav">
+      <button id="btnPrev" class="month-btn" type="button" title="เดือนก่อนหน้า">← เดือนก่อนหน้า</button>
+      <button id="btnPick" class="month-btn" type="button" title="เลือกช่วงเวลา">เลือกช่วงเวลา</button>
+      <button id="btnClear" class="month-btn ghost" type="button" title="ล้างช่วง">ล้างช่วง</button>
+      <button id="btnNext" class="month-btn" type="button" title="เดือนถัดไป">เดือนถัดไป →</button>
+      <span id="rangeBadge" class="current-range" style="display:none;"></span>
+      <input type="month" id="monthPicker" />
+    </div>
+
+    <div id="reviewSection">กำลังโหลดข้อมูล...</div>
+    <div style="text-align:center; margin-top:8px;">
+      <button id="downloadExcelBtn" class="btn" type="button" style="background:#00796b;" disabled>⬇️ โหลด Excel</button>
+      <button id="downloadPdfBtn" class="btn" type="button" style="background:#00796b;" disabled>⬇️ ดาวน์โหลด PDF</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+  <!-- Modal ลูกค้า -->
+  <div id="customer-modal" style="display:none;position:fixed;inset:0;background-color:rgba(0,0,0,.5);z-index:9999;justify-content:center;align-items:center;">
+    <div id="customer-modal-box" style="background:#fff;padding:16px;border-radius:16px;width:100%;max-width:360px;box-sizing:border-box;margin:auto;max-height:90vh;overflow:auto;position:relative;font-size:13.5px;">
+      <button id="closeCustomerModalBtn" type="button" style="position:absolute;top:10px;right:14px;font-size:20px;border:none;background:none;cursor:pointer;z-index:3;" aria-label="ปิด">&times;</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Modal เลือกช่วงเวลา -->
+  <div id="month-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;justify-content:center;align-items:center;">
+    <div id="month-modal-box" style="background:#fff;padding:16px;border-radius:12px;width:100%;max-width:340px;box-sizing:border-box;position:relative;">
+      <button type="button" id="monthCloseBtn" aria-label="ปิด" style="position:absolute;top:8px;right:10px;border:none;background:none;font-size:20px;cursor:pointer;">&times;</button>
+      <div style="font-weight:600;margin-bottom:12px;">เลือกช่วงเวลา</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <label for="monthStart" style="white-space:nowrap;width:74px;">เริ่มต้น:</label>
+          <input type="month" id="monthStart" style="flex:1;" />
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <label for="monthEnd" style="white-space:nowrap;width:74px;">สิ้นสุด:</label>
+          <input type="month" id="monthEnd" style="flex:1;" />
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">
+        <button type="button" class="btn" id="monthCancelBtn" style="background:#78909c;">ยกเลิก</button>
+        <button type="button" class="btn" id="monthOkBtn">ตกลง</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const subOptionsMap = {
+        "โบทอค": ["Aestox 50 u", "Aestox 100 u", "Allergan 50 u", "Allergan 100 u"],
+        "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q ระบุสีด้วย", "Restylane ระบุสีด้วย"],
+        "Fat/Hifu": ["Bromi", "Sisi", "HIFU", "HIFU แถม"],
+        "งานผิว": ["Meso Chanel", "P - Cell", "Aquatic", "Hestina", "Exosome", "Rejuran", "Belotero Revive", "Sculptra", "Juvelook", "Aesthefill"],
+        "ดริปผิว": ["Snow White", "Super Aurawhite", "Vitamin Mix", "Brain Booster", "Energy Booster"],
+        "อื่นๆ": ["ยาฉีดสลายฝ้า", "ครีมทาฝ้า", "ยาทานฝ้า", "ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen", "จ่ายเงิน/จองสินค้า"],
+        "ทรีทเม้นท์": ["ทรีทเมนต์หน้าใส", "ทรีทเมนต์สิว", "ทรีทเมนต์ฝ้า"]
+      };
+      subOptionsMap["โปรโมชั่น/อีเว้นพิเศษ"] = [...new Set(Object.values(subOptionsMap).flat())];
+
+      const thaiMonthsFull = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+
+      const ITEM_RE = /^(.*?)\s*(?:\((.*?)\))?\s*-\s*(\d+)\s*ชิ้น(?:\s*[xX*]\s*([\d,.\s]+)(?:\s*(?:บาท|฿))?)?/;
+      function parseCurrency(v){
+        if (v == null) return 0;
+        if (typeof v === 'number') return isFinite(v) ? v : 0;
+        const s = String(v).replace(/[^\d.-]/g,'');
+        const n = parseFloat(s);
+        return isNaN(n) ? 0 : n;
+      }
+      function parseLine(itemText){
+        const m = itemText.match(ITEM_RE);
+        if(!m) return null;
+        return { main:(m[1]||'').trim(), sub:(m[2]||'').trim(), qty:parseInt(m[3],10)||0, price:parseCurrency(m[4]) };
+      }
+      function formatDate(dateStr){ if(!dateStr) return ''; const [y,m,d] = dateStr.split('-'); return `${d}/${m}/${y.slice(-2)}`; }
+      function monthLabel(ym){ const [y,m]=ym.split('-').map(n=>parseInt(n,10)); return `${thaiMonthsFull[m-1]} ${y}`; }
+      function daysInMonth(year, month){ return new Date(year, month, 0).getDate(); }
+      function daysToCompareForMonth(year, month){ const now=new Date(); const isCurrent=(now.getFullYear()===year && (now.getMonth()+1)===month); const lastDay=daysInMonth(year,month); return isCurrent? Math.min(now.getDate(), lastDay) : lastDay; }
+      function debounce(fn, wait){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; }
+      function escapeHtml(str){ return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;'); }
+      function escapeAttr(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+      // ===== State =====
+      let allCustomerRecords = [];
+      let groupedByMonth = {};
+      let monthsSorted = [];
+      let selectedMonth = null; // 'YYYY-MM'
+      let rangeStart = null;    // 'YYYY-MM'
+      let rangeEnd = null;      // 'YYYY-MM'
+      let chartInstance = null;
+
+      const isRangeActive = () => !!(rangeStart && rangeEnd);
+
+      // ===== Fetch & Init =====
+      fetch('/api/sales')
+        .then(res=>res.json())
+        .then(data=>{
+          if(!data || data.length===0){ document.getElementById('reviewSection').textContent='ไม่มีข้อมูลยอดขาย'; return; }
+          const records = data.map(rec => ({ ...rec, items: typeof rec.items === 'string' ? JSON.parse(rec.items) : (rec.items||[]) }));
+          saveAllRecords(records);
+          setupMonthState();
+          renderView();
+          updateMonthButtons();
+          document.getElementById('downloadExcelBtn').disabled = false;
+          document.getElementById('downloadPdfBtn').disabled = false;
+        })
+        .catch(err=>{ console.error(err); document.getElementById('reviewSection').textContent='เกิดข้อผิดพลาดในการโหลดข้อมูล'; });
+
+      function saveAllRecords(records){
+        allCustomerRecords = records;
+        groupedByMonth = {};
+        records.forEach(rec=>{
+          const d = rec.date && /^\d{4}-\d{2}-\d{2}$/.test(rec.date) ? rec.date : null;
+          if(!d) return;
+          const month = d.slice(0,7);
+          (groupedByMonth[month] ??= []).push({
+            ...rec,
+            amount: parseCurrency(rec.amount),
+            items: Array.isArray(rec.items) ? rec.items : []
+          });
+        });
+        monthsSorted = Object.keys(groupedByMonth).sort((a,b)=>{
+          const [ay, am] = a.split('-').map(Number);
+          const [by, bm] = b.split('-').map(Number);
+          return ay === by ? am - bm : ay - by;
+        });
+      }
+
+      function setupMonthState(){
+        selectedMonth = monthsSorted[monthsSorted.length-1] || null;
+        rangeStart = null; rangeEnd = null;
+        updateRangeBadge();
+      }
+
+      function updateRangeBadge(){
+        const badge = document.getElementById('rangeBadge');
+        if (isRangeActive()){
+          badge.style.display = 'inline-block';
+          badge.textContent = `${monthLabel(rangeStart)} – ${monthLabel(rangeEnd)}`;
+        } else {
+          badge.style.display = 'none';
+          badge.textContent = '';
+        }
+      }
+
+      // ===== Rendering switch =====
+      function renderView(){
+        if (isRangeActive()) renderSelectedRange(); else renderSelectedMonth();
+        const input = document.getElementById('searchInput');
+        if (input){ input.value=''; onSearch(); }
+        toggleSearch(false);
+      }
+
+      function destroyChart(){
+        if (chartInstance && typeof chartInstance.destroy === 'function') {
+          try{ chartInstance.destroy(); }catch{}
+          chartInstance = null;
+        }
+      }
+
+      // ===== Rendering: Range =====
+      function renderSelectedRange(){
+        const reviewSection = document.getElementById('reviewSection');
+        reviewSection.innerHTML = '';
+
+        const monthsInRange = monthsSorted.filter(m=> m >= rangeStart && m <= rangeEnd);
+        if (monthsInRange.length === 0){ reviewSection.textContent = 'ไม่พบข้อมูลในช่วงเวลาที่เลือก'; return; }
+        const recs = monthsInRange.flatMap(m=> groupedByMonth[m] || []);
+        const total = recs.reduce((s,r)=> s + parseCurrency(r.amount), 0);
+
+        const summaryRow = document.createElement('div');
+        summaryRow.className='month-summary';
+        summaryRow.textContent = `📆 ช่วง ${monthLabel(rangeStart)} – ${monthLabel(rangeEnd)} — ยอดรวม ${total.toLocaleString()} บาท`;
+        reviewSection.appendChild(summaryRow);
+
+        const table = document.createElement('table');
+        table.innerHTML = `<thead><tr><th>ลำดับ</th><th>ชื่อ</th><th>เบอร์</th><th>รายการ</th><th>ยอด</th></tr></thead><tbody></tbody>`;
+        const tbody = table.querySelector('tbody');
+        const sortedRecs = recs.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
+
+        let currentDate = ''; let subIndex = 1; let dailyTotal = 0;
+        function pushDayHeader(dateStr){ const tr=document.createElement('tr'); tr.className='day-header'; const td=document.createElement('td'); td.colSpan=5; td.textContent=`📅 วันที่ ${dateStr}`; tr.appendChild(td); tbody.appendChild(tr); }
+        function pushDayTotal(){ const tr=document.createElement('tr'); tr.className='day-total'; const td=document.createElement('td'); td.colSpan=5; td.innerHTML=`💵 ${dailyTotal.toLocaleString()} บาท`; tr.appendChild(td); tbody.appendChild(tr); }
+
+        sortedRecs.forEach(r=>{ const formattedDate = formatDate(r.date); if(formattedDate !== currentDate){ if(currentDate !== '') pushDayTotal(); currentDate = formattedDate; subIndex = 1; dailyTotal = 0; pushDayHeader(formattedDate); }
+          const rowTotal = parseCurrency(r.amount); dailyTotal += rowTotal; const tr = buildRow(r, subIndex++); tbody.appendChild(tr); });
+        if(currentDate !== '') pushDayTotal();
+        reviewSection.appendChild(table);
+
+        // สรุปรายการ
+        const itemSummary = {}; const itemTotal = {}; const promoItemSummary = {}; const promoItemTotal = {};
+        recs.forEach(rec=>{
+          (rec.items||[]).forEach(text=>{
+            const p=parseLine(text); if(!p) return;
+            const value=(p.qty||0)*(p.price||0);
+            if(p.main==='โปรโมชั่น/อีเว้นพิเศษ'){
+              const key=p.sub||p.main; promoItemSummary[key]=(promoItemSummary[key]||0)+p.qty; promoItemTotal[key]=(promoItemTotal[key]||0)+value;
+            } else {
+              const key=p.sub||p.main; itemSummary[key]=(itemSummary[key]||0)+p.qty; itemTotal[key]=(itemTotal[key]||0)+value;
+            }
+          });
+        });
+
+        function renderItemSummary(title, qtyMap, totalMap, totalFromItems){
+          const totalQty = Object.values(qtyMap).reduce((a,b)=>a+b,0);
+          const keys = Object.keys(qtyMap).sort((a,b)=> (totalMap[b]||0)-(totalMap[a]||0));
+          let html = `<div style="margin-bottom:10px;"><strong>${title} ${totalQty.toLocaleString()} ชิ้น, รวม ${totalFromItems.toLocaleString()} บาท</strong><ul style="padding-left:20px; margin:5px 0;">`;
+          keys.forEach(name=>{ const qty = qtyMap[name]||0; const itemTotalV = totalMap[name]||0; html += `<li>${name} — ${qty} ชิ้น, ${itemTotalV.toLocaleString()} บาท</li>`; });
+          html += '</ul></div>';
+          return html;
+        }
+
+        let normalAmount = 0, promoAmount = 0;
+        recs.forEach(rec=>{
+          (rec.items||[]).forEach(text=>{
+            const p=parseLine(text); if(!p) return; const value=(p.qty||0)*(p.price||0);
+            if(p.main==='โปรโมชั่น/อีเว้นพิเศษ') promoAmount += value; else normalAmount += value;
+          });
+        });
+
+        const summaryDiv = document.createElement('div'); summaryDiv.className='summary-card';
+        const summaryHTML = `${renderItemSummary('⭐ สินค้าทั่วไป', itemSummary, itemTotal, normalAmount)}${renderItemSummary('🎁 โปรโมชั่น', promoItemSummary, promoItemTotal, promoAmount)}`;
+
+        // ชำระเงิน
+        const paymentMap = {};
+        recs.forEach(r=>{
+          const key = (r.payment || 'ไม่ระบุ').trim();
+          paymentMap[key] = (paymentMap[key]||0) + parseCurrency(r.amount);
+        });
+        const paymentHtml = `<div style="margin-top:10px;">
+          <strong>💳 สรุปตามช่องทางชำระเงิน</strong>
+          <ul style="padding-left:20px; margin:6px 0;">
+            ${Object.entries(paymentMap).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<li>${k} — ${v.toLocaleString()} บาท</li>`).join('')}
+          </ul>
+        </div>`;
+
+        /* ✨ ไม่มีปุ่มเพิ่มเติม/พับ-กาง: แสดงเนื้อหาเต็มเลย */
+        summaryDiv.innerHTML = `${summaryHTML}${paymentHtml}`;
+        reviewSection.appendChild(summaryDiv);
+
+        // Chart
+        const monthTotals = monthsInRange.map(m=> ({ m, total: (groupedByMonth[m]||[]).reduce((s,r)=> s + parseCurrency(r.amount), 0) }));
+        const canvasContainer = document.createElement('div'); canvasContainer.style.marginTop='30px'; canvasContainer.style.height='240px';
+        const canvas = document.createElement('canvas'); canvas.id='salesChart'; canvasContainer.appendChild(canvas); reviewSection.appendChild(canvasContainer);
+        destroyChart();
+        const ctx = canvas.getContext('2d');
+        if(ctx){
+          chartInstance = new Chart(ctx, {
+            type:'bar',
+            data:{ labels: monthTotals.map(x=> monthLabel(x.m)), datasets:[{ label:'ยอดรวม (บาท)', data: monthTotals.map(x=> x.total) }] },
+            options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'top' } }, scales:{ y:{ ticks:{ precision:0 } } } }
+          });
+        }
+      }
+
+      // ===== Rendering: Month =====
+      function renderSelectedMonth(){
+        const reviewSection = document.getElementById('reviewSection');
+        reviewSection.innerHTML = '';
+        if(!selectedMonth || !groupedByMonth[selectedMonth]){ reviewSection.textContent = 'ไม่พบข้อมูลของเดือนที่เลือก'; return; }
+
+        const recs = groupedByMonth[selectedMonth].slice();
+        const total = recs.reduce((sum, r)=> sum + parseCurrency(r.amount), 0);
+
+        const itemSummary = {}; const itemTotal = {}; const promoItemSummary = {}; const promoItemTotal = {};
+        recs.forEach(rec=>{
+          (rec.items||[]).forEach(text=>{
+            const p=parseLine(text); if(!p) return; const value=(p.qty||0)*(p.price||0);
+            if(p.main==='โปรโมชั่น/อีเว้นพิเศษ'){ const key=p.sub||p.main; promoItemSummary[key]=(promoItemSummary[key]||0)+p.qty; promoItemTotal[key]=(promoItemTotal[key]||0)+value; }
+            else { const key=p.sub||p.main; itemSummary[key]=(itemSummary[key]||0)+p.qty; itemTotal[key]=(itemTotal[key]||0)+value; }
+          });
+        });
+
+        const [y,m] = selectedMonth.split('-').map(n=>parseInt(n,10));
+        const monthIndex = m-1;
+        const summaryRow = document.createElement('div'); summaryRow.className='month-summary'; summaryRow.textContent = `📆 ${thaiMonthsFull[monthIndex]} ${y} — ยอดรวม ${total.toLocaleString()} บาท`;
+
+        const prevMonthDate = new Date(y, m-2, 1);
+        const prevMonth = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth()+1).padStart(2,'0')}`;
+        const limitDayCurr = daysToCompareForMonth(y, m);
+        const currToDateTotal = recs.filter(r=> (parseInt((r.date ? r.date.split('-')[2] : '0'))||0) <= limitDayCurr).reduce((s,r)=> s+parseCurrency(r.amount), 0);
+
+        const prevRecs = groupedByMonth[prevMonth] || [];
+        const [py, pm] = prevMonth.split('-').map(n=>parseInt(n,10));
+        const limitDayPrev = (pm && py) ? Math.min(limitDayCurr, daysInMonth(py, pm)) : 0;
+        const prevToDateTotal = prevRecs.filter(r=> (parseInt((r.date ? r.date.split('-')[2] : '0'))||0) <= limitDayPrev).reduce((s,r)=> s+parseCurrency(r.amount), 0);
+        const diff = currToDateTotal - prevToDateTotal;
+
+        const compareDiv = document.createElement('div'); compareDiv.className='compare'; compareDiv.style.color = diff>0 ? 'green' : diff<0 ? 'crimson' : '#555';
+        compareDiv.textContent = diff>0 ? `📈 ยอดขายจนถึงวันที่ ${limitDayCurr}: มากกว่าเดือนก่อนหน้า ${diff.toLocaleString()} บาท` : diff<0 ? `📉 ยอดขายจนถึงวันที่ ${limitDayCurr}: น้อยกว่าเดือนก่อนหน้า ${Math.abs(diff).toLocaleString()} บาท` : `📊 ยอดขายจนถึงวันที่ ${limitDayCurr}: เท่ากับเดือนก่อนหน้า`;
+
+        const monthWrap = document.createElement('div'); monthWrap.appendChild(summaryRow); monthWrap.appendChild(compareDiv); document.getElementById('reviewSection').appendChild(monthWrap);
+
+        // ตารางรายวัน
+        const table = document.createElement('table');
+        table.innerHTML = `<thead><tr><th>ลำดับ</th><th>ชื่อ</th><th>เบอร์</th><th>รายการ</th><th>ยอด</th></tr></thead><tbody></tbody>`;
+        const tbody = table.querySelector('tbody');
+
+        const sortedRecs = recs.sort((a,b)=> new Date(b.date) - new Date(a.date));
+        let currentDate = ''; let subIndex = 1; let dailyTotal = 0;
+
+        function pushDayHeader(dateStr){ const tr=document.createElement('tr'); tr.className='day-header'; const td=document.createElement('td'); td.colSpan=5; td.textContent=`📅 วันที่ ${dateStr}`; tr.appendChild(td); tbody.appendChild(tr); }
+        function pushDayTotal(){ const tr=document.createElement('tr'); tr.className='day-total'; const td=document.createElement('td'); td.colSpan=5; td.innerHTML=`💵 ${dailyTotal.toLocaleString()} บาท`; tr.appendChild(td); tbody.appendChild(tr); }
+
+        sortedRecs.forEach(r=>{ const formattedDate = formatDate(r.date); if(formattedDate !== currentDate){ if(currentDate !== '') pushDayTotal(); currentDate = formattedDate; subIndex = 1; dailyTotal = 0; pushDayHeader(formattedDate); }
+          const rowTotal = parseCurrency(r.amount); dailyTotal += rowTotal; const tr = buildRow(r, subIndex++); tbody.appendChild(tr); });
+        if(currentDate !== '') pushDayTotal();
+
+        document.getElementById('reviewSection').appendChild(table);
+
+        // สรุปหมวด + ชำระเงิน
+        function renderItemSummary(title, qtyMap, totalMap, totalFromItems){
+          const totalQty = Object.values(qtyMap).reduce((a,b)=>a+b,0);
+          const keys = Object.keys(qtyMap).sort((a,b)=> (totalMap[b]||0)-(totalMap[a]||0));
+          let html = `<div style="margin-bottom:10px;"><strong>${title} ${totalQty.toLocaleString()} ชิ้น, รวม ${totalFromItems.toLocaleString()} บาท</strong><ul style="padding-left:20px; margin:5px 0;">`;
+          keys.forEach(name=>{ const qty = qtyMap[name]||0; const itemTotal = totalMap[name]||0; html += `<li>${name} — ${qty} ชิ้น, ${itemTotal.toLocaleString()} บาท</li>`; });
+          html += '</ul></div>';
+          return html;
+        }
+        let normalAmount = 0, promoAmount = 0;
+        recs.forEach(rec=>{
+          (rec.items||[]).forEach(text=>{
+            const p=parseLine(text); if(!p) return; const value=(p.qty||0)*(p.price||0);
+            if(p.main==='โปรโมชั่น/อีเว้นพิเศษ') promoAmount += value; else normalAmount += value;
+          });
+        });
+        const summaryDiv = document.createElement('div'); summaryDiv.className='summary-card';
+        const summaryHTML = `${renderItemSummary('⭐ สินค้าทั่วไป', itemSummary, itemTotal, normalAmount)}${renderItemSummary('🎁 โปรโมชั่น', promoItemSummary, promoItemTotal, promoAmount)}`;
+
+        const paymentMap = {};
+        recs.forEach(r=>{
+          const key = (r.payment || 'ไม่ระบุ').trim();
+          paymentMap[key] = (paymentMap[key]||0) + parseCurrency(r.amount);
+        });
+        const paymentHtml = `<div style="margin-top:10px;">
+          <strong>💳 สรุปตามช่องทางชำระเงิน</strong>
+          <ul style="padding-left:20px; margin:6px 0;">
+            ${Object.entries(paymentMap).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<li>${k} — ${v.toLocaleString()} บาท</li>`).join('')}
+          </ul>
+        </div>`;
+
+        /* ✨ ไม่มีปุ่มเพิ่มเติม/พับ-กาง: แสดงเนื้อหาเต็มเลย */
+        summaryDiv.innerHTML = `${summaryHTML}${paymentHtml}`;
+        document.getElementById('reviewSection').appendChild(summaryDiv);
+
+        // Chart
+        const canvasContainer = document.createElement('div'); canvasContainer.style.marginTop='30px'; canvasContainer.style.height='220px';
+        const canvas = document.createElement('canvas'); canvas.id='salesChart'; canvasContainer.appendChild(canvas); document.getElementById('reviewSection').appendChild(canvasContainer);
+        const ctx = canvas.getContext('2d'); destroyChart();
+        if(ctx){
+          chartInstance = new Chart(ctx, {
+            type:'bar',
+            data:{ labels: [selectedMonth], datasets:[{ label:'ยอดรวม (บาท)', data: [total] }] },
+            options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'top' } }, layout:{ padding:{ bottom:10 } }, scales:{ y:{ ticks:{ precision:0 } } } }
+          });
+        }
+      }
+
+      // ===== Row builder =====
+      function buildRow(r, subIndex){
+        const tr = document.createElement('tr');
+
+        const tdIndex = document.createElement('td');
+        tdIndex.textContent = subIndex;
+        tr.appendChild(tdIndex);
+
+        const tdName = document.createElement('td');
+        tdName.innerHTML = `
+          <div>
+            <strong class="open-customer" 
+              style="cursor:pointer;color:#008080;" 
+              data-key="${encodeURIComponent((r.name||'')+'|'+(r.phone||''))}">
+              ${escapeHtml(r.name||'')}
+            </strong>
+            <div style="font-size:10px;color:#777;">${escapeHtml(r.opd||'-')}</div>
+          </div>`;
+        tr.appendChild(tdName);
+
+        const tdPhone = document.createElement('td');
+        const phoneSafe = escapeAttr(r.phone || '');
+        tdPhone.innerHTML = `<span style="cursor:pointer;color:#0288d1;"
+          onclick="if(this.dataset.showing==='true'){this.innerText='📞';this.dataset.showing='false';}else{this.innerText='${phoneSafe}';this.dataset.showing='true';}"
+          oncontextmenu="navigator.clipboard?.writeText('${phoneSafe}'); event.preventDefault(); this.title='คัดลอกแล้ว';"
+          title="คลิกเพื่อแสดง/ซ่อน, คลิกขวาเพื่อคัดลอก"
+          data-showing='false'>📞</span>`;
+        tr.appendChild(tdPhone);
+
+        /* รายการ: แสดงเฉพาะรายการ ไม่ใส่หมายเหตุที่นี่ */
+        const itemsUl = (r.items||[]).map(item=>{ 
+          const m = item.match(/^(.*?) ?(?:\((.*?)\))? - (\d+) ชิ้น/);
+          if(m){ const main=m[1], sub=m[2], qty=m[3]; 
+            return `<li>${sub? `${escapeHtml(main)} (${escapeHtml(sub)}` : escapeHtml(main)}${sub?')':''} - ${qty} ชิ้น</li>`; 
+          }
+          return `<li>${escapeHtml(item)}</li>`;
+        }).join('');
+        const tdItems = document.createElement('td');
+        tdItems.innerHTML = `<ul style='margin:0; padding-left:16px;'>${itemsUl}</ul>`;
+        tr.appendChild(tdItems);
+
+        /* ยอดขาย + หมายเหตุ (ย้ายมาตรงนี้ใต้ยอดขายตามคำขอ) */
+        const tdAmt = document.createElement('td');
+        const amt = parseCurrency(r.amount);
+        tdAmt.innerHTML = `
+          <div>${amt.toLocaleString()} บาท${r.payment ? ` (${r.payment})` : ''}</div>
+          ${
+            r.note && String(r.note).trim()
+              ? `<div style="color:#888; font-size:10px; margin-top:4px;">📝 ${escapeHtml(r.note)}</div>`
+              : ''
+          }`;
+        tr.appendChild(tdAmt);
+
+        return tr;
+      }
+
+      // ===== Month Nav =====
+      function updateMonthButtons(){
+        const idx = monthsSorted.indexOf(selectedMonth);
+        const disabled = isRangeActive();
+        const btnPrev = document.getElementById('btnPrev');
+        const btnNext = document.getElementById('btnNext');
+        if (btnPrev) btnPrev.disabled = disabled || (idx <= 0);
+        if (btnNext) btnNext.disabled = disabled || (idx >= monthsSorted.length-1);
+      }
+
+      document.getElementById('btnPrev')?.addEventListener('click', ()=>{ const idx=monthsSorted.indexOf(selectedMonth); if(idx>0){ selectedMonth = monthsSorted[idx-1]; renderView(); updateMonthButtons(); }});
+      document.getElementById('btnNext')?.addEventListener('click', ()=>{ const idx=monthsSorted.indexOf(selectedMonth); if(idx<monthsSorted.length-1){ selectedMonth = monthsSorted[idx+1]; renderView(); updateMonthButtons(); }});
+      document.getElementById('btnPick')?.addEventListener('click', ()=>{ openMonthModal(); });
+      document.getElementById('btnClear')?.addEventListener('click', ()=>{ setupMonthState(); renderView(); updateMonthButtons(); });
+
+      // ===== Search logic =====
+      const onSearch = debounce(()=>{ const val = (document.getElementById('searchInput').value||'').trim().toLowerCase(); const tbody = document.querySelector('table tbody'); if (!tbody) return; let currentHeader = null; let currentHasVisible = false;
+
+      [...tbody.children].forEach(row=>{
+        if(row.classList.contains('day-header')){ if(currentHeader && !currentHasVisible){ currentHeader.style.display = 'none'; if(currentHeader._totalRow) currentHeader._totalRow.style.display = 'none'; } currentHeader = row; currentHeader.style.display = ''; currentHasVisible = false; return; } if(row.classList.contains('day-total')){ if(currentHeader) currentHeader._totalRow = row; row.style.display = currentHasVisible ? '' : 'none'; return; } const text = row.textContent.toLowerCase(); const show = text.includes(val); row.style.display = show ? '' : 'none'; if(show) currentHasVisible = true; });
+
+      if(currentHeader && !currentHasVisible){ currentHeader.style.display = 'none'; if(currentHeader._totalRow) currentHeader._totalRow.style.display = 'none'; }
+    }, 200);
+    document.getElementById('searchInput')?.addEventListener('input', onSearch);
+
+    // ===== Floating Search toggle =====
+    const wrap = document.getElementById('searchWrap');
+    const fab = document.getElementById('searchFab');
+    const panel = document.getElementById('searchPanel');
+    const closeBtn = document.getElementById('searchCloseBtn');
+    function toggleSearch(open){
+      if(!wrap) return;
+      if(open){
+        wrap.classList.add('open');
+        setTimeout(()=> document.getElementById('searchInput')?.focus(), 10);
+      }else{
+        wrap.classList.remove('open');
+      }
+    }
+    fab?.addEventListener('click', (e)=>{ e.stopPropagation(); toggleSearch(true); });
+    closeBtn?.addEventListener('click', (e)=>{ e.stopPropagation(); document.getElementById('searchInput').value=''; onSearch(); toggleSearch(false); });
+    document.addEventListener('click', (e)=>{ 
+      if(!wrap.classList.contains('open')) return; 
+      const t = e.target;
+      if(!(wrap.contains(t))) toggleSearch(false);
+    });
+    document.addEventListener('keydown', (e)=>{ 
+      if(e.key === 'Escape' && wrap.classList.contains('open')){ 
+        document.getElementById('searchInput').value=''; 
+        onSearch(); 
+        toggleSearch(false); 
+      } 
+    });
+
+    // ===== Floating Menu =====
+    const floatingToggle = document.getElementById('floatingToggle');
+    const floatingMenu = document.getElementById('floatingMenu');
+    floatingToggle?.addEventListener('click', (e)=>{ e.stopPropagation(); if(!floatingMenu) return; floatingMenu.style.display = (floatingMenu.style.display==='flex') ? 'none':'flex'; });
+    document.addEventListener('click', (e)=>{ if(!floatingToggle || !floatingMenu) return; if(!floatingToggle.contains(e.target) && !floatingMenu.contains(e.target)) floatingMenu.style.display='none'; });
+
+    // ===== Customer Modal =====
+    document.addEventListener('click', (e)=>{ 
+      const el = e.target.closest?.('.open-customer'); 
+      if(!el) return; 
+      const key = decodeURIComponent(el.dataset.key || ''); 
+      openCustomerModal(key); 
+    });
+    document.getElementById('closeCustomerModalBtn')?.addEventListener('click', closeCustomerModal);
+    document.getElementById('customer-modal')?.addEventListener('click', (e)=>{ if(e.target && e.target.id === 'customer-modal') closeCustomerModal(); });
+
+    function openCustomerModal(key){
+      const records = allCustomerRecords.filter(r=> `${r.name}|${r.phone}` === key);
+      if(records.length===0) return;
+
+      const first = records[0];
+      const customer = { name:first.name, phone:first.phone||'-', opd:first.opd||'-' };
+
+      const latestRecord = records.reduce((latest, r)=> new Date(r.date) > new Date(latest.date) ? r : latest, records[0]);
+      const lastDate = new Date(latestRecord.date);
+      const today = new Date();
+      const daysAbsent = Math.floor( (today - lastDate) / (1000*60*60*24) );
+
+      const paidRecords = records.filter(r=> parseCurrency(r.amount) > 0);
+      const paidVisits = paidRecords.length;
+      const totalAmount = paidRecords.reduce((s,r)=> s + parseCurrency(r.amount), 0);
+      const average = paidVisits>0 ? Math.round(totalAmount/paidVisits) : 0;
+
+      const allItems = {};
+      records.forEach(r=>{
+        (r.items||[]).forEach(item=>{
+          let name=item;
+          const m=item.match(/\((.*?)\)/);
+          if(m){ name=m[1]; } else { name=item.split(' - ')[0]; }
+          const qtyMatch=item.match(/- (\d+) ชิ้น/);
+          const qty= qtyMatch? parseInt(qtyMatch[1],10) : 1;
+          allItems[name]=(allItems[name]||0)+qty;
+        });
+      });
+
+      const categorizedItems = {};
+      for(const [cat, names] of Object.entries(subOptionsMap)){
+        names.forEach(n=>{
+          if(allItems[n]){
+            (categorizedItems[cat] ??= []).push(`${n} : ${allItems[n]}`);
+            delete allItems[n];
+          }
+        });
+      }
+      if(Object.keys(allItems).length){ categorizedItems['อื่นๆ'] = Object.entries(allItems).map(([n,q])=>`${n} : ${q}`); }
+
+      const itemSummary = Object.entries(categorizedItems).map(([cat, items])=> `<div style="margin-bottom:6px;"><strong>${cat}</strong>: ${items.join(' | ')}</div>`).join('');
+
+      const historyHtml = records.sort((a,b)=> b.date.localeCompare(a.date)).map(r=>{
+        const itemsHtml = (r.items||[]).map(item=>{
+          let name=item; const m=item.match(/\((.*?)\)/);
+          if(m){ name=m[1]; } else { name=item.split(' - ')[0]; } const qtyMatch=item.match(/- (\d+) ชิ้น/); const qty = qtyMatch? parseInt(qtyMatch[1],10) : 1; return `<li>${escapeHtml(name)} : ${qty}</li>`; }).join('');
+        const noteText = r.note ? `<div style="margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${escapeHtml(r.note)}</div>` : '';
+        return `<div style="margin-bottom:16px;"><div style="margin-bottom:4px;font-weight:bold;">📅 ${formatDate(r.date)}</div><ul style="padding-left:16px;margin:0;">${itemsHtml}</ul><div style="margin-top:4px;color:#00796b;">💵 ยอด: ${parseCurrency(r.amount).toLocaleString()} บาท</div>${noteText}<hr style="margin: 10px auto; border: 0; border-top: 1px dashed #999; width: 60%;"></div>`; 
+      }).join('');
+
+      const modal = document.getElementById('modal-content');
+      modal.innerHTML = '';
+
+      const title = document.createElement('h3'); title.style.fontSize='18px'; title.style.marginBottom='4px'; title.textContent = `📇 ${customer.name}`;
+      const d1 = document.createElement('div'); d1.innerHTML = `🆔 <strong>OPD:</strong> ${escapeHtml(customer.opd)}`;
+      const d2 = document.createElement('div'); d2.innerHTML = `📞 <strong>เบอร์:</strong> ${escapeHtml(customer.phone)}`;
+      const d3 = document.createElement('div'); d3.innerHTML = `📅 <strong>วันล่าสุด:</strong> ${formatDate(latestRecord.date)} <span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
+      const d4 = document.createElement('div'); d4.style.color='#00796b'; d4.innerHTML = `<strong>💰 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท`;
+
+      const d5 = document.createElement('div'); d5.innerHTML = `🔁 มาใช้บริการ: ${records.length} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)`;
+      const d6 = document.createElement('div'); d6.innerHTML = `💳 <strong>เฉลี่ยต่อครั้ง:</strong> ${Math.round(average).toLocaleString()} บาท`;
+
+      const hr1 = document.createElement('hr'); hr1.style.cssText='margin:16px auto 8px; border:0; border-top:1px solid #ccc; width:60%';
+      const sumTitle = document.createElement('div'); sumTitle.style.fontWeight='bold'; sumTitle.textContent = '📦 สรุปรายการซื้อทั้งหมด:';
+      const sumDiv = document.createElement('div'); sumDiv.style.margin='6px 0 12px'; sumDiv.innerHTML = itemSummary;
+
+      const hr2 = document.createElement('hr'); hr2.style.cssText='margin:16px auto 8px; border:0; border-top:1px solid #ccc; width:60%';
+      const histTitle = document.createElement('div'); histTitle.style.fontWeight='bold'; histTitle.style.marginBottom='6px'; histTitle.textContent='🛍️ ประวัติการซื้อย้อนหลัง:';
+
+      const histWrap = document.createElement('div'); histWrap.innerHTML = historyHtml;
+      const totalWrap = document.createElement('div'); totalWrap.style.cssText='margin-top:10px;font-weight:bold;color:#b8860b;'; totalWrap.textContent = `💰 รวมทั้งหมด: ${totalAmount.toLocaleString()} บาท`;
+
+      modal.appendChild(title); modal.appendChild(d1); modal.appendChild(d2); modal.appendChild(d3); modal.appendChild(d4); modal.appendChild(d5); modal.appendChild(d6);
+      modal.appendChild(hr1); modal.appendChild(sumTitle); modal.appendChild(sumDiv);
+      modal.appendChild(hr2); modal.appendChild(histTitle); modal.appendChild(histWrap); modal.appendChild(totalWrap);
+
+      document.getElementById('customer-modal').style.display='flex';
+    }
+    function closeCustomerModal(){ const m = document.getElementById('customer-modal'); if (m) m.style.display='none'; }
+    function saveModalAsImage(){
+      const node = document.getElementById('modal-content');
+      if(!node){ alert('ไม่พบเนื้อหาใน modal'); return; }
+      html2canvas(node, { scale:2 }).then(canvas=>{
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if(isIOS){
+          const previewArea = document.createElement('div');
+          previewArea.style.marginTop='20px';
+          previewArea.id='modalImagePreview';
+          previewArea.innerHTML = `<div style="font-weight:bold; margin-bottom:6px;">แตะค้างที่ภาพด้านล่างเพื่อบันทึกรูป</div><img src="${dataUrl}" style="width:100%; border:1px solid #ccc; border-radius:12px;" />`;
+          const existing = document.getElementById('modalImagePreview'); if(existing) existing.remove();
+          node.appendChild(previewArea);
+        } else {
+          const link = document.createElement('a'); link.download='customer-info.jpg'; link.href = dataUrl; link.click();
+        }
+      }).catch(err=>{ console.error('จับภาพไม่สำเร็จ:', err); alert('เกิดข้อผิดพลาดในการบันทึกรูปภาพ'); });
+    }
+
+    // ===== Excel Export =====
+    document.getElementById('downloadExcelBtn')?.addEventListener('click', downloadExcel);
+    function downloadExcel(){
+      const allMonths = isRangeActive()
+        ? monthsSorted.filter(m=> m >= rangeStart && m <= rangeEnd)
+        : (selectedMonth ? [selectedMonth] : []);
+      const recs = allMonths.flatMap(m=> groupedByMonth[m] || []);
+      if(!recs.length){ alert('ไม่มีข้อมูลให้ดาวน์โหลด'); return; }
+
+      const filename = isRangeActive ? `ยอดขาย_${rangeStart}_ถึง_${rangeEnd}.xlsx` : `ยอดขาย_${selectedMonth||'ทั้งหมด'}.xlsx`;
+
+      const sortedRecs = recs.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
+      const ws_data = [];
+      let currentDate = '';
+      let dailyTotal = 0;
+
+      sortedRecs.forEach(r=>{
+        const formattedDate = formatDate(r.date);
+        const items = (r.items||[]).map(item=>{
+          const m = item.match(/^(.*?) ?(?:\((.*?)\))? - (\d+) ชิ้น/);
+          if(m){ const main=m[1], sub=m[2], qty=m[3]; return sub? `${main} (${sub}) - ${qty} ชิ้น` : `${main} - ${qty} ชิ้น`; }
+          return item;
+        }).join('\n');
+
+        if(formattedDate !== currentDate){
+          if(currentDate !== ''){ ws_data.push(['','','','รวมยอดประจำวัน', dailyTotal, '']); ws_data.push([]); }
+          currentDate = formattedDate; dailyTotal = 0; ws_data.push([`วันที่ ${formattedDate}`]); ws_data.push(['OPD','ชื่อ','เบอร์','รายการ','ยอด (บาท)','หมายเหตุ']);
+        }
+        dailyTotal += parseCurrency(r.amount);
+        ws_data.push([ r.opd||'', r.name, r.phone||'', items, parseCurrency(r.amount), r.note||'']);
+      });
+      if(currentDate !== '') ws_data.push(['','','','รวมยอดประจำวัน', dailyTotal, '']);
+
+      const worksheet = XLSX.utils.aoa_to_sheet(ws_data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'ยอดขายรายวัน');
+      XLSX.writeFile(workbook, filename);
+    }
+
+    // ===== Month Range Modal =====
+    function openMonthModal(){
+      const mm = document.getElementById('month-modal');
+      const inputStart = document.getElementById('monthStart');
+      const inputEnd = document.getElementById('monthEnd');
+      if (inputStart) inputStart.value = rangeStart || selectedMonth || '';
+      if (inputEnd)   inputEnd.value   = rangeEnd || selectedMonth || '';
+      if (mm) mm.style.display = 'flex';
+    }
+    function closeMonthModal(){ const m = document.getElementById('month-modal'); if (m) m.style.display = 'none'; }
+    function confirmMonthModal(){
+      let s = (document.getElementById('monthStart').value||'').trim();
+      let e = (document.getElementById('monthEnd').value||'').trim();
+      if(!s && !e){ closeMonthModal(); return; }
+      if(s && !e) e = s; if(e && !s) s = e;
+      if (s > e){ const t=s; s=e; e=t; }
+      rangeStart = s; rangeEnd = e; selectedMonth = s;
+      updateRangeBadge();
+      renderView();
+      updateMonthButtons();
+      closeMonthModal();
+    }
+    document.getElementById('month-modal')?.addEventListener('click', (e)=>{ if (e.target && e.target.id === 'month-modal') closeMonthModal(); });
+    document.getElementById('month-modal-box')?.addEventListener('click', (e)=>{ e.stopPropagation(); });
+    document.getElementById('monthCloseBtn')?.addEventListener('click', closeMonthModal);
+    document.getElementById('monthCancelBtn')?.addEventListener('click', closeMonthModal);
+    document.getElementById('monthOkBtn')?.addEventListener('click', confirmMonthModal);
+
+    // ESC ปิดทุก modal
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape'){
+        closeCustomerModal();
+        closeMonthModal();
+        if(document.getElementById('searchWrap').classList.contains('open')){ document.getElementById('searchInput').value=''; onSearch(); toggleSearch(false); }
+      }
+    });
+
+    // expose
+    window.openMonthModal = openMonthModal;
+    window.closeMonthModal = closeMonthModal;
+    window.confirmMonthModal = confirmMonthModal;
+  });
+</script>
 </body>
 </html>

@@ -1,16 +1,783 @@
 <!doctype html>
-<html lang="th">
+<html lang="th" class="h-full">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>{% block title %}App{% endblock %}</title>
-  {% block head %}{% endblock %}
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>คำนวณภาษีจากยอดขาย | What-if + โหมดยอดโอน (ตัดสด)</title>
+
+  <!-- Thai font + Tailwind CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { thai: ['"Noto Sans Thai"', 'ui-sans-serif', 'system-ui'] },
+          colors: {
+            brand: {50:"#eff6ff",100:"#dbeafe",200:"#bfdbfe",300:"#93c5fd",400:"#60a5fa",500:"#3b82f6",600:"#2563eb",700:"#1d4ed8",800:"#1e40af",900:"#1e3a8a"},
+            proj:  {100:"#ecfee8", 600:"#16a34a"},
+            warn:  {50:"#fff7ed", 600:"#ea580c"},
+          },
+          boxShadow: { soft: "0 10px 20px rgba(2, 6, 23, 0.06)" }
+        }
+      }
+    }
+  </script>
+  <style>
+    html, body { height: 100%; }
+    body { font-family: "Noto Sans Thai", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; }
+    input, select, textarea { font-size: 16px; } /* กัน iPhone ซูมอิน */
+    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+    .modal-show { display: flex !important; }
+  </style>
 </head>
-<body>
+<body class="min-h-full bg-slate-50 text-slate-800">
 
-  {% block content %}{% endblock %}
+  <!-- Topbar -->
+  <header class="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+      <a href="/dashboard" class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-xl bg-brand-600 grid place-items-center shadow-soft">
+          <span class="text-white font-bold">Σ</span>
+        </div>
+        <div class="leading-tight">
+          <div class="font-semibold">Sales & Tax</div>
+          <div class="text-xs text-slate-500">คำนวณภาษี | What-if | โหมดยอดโอน</div>
+        </div>
+      </a>
+      <nav class="hidden md:flex items-center gap-4 text-sm">
+        <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="/record_sales">บันทึกยอดขาย</a>
+        <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="/sale_summary">สรุปยอดขาย</a>
+        <a class="px-3 py-2 rounded-lg hover:bg-slate-100 font-medium text-brand-700" href="/tax">คำนวณภาษี</a>
+        <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="/customer_list">ลูกค้า</a>
+        <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="/inventory">สต็อก</a>
+      </nav>
+      <div class="flex items-center gap-3">
+        <a href="/logout" class="text-sm px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800">ออกจากระบบ</a>
+      </div>
+    </div>
+  </header>
 
-  {# วางไว้ท้าย <body> เพื่อให้ DOM พร้อมก่อน #}
-  {% include "floating_menu.html" %}
+  <!-- Main -->
+  <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+    <section class="space-y-8">
+      <!-- Header & Controls -->
+      <div class="flex items-end justify-between flex-wrap gap-4">
+        <div>
+          <h1 class="text-2xl font-semibold tracking-tight">คำนวณภาษีจากยอดขาย</h1>
+          <p class="text-slate-500 text-sm">
+            ปรับยอดได้ทุกเดือนได้เลย (<i>what-if</i>) และเลือกฐานคำนวณ “เฉพาะยอดโอน (ตัดสด)” ได้
+          </p>
+        </div>
+        <div class="flex items-center flex-wrap gap-3">
+          <label class="text-sm text-slate-600">ปีภาษี</label>
+          <select id="yearInput" class="px-3 py-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-brand-500"></select>
+
+          <label class="text-sm text-slate-600">ฐานคำนวณ</label>
+          <select id="baseMode" class="px-3 py-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-brand-500">
+            <option value="all">ยอดขายทั้งหมด</option>
+            <option value="transfer">เฉพาะยอดโอน (ตัด “สด”)</option>
+          </select>
+
+          <button id="calcBtn" class="px-4 py-2 rounded-xl bg-brand-600 text-white hover:bg-brand-700 shadow-soft">คำนวณ</button>
+          <button id="openDeduct" class="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100">เพิ่มค่าลดหย่อนอื่นๆ</button>
+          <button id="detailBtn" class="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100">ดูรายละเอียดการคำนวณ</button>
+          <button id="resetBtn" class="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100">Reset what-if</button>
+          <button id="exportBtn" class="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100">Export CSV</button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div id="kpi" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+
+      <!-- Monthly table (all months editable) -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-soft overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-200">
+          <div class="flex items-center justify-between">
+            <div class="font-medium">ยอดรายเดือน (แก้ได้ทุกเดือน)</div>
+            <div class="text-right">
+              <div id="yearLabel" class="text-slate-500 text-sm"></div>
+              <div id="metaLabel" class="text-xs text-slate-400"></div>
+            </div>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 text-slate-600">
+              <tr>
+                <th class="text-left px-4 py-3">เดือน</th>
+                <th class="text-right px-4 py-3">ยอดจากระบบ (ตามโหมด)</th>
+                <th class="text-right px-4 py-3">ยอดที่ใช้คำนวณ (what-if)</th>
+                <th class="text-right px-4 py-3">ภาษีเฉลี่ย/เดือน*</th>
+              </tr>
+            </thead>
+            <tbody id="monthRows" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+        <div class="px-5 py-3 text-xs text-slate-500 bg-slate-50 leading-relaxed">
+          * “ภาษีเฉลี่ย/เดือน” = ภาษีทั้งปี ÷ 12 (เพื่อวางแผนกระแสเงินสด ไม่ใช่ยอดยื่นรายเดือน)
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="text-xs text-slate-500 space-y-1">
+        <p>สูตร: ค่าใช้จ่ายเหมา 60% (ม.40(8)) + ลดหย่อนบุคคล 60,000 + (ค่าลดหย่อนอื่นๆ ที่คุณกรอก) → ภาษีก้าวหน้า</p>
+        <p class="text-warn-600 bg-warn-50 px-3 py-2 rounded-xl inline-block">หมายเหตุ: ประกันสังคมถูกย้ายไปอยู่ใน “เพิ่มค่าลดหย่อนอื่นๆ” และจะคิดตามเพดาน ม.33/39/40 เมื่อกรอกเท่านั้น</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Floating Quick Menu (mobile) -->
+  <div class="fixed bottom-4 right-4 z-40 md:hidden">
+    <div class="bg-white border border-slate-200 shadow-soft rounded-2xl p-2 flex gap-2">
+      <a href="/record_sales" class="px-3 py-2 rounded-lg bg-slate-100 text-sm">บันทึก</a>
+      <a href="/sale_summary" class="px-3 py-2 rounded-lg bg-slate-100 text-sm">สรุป</a>
+      <a href="/tax" class="px-3 py-2 rounded-lg bg-brand-600 text-white text-sm">ภาษี</a>
+    </div>
+  </div>
+
+  <!-- ===================== Drawer: Other Deductions ===================== -->
+  <aside id="deductDrawer" class="hidden fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-black/30" data-close="#deductDrawer"></div>
+    <div class="absolute right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl border-l border-slate-200 overflow-y-auto">
+      <div class="p-5 border-b border-slate-200 sticky top-0 bg-white z-10">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold">เพิ่มค่าลดหย่อนอื่นๆ</h2>
+          <button class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200" data-close="#deductDrawer">ปิด</button>
+        </div>
+        <p class="text-xs text-slate-500 mt-1">ใส่เฉพาะสิทธิที่มีหลักฐานจริง ระบบจะคำนวณเพดานให้เอง</p>
+      </div>
+
+      <div class="p-5 space-y-6">
+        <!-- Social Security -->
+        <section class="space-y-3">
+          <h3 class="font-medium">ประกันสังคม (ใส่เองตามจริง — เจ้าของกิจการใช้ ม.39/40 ได้)</h3>
+          <div class="flex flex-wrap items-center gap-3 text-sm">
+            <select id="d_ssoType" class="px-3 py-2 rounded-lg border border-slate-300">
+              <option value="33">ม.33 — เพดาน 9,000</option>
+              <option value="39">ม.39 — เพดาน 5,184</option>
+              <option value="40" selected>ม.40 — เพดาน 3,600</option>
+            </select>
+            <input id="d_ssoPaid" type="number" min="0" step="1" placeholder="ยอดที่จ่ายทั้งปี" class="w-40 px-2 py-1 rounded border border-slate-300">
+            <span class="text-xs text-slate-500">จะจำกัดตามเพดานอัตโนมัติ</span>
+          </div>
+        </section>
+
+        <!-- Family -->
+        <section class="space-y-3">
+          <h3 class="font-medium">ครอบครัว</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="text-sm">คู่สมรสไม่มีรายได้ (60,000) <input id="d_spouseNoIncome" type="checkbox" class="ml-2 align-middle"></label>
+            <label class="text-sm">จำนวนบุตรที่ใช้สิทธิ (x 30,000) <input id="d_childrenCount" type="number" min="0" step="1" class="w-28 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+            <label class="text-sm">บุตรเกิดตั้งแต่ปี 2018 (คนที่ 2 เป็นต้นไป) x 30,000 <input id="d_children2018plus" type="number" min="0" step="1" class="w-28 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+            <label class="text-sm">บิดามารดา (อายุ ≥60 & รายได้ ≤30,000/ปี) x 30,000 <input id="d_parentsCount" type="number" min="0" max="4" step="1" class="w-28 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+            <label class="text-sm">ผู้พิการที่อุปการะ (คน) x 60,000 <input id="d_disabledCount" type="number" min="0" step="1" class="w-28 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+          </div>
+        </section>
+
+        <!-- Insurance -->
+        <section class="space-y-3">
+          <h3 class="font-medium">ประกัน/สุขภาพ</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="text-sm">เบี้ยประกันชีวิตตนเอง (≤100,000) <input id="d_lifeSelf" type="number" min="0" step="1" class="w-36 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+            <label class="text-sm">ประกันสุขภาพตนเอง (≤25,000; รวมกับชีวิต ≤100,000) <input id="d_healthSelf" type="number" min="0" step="1" class="w-36 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+            <label class="text-sm">เบี้ยชีวิตคู่สมรสไม่มีรายได้ (≤10,000) <input id="d_lifeSpouse" type="number" min="0" step="1" class="w-36 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+            <label class="text-sm">สุขภาพพ่อแม่ (≤15,000/คน) รวมยอด: <input id="d_healthParentsAmount" type="number" min="0" step="1" class="w-36 ml-2 px-2 py-1 rounded border border-slate-300"> คนที่คุ้มครอง: <input id="d_healthParentsCount" type="number" min="0" max="4" step="1" value="0" class="w-20 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+          </div>
+        </section>
+
+        <!-- Retirement & Savings -->
+        <section class="space-y-3">
+          <h3 class="font-medium">ออมเพื่อเกษียณ (เพดานรวม 500,000/ปี)</h3>
+          <p class="text-xs text-slate-500">คำนวณเพดานจาก “เงินได้หลังหักค่าใช้จ่าย”</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="text-sm">RMF (≤30% ฐาน, รวม 500k) <input id="d_rmf" type="number" min="0" step="1" class="w-36 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+            <label class="text-sm">กองทุนสำรองเลี้ยงชีพ/กบข./ครูเอกชน (≤15% ฐาน, รวม 500k) <input id="d_pvd_gpf_ptf" type="number" min="0" step="1" class="w-36 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+            <label class="text-sm">ประกันชีวิตแบบบำนาญ (≤15% ฐาน, เพดาน 200k, รวม 500k) <input id="d_annuityLife" type="number" min="0" step="1" class="w-36 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+            <label class="text-sm">กอช./NSF (นับรวมเพดาน 500k) <input id="d_nsf" type="number" min="0" step="1" class="w-36 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="text-sm">SSF (≤30% ฐาน, เพดาน 200k) <input id="d_ssf" type="number" min="0" step="1" class="w-36 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+            <label class="text-sm">Thai ESG (แคมเปญ 2024–2026 เพดาน 300k) <input id="d_thaiESG" type="number" min="0" step="1" class="w-36 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+          </div>
+        </section>
+
+        <!-- Housing / Campaigns -->
+        <section class="space-y-3">
+          <h3 class="font-medium">ที่อยู่อาศัย & แคมเปญ</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="text-sm">ดอกเบี้ยกู้บ้าน (≤100,000) <input id="d_mortgage" type="number" min="0" step="1" class="w-36 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+            <label class="text-sm">Easy e-Receipt (ถ้ามีประกาศปีนั้น) <input id="d_easyReceipt" type="number" min="0" step="1" class="w-36 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+          </div>
+        </section>
+
+        <!-- Donations -->
+        <section class="space-y-3">
+          <h3 class="font-medium">เงินบริจาค</h3>
+          <p class="text-xs text-slate-500">รวมกันแล้วหักได้ไม่เกิน 10% ของฐานหลังหักลดหย่อนอื่นๆ (ก่อนหักบริจาค)</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="text-sm">บริจาคทั่วไป (ตามจริง) <input id="d_donateGeneral" type="number" min="0" step="1" class="w-36 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+            <label class="text-sm">บริจาคพิเศษ (รพ./การศึกษา/กีฬา ฯลฯ) คูณ 2 <input id="d_donateDouble" type="number" min="0" step="1" class="w-36 ml-2 px-2 py-1 rounded border border-slate-300"></label>
+          </div>
+        </section>
+
+        <div class="p-5 border-t border-slate-200">
+          <button class="px-4 py-2 rounded-xl bg-brand-600 text-white hover:bg-brand-700 shadow-soft" data-close="#deductDrawer">เสร็จสิ้น</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===================== Modal: Tax Details ===================== -->
+  <div id="detailModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center z-50">
+    <div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-soft relative">
+      <h2 class="text-lg font-semibold mb-4">รายละเอียดการคำนวณภาษี</h2>
+      <div id="detailContent" class="space-y-4 text-sm"></div>
+      <button id="closeDetail" class="absolute top-2 right-2 px-2 py-1 rounded bg-slate-200 hover:bg-slate-300">ปิด</button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    // ===================== Helpers =====================
+    const MONTH_TH = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+    const fmt2 = (n) => (n ?? 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmt0 = (n) => (n ?? 0).toLocaleString('th-TH');
+    const clamp = (v, min=0) => isNaN(v) ? 0 : Math.max(min, v);
+    const THB = (n) => `฿ ${fmt2(n)}`;
+
+    // ---- normalize payment: map to transfer / cash / unknown
+    function normalizePayment(p){
+      const s = (p ?? '').toString().trim().toLowerCase();
+      if (!s || s==='-' || s==='–' || s==='—') return 'unknown';
+      // ฟันธงตามฐานของคุณ: มีแค่ "โอน" กับ "สด"
+      if (s === 'โอน') return 'transfer';
+      if (s === 'สด') return 'cash';
+      // กันอนาคต: คำพ้อง
+      const transferSet = new Set(['transfer','promptpay','qr','ppt','บัญชี','บัตร','credit','debit','linepay','truewallet','wallet','ธนาคาร']);
+      const cashSet     = new Set(['เงินสด','cash','cs']);
+      if (transferSet.has(s)) return 'transfer';
+      if (cashSet.has(s)) return 'cash';
+      return 'unknown';
+    }
+
+    // ===================== Progressive Tax =====================
+    function calcTaxProgressive(taxable) {
+      let remain = Math.max(0, taxable || 0), tax = 0, prev = 0;
+      const bands = [
+        [150000, 0.00],
+        [300000, 0.05],
+        [500000, 0.10],
+        [750000, 0.15],
+        [1000000, 0.20],
+        [2000000, 0.25],
+        [5000000, 0.30],
+        [Infinity, 0.35],
+      ];
+      const rows = [];
+      for (const [cap, rate] of bands) {
+        const width = (cap === Infinity ? remain : Math.max(0, cap - prev));
+        const portion = Math.min(remain, width);
+        const t = portion * rate;
+        if (portion > 0) rows.push({from: prev+1, to: cap, rate, portion, tax: t});
+        tax += t;
+        remain -= portion;
+        prev = cap;
+        if (remain <= 0) break;
+      }
+      return { tax: Math.round(tax*100)/100, rows };
+    }
+
+    // ===================== Year / Base Mode =====================
+    const yearSel   = document.getElementById('yearInput');
+    const baseMode  = document.getElementById('baseMode');
+
+    const calcBtn   = document.getElementById('calcBtn');
+    const openDeduct= document.getElementById('openDeduct');
+    const detailBtn = document.getElementById('detailBtn');
+    const resetBtn  = document.getElementById('resetBtn');
+    const exportBtn = document.getElementById('exportBtn');
+
+    const kpi        = document.getElementById('kpi');
+    const monthRows  = document.getElementById('monthRows');
+    const yearLabel  = document.getElementById('yearLabel');
+    const metaLabel  = document.getElementById('metaLabel');
+
+    (function initYear(){
+      const now = new Date();
+      const thisYear = now.getFullYear();
+      const years = [];
+      for(let y=thisYear+1; y>=thisYear-5; y--) years.push(y);
+      years.forEach(y => {
+        const opt = document.createElement('option');
+        opt.value = y; opt.textContent = y;
+        if (y === thisYear) opt.selected = true;
+        yearSel.appendChild(opt);
+      });
+    })();
+
+    // ===================== Projections (LocalStorage) =====================
+    const keyProj = (year, mode) => `tax_projections_${year}_${mode}`;
+    function loadProjections(year, mode) {
+      try { return JSON.parse(localStorage.getItem(keyProj(year, mode))||'{}') || {}; } catch { return {}; }
+    }
+    function saveProjections(year, mode, obj) {
+      try { localStorage.setItem(keyProj(year, mode), JSON.stringify(obj||{})); } catch {}
+    }
+    function resetProjections(year, mode) { try { localStorage.removeItem(keyProj(year, mode)); } catch {} }
+
+    // ===================== Fetch base data =====================
+    async function fetchAllMonthsBySummary(year){
+      const res = await fetch(`/api/tax_summary?year=${year}`, { credentials: 'same-origin' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'โหลดข้อมูล (ยอดรวมทั้งหมด) ไม่สำเร็จ');
+      return { months: data.months, meta: { modeNote: 'ฐาน: ยอดทั้งหมด' } };
+    }
+
+    async function fetchAllMonthsTransferOnly(year){
+      const since = `${year}-01-01`, until = `${year}-12-31`;
+      const url = `/api/reccord_sale?since=${since}&until=${until}&limit=20000`;
+      const res = await fetch(url, { credentials: 'same-origin' });
+      const rows = await res.json();
+      if (!res.ok) throw new Error(rows.error || 'โหลดข้อมูล (ยอดโอน) ไม่สำเร็จ');
+
+      const months = Array.from({length:12}, (_,i)=>({month:i+1, gross:0}));
+      let sumTransfer = 0, sumCash = 0, sumUnknown = 0;
+      const seenKinds = new Set();
+
+      for (const r of rows) {
+        const dt = (r.date || '').slice(0,10);
+        if (!dt) continue;
+        const m = parseInt(dt.split('-')[1]||'0',10);
+        const amt = parseFloat(r.amount || 0) || 0;
+        const kind = normalizePayment(r.payment);
+        seenKinds.add((r.payment ?? '').toString());
+        if (m<1 || m>12) continue;
+
+        if (kind === 'transfer') { months[m-1].gross = Math.round((months[m-1].gross + amt)*100)/100; sumTransfer += amt; }
+        else if (kind === 'cash') { sumCash += amt; }
+        else { sumUnknown += amt; }
+      }
+
+      return {
+        months,
+        meta: {
+          modeNote: 'ฐาน: เฉพาะยอดโอน (ตัด “สด”)',
+          total_included: sumTransfer,
+          cash_excluded: sumCash,
+          unknown_excluded: sumUnknown,
+          distinctPayments: Array.from(seenKinds).slice(0,8)
+        }
+      };
+    }
+
+    async function fetchMonths(year, mode){
+      return (mode === 'transfer')
+        ? await fetchAllMonthsTransferOnly(year)
+        : await fetchAllMonthsBySummary(year);
+    }
+
+    // ===================== Deductions inputs =====================
+    const D = {
+      ssoType: document.getElementById('d_ssoType'),
+      ssoPaid: document.getElementById('d_ssoPaid'),
+
+      spouseNoIncome: document.getElementById('d_spouseNoIncome'),
+      childrenCount: document.getElementById('d_childrenCount'),
+      children2018plus: document.getElementById('d_children2018plus'),
+      parentsCount: document.getElementById('d_parentsCount'),
+      disabledCount: document.getElementById('d_disabledCount'),
+
+      lifeSelf: document.getElementById('d_lifeSelf'),
+      healthSelf: document.getElementById('d_healthSelf'),
+      lifeSpouse: document.getElementById('d_lifeSpouse'),
+      healthParentsAmount: document.getElementById('d_healthParentsAmount'),
+      healthParentsCount: document.getElementById('d_healthParentsCount'),
+
+      rmf: document.getElementById('d_rmf'),
+      pvd_gpf_ptf: document.getElementById('d_pvd_gpf_ptf'),
+      annuityLife: document.getElementById('d_annuityLife'),
+      nsf: document.getElementById('d_nsf'),
+      ssf: document.getElementById('d_ssf'),
+      thaiESG: document.getElementById('d_thaiESG'),
+
+      mortgage: document.getElementById('d_mortgage'),
+      easyReceipt: document.getElementById('d_easyReceipt'),
+
+      donateGeneral: document.getElementById('d_donateGeneral'),
+      donateDouble: document.getElementById('d_donateDouble'),
+    };
+
+    function ssoCapByType(type){
+      if (type === '33') return 9000;
+      if (type === '39') return 5184;
+      if (type === '40') return 3600;
+      return 0;
+    }
+
+    // ===================== Engine: compute =====================
+    function computeFromMonthly(monthsUsed, deductions, yearSelected) {
+      const grossYear = Math.round(monthsUsed.reduce((a,b)=>a+(b.gross||0),0)*100)/100;
+      const expense = Math.round(grossYear * 0.60 * 100)/100;
+      const netAfterExpense = Math.max(0, Math.round((grossYear - expense) * 100)/100);
+
+      const allowancePersonal = 60000;
+
+      // SSO (เฉพาะเมื่อกรอกเอง)
+      const ssoPaid = clamp(parseFloat(deductions.ssoPaid||0));
+      const ssoCap = ssoCapByType(deductions.ssoType);
+      const ssoAllowed = Math.min(ssoPaid, ssoCap);
+
+      // ครอบครัว
+      const spouseAllowance = deductions.spouseNoIncome ? 60000 : 0;
+      const childrenAllowance = (Math.max(0, deductions.childrenCount|0)) * 30000;
+      const childrenExtra2018 = Math.max(0, (deductions.children2018plus|0) - 1) * 30000;
+      const parentsAllowance = Math.min(4, Math.max(0, deductions.parentsCount|0)) * 30000;
+      const disabledAllowance = Math.max(0, deductions.disabledCount|0) * 60000;
+
+      // ประกัน/สุขภาพ
+      let lifeSelf = clamp(parseFloat(deductions.lifeSelf||0));
+      let healthSelf = clamp(parseFloat(deductions.healthSelf||0));
+      const lifeSpouse = deductions.spouseNoIncome ? Math.min(clamp(parseFloat(deductions.lifeSpouse||0)), 10000) : 0;
+      lifeSelf = Math.min(lifeSelf, 100000);
+      healthSelf = Math.min(healthSelf, 25000, Math.max(0, 100000 - lifeSelf));
+
+      const hpCount = Math.min(4, Math.max(0, deductions.healthParentsCount|0));
+      const hpAmount = clamp(parseFloat(deductions.healthParentsAmount||0));
+      const healthParents = Math.min(hpAmount, hpCount * 15000);
+
+      // ออมเพื่อเกษียณ
+      const basePct = netAfterExpense;
+      const rmfMax = Math.min(basePct * 0.30, 500000);
+      const pvd_gpf_ptfMax = Math.min(basePct * 0.15, 500000);
+      const annuityMax = Math.min(basePct * 0.15, 200000);
+      const nsfMax = 500000;
+
+      let rmf = Math.min(clamp(parseFloat(deductions.rmf||0)), rmfMax);
+      let pvd_gpf_ptf = Math.min(clamp(parseFloat(deductions.pvd_gpf_ptf||0)), pvd_gpf_ptfMax);
+      let annuityLife = Math.min(clamp(parseFloat(deductions.annuityLife||0)), annuityMax);
+      let nsf = Math.min(clamp(parseFloat(deductions.nsf||0)), nsfMax);
+
+      // เพดานรวม 500k
+      let umbrella = rmf + pvd_gpf_ptf + annuityLife + nsf;
+      if (umbrella > 500000) {
+        let over = umbrella - 500000;
+        const cut = (v)=>{ const dec = Math.min(v, over); over -= dec; return v - dec; };
+        nsf = cut(nsf); if (over>0) annuityLife = cut(annuityLife);
+        if (over>0) pvd_gpf_ptf = cut(pvd_gpf_ptf);
+        if (over>0) rmf = cut(rmf);
+        umbrella = 500000;
+      }
+      const ssf = Math.min(clamp(parseFloat(deductions.ssf||0)), Math.min(basePct*0.30, 200000));
+      const thaiESG = Math.min(clamp(parseFloat(deductions.thaiESG||0)), (yearSelected>=2024 && yearSelected<=2026) ? 300000 : 100000);
+
+      // บ้าน/แคมเปญ
+      const mortgage = Math.min(clamp(parseFloat(deductions.mortgage||0)), 100000);
+      const easyReceipt = clamp(parseFloat(deductions.easyReceipt||0));
+
+      // บริจาค
+      const preDonationBase =
+        netAfterExpense
+        - allowancePersonal - ssoAllowed
+        - spouseAllowance - childrenAllowance - childrenExtra2018 - parentsAllowance - disabledAllowance
+        - lifeSelf - healthSelf - lifeSpouse - healthParents
+        - umbrella - ssf - thaiESG
+        - mortgage - easyReceipt;
+
+      const donateCap = Math.max(0, preDonationBase * 0.10);
+      const donateGeneral = clamp(parseFloat(deductions.donateGeneral||0));
+      const donateDouble = clamp(parseFloat(deductions.donateDouble||0)) * 2;
+      const donationAllowed = Math.min(donateCap, donateGeneral + donateDouble);
+
+      // รวมผล
+      const totalDeductions =
+        allowancePersonal + ssoAllowed
+        + spouseAllowance + childrenAllowance + childrenExtra2018 + parentsAllowance + disabledAllowance
+        + lifeSelf + healthSelf + lifeSpouse + healthParents
+        + umbrella + ssf + thaiESG
+        + mortgage + easyReceipt
+        + donationAllowed;
+
+      const taxable = Math.max(0, Math.round((netAfterExpense - totalDeductions) * 100)/100);
+      const taxObj = calcTaxProgressive(taxable);
+      const taxYear = taxObj.tax;
+      const taxMonth = taxYear>0 ? Math.round((taxYear/12)*100)/100 : 0;
+      const eff = grossYear>0 ? Math.round((taxYear/grossYear)*10000)/100 : 0;
+
+      return {
+        parts: {
+          grossYear, expense, netAfterExpense,
+          allowancePersonal, ssoAllowed,
+          spouseAllowance, childrenAllowance, childrenExtra2018, parentsAllowance, disabledAllowance,
+          lifeSelf, healthSelf, lifeSpouse, healthParents,
+          rmf, pvd_gpf_ptf, annuityLife, nsf, umbrella, ssf, thaiESG,
+          mortgage, easyReceipt,
+          donationAllowed, donateCap, preDonationBase
+        },
+        summary: {
+          social_security: ssoAllowed,
+          gross_year: grossYear,
+          expense_lump: expense,
+          net_after_expense: netAfterExpense,
+          taxable_income: taxable,
+          tax_year: taxYear,
+          tax_month_avg: taxMonth,
+          effective_rate: eff
+        },
+        breakdownRows: taxObj.rows
+      };
+    }
+
+    // ===================== UI Renderers =====================
+    function renderKPIs(summary, mode) {
+      kpi.innerHTML = '';
+      const badge = `<span class="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-proj-100 text-proj-600 border border-green-200 align-middle">What-if (${mode==='transfer'?'เฉพาะยอดโอน':'ยอดทั้งหมด'})</span>`;
+      const items = [
+        { label: 'ยอดทั้งปีที่ใช้คำนวณ', value: `${THB(summary.gross_year)} ${badge}` },
+        { label: 'ค่าใช้จ่ายเหมา 60%', value: THB(summary.expense_lump) },
+        { label: 'เงินได้หลังหักค่าใช้จ่าย', value: THB(summary.net_after_expense) },
+        { label: 'เงินได้พึงประเมิน', value: THB(summary.taxable_income) },
+        { label: 'ภาษีทั้งปี', value: THB(summary.tax_year) },
+        { label: 'เฉลี่ยต่อเดือน', value: THB(summary.tax_month_avg) },
+        { label: 'อัตราภาษีเฉลี่ย', value: `${fmt2(summary.effective_rate)}%` },
+        { label: 'ประกันสังคม (ถ้ามี)', value: THB(summary.social_security || 0) },
+      ];
+      items.forEach(it => {
+        const card = document.createElement('div');
+        card.className = "rounded-2xl bg-white border border-slate-200 p-4 shadow-soft";
+        card.innerHTML = `<div class="text-xs text-slate-500">${it.label}</div><div class="mt-1 text-lg font-semibold">${it.value}</div>`;
+        kpi.appendChild(card);
+      });
+    }
+
+    function renderMonths(year, mode, monthsBase, monthsUsed, taxMonthAvg, meta) {
+      monthRows.innerHTML = '';
+      yearLabel.textContent = `${year} • ${mode==='transfer'?'เฉพาะยอดโอน (ตัด “สด”)':'ยอดทั้งหมด'}`;
+      if (mode === 'transfer') {
+        metaLabel.innerHTML = `นับรวมโอน: <b>${THB(meta.total_included||0)}</b> • ตัด “สด”: <b>${THB(meta.cash_excluded||0)}</b> • ไม่ทราบ: <b>${THB(meta.unknown_excluded||0)}</b>`;
+      } else {
+        metaLabel.textContent = '';
+      }
+
+      for (let i=0;i<12;i++){
+        const baseRow = monthsBase[i] || {month:i+1,gross:0};
+        const usedRow = monthsUsed[i] || baseRow;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="px-4 py-2">${MONTH_TH[i]}</td>
+          <td class="px-4 py-2 text-right">฿ ${fmt2(baseRow.gross)}</td>
+          <td class="px-4 py-2 text-right">
+            <input type="number" inputmode="decimal" min="0" step="0.01"
+              data-month="${i+1}"
+              class="whatif-input w-36 md:w-40 text-right px-2 py-1 border rounded-lg border-slate-300 focus:ring-2 focus:ring-brand-500 bg-proj-100/50"
+              value="${usedRow.gross || ''}">
+          </td>
+          <td class="px-4 py-2 text-right text-slate-700">฿ ${fmt2(taxMonthAvg)}</td>
+        `;
+        monthRows.appendChild(tr);
+      }
+
+      // sanitize + persist
+      document.querySelectorAll('.whatif-input').forEach(inp => {
+        inp.addEventListener('input', () => {
+          let v = (inp.value || '').replace(',', '.').replace(/[^0-9.]/g,'');
+          const parts = v.split('.');
+          if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+          if (parts.length === 2) v = parts[0] + '.' + parts[1].slice(0, 2);
+          inp.value = v;
+        }, {passive:true});
+        inp.addEventListener('change', () => {
+          const y = parseInt(yearSel.value, 10);
+          const m = baseMode.value;
+          const month = parseInt(inp.dataset.month, 10);
+          const val = clamp(parseFloat(inp.value || '0'));
+          const obj = loadProjections(y, m);
+          if (!val) { delete obj[month]; inp.value=''; } else { obj[month]=val; inp.value=val; }
+          saveProjections(y, m, obj);
+        });
+      });
+    }
+
+    // ===================== Modal: detail breakdown =====================
+    const detailModal = document.getElementById('detailModal');
+    const detailContent = document.getElementById('detailContent');
+    const closeDetail = document.getElementById('closeDetail');
+    function openModal(el){ el.classList.add('modal-show'); el.classList.remove('hidden'); }
+    function closeModal(el){ el.classList.remove('modal-show'); el.classList.add('hidden'); }
+
+    function renderDetail(parts, rows, taxable) {
+      // หา marginal & next threshold
+      const ladder = [
+        [150000, 0],[300000,5],[500000,10],[750000,15],[1000000,20],[2000000,25],[5000000,30],[Infinity,35]
+      ];
+      let marginal=0, nextThreshold=null, prev=0;
+      for (const [cap, rate] of ladder){
+        if (taxable > cap) { marginal = rate; prev = cap; continue; }
+        marginal = rate; nextThreshold = cap===Infinity?null:cap; break;
+      }
+      const nextNeededNet = nextThreshold ? Math.max(0, nextThreshold - taxable) : 0;
+      const nextNeededGross = nextThreshold ? Math.round((nextNeededNet/0.4)) : 0; // เพราะหักเหมา 60%
+
+      const tbl = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="rounded-xl border border-slate-200 p-3">
+            <div class="text-xs text-slate-500">โครงสร้างเงินได้</div>
+            <ul class="mt-1 text-sm space-y-1">
+              <li>ยอดทั้งปีที่ใช้คำนวณ: <b>${THB(parts.grossYear)}</b></li>
+              <li>ค่าใช้จ่ายเหมา 60%: <b>${THB(parts.expense)}</b></li>
+              <li>เงินได้หลังหักค่าใช้จ่าย: <b>${THB(parts.netAfterExpense)}</b></li>
+            </ul>
+          </div>
+          <div class="rounded-xl border border-slate-200 p-3">
+            <div class="text-xs text-slate-500">สรุปค่าลดหย่อนที่ใช้</div>
+            <ul class="mt-1 text-sm space-y-1">
+              <li>บุคคลธรรมดา: ${THB(60000)} | ประกันสังคม: ${THB(parts.ssoAllowed||0)}</li>
+              <li>ครอบครัว (คู่สมรส/บุตร/พ่อแม่/ผู้พิการ): ${THB(parts.spouseAllowance + parts.childrenAllowance + parts.childrenExtra2018 + parts.parentsAllowance + parts.disabledAllowance)}</li>
+              <li>ประกัน/สุขภาพ (ตน/คู่สมรส/พ่อแม่): ${THB(parts.lifeSelf + parts.healthSelf + parts.lifeSpouse + parts.healthParents)}</li>
+              <li>ออมเกษียณ (รวม 500k): ${THB(parts.umbrella)} | SSF: ${THB(parts.ssf)} | Thai ESG: ${THB(parts.thaiESG)}</li>
+              <li>ดอกเบี้ยกู้บ้าน + แคมเปญ: ${THB(parts.mortgage + parts.easyReceipt)}</li>
+              <li>บริจาค (หลังคูณ/เพดาน 10%): <b>${THB(parts.donationAllowed)}</b> (เพดาน: ${THB(parts.donateCap)})</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <div class="text-sm font-medium mb-2">บันไดภาษีที่ถูกคิด</div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm border">
+              <thead class="bg-slate-50 text-slate-600">
+                <tr><th class="text-left px-2 py-2">ช่วงเงินได้สุทธิ</th><th class="text-right px-2 py-2">อัตรา</th><th class="text-right px-2 py-2">เงินได้ที่เข้า</th><th class="text-right px-2 py-2">ภาษี</th></tr>
+              </thead>
+              <tbody class="divide-y">
+                ${rows.map(r=>`
+                  <tr>
+                    <td class="px-2 py-1">${fmt0(r.from)} – ${r.to===Infinity?'∞':fmt0(r.to)}</td>
+                    <td class="px-2 py-1 text-right">${(r.rate*100).toFixed(0)}%</td>
+                    <td class="px-2 py-1 text-right">${fmt0(r.portion.toFixed(0))}</td>
+                    <td class="px-2 py-1 text-right">${fmt0(r.tax.toFixed(0))}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div class="mt-3 text-sm">
+            <div>อัตราภาษีสูงสุดที่โดน (Marginal): <b>${marginal}%</b></div>
+            ${nextThreshold!==null ? `<div>เหลืออีก <b>${THB(nextNeededNet)}</b> จะขยับไปขั้นถัดไป (ต้องเพิ่มยอดขายราว <b>${THB(nextNeededGross)}</b> ก่อนหักค่าใช้จ่าย)</div>` : `<div>อยู่ขั้นสูงสุดแล้ว</div>`}
+          </div>
+        </div>
+      `;
+      detailContent.innerHTML = tbl;
+    }
+
+    // ===================== Run (fetch + what-if) =====================
+    async function run() {
+      const y = parseInt(yearSel.value, 10);
+      const mode = baseMode.value;
+
+      try {
+        calcBtn.disabled = true; calcBtn.textContent = 'กำลังคำนวณ...';
+
+        // 1) ดึงยอดฐาน (ตามโหมด)
+        const basePack = await fetchMonths(y, mode);    // {months, meta}
+        const monthsBase = basePack.months;
+        const meta = basePack.meta || {};
+
+        // 2) โหลด what-if เดิม
+        const proj = loadProjections(y, mode);
+        const monthsUsed = monthsBase.map(m => ({ month: m.month, gross: (proj[m.month]!==undefined ? clamp(parseFloat(proj[m.month])) : m.gross) }));
+
+        // 3) อ่าน deductions จาก drawer
+        const ded = {
+          ssoType: D.ssoType.value, ssoPaid: D.ssoPaid.value,
+
+          spouseNoIncome: D.spouseNoIncome.checked,
+          childrenCount: parseInt(D.childrenCount.value || '0', 10),
+          children2018plus: parseInt(D.children2018plus.value || '0', 10),
+          parentsCount: parseInt(D.parentsCount.value || '0', 10),
+          disabledCount: parseInt(D.disabledCount.value || '0', 10),
+
+          lifeSelf: D.lifeSelf.value, healthSelf: D.healthSelf.value, lifeSpouse: D.lifeSpouse.value,
+          healthParentsAmount: D.healthParentsAmount.value, healthParentsCount: D.healthParentsCount.value,
+
+          rmf: D.rmf.value, pvd_gpf_ptf: D.pvd_gpf_ptf.value, annuityLife: D.annuityLife.value, nsf: D.nsf.value,
+          ssf: D.ssf.value, thaiESG: D.thaiESG.value,
+
+          mortgage: D.mortgage.value, easyReceipt: D.easyReceipt.value,
+
+          donateGeneral: D.donateGeneral.value, donateDouble: D.donateDouble.value,
+        };
+
+        // 4) คำนวณ
+        const result = computeFromMonthly(monthsUsed, ded, y);
+
+        // 5) แสดงผล
+        renderKPIs(result.summary, mode);
+        renderMonths(y, mode, monthsBase, monthsUsed, result.summary.tax_month_avg, meta);
+
+        // 6) รายละเอียด
+        detailBtn.onclick = () => {
+          openModal(detailModal);
+          renderDetail(result.parts, result.breakdownRows, result.summary.taxable_income);
+        };
+        document.getElementById('closeDetail').onclick = () => closeModal(detailModal);
+
+        // 7) Export
+        exportBtn.onclick = () => {
+          const lines = [];
+          lines.push(`รายงานคำนวณภาษีจากยอดขาย ปี ${y} (${mode==='transfer'?'เฉพาะยอดโอน (ตัด “สด”)':'ยอดทั้งหมด'})`);
+          const s = result.summary;
+          lines.push(`ยอดทั้งปีที่ใช้คำนวณ,${s.gross_year}`);
+          lines.push(`ค่าใช้จ่ายเหมา 60%,${s.expense_lump}`);
+          lines.push(`เงินได้หลังหักค่าใช้จ่าย,${s.net_after_expense}`);
+          lines.push(`เงินได้พึงประเมิน,${s.taxable_income}`);
+          lines.push(`ภาษีทั้งปี,${s.tax_year}`);
+          lines.push(`ภาษีเฉลี่ยต่อเดือน,${s.tax_month_avg}`);
+          lines.push(`อัตราภาษีเฉลี่ย (%),${s.effective_rate}`);
+          if (mode==='transfer') {
+            lines.push('');
+            lines.push(`สรุปการตัดสด,นับรวมโอน,ตัดออก (สด),ไม่ทราบ`);
+            lines.push(`${y},${(basePack.meta.total_included||0)},${(basePack.meta.cash_excluded||0)},${(basePack.meta.unknown_excluded||0)}`);
+          }
+          lines.push('');
+          lines.push('เดือน,ยอดจากระบบ(ตามโหมด),ยอดที่ใช้คำนวณ,ภาษีเฉลี่ย/เดือน');
+          for (let i=0;i<12;i++){
+            const a = monthsBase[i] || {month:i+1,gross:0};
+            const u = monthsUsed[i] || a;
+            lines.push(`${MONTH_TH[i]},${a.gross},${u.gross},${s.tax_month_avg}`);
+          }
+          const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob); const a = document.createElement('a');
+          a.href = url; a.download = `tax_${y}_${mode}.csv`; a.click(); URL.revokeObjectURL(url);
+        };
+
+      } catch (err) {
+        alert(err.message || 'เกิดข้อผิดพลาด');
+      } finally {
+        calcBtn.disabled = false; calcBtn.textContent = 'คำนวณ';
+      }
+    }
+
+    // ===================== Drawer open/close =====================
+    const drawer = document.getElementById('deductDrawer');
+    document.querySelectorAll('[data-close]').forEach(btn=>{
+      btn.addEventListener('click', () => {
+        const sel = btn.getAttribute('data-close');
+        document.querySelector(sel)?.classList.add('hidden');
+      });
+    });
+    document.getElementById('openDeduct').addEventListener('click', ()=> drawer.classList.remove('hidden'));
+
+    // Events
+    calcBtn.addEventListener('click', run);
+    yearSel.addEventListener('change', run);
+    baseMode.addEventListener('change', run);
+    resetBtn.addEventListener('click', () => { resetProjections(parseInt(yearSel.value,10), baseMode.value); run(); });
+
+    // First run
+    run();
+  </script>
 </body>
 </html>
