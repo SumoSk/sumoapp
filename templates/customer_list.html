@@ -358,6 +358,15 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
     </div>
   </div>
 
+  <!-- Modal: Pitch History -->
+<div id="pitch-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:10000; align-items:center; justify-content:center">
+  <div class="box" style="background:#fff;border-radius:16px;max-width:92vw;max-height:90vh;overflow:auto;padding:18px;position:relative;box-shadow:0 8px 30px rgba(0,0,0,.2)">
+    <button class="close" onclick="closePitchModal()" style="position:absolute;right:10px;top:10px;width:36px;height:36px;border:none;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.15);cursor:pointer;background:#fff">✖</button>
+    <div id="pitch-modal-content"></div>
+  </div>
+</div>
+
+
   <!-- Modal: เลือกช่วงเวลากำหนดเอง -->
   <div id="rangeModal" class="range-modal" style="display:none;">
     <div class="range-modal__backdrop" onclick="closeRangeModal()"></div>
@@ -841,6 +850,18 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
       const t = today();
       return Math.floor((t - d)/(1000*60*60*24));
     };
+// คลิกที่คอลัมน์ "Sale Pitch (วัน)" -> เปิด Pitch History
+document.addEventListener('click', (e)=>{
+  const cell = e.target.closest('#finalCustTable td.lp-cell');
+  if(!cell) return;
+  const tr = cell.closest('tr');
+  if(!tr) return;
+  const opd = tr.getAttribute('data-opd') || '';
+  const nameCell = tr.querySelector('td:nth-child(3)'); // คอลัมน์ชื่อ
+  const displayName = nameCell ? nameCell.textContent.trim() : opd;
+  if(!opd){ alert('ไม่พบ OPD ของลูกค้า'); return; }
+  openPitchModalForOPD(opd, displayName);
+});
 
     async function fetchLatestPitch(opd){
       try{
@@ -851,45 +872,83 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
         return row ? {created_at: row.created_at, content: row.content, outcome: row.outcome || ''} : null;
       }catch{ return null; }
     }
+/* ===== [#4 FULL] รวมจำนวน Pitch ทั้งหมดลงใน tooltip ของ "Sale Pitch (วัน)" ===== */
 
-    async function hydrateLatestPitchesForVisibleRows(){
-      const rows = Array.from(document.querySelectorAll('#finalCustTable tbody tr[data-opd]'));
-      const opds = [...new Set(rows.map(tr => tr.getAttribute('data-opd')).filter(Boolean))];
+/** Cache จำนวนนับ pitch ต่อ OPD (ลดการยิง API ซ้ำ) */
+const pitchCountCache = new Map();
 
-      const targets = opds.filter(opd => !pitchCache.has(opd));
-      for(const opd of targets){
-        const latest = await fetchLatestPitch(opd);
-        pitchCache.set(opd, latest || null);
+/** ดึงจำนวน pitch ทั้งหมดของลูกค้าตาม OPD (ใช้ /api/pitches) */
+async function _fetchPitchCount(opd){
+  if(pitchCountCache.has(opd)) return pitchCountCache.get(opd);
+  try{
+    const r = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
+    if(!r.ok){ pitchCountCache.set(opd, 0); return 0; }
+    const arr = await r.json();
+    const count = Array.isArray(arr) ? arr.length : 0;
+    pitchCountCache.set(opd, count);
+    return count;
+  }catch{
+    pitchCountCache.set(opd, 0);
+    return 0;
+  }
+}
 
-        const rowObj = finalRows.find(r => r.v.opd === opd);
-        if(rowObj){
-          if(latest){
-            rowObj.lastPitchDays = daysSince(latest.created_at);
-            rowObj.lastOutcomeStr = `${latest.content||'-'}${latest.outcome? ' — '+latest.outcome : ''}`;
-          }else{
-            rowObj.lastPitchDays = null;
-            rowObj.lastOutcomeStr = '';
-          }
-        }
+/**
+ * แทนที่เวอร์ชันเดิมทั้งหมด:
+ * - เติมข้อมูล Pitch ล่าสุด (วันนับจากล่าสุด และสรุป Outcome ในคอลัมน์)
+ * - เพิ่ม "รวม X ครั้ง" ลงใน tooltip ของคอลัมน์ Sale Pitch (วัน)
+ */
+async function hydrateLatestPitchesForVisibleRows(){
+  // หา tr ที่มี data-opd จากตารางลูกค้าสุดท้าย
+  const rows = Array.from(document.querySelectorAll('#finalCustTable tbody tr[data-opd]'));
+  const opds = [...new Set(rows.map(tr => tr.getAttribute('data-opd')).filter(Boolean))];
 
-        const tr = document.querySelector(`#finalCustTable tbody tr[data-opd="${CSS.escape(opd)}"]`);
-        if(tr){
-          const cellDays = tr.querySelector('.lp-cell');
-          const cellOutcome = tr.querySelector('.lp-outcome');
-          if(latest){
-            const dd = String(latest.created_at||'').slice(0,10);
-            const title = `Pitch ล่าสุด: ${formatDate(dd)} • ${latest.content||''}${latest.outcome? ' — '+latest.outcome : ''}`;
-            cellDays.textContent = `${daysSince(latest.created_at)} วัน`;
-            cellDays.title = title;
-            cellOutcome.textContent = `${latest.content||'-'}${latest.outcome? ' — '+latest.outcome : ''}`;
-          }else{
-            cellDays.textContent = 'ไม่เคย';
-            cellDays.title = '—';
-            cellOutcome.textContent = '—';
-          }
-        }
+  // เลือกเฉพาะ OPD ที่ยังไม่เคย fetch "latest pitch"
+  const targets = opds.filter(opd => !pitchCache.has(opd));
+
+  for(const opd of targets){
+    // 1) ดึง pitch ล่าสุด 1 รายการ (ฟังก์ชันนี้มีอยู่แล้วในโค้ดเดิมของคุณ)
+    const latest = await fetchLatestPitch(opd);
+    pitchCache.set(opd, latest || null);
+
+    // 2) ดึง "จำนวนทั้งหมด" ของ pitch เพื่อแสดงใน tooltip
+    const pitchCount = await _fetchPitchCount(opd); // ← เพิ่มจากเวอร์ชันเดิม
+
+    // 3) อัปเดตออบเจ็กต์ในหน่วยความจำ (finalRows) ให้สะท้อนค่าใหม่
+    const rowObj = finalRows.find(r => r.v.opd === opd);
+    if(rowObj){
+      if(latest){
+        rowObj.lastPitchDays = daysSince(latest.created_at);
+        rowObj.lastOutcomeStr = `${latest.content||'-'}${latest.outcome? ' — '+latest.outcome : ''}`;
+      }else{
+        rowObj.lastPitchDays = null;
+        rowObj.lastOutcomeStr = '';
       }
     }
+
+    // 4) อัปเดต DOM ของแถวที่เกี่ยวข้อง
+    const tr = document.querySelector(`#finalCustTable tbody tr[data-opd="${CSS.escape(opd)}"]`);
+    if(tr){
+      const cellDays = tr.querySelector('.lp-cell');     // คอลัมน์ "Sale Pitch (วัน)"
+      const cellOutcome = tr.querySelector('.lp-outcome'); // คอลัมน์ "Outcome (ล่าสุด)"
+
+      if(latest){
+        const dd = String(latest.created_at||'').slice(0,10);
+        // ใส่จำนวนครั้งรวมต่อท้าย tooltip
+        const title = `Pitch ล่าสุด: ${formatDate(dd)} • ${latest.content||''}${latest.outcome? ' — '+latest.outcome : ''} • รวม ${pitchCount} ครั้ง`;
+        cellDays.textContent = `${daysSince(latest.created_at)} วัน`;
+        cellDays.title = title;
+        cellOutcome.textContent = `${latest.content||'-'}${latest.outcome? ' — '+latest.outcome : ''}`;
+      }else{
+        cellDays.textContent = 'ไม่เคย';
+        // ถึงไม่มีล่าสุด ก็ยังโชว์ “รวม X ครั้ง” (ส่วนใหญ่จะเป็น 0)
+        cellDays.title = `— • รวม ${pitchCount} ครั้ง`;
+        cellOutcome.textContent = '—';
+      }
+    }
+  }
+}
+
 
     /* ===== แก้ไข Profile inline ===== */
     async function saveProfile(opd, value){
@@ -1192,6 +1251,76 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
         console.error(e); alert('โหลดข้อมูลไม่สำเร็จ');
       }
     })();
+
+    /* ===== Pitch History Modal ===== */
+function closePitchModal(){
+  const m = document.getElementById('pitch-modal');
+  if(m) m.style.display='none';
+}
+document.getElementById('pitch-modal')?.addEventListener('click', (e)=>{
+  const box = e.target.closest('.box');
+  if(!box) closePitchModal();
+});
+
+function fmtDateTime(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  if(isNaN(d)) return iso;
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+  const hh=String(d.getHours()).padStart(2,'0'), mm=String(d.getMinutes()).padStart(2,'0');
+  return `${dd}/${m}/${String(y).slice(-2)} ${hh}:${mm}`;
+}
+
+async function openPitchModalForOPD(opd, displayName){
+  try{
+    const r = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
+    if(!r.ok){ alert('โหลดประวัติ Pitch ไม่สำเร็จ'); return; }
+    const rows = await r.json() || [];
+
+    // สรุปจำนวนครั้ง
+    const count = rows.length;
+
+    // สร้างตาราง: วันที่, ช่องทาง, โปรโมชั่น, Outcome, Comment, ผู้บันทึก
+    const table = rows.map((p,idx)=>`
+      <tr>
+        <td>${idx+1}</td>
+        <td>${fmtDateTime(p.created_at||'')}</td>
+        <td>${esc(p.channel||'-')}</td>
+        <td>${esc(p.promotion||'-')}</td>
+        <td>${esc(p.outcome||'-')}</td>
+        <td>${esc(p.content||'-')}</td>
+        <td>${esc(p.author||'-')}</td>
+      </tr>
+    `).join('') || `<tr><td colspan="7" class="sub-muted">ยังไม่มีประวัติการ Pitch</td></tr>`;
+
+    const html = `
+      <div style="margin-bottom:8px">
+        <div class="headline" style="font-size:18px; margin:0 0 4px">ประวัติการ Pitch — ${esc(displayName||opd)}</div>
+        <div class="sub-muted">รวมทั้งหมด <b>${count.toLocaleString()}</b> ครั้ง</div>
+      </div>
+      <table style="width:100%; border-collapse:collapse; background:#fff">
+        <thead>
+          <tr>
+            <th style="width:48px">#</th>
+            <th>วันที่</th>
+            <th>ช่องทาง</th>
+            <th>โปรโมชั่น</th>
+            <th>Outcome</th>
+            <th>Comment</th>
+            <th>ผู้บันทึก</th>
+          </tr>
+        </thead>
+        <tbody>${table}</tbody>
+      </table>
+    `;
+    document.getElementById('pitch-modal-content').innerHTML = html;
+    document.getElementById('pitch-modal').style.display='flex';
+  }catch(e){
+    console.error(e);
+    alert('เกิดข้อผิดพลาดในการโหลดข้อมูล Pitch');
+  }
+}
+
   </script>
   {% include "floating_menu.html" %}
 </body>
