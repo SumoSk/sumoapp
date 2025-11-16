@@ -280,6 +280,79 @@
 .table-mini th, .table-mini td { padding:6px 8px; border-bottom:1px dashed #e0e0e0; text-align:right; }
 .table-mini th:first-child, .table-mini td:first-child { text-align:left; }
 .badge { display:inline-block; padding:2px 8px; border-radius:999px; background:#e0f2f1; color:#004d40; font-size:12px; }
+
+/* === กล่องลูกค้าที่ควรโทรก่อน (Lead Score) === */
+.lead-score-box {
+  max-width: 1200px;
+  margin: 0 auto 20px;
+  background: #fff;
+  padding: 15px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+.lead-score-box h3 {
+  margin-top: 0;
+  color: teal;
+  font-size: 18px;
+  text-align: center;
+}
+.lead-score-sub {
+  text-align: center;
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+  margin-bottom: 10px;
+}
+#leadScoreList {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+#leadScoreList li {
+  padding: 6px 0;
+  border-bottom: 1px dashed #e5e7eb;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.lead-name {
+  font-weight: 600;
+  color: #00695c;
+  cursor: pointer;
+}
+.lead-score-badge {
+  background: #e0f2f1;
+  color: #004d40;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.lead-score-meta {
+  font-size: 12px;
+  color: #4b5563;
+  flex: 1 1 auto;   /* ไม่บังคับให้ลงบรรทัดใหม่ */
+  white-space: normal;
+}
+.lead-absent {
+  color: #dc2626;
+  font-weight: 600;
+}
+.lead-money {
+  font-weight: 600;
+  color: #009688;
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 768px) {
+  .lead-score-box h3 { font-size: 14px; }
+  .lead-score-sub,
+  .lead-score-meta,
+  .lead-score-badge,
+  #leadScoreList li { font-size: 10px; }
+}
+
 </style>
 </head>
 <body>
@@ -354,6 +427,18 @@
   <div class="summary-list" id="summaryList"></div>
 </div>
 
+<!-- กล่อง: ลูกค้าที่ควรโทรก่อน ตามคะแนน -->
+<div class="lead-score-box">
+  <h3>📞 ลูกค้าที่ควรตามในเดือนนี้</h3>
+  <div class="lead-score-sub">
+    ระบบจะดูจาก <b>= มูลค่าลูกค้า (ยอดรวม + จำนวนครั้ง + บิลเฉลี่ย) + คะแนนหายไปนาน (ดีที่สุดช่วง 46–120 วัน) และตัดคนที่มา 45 วัน</b><br>
+    
+  </div>
+  <ul id="leadScoreList">
+    <!-- JS จะเติมรายการให้เอง -->
+  </ul>
+</div>
+
 <!-- Modal แสดงกลุ่ม -->
 <div id="group-modal" style="display:none;position:fixed;inset:0;background-color:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
   <div id="group-modal-content" style="background:white;padding:20px;border-radius:16px;width:95%;max-width:700px;max-height:90vh;overflow:auto;position:relative; font-size:13px;">
@@ -375,6 +460,69 @@
   let allSalesRecords = [];
   let allCustomerRecords = [];
   let fullCustomerList = [];
+async function fetchLatestPitchForOPD(opd) {
+  if (!opd || opd === '-') return null;
+
+  try {
+    const url = `/api/salepitch/latest?opd=${encodeURIComponent(opd)}`;
+    console.log('🔍 Fetch pitch:', url);
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      console.warn('❌ salepitch not OK:', res.status);
+      return null;
+    }
+
+    const data = await res.json();
+    console.log('✅ pitch raw data for', opd, data);
+
+    // ถ้า backend ส่งเป็น array ให้ดึงตัวแรก
+    const obj = Array.isArray(data) ? data[0] : data;
+
+    if (!obj) return null;
+
+    // 🔧 ตรงนี้สำคัญ: map key จาก backend ให้มาอยู่ในรูปที่เราใช้ต่อ
+    return {
+      date:   obj.date || obj.call_date || obj.created_at,  // เปลี่ยนตามจริง
+      outcome: obj.outcome || obj.result || obj.summary || '',
+      content: obj.content || obj.note || ''
+    };
+  } catch (err) {
+    console.error('fetchLatestPitchForOPD error', err);
+    return null;
+  }
+}
+
+// cache สำหรับ Sale pitch (ใช้กับกล่องคะแนนโทร)
+const leadPitchCache = new Map();
+
+async function fetchLatestPitchForOPD(opd){
+  if(!opd) return null;
+  if(leadPitchCache.has(opd)) return leadPitchCache.get(opd);
+  try{
+    const r = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
+    if(!r.ok){ 
+      leadPitchCache.set(opd, null);
+      return null;
+    }
+    const arr = await r.json() || [];
+    // เผื่อ backend ไม่ sort ให้
+    arr.sort((a,b) => String(b.created_at||'').localeCompare(String(a.created_at||'')));
+    const top = arr[0];
+    const latest = top ? {
+      date: top.created_at,
+      outcome: top.outcome || '',
+      content: top.content || ''
+    } : null;
+    leadPitchCache.set(opd, latest);
+    return latest;
+  }catch(e){
+    console.error('fetchLatestPitchForOPD error', e);
+    leadPitchCache.set(opd, null);
+    return null;
+  }
+}
+
 
   // โหมดช่วงเดือน
   const monthRange = { enabled:false, startYM:null, endYM:null };
@@ -596,7 +744,10 @@
           <ul>${items}</ul>
         </div>`;
     }).join('');
-
+   // หลังสรุปหมวดสินค้า เสร็จแล้ว -> สร้าง list ลูกค้าที่ควรโทรก่อน
+if (typeof window.buildLeadScoreList === 'function') {
+  window.buildLeadScoreList();
+}
     // Top 10
     const top10 = Object.values(customerMap).sort((a,b)=>b.amount-a.amount).slice(0,10);
     document.getElementById('top10List').innerHTML = top10.map((c) => {
@@ -804,104 +955,204 @@
   function closeCustomerModal(){ document.getElementById("customer-modal").style.display = "none"; }
   function formatDate(d){ if(!d) return ''; const [y,m,day]=d.split('-'); return `${day}/${m}/${y.slice(-2)}`; }
 
-  function openCustomerModal(key) {
-    const records = allCustomerRecords.filter(r => `${r.name}|${r.phone}` === key);
-    if(!records.length) return;
+  async function openCustomerModal(key) {
+  // key รูปแบบ "name|phone"
+  const [name, phone = ''] = String(key).split('|');
+  const norm = s => (s || '').trim().toLowerCase();
 
-    const first = records[0];
-    const customer = { name:first.name, phone:first.phone||'-', opd:first.opd||'-' };
+  // ใช้ allCustomerRecords (โหลดจาก /api/sales แล้วข้างบน)
+  const records = allCustomerRecords.filter(r =>
+    norm(r.name) === norm(name) &&
+    norm(r.phone || '') === norm(phone)
+  );
 
-    const latestRecord = records.reduce((latest,r)=> new Date(r.date) > new Date(latest.date)? r:latest, records[0]);
+  if (!records.length) {
+    alert('ไม่พบข้อมูลลูกค้าคนนี้');
+    return;
+  }
 
-    const lastDate = new Date(latestRecord.date);
-    const today = new Date();
-    const daysAbsent = Math.floor((today - lastDate)/(1000*60*60*24));
+  // เรียงบิล ล่าสุดอยู่บนสุด
+  records.sort((a, b) => b.date.localeCompare(a.date));
 
-    const totalVisits = records.length;
-    const paidRecords = records.filter(r => parseFloat(r.amount||0) > 0);
-    const paidVisits = paidRecords.length;
-    const totalAmount = paidRecords.reduce((s,r)=>s+parseFloat(r.amount),0);
-    const average = paidVisits>0 ? Math.round(totalAmount/paidVisits) : 0;
+  const customer = {
+    name: records[0].name,
+    phone: records[0].phone || '-',
+    opd: records[0].opd || '-'
+  };
 
-    const allItems = {};
-    records.forEach(r => {
-      (r.items||[]).forEach(item=>{
-        let name = item;
-        const m = item.match(/\((.*?)\)/); name = m? m[1] : item.split(" - ")[0];
-        const q = item.match(/- (\d+) ชิ้น/); const qty = q? parseInt(q[1]) : 1;
-        allItems[name] = (allItems[name]||0) + qty;
-      });
+  const lastDateStr = (records[0].date || '').slice(0, 10);
+  const baseDate = new Date();
+  const lastDate = new Date(lastDateStr);
+  const daysAbsent = isNaN(lastDate)
+    ? 0
+    : Math.floor((baseDate - lastDate) / (1000 * 60 * 60 * 24));
+
+  const totalVisits = records.length;
+
+  // คิดเงินจาก amount ตรง ๆ
+  const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
+  const paidVisits = paidRecords.length;
+  const totalAmount = paidRecords.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
+  const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
+
+  // รวมจำนวนสินค้าตามหมวด
+  const allItems = {};
+  records.forEach(r => {
+    (r.items || []).forEach(item => {
+      let n = item;
+      const m = item.match(/\((.*?)\)/);
+      n = m ? m[1] : item.split(' - ')[0];
+
+      const q = item.match(/- (\d+) ชิ้น/);
+      const qty = q ? parseInt(q[1]) : 1;
+
+      allItems[n] = (allItems[n] || 0) + qty;
     });
+  });
 
-    const categoryMap = {
-      "โบทอค":["Aestox 50 u","Aestox 100 u","Allergan 50 u","Allergan 100 u","เฉพาะจุด","แบ่งไว้แล้ว", "Nabota"],
-      "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q", "Restylane", "Ex-Filler"],
-      "งานผิว":["Meso Chanel","P - Cell","Aquatic","Hestina","Exosome","Rejuran","Belotero Revive","Sculptra","Juvelook","Aesthefill","Mesowink","AlphaArbutin","PRP","Biocollagen", "Transamine"],
-      "ดริปผิว":["Snow White","Super Aurawhite","Vitamin Mix","Brain Booster","Energy Booster"],
-      "ทรีทเม้นท์":["ทรีทเมนต์หน้าใส","ทรีทเมนต์สิว","ทรีทเมนต์ฝ้า"],
-      "Fat/Hifu":["Bromi","Sisi","HIFU","HIFU แถม"],
-      "อื่นๆ":["ยาฉีดสลายฝ้า","ครีมทาฝ้า","ยาทานฝ้า","ไหมลิฟท์กรอบหน้า","ไหม PDO","ไหม Collagen","จ่ายเงิน/จองสินค้า"],
-      "โปรโมชั่น/อีเว้นพิเศษ":["สลายฟิลเลอร์","ไหม PDO","ปั่น RF","ไหมลิฟท์กรอบหน้า","ผลักวิตามิน"]
-    };
+  const categoryMap = {
+    "โบทอค": ["Aestox 50 u","Aestox 100 u","Allergan 50 u","Allergan 100 u","เฉพาะจุด","แบ่งไว้แล้ว","Nabota"],
+    "ฟิลเลอร์": ["Neuramis สีดำ","Neuramis สีทอง","E.P.T.Q ระบุสีด้วย","Restylane ระบุสีด้วย"],
+    "Fat/Hifu": ["Bromi","Sisi","HIFU","HIFU แถม"],
+    "งานผิว": [
+      "Meso Chanel","P - Cell","Aquatic","Hestina","Exosome","Rejuran",
+      "Belotero Revive","Sculptra","Juvelook","Aesthefill",
+      "PRP","Mesowink","สะกิดหน้าใส","Alphaarbutin","Transamine","Biocollagen"
+    ],
+    "ดริปผิว": ["Snow White","Super Aurawhite","Vitamin Mix","Brain Booster","Energy Booster"],
+    "ทรีทเม้นท์": [
+      "ทรีทเมนต์หน้าใส","ทรีทเมนต์สิว","ทรีทเมนต์ฝ้า",
+      "ผลักวิตามิน","ปั่น RF","กดสิว","subcisionสิว"
+    ],
+    "อื่นๆ": [
+      "ยาฉีดสลายฝ้า","ครีมทาฝ้า","ยาทานฝ้า",
+      "ไหมลิฟท์กรอบหน้า","ไหม PDO","ไหม Collagen",
+      "จ่ายเงิน/จองสินค้า","สลายฟิลเลอร์","PRPผม","จี้ไฝ"
+    ],
+    "โปรโมชั่น/อีเว้นพิเศษ": []
+  };
 
-    const categorizedItems = {};
-    for (const [cat, names] of Object.entries(categoryMap)) {
-      names.forEach(n => {
-        if (allItems[n]) {
-          (categorizedItems[cat] ||= []).push(`${n} : ${allItems[n]}`);
-          delete allItems[n];
-        }
-      });
-    }
-    if (Object.keys(allItems).length) categorizedItems["อื่นๆ"] =
-      Object.entries(allItems).map(([n,q])=>`${n} : ${q}`);
+  const categorizedItems = {};
+  for (const [cat, names] of Object.entries(categoryMap)) {
+    names.forEach(n => {
+      if (allItems[n]) {
+        (categorizedItems[cat] ||= []).push(`${escapeHTML(n)} : ${allItems[n]}`);
+        delete allItems[n];
+      }
+    });
+  }
+  if (Object.keys(allItems).length) {
+    (categorizedItems["อื่นๆ"] ||= []).push(
+      ...Object.entries(allItems).map(([n, q]) => `${escapeHTML(n)} : ${q}`)
+    );
+  }
 
-    const itemSummary = Object.entries(categorizedItems)
-      .map(([cat,items])=>`<div style="margin-bottom:6px;"><strong>${cat}</strong>: ${items.join(" | ")}</div>`).join("");
+  const itemSummary = Object.entries(categorizedItems)
+    .map(([cat, items]) => `
+      <div style="margin-bottom:4px;">
+        <strong>${escapeHTML(cat)}</strong>: ${items.join(" | ")}
+      </div>
+    `).join("");
 
-    const historyHtml = records.sort((a,b)=>b.date.localeCompare(a.date)).map(r=>{
-      const items = (r.items||[]).map(item=>{
-        const m = item.match(/\((.*?)\)/);
-        const name = m? m[1] : item.split(" - ")[0];
-        const q = item.match(/- (\d+) ชิ้น/); const qty = q? parseInt(q[1]) : 1;
-        return `<li>${name} : ${qty}</li>`;
-      }).join("");
-      const noteText = r.note ? `<div style="margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${escapeHTML(r.note)}</div>` : "";
-      return `
-        <div style="margin-bottom:16px;">
-          <div style="margin-bottom:4px;font-weight:bold;">📅 ${formatDate(r.date)}</div>
-          <ul style="padding-left:16px;margin:0;">${items}</ul>
-          <div style="margin-top:4px;color:#00796b;">💵 ยอด: ${parseFloat(r.amount||0).toLocaleString()} บาท</div>
-          ${noteText}
-          <hr style="margin: 10px auto; border: 0; border-top: 1px dashed #999; width: 60%;">
-        </div>`;
+  // ประวัติการซื้อย้อนหลังแบบละเอียด
+  const historyHtml = records.map(r => {
+    const items = (r.items || []).map(item => {
+      const m = item.match(/\((.*?)\)/);
+      const name = m ? m[1] : item.split(" - ")[0];
+      const q = item.match(/- (\d+) ชิ้น/);
+      const qty = q ? parseInt(q[1]) : 1;
+      return `<li>${escapeHTML(name)} : ${qty}</li>`;
     }).join("");
 
-    const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
+    const noteText = r.note
+      ? `<div style="font-size:11px; margin-top:2px; font-style:italic; color:#444;">
+           📝 หมายเหตุ: ${escapeHTML(r.note)}
+         </div>`
+      : "";
 
-    document.getElementById("modal-content").innerHTML = `
-      <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
-        <button onclick="saveModalAsImage()" title="บันทึกเป็นรูปภาพ" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">💾</button>
-        <button onclick="closeCustomerModal()" title="ปิดหน้าต่าง" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">❌</button>
+    return `
+      <div style="margin-bottom:14px;">
+        <div style="font-weight:600; font-size:12px;">
+          📅 ${formatDate((r.date || '').slice(0,10))}
+        </div>
+        <ul style="padding-left:16px; margin:0; font-size:11px;">${items}</ul>
+        <div style="margin-top:4px; color:#0a645a; font-size:11px;">
+          💵 ${Math.round(parseFloat(r.amount || 0)).toLocaleString()} บาท
+        </div>
+        ${noteText}
+        <hr style="margin:8px auto; border:0; border-top:1px dashed #ddd; width:60%;">
       </div>
+    `;
+  }).join("");
 
-      <h3 style="font-size:18px;margin-bottom:4px;">📇 ${customer.name}</h3>
-      <div>🆔 <strong>OPD:</strong> ${customer.opd}</div>
-      <div>📞 <strong>เบอร์:</strong> ${customer.phone}</div>
-      <div>📅 <strong>วันล่าสุด:</strong> ${formatDate(latestRecord.date)} ${daysAbsentText}</div>
-      <div style="color:#00796b;"><strong>💰 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท</div>
-      <div>🔁 มาใช้บริการ: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
-      <div>💳 <strong>เฉลี่ยต่อครั้ง:</strong> ${Math.round(average).toLocaleString()} บาท</div>
+  // ==== Sale Pitch แบบสั้น: วันย่อ — โปร — Outcome (ล่าสุดบนสุด) ====
+  let pitchSectionHtml = '';
 
-      <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
-      <div style="font-weight:bold;">📦 สรุปรายการซื้อทั้งหมด:</div>
-      <div style="margin:6px 0 12px;">${itemSummary}</div>
-      <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
-      <div style="font-weight:bold;margin-bottom:6px;">🛍️ ประวัติการซื้อย้อนหลัง:</div>
-      ${historyHtml}
-      <div style="margin-top:10px;font-weight:bold;color:#b8860b;">💰 รวมทั้งหมด: ${totalAmount.toLocaleString()} บาท</div>`;
-    document.getElementById("customer-modal").style.display = "flex";
+  try {
+    const opd = customer.opd && customer.opd !== '-' ? customer.opd : '';
+    if (opd) {
+      const res = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
+      if (res.ok) {
+        const pitches = await res.json() || [];
+
+        if (pitches.length) {
+          pitches.sort((a,b)=> String(b.created_at||'').localeCompare(String(a.created_at||'')));
+
+          pitchSectionHtml = pitches.map(p => {
+            const d = formatDate(String(p.created_at || '').slice(0,10)); // dd/mm/yy
+            return `
+              <div style="padding:2px 0; font-size:11px; color:#374151;">
+                ${d} — ${escapeHTML(p.promotion || '-')} — ${escapeHTML(p.outcome || '-')}
+              </div>`;
+          }).join("");
+        } else {
+          pitchSectionHtml = `<div class="sub-muted" style="font-size:11px;">ยังไม่มีข้อมูล Sale Pitch</div>`;
+        }
+      } else {
+        pitchSectionHtml = `<div class="sub-muted" style="font-size:11px;">โหลด Sale Pitch ไม่สำเร็จ</div>`;
+      }
+    } else {
+      pitchSectionHtml = `<div class="sub-muted" style="font-size:11px;">ไม่มี OPD จึงดึง Sale Pitch ไม่ได้</div>`;
+    }
+  } catch (e) {
+    console.error(e);
+    pitchSectionHtml = `<div class="sub-muted" style="font-size:11px;">เกิดข้อผิดพลาดในการโหลด Sale Pitch</div>`;
   }
+
+  const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
+
+  // ใส่ HTML ลง modal
+  document.getElementById("modal-content").innerHTML = `
+    <h3 style="font-size:16px; margin-bottom:4px;">📇 ${escapeHTML(customer.name)}</h3>
+    <div style="font-size:12px;">🆔 OPD: ${escapeHTML(customer.opd)}</div>
+    <div style="font-size:12px;">📞 เบอร์: ${escapeHTML(customer.phone)}</div>
+    <div style="font-size:12px;">📅 วันล่าสุด: ${formatDate(lastDateStr)} ${daysAbsentText}</div>
+    <div style="font-size:12px; color:#00796b;">
+      💰 ยอดรวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท
+    </div>
+    <div style="font-size:12px;">🔁 จำนวนครั้ง: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
+    <div style="font-size:12px;">💳 เฉลี่ยต่อครั้ง: ${average.toLocaleString()} บาท</div>
+
+    <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
+
+    <div style="font-weight:600; font-size:13px; margin-bottom:6px;">📦 สรุปรายการซื้อทั้งหมด:</div>
+    <div style="font-size:11px;">${itemSummary || '-'}</div>
+
+    <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
+
+    <div style="font-weight:600; font-size:13px; margin-bottom:4px;">🗣️ Sale Pitch (แบบสั้น):</div>
+    ${pitchSectionHtml}
+
+    <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
+
+    <div style="font-weight:600; font-size:13px; margin-bottom:6px;">🧾 ประวัติการซื้อย้อนหลัง:</div>
+    ${historyHtml}
+  `;
+
+  document.getElementById("customer-modal").style.display = 'flex';
+}
+
+
 
   function saveModalAsImage() {
     const node = document.getElementById("modal-content");
@@ -1283,6 +1534,225 @@ function openMonthlySalesPopup(){
   // ใช้ modal เดิม
   document.getElementById('modal-content').innerHTML = html;
   document.getElementById('customer-modal').style.display = 'flex';
+}
+
+// ===== ฟังก์ชันคำนวณคะแนน Lead (เวอร์ชันใหม่) =====
+
+// คะแนนจาก "ไม่ได้มานานกี่วัน" (โค้งขึ้นแล้วค่อย ๆ ลด)
+function recencyScore(absentDays) {
+  if (absentDays <= 45) return 0; // ช่วงพักตัว
+
+  // 46–90 วัน: จาก 20 → 40
+  if (absentDays <= 90) {
+    return 20 + (absentDays - 46) * (20 / (90 - 46));
+  }
+
+  // 91–180 วัน: จาก 40 → 25
+  if (absentDays <= 180) {
+    return 40 - (absentDays - 90) * (15 / (180 - 90));
+  }
+
+  // 181–365 วัน: จาก 25 → 10
+  if (absentDays <= 365) {
+    return 25 - (absentDays - 180) * (15 / (365 - 180));
+  }
+
+  // 366–730 วัน (1–2 ปี): จาก 10 → 3
+  if (absentDays <= 730) {
+    return 10 - (absentDays - 365) * (7 / (730 - 365));
+  }
+
+  // 731–1460 วัน (2–4 ปี): จาก 3 → 1
+  if (absentDays <= 1460) {
+    return 3 - (absentDays - 730) * (2 / (1460 - 730));
+  }
+
+  // เก่ามากแล้ว ให้แค่นิดเดียวพอ
+  return 0.5;
+}
+
+// คะแนนจากยอดรวมตลอดชีพ
+function valueScore(totalAmount) {
+  if (totalAmount >= 200000) return 45;
+  if (totalAmount >= 100000) return 40;
+  if (totalAmount >= 50000)  return 32;
+  if (totalAmount >= 20000)  return 24;
+  if (totalAmount >= 10000)  return 16;
+  if (totalAmount >= 5000)   return 10;
+  if (totalAmount >= 3000)   return 6;
+  if (totalAmount >= 1000)   return 3;
+  return 0;
+}
+
+// คะแนนจากจำนวนครั้งที่มา
+function visitScore(totalVisits) {
+  if (totalVisits >= 12) return 18;
+  if (totalVisits >= 8)  return 14;
+  if (totalVisits >= 5)  return 10;
+  if (totalVisits >= 3)  return 6;
+  if (totalVisits >= 2)  return 3;
+  return 0;
+}
+
+// คะแนนจากบิลเฉลี่ย
+function avgScore(averageBill) {
+  if (averageBill >= 20000) return 18;
+  if (averageBill >= 12000) return 14;
+  if (averageBill >= 8000)  return 10;
+  if (averageBill >= 5000)  return 7;
+  if (averageBill >= 3000)  return 4;
+  if (averageBill >= 1500)  return 2;
+  return 0;
+}
+
+// ฟังก์ชันรวมทุกอย่างเป็นคะแนนสุดท้าย
+function computeLeadScoreForCustomer(core) {
+  const totalAmount  = core.totalAmount || 0;
+  const totalVisits  = core.totalVisits || 0;
+  const averageBill  = core.averageBill || 0;
+  const absentDays   = core.absentDays || 0;
+
+  // ตัดลูกค้าจิ๋ว: ยอดรวมน้อยมาก + มาครั้งเดียว -> ไม่ต้องติดลิสต์
+  if (totalAmount < 2000 && totalVisits <= 1) {
+    return 0;
+  }
+
+  const r = recencyScore(absentDays);      // 0–~40
+  const v = valueScore(totalAmount);       // 0–45
+  const f = visitScore(totalVisits);       // 0–18
+  const a = avgScore(averageBill);         // 0–18
+
+  // VIP Boost: ลูกค้าหนัก ๆ ที่กำลังห่างไปช่วงน่าโทร
+  let vipBoost = 0;
+  const isVIP = (totalAmount >= 100000) || (averageBill >= 10000);
+  if (isVIP) {
+    if (absentDays >= 60 && absentDays <= 210) {
+      vipBoost = 10;      // หายไปช่วง 2–7 เดือน ดันขึ้นอีกหน่อย
+    } else if (absentDays <= 365) {
+      vipBoost = 5;       // ภายใน 1 ปี ยังถือว่าควรตาม
+    }
+  }
+
+  const rawScore = r + v + f + a + vipBoost;
+
+  // ปัดให้เป็นเลขเต็มสวย ๆ
+  return Math.round(rawScore);
+}
+
+
+// สร้าง list ลูกค้าที่ควรโทรก่อน จาก allCustomerRecords + Sale pitch
+async function buildLeadScoreList() {
+  const ul = document.getElementById('leadScoreList');
+  if (!ul || !allCustomerRecords.length) return;
+
+  const grouped = {};
+  const today = new Date();
+
+  // รวมข้อมูลตลอดชีพต่อคน
+  allCustomerRecords.forEach(r => {
+    const key = `${r.name}|${r.phone}`;
+    if (!grouped[key]) {
+      grouped[key] = {
+        key,
+        name: r.name,
+        phone: r.phone || '-',
+        opd: r.opd || '-',
+        records: []
+      };
+    }
+    grouped[key].records.push(r);
+  });
+
+  // คำนวณตัวเลขต่อคน
+  let scored = Object.values(grouped).map(c => {
+    const recs = c.records;
+
+    const totalVisits = recs.length;
+    const paid = recs.filter(r => parseFloat(r.amount || 0) > 0);
+    const paidVisits = paid.length;
+    const totalAmount = paid.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
+    const averageBill = paidVisits > 0 ? totalAmount / paidVisits : 0;
+
+    const latest = recs.reduce(
+      (last, r) => new Date(r.date) > new Date(last.date) ? r : last,
+      recs[0]
+    );
+    const lastDate = new Date(latest.date);
+    const absentDays = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+
+    const core = {
+      key: c.key,
+      name: c.name,
+      phone: c.phone,
+      opd: c.opd,
+      totalVisits,
+      totalAmount,
+      averageBill,
+      absentDays,
+      lastDate: latest.date
+    };
+
+    const score = computeLeadScoreForCustomer(core);
+    return { ...core, score };
+  })
+  // พักก่อน 0–45 วัน
+  .filter(c => c.absentDays > 45)
+  // ตัดคนที่คะแนนต่ำมาก ๆ ไม่ให้ติดลิสต์
+  .filter(c => c.score >= 20);
+
+  if (!scored.length) {
+    ul.innerHTML = `<li class="lead-score-meta">
+      ยังไม่มีลูกค้าที่เข้าเกณฑ์ (เช่น หายเกิน 45 วัน และมีมูลค่าพอสมควร)
+    </li>`;
+    return;
+  }
+
+  // ดึง Sale pitch ล่าสุดสำหรับแต่ละคน (ตาม OPD)
+  const enriched = await Promise.all(scored.map(async c => {
+    const pitch = await fetchLatestPitchForOPD(c.opd);
+    return { ...c, pitch };
+  }));
+
+  // เรียงคะแนนสูง -> ต่ำ แล้วเอา Top 15
+  const top = enriched
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 45);
+
+  ul.innerHTML = top.map(c => {
+    const avg   = Math.round(c.averageBill || 0).toLocaleString();
+    const total = Math.round(c.totalAmount || 0).toLocaleString();
+    const last  = new Date(c.lastDate).toLocaleDateString('th-TH', {
+      day: '2-digit', month: 'short', year: '2-digit'
+    });
+    const key = c.key;
+
+    // Sale pitch
+    let pitchDateText = 'ยังไม่เคยโทร';
+    let pitchOutcomeShort = '—';
+    if (c.pitch && c.pitch.date) {
+      pitchDateText = formatDate(String(c.pitch.date).slice(0, 10)); // ใช้ formatDate เดิม
+      const raw = c.pitch.outcome || c.pitch.content || '';
+      pitchOutcomeShort = raw ? raw : '—';
+    }
+
+    return `
+      <li>
+        <span class="lead-name" onclick="openCustomerModal('${key}')">
+          ${escapeHTML(c.name || '-')}
+        </span>
+        <span class="lead-score-badge">คะแนนโทร: ${c.score}</span>
+        <span class="lead-score-meta">
+          ⏳ ไม่มาแล้ว <span class="lead-absent">${c.absentDays} วัน</span>
+          • 💰 ยอดรวม ${total} บ.
+          • 💳 เฉลี่ย/บิล ${avg} บ.
+          • 🔁 มา ${c.totalVisits} ครั้ง
+          • 📅 มาล่าสุด: ${last}
+          • 📞 โทรล่าสุด: ${escapeHTML(pitchDateText)}
+          • ผล: ${escapeHTML(pitchOutcomeShort)}
+        </span>
+      </li>
+    `;
+  }).join('');
 }
 
 

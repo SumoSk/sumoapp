@@ -263,6 +263,28 @@
     function escapeHtml(str){ return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;'); }
     function escapeAttr(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;'); }
 
+        // ใช้ชื่อสั้น ๆ เวลา escape
+    const esc = escapeHtml;
+
+    // OPD เป็นเลข 4 หลัก
+    function pad4(s){
+      return String(s || '').replace(/\D/g, '').padStart(4, '0');
+    }
+
+    // คิดยอดแต่ละบิล ถ้าไม่มี amount ก็เดาจาก items
+    function recordAmount(r){
+      const a = parseCurrency(r.amount);
+      if (!isNaN(a) && a > 0) return a;
+
+      let sum = 0;
+      (r.items || []).forEach(text => {
+        const p = parseLine(text);
+        if (!p) return;
+        sum += (p.qty || 0) * (p.price || 0);
+      });
+      return sum;
+    }
+
     // ===== State =====
     let allCustomerRecords = [];
     let groupedByMonth = {};
@@ -698,103 +720,206 @@
     document.getElementById('closeCustomerModalBtn')?.addEventListener('click', closeCustomerModal);
     document.getElementById('customer-modal')?.addEventListener('click', (e)=>{ if(e.target && e.target.id === 'customer-modal') closeCustomerModal(); });
 
-    function openCustomerModal(key){
+        async function openCustomerModal(key){
       const records = allCustomerRecords.filter(r=> `${r.name}|${r.phone}` === key);
       if(records.length===0) return;
 
+      // เรียงบิลจากใหม่ไปเก่า
+      records.sort((a,b)=> b.date.localeCompare(a.date));
+
       const first = records[0];
-      const customer = { name:first.name, phone:first.phone||'-', opd:first.opd||'-' };
+      const customer = {
+        name: first.name,
+        phone: first.phone || '-',
+        opd: pad4(first.opd || '-')
+      };
 
-      const latestRecord = records.reduce((latest, r)=> new Date(r.date) > new Date(latest.date) ? r : latest, records[0]);
-      const lastDate = new Date(latestRecord.date);
+      // วันล่าสุด + วันไม่ได้มา
+      const latestRecord = records[0];
+      const lastDateStr = (latestRecord.date || '').slice(0,10);
+      const lastDate = new Date(lastDateStr);
       const today = new Date();
-      const daysAbsent = Math.floor( (today - lastDate) / (1000*60*60*24) );
+      const daysAbsent = isNaN(lastDate)
+        ? 0
+        : Math.floor((today - lastDate) / (1000*60*60*24));
 
-      const paidRecords = records.filter(r=> parseCurrency(r.amount) > 0);
+      // สรุปยอดเงิน
+      const paidRecords = records.filter(r => recordAmount(r) > 0);
       const paidVisits = paidRecords.length;
-      const totalAmount = paidRecords.reduce((s,r)=> s + parseCurrency(r.amount), 0);
-      const average = paidVisits>0 ? Math.round(totalAmount/paidVisits) : 0;
+      const totalAmount = paidRecords.reduce((s,r)=> s + recordAmount(r), 0);
+      const average = paidVisits > 0 ? Math.round(totalAmount/paidVisits) : 0;
 
+      // รวมสินค้าแยกตามชื่อ
       const allItems = {};
       records.forEach(r=>{
-        (r.items||[]).forEach(item=>{
-          let name=item;
-          const m=item.match(/\((.*?)\)/);
-          if(m){ name=m[1]; } else { name=item.split(' - ')[0]; }
-          const qtyMatch=item.match(/- (\d+) ชิ้น/);
-          const qty= qtyMatch? parseInt(qtyMatch[1],10) : 1;
-          allItems[name]=(allItems[name]||0)+qty;
+        (r.items || []).forEach(item=>{
+          let name = item;
+          const m = item.match(/\((.*?)\)/);
+          if (m) {
+            name = m[1];
+          } else {
+            name = item.split(' - ')[0];
+          }
+          const qtyMatch = item.match(/- (\d+) ชิ้น/);
+          const qty = qtyMatch ? parseInt(qtyMatch[1],10) : 1;
+          allItems[name] = (allItems[name] || 0) + qty;
         });
       });
 
+      // แยกหมวดด้วย subOptionsMap (เหมือนเดิม)
       const categorizedItems = {};
       for(const [cat, names] of Object.entries(subOptionsMap)){
         names.forEach(n=>{
           if(allItems[n]){
-            (categorizedItems[cat] ??= []).push(`${n} : ${allItems[n]}`);
+            (categorizedItems[cat] ??= []).push(`${esc(n)} : ${allItems[n]}`);
             delete allItems[n];
           }
         });
       }
-      if(Object.keys(allItems).length){ categorizedItems['อื่นๆ'] = Object.entries(allItems).map(([n,q])=>`${n} : ${q}`); }
+      if(Object.keys(allItems).length){
+        (categorizedItems['อื่นๆ'] ??= []).push(
+          ...Object.entries(allItems).map(([n,q])=>`${esc(n)} : ${q}`)
+        );
+      }
 
-      const itemSummary = Object.entries(categorizedItems).map(([cat, items])=> `<div style="margin-bottom:6px;"><strong>${cat}</strong>: ${items.join(' | ')}</div>`).join('');
+      const itemSummary = Object.entries(categorizedItems)
+        .map(([cat, items])=>
+          `<div style="margin-bottom:4px;">
+             <strong>${esc(cat)}</strong>: ${items.join(' | ')}
+           </div>`
+        ).join('');
 
-      const historyHtml = records.sort((a,b)=> b.date.localeCompare(a.date)).map(r=>{
+      // ประวัติการซื้อย้อนหลัง (ใหม่บนสุด)
+      const historyHtml = records.map(r=>{
         const itemsHtml = (r.items||[]).map(item=>{
-          let name=item; const m=item.match(/\((.*?)\)/);
-          if(m){ name=m[1]; } else { name=item.split(' - ')[0]; }
-          const qtyMatch=item.match(/- (\d+) ชิ้น/); const qty = qtyMatch? parseInt(qtyMatch[1],10) : 1;
-          return `<li>${escapeHtml(name)} : ${qty}</li>`;
+          let name = item;
+          const m = item.match(/\((.*?)\)/);
+          if (m) {
+            name = m[1];
+          } else {
+            name = item.split(' - ')[0];
+          }
+          const qtyMatch=item.match(/- (\d+) ชิ้น/);
+          const qty = qtyMatch ? parseInt(qtyMatch[1],10) : 1;
+          return `<li>${esc(name)} : ${qty}</li>`;
         }).join('');
-        const noteText = r.note ? `<div style="margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${escapeHtml(r.note)}</div>` : '';
-        return `<div style="margin-bottom:16px;"><div style="margin-bottom:4px;font-weight:bold;">📅 ${formatDate(r.date)}</div><ul style="padding-left:16px;margin:0;">${itemsHtml}</ul><div style="margin-top:4px;color:#00796b;">💵 ยอด: ${parseCurrency(r.amount).toLocaleString()} บาท</div>${noteText}<hr style="margin: 10px auto; border: 0; border-top: 1px dashed #999; width: 60%;"></div>`;
+
+        const noteText = r.note
+          ? `<div style="font-size:11px; margin-top:2px; font-style:italic; color:#444;">
+               📝 หมายเหตุ: ${esc(r.note)}
+             </div>`
+          : '';
+
+        return `
+          <div style="margin-bottom:14px;">
+            <div style="font-weight:600; font-size:12px;">
+              📅 ${formatDate((r.date || '').slice(0,10))}
+            </div>
+            <ul style="padding-left:16px;margin:0;font-size:11px;">${itemsHtml}</ul>
+            <div style="margin-top:4px;color:#0a645a;font-size:11px;">
+              💵 ${Math.round(recordAmount(r)).toLocaleString()} บาท
+            </div>
+            ${noteText}
+            <hr style="margin:8px auto; border:0; border-top:1px dashed #ddd; width:60%;">
+          </div>`;
       }).join('');
+
+      // ==== ดึง Sale Pitch ทั้งหมดของ OPD นี้ (แบบสั้น) ====
+      let pitchSectionHtml = '';
+      try{
+        const opdClean = (customer.opd || '').replace(/\D/g,'');
+        if (opdClean){
+          const res = await fetch(`/api/pitches?opd=${encodeURIComponent(opdClean)}`);
+          if (res.ok){
+            const pitches = await res.json() || [];
+            if (pitches.length){
+              pitches.sort((a,b)=> String(b.created_at||'').localeCompare(String(a.created_at||'')));
+
+              pitchSectionHtml = pitches.map(p=>{
+                const dIso = String(p.created_at || p.date || '').slice(0,10);
+                const d = formatDate(dIso); // dd/mm/yy
+                return `
+                  <div style="padding:2px 0; font-size:11px; color:#374151;">
+                    ${d} — ${esc(p.promotion || '-')} — ${esc(p.outcome || '-')}
+                  </div>`;
+              }).join('');
+            } else {
+              pitchSectionHtml = `<div style="font-size:11px;color:#888;">ยังไม่มีข้อมูล Sale Pitch</div>`;
+            }
+          } else {
+            pitchSectionHtml = `<div style="font-size:11px;color:#888;">โหลด Sale Pitch ไม่สำเร็จ</div>`;
+          }
+        } else {
+          pitchSectionHtml = `<div style="font-size:11px;color:#888;">ไม่มี OPD จึงดึง Sale Pitch ไม่ได้</div>`;
+        }
+      }catch(e){
+        console.error(e);
+        pitchSectionHtml = `<div style="font-size:11px;color:#888;">เกิดข้อผิดพลาดในการโหลด Sale Pitch</div>`;
+      }
 
       const modal = document.getElementById('modal-content');
       modal.innerHTML = '';
 
-      // ปุ่มบันทึกรูป
+      // ปุ่มบันทึกรูป (ทำครั้งเดียว)
       const box = document.getElementById('customer-modal-box');
       if (box && !box.querySelector('#modal-save-controls')) {
         const controls = document.createElement('div');
         controls.id = 'modal-save-controls';
         controls.style.cssText='position:absolute;top:10px;left:14px;display:flex;gap:10px;z-index:2;pointer-events:none;';
+
         const saveBtn = document.createElement('button');
         saveBtn.title='บันทึกเป็นรูปภาพ';
         saveBtn.type = 'button';
         saveBtn.style.cssText='background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,.15); cursor:pointer; display:flex; align-items:center; justify-content:center; pointer-events:auto;';
         saveBtn.textContent='💾';
         saveBtn.addEventListener('click', saveModalAsImage);
+
         controls.appendChild(saveBtn);
         box.appendChild(controls);
       }
 
-      const title = document.createElement('h3'); title.style.fontSize='18px'; title.style.marginBottom='4px'; title.textContent = `📇 ${customer.name}`;
-      const d1 = document.createElement('div'); d1.innerHTML = `🆔 <strong>OPD:</strong> ${escapeHtml(customer.opd)}`;
-      const d2 = document.createElement('div'); d2.innerHTML = `📞 <strong>เบอร์:</strong> ${escapeHtml(customer.phone)}`;
-      const d3 = document.createElement('div'); d3.innerHTML = `📅 <strong>วันล่าสุด:</strong> ${formatDate(latestRecord.date)} <span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
-      const d4 = document.createElement('div'); d4.style.color='#00796b'; d4.innerHTML = `<strong>💰 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท`;
+      const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
 
-      const d5 = document.createElement('div'); d5.innerHTML = `🔁 มาใช้บริการ: ${records.length} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)`;
-      const d6 = document.createElement('div'); d6.innerHTML = `💳 <strong>เฉลี่ยต่อครั้ง:</strong> ${Math.round(average).toLocaleString()} บาท`;
+      // ใส่ HTML ลง modal (ฟอนต์เท่า ๆ ส่วนอื่น)
+      modal.innerHTML = `
+        <h3 style="font-size:16px; margin-bottom:4px;">📇 ${esc(customer.name)}</h3>
+        <div style="font-size:12px;">🆔 OPD: ${esc(customer.opd)}</div>
+        <div style="font-size:12px;">📞 เบอร์: ${esc(customer.phone)}</div>
+        <div style="font-size:12px;">📅 วันล่าสุด: ${formatDate(lastDateStr)} ${daysAbsentText}</div>
+        <div style="font-size:12px; color:#00796b;">
+          💰 ยอดรวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท
+        </div>
+        <div style="font-size:12px;">🔁 จำนวนครั้ง: ${records.length} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
+        <div style="font-size:12px;">💳 เฉลี่ยต่อครั้ง: ${average.toLocaleString()} บาท</div>
 
-      const hr1 = document.createElement('hr'); hr1.style.cssText='margin:16px auto 8px; border:0; border-top:1px solid #ccc; width:60%';
-      const sumTitle = document.createElement('div'); sumTitle.style.fontWeight='bold'; sumTitle.textContent = '📦 สรุปรายการซื้อทั้งหมด:';
-      const sumDiv = document.createElement('div'); sumDiv.style.margin='6px 0 12px'; sumDiv.innerHTML = itemSummary;
+        <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
 
-      const hr2 = document.createElement('hr'); hr2.style.cssText='margin:16px auto 8px; border:0; border-top:1px solid #ccc; width:60%';
-      const histTitle = document.createElement('div'); histTitle.style.fontWeight='bold'; histTitle.style.marginBottom='6px'; histTitle.textContent='🛍️ ประวัติการซื้อย้อนหลัง:';
+        <div style="font-weight:600; font-size:13px; margin-bottom:6px;">📦 สรุปรายการซื้อทั้งหมด:</div>
+        <div style="font-size:11px;">${itemSummary || '-'}</div>
 
-      const histWrap = document.createElement('div'); histWrap.innerHTML = historyHtml;
-      const totalWrap = document.createElement('div'); totalWrap.style.cssText='margin-top:10px;font-weight:bold;color:#b8860b;'; totalWrap.textContent = `💰 รวมทั้งหมด: ${totalAmount.toLocaleString()} บาท`;
+        <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
 
-      modal.appendChild(title); modal.appendChild(d1); modal.appendChild(d2); modal.appendChild(d3); modal.appendChild(d4); modal.appendChild(d5); modal.appendChild(d6);
-      modal.appendChild(hr1); modal.appendChild(sumTitle); modal.appendChild(sumDiv);
-      modal.appendChild(hr2); modal.appendChild(histTitle); modal.appendChild(histWrap); modal.appendChild(totalWrap);
+        <div style="font-weight:600; font-size:13px; margin-bottom:4px;">🗣️ Sale Pitch (แบบสั้น):</div>
+        ${pitchSectionHtml}
+
+        <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
+
+        <div style="font-weight:600; font-size:13px; margin-bottom:6px;">🛍️ ประวัติการซื้อย้อนหลัง:</div>
+        ${historyHtml}
+
+        <div style="margin-top:10px;font-weight:bold;color:#b8860b;">
+          💰 รวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท
+        </div>
+      `;
 
       document.getElementById('customer-modal').style.display='flex';
     }
+
+
+
+
+
+
     function closeCustomerModal(){ const m = document.getElementById('customer-modal'); if (m) m.style.display='none'; }
     function saveModalAsImage(){
       const node = document.getElementById('modal-content');
