@@ -1041,98 +1041,174 @@ async function hydrateLatestPitchesForVisibleRows(){
 
     /* ===== โมดัลลูกค้า (คงเดิม) ===== */
     function openCustomerModal(key) {
-      const records = allCustomerRecords.filter(r => `${r.name}|${r.phone||''}` === key);
-      if(!records.length) return;
+  // 1) พยายามดึงจาก customersMap ก่อน (ชุดข้อมูลที่ผ่านฟิลเตอร์แล้ว)
+  let cust = customersMap.get(key);
 
-      const first = records[0];
-      const customer = { name:first.name, phone:first.phone||'-', opd:first.opd||'-' };
+  // ถ้าหาไม่เจอ (เช่น ลิงก์เก่าที่ใช้ name|phone) ให้ลอง map จาก allSales เป็น fallback
+  if (!cust) {
+    const [name, phone = ''] = String(key).split('|');
+    const norm = s => (s || '').trim().toLowerCase();
 
-      const latestRecord = records.reduce((latest,r)=> new Date(r.date) > new Date(latest.date)? r:latest, records[0]);
+    const recs = allSales.filter(r =>
+      norm(r.name) === norm(name) &&
+      norm(r.phone || '') === norm(phone)
+    );
 
-      const lastDate = new Date(latestRecord.date);
-      const todayD = new Date();
-      const daysAbsent = Math.floor((todayD - lastDate)/(1000*60*60*24));
+    if (!recs.length) return; // หาไม่เจอจริง ๆ ก็ไม่ต้องเปิด
 
-      const totalVisits = records.length;
-      const paidRecords = records.filter(r => parseFloat(r.amount||0) > 0);
-      const paidVisits = paidRecords.length;
-      const totalAmount = paidRecords.reduce((s,r)=>s+parseFloat(r.amount||0),0);
-      const average = paidVisits>0 ? Math.round(totalAmount/paidVisits) : 0;
+    cust = {
+      key,
+      name: recs[0].name,
+      phone: recs[0].phone || '',
+      opd: pad4(recs[0].opd || ''),
+      bills: recs.slice()
+    };
+  }
 
-      const allItems = {};
-      records.forEach(r => {
-        (r.items||[]).forEach(item=>{
-          let name = item;
-          const m = item.match(/\((.*?)\)/); name = m? m[1] : item.split(" - ")[0];
-          const q = item.match(/- (\d+) ชิ้น/); const qty = q? parseInt(q[1]) : 1;
-          allItems[name] = (allItems[name]||0) + qty;
-        });
-      });
+  // ใช้ bills ของลูกค้าคนนี้ (ตามช่วงวันที่ที่เลือกแล้ว ถ้ามาจาก customersMap)
+  const records = cust.bills.slice().sort((a, b) => b.date.localeCompare(a.date));
 
-      const categoryMap = {
-        "โบทอค": ["Aestox 50 u","Aestox 100 u","Allergan 50 u","Allergan 100 u","เฉพาะจุด","แบ่งไว้แล้ว","Nabota"],
-        "ฟิลเลอร์": ["Neuramis สีดำ","Neuramis สีทอง","E.P.T.Q ระบุสีด้วย","Restylane ระบุสีด้วย"],
-        "Fat/Hifu": ["Bromi","Sisi","HIFU","HIFU แถม"],
-        "งานผิว": ["Meso Chanel","P - Cell","Aquatic","Hestina","Exosome","Rejuran","Belotero Revive","Sculptra","Juvelook","Aesthefill","PRP","Mesowink","สะกิดหน้าใส","Alphaarbutin","Transamine","Biocollagen"],
-        "ดริปผิว": ["Snow White","Super Aurawhite","Vitamin Mix","Brain Booster","Energy Booster"],
-        "ทรีทเม้นท์": ["ทรีทเมนต์หน้าใส","ทรีทเมนต์สิว","ทรีทเมนต์ฝ้า","ผลักวิตามิน","ปั่น RF","กดสิว","subcisionสิว"],
-        "อื่นๆ": ["ยาฉีดสลายฝ้า","ครีมทาฝ้า","ยาทานฝ้า","ไหมลิฟท์กรอบหน้า","ไหม PDO","ไหม Collagen","จ่ายเงิน/จองสินค้า","สลายฟิลเลอร์","PRPผม","จี้ไฝ"],
-        "โปรโมชั่น/อีเว้นพิเศษ": []
-      };
+  const customer = {
+    name: cust.name,
+    phone: cust.phone || '-',
+    opd: cust.opd || '-'
+  };
 
-      const categorizedItems = {};
-      for (const [cat, names] of Object.entries(categoryMap)) {
-        names.forEach(n => {
-          if (allItems[n]) {
-            (categorizedItems[cat] ||= []).push(`${n} : ${allItems[n]}`);
-            delete allItems[n];
-          }
-        });
+  const latestRecord = records[0];
+  const lastDateStr = (latestRecord?.date || '').slice(0, 10);
+
+  // ใช้ endAnchorDate เหมือนตอนคำนวณ recency ในตารางหลัก
+  const baseDate = endAnchorDate || new Date();
+  const lastDate = new Date(lastDateStr);
+  const daysAbsent = isNaN(lastDate)
+    ? 0
+    : Math.floor((baseDate - lastDate) / (1000 * 60 * 60 * 24));
+
+  const totalVisits = records.length;
+
+  // 2) คิดเงินด้วย recordAmount (เหมือนในตารางหลัก)
+  const paidRecords = records.filter(r => recordAmount(r) > 0);
+  const paidVisits = paidRecords.length;
+  const totalAmount = paidRecords.reduce((s, r) => s + recordAmount(r), 0);
+  const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
+
+  // 3) รวมรายการสินค้า
+  const allItems = {};
+  records.forEach(r => {
+    (r.items || []).forEach(item => {
+      let name = item;
+      const m = item.match(/\((.*?)\)/);
+      name = m ? m[1] : item.split(" - ")[0];
+
+      const q = item.match(/- (\d+) ชิ้น/);
+      const qty = q ? parseInt(q[1]) : 1;
+
+      allItems[name] = (allItems[name] || 0) + qty;
+    });
+  });
+
+  const categoryMap = {
+    "โบทอค": ["Aestox 50 u","Aestox 100 u","Allergan 50 u","Allergan 100 u","เฉพาะจุด","แบ่งไว้แล้ว","Nabota"],
+    "ฟิลเลอร์": ["Neuramis สีดำ","Neuramis สีทอง","E.P.T.Q ระบุสีด้วย","Restylane ระบุสีด้วย"],
+    "Fat/Hifu": ["Bromi","Sisi","HIFU","HIFU แถม"],
+    "งานผิว": [
+      "Meso Chanel","P - Cell","Aquatic","Hestina","Exosome","Rejuran",
+      "Belotero Revive","Sculptra","Juvelook","Aesthefill",
+      "PRP","Mesowink","สะกิดหน้าใส","Alphaarbutin","Transamine","Biocollagen"
+    ],
+    "ดริปผิว": ["Snow White","Super Aurawhite","Vitamin Mix","Brain Booster","Energy Booster"],
+    "ทรีทเม้นท์": ["ทรีทเมนต์หน้าใส","ทรีทเมนต์สิว","ทรีทเมนต์ฝ้า","ผลักวิตามิน","ปั่น RF","กดสิว","subcisionสิว"],
+    "อื่นๆ": [
+      "ยาฉีดสลายฝ้า","ครีมทาฝ้า","ยาทานฝ้า",
+      "ไหมลิฟท์กรอบหน้า","ไหม PDO","ไหม Collagen",
+      "จ่ายเงิน/จองสินค้า","สลายฟิลเลอร์","PRPผม","จี้ไฝ"
+    ],
+    "โปรโมชั่น/อีเว้นพิเศษ": []
+  };
+
+  const categorizedItems = {};
+  for (const [cat, names] of Object.entries(categoryMap)) {
+    names.forEach(n => {
+      if (allItems[n]) {
+        (categorizedItems[cat] ||= []).push(`${n} : ${allItems[n]}`);
+        delete allItems[n];
       }
-      if (Object.keys(allItems).length) categorizedItems["อื่นๆ"] =
-        Object.entries(allItems).map(([n,q])=>`${n} : ${q}`);
+    });
+  }
+  if (Object.keys(allItems).length) {
+    (categorizedItems["อื่นๆ"] ||= []).push(
+      ...Object.entries(allItems).map(([n, q]) => `${n} : ${q}`)
+    );
+  }
 
-      const itemSummary = Object.entries(categorizedItems)
-        .map(([cat,items])=>`<div style="margin-bottom:6px;"><strong>${cat}</strong>: ${items.join(" | ")}</div>`).join("");
+  const itemSummary = Object.entries(categorizedItems)
+    .map(([cat, items]) => `
+      <div style="margin-bottom:6px;">
+        <strong>${cat}</strong>: ${items.join(" | ")}
+      </div>
+    `).join("");
 
-      const historyHtml = records.sort((a,b)=>b.date.localeCompare(a.date)).map(r=>{
-        const items = (r.items||[]).map(item=>{
-          const m = item.match(/\((.*?)\)/);
-          const name = m? m[1] : item.split(" - ")[0];
-          const q = item.match(/- (\d+) ชิ้น/); const qty = q? parseInt(q[1]) : 1;
-          return `<li>${esc(name)} : ${qty}</li>`;
-        }).join("");
-        const noteText = r.note ? `<div style="margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${esc(r.note)}</div>` : "";
-        return `
-          <div style="margin-bottom:16px;">
-            <div style="margin-bottom:4px;font-weight:bold;">📅 ${formatDate((r.date||'').slice(0,10))}</div>
-            <ul style="padding-left:16px;margin:0;">${items}</ul>
-            <div style="margin-top:4px;color:#00796b;">💵 ยอด: ${parseFloat(r.amount||0).toLocaleString()} บาท</div>
-            ${noteText}
-            <hr style="margin: 10px auto; border: 0; border-top: 1px dashed #999; width: 60%;">
-          </div>`;
-      }).join("");
+  const historyHtml = records.map(r => {
+    const items = (r.items || []).map(item => {
+      const m = item.match(/\((.*?)\)/);
+      const name = m ? m[1] : item.split(" - ")[0];
+      const q = item.match(/- (\d+) ชิ้น/);
+      const qty = q ? parseInt(q[1]) : 1;
+      return `<li>${esc(name)} : ${qty}</li>`;
+    }).join("");
 
-      const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
+    const noteText = r.note
+      ? `<div style="margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${esc(r.note)}</div>`
+      : "";
 
-      document.getElementById("modal-content").innerHTML = `
-        <h3 style="font-size:18px;margin-bottom:4px;">📇 ${esc(customer.name)}</h3>
-        <div>🆔 <strong>OPD:</strong> ${esc(customer.opd)}</div>
-        <div>📞 <strong>เบอร์:</strong> ${esc(customer.phone)}</div>
-        <div>📅 <strong>วันล่าสุด:</strong> ${formatDate((latestRecord.date||'').slice(0,10))} ${daysAbsentText}</div>
-        <div style="color:#00796b;"><strong>💰 ยอดรวม:</strong> ${Math.round(totalAmount).toLocaleString()} บาท</div>
-        <div>🔁 มาใช้บริการ: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
-        <div>💳 <strong>เฉลี่ยต่อครั้ง:</strong> ${Math.round(average).toLocaleString()} บาท</div>
+    return `
+      <div style="margin-bottom:16px;">
+        <div style="margin-bottom:4px;font-weight:bold;">
+          📅 ${formatDate((r.date || '').slice(0,10))}
+        </div>
+        <ul style="padding-left:16px;margin:0;">${items}</ul>
+        <div style="margin-top:4px;color:#00796b;">
+          💵 ยอด: ${Math.round(recordAmount(r)).toLocaleString()} บาท
+        </div>
+        ${noteText}
+        <hr style="margin: 10px auto; border: 0; border-top: 1px dashed #999; width: 60%;">
+      </div>
+    `;
+  }).join("");
 
-        <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
-        <div style="font-weight:bold;">📦 สรุปรายการซื้อทั้งหมด:</div>
-        <div style="margin:6px 0 12px;">${itemSummary || '-'}</div>
-        <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
-        <div style="font-weight:bold;margin-bottom:6px;">🛍️ ประวัติการซื้อย้อนหลัง:</div>
-        ${historyHtml}
-        <div style="margin-top:10px;font-weight:bold;color:${varGold()};">💰 รวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท</div>`;
-      document.getElementById("customer-modal").style.display='flex';
-    }
+  const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
+
+  document.getElementById("modal-content").innerHTML = `
+    <h3 style="font-size:18px;margin-bottom:4px;">📇 ${esc(customer.name)}</h3>
+    <div>🆔 <strong>OPD:</strong> ${esc(customer.opd)}</div>
+    <div>📞 <strong>เบอร์:</strong> ${esc(customer.phone)}</div>
+    <div>📅 <strong>วันล่าสุด:</strong> ${formatDate(lastDateStr)} ${daysAbsentText}</div>
+    <div style="color:#00796b;">
+      <strong>💰 ยอดรวม:</strong> ${Math.round(totalAmount).toLocaleString()} บาท
+    </div>
+    <div>🔁 มาใช้บริการ: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
+    <div>💳 <strong>เฉลี่ยต่อครั้ง:</strong> ${Math.round(average).toLocaleString()} บาท</div>
+
+    <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
+    <div style="font-weight:bold;">📦 สรุปรายการซื้อทั้งหมด:</div>
+    <div style="margin:6px 0 12px;">${itemSummary || '-'}</div>
+
+    <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
+    <div style="font-weight:bold;margin-bottom:6px;">🛍️ ประวัติการซื้อย้อนหลัง:</div>
+    ${historyHtml}
+
+    <div style="margin-top:10px;font-weight:bold;color:${varGold()};">
+      💰 รวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท
+    </div>
+  `;
+
+  document.getElementById("customer-modal").style.display = 'flex';
+}
+
+
+
+
+
     function closeCustomerModal(){ document.getElementById('customer-modal').style.display='none'; }
     document.getElementById('customer-modal').addEventListener('click', (e)=>{
       const box = document.querySelector('#customer-modal .box');
