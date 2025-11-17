@@ -521,7 +521,10 @@
 
   <!-- Customer Modal -->
   <div id="customer-modal" aria-hidden="true">
-    <div class="panel">
+    <div class="panel" id="customer-modal-box" style="position:relative;">
+      <div style="position:absolute; top:10px; right:10px;">
+         <button onclick="closeCustomerModal()" title="ปิด" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">❌</button>
+      </div>
       <div id="modal-content"></div>
     </div>
   </div>
@@ -1423,31 +1426,96 @@ const fmtThaiDate = fmtShortDate;
 
 
 
-    /* ==================== Customer Modal & Records Loader ==================== */
+        /* ==================== Customer Modal & Records Loader ==================== */
+
     let _recordsLoaded = false;
+
+    // โหลด reccord_sale (เหมือนเดิม)
     async function loadCustomerRecords(){
       try{
-        // ปรับ path ตามหลังบ้าน: /api/reccord_sale
         const res = await fetch('/api/reccord_sale');
         if(!res.ok) throw 0;
         const data = await res.json();
         window.allCustomerRecords = Array.isArray(data) ? data : [];
         _recordsLoaded = true;
-        rebuildRecordsIndex(); // <= เพิ่มบรรทัดนี้
+        rebuildRecordsIndex();
       }catch(e){
         window.allCustomerRecords = [];
         _recordsLoaded = false;
         showToast('โหลดประวัติ reccord_sale ไม่สำเร็จ','error');
       }
     }
+
     async function ensureRecordsLoaded(){
       if(_recordsLoaded) return true;
       await loadCustomerRecords();
       return _recordsLoaded;
     }
 
+    // ฟังก์ชันคิดจำนวนเงินต่อบิล (ถ้า backend มี logic พิเศษ ค่อยปรับตรงนี้)
+    function recordAmount(r){
+      const n = parseFloat(r.amount || 0);
+      return isNaN(n) ? 0 : n;
+    }
+
+    // map หมวดสินค้า (ใช้แทน categoryMap เดิม ถ้าไม่มี subOptionsMap จากหน้าอื่น)
+    (function ensureSubOptionsMap(){
+      if (window.subOptionsMap) return;
+      window.subOptionsMap = {
+        "โบทอค":[
+          "Aestox 50 u","Aestox 100 u","Allergan 50 u","Allergan 100 u",
+          "เฉพาะจุด","แบ่งไว้แล้ว","Nabota"
+        ],
+        "ฟิลเลอร์":[
+          "Neuramis สีดำ","Neuramis สีทอง","E.P.T.Q ระบุสีด้วย","Restylane ระบุสีด้วย"
+        ],
+        "งานผิว":[
+          "Meso Chanel","P - Cell","Aquatic","Hestina","Exosome","Rejuran",
+          "Belotero Revive","Sculptra","Juvelook","Aesthefill","Mesowink",
+          "AlphaArbutin","PRP","Biocollagen","Transamine"
+        ],
+        "ดริปผิว":[
+          "Snow White","Super Aurawhite","Vitamin Mix",
+          "Brain Booster","Energy Booster"
+        ],
+        "ทรีทเม้นท์":[
+          "ทรีทเมนต์หน้าใส","ทรีทเมนต์สิว","ทรีทเมนต์ฝ้า"
+        ],
+        "Fat/Hifu":[
+          "Bromi","Sisi","HIFU","HIFU แถม"
+        ],
+        "อื่นๆ":[
+          "ยาฉีดสลายฝ้า","ครีมทาฝ้า","ยาทานฝ้า",
+          "ไหมลิฟท์กรอบหน้า","ไหม PDO","ไหม Collagen",
+          "จ่ายเงิน/จองสินค้า"
+        ],
+        "โปรโมชั่น/อีเว้นพิเศษ":[
+          "สลายฟิลเลอร์","ไหม PDO","ปั่น RF","ไหมลิฟท์กรอบหน้า","ผลักวิตามิน"
+        ]
+      };
+    })();
+
+    // helper สำหรับ save เป็นรูปภาพ (ใช้ร่วมกับ html2canvas ถ้ามี)
+    async function saveModalAsImage(){
+      const box = document.getElementById('customer-modal-box');
+      if(!box){
+        alert('ไม่พบกล่องข้อมูลลูกค้า');
+        return;
+      }
+      if(typeof html2canvas === 'undefined'){
+        alert('ยังไม่ได้โหลด html2canvas');
+        return;
+      }
+      const canvas = await html2canvas(box);
+      const link = document.createElement('a');
+      link.download = `customer_${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    // setup ปิด modal + hook click .customer-link
     (function () {
-      // ===== Helpers =====
+      // formatDate ถ้ายังไม่มี
       window.formatDate ||= function (d) {
         if (!d) return '-';
         const x = new Date(d); if (isNaN(x)) return d;
@@ -1456,149 +1524,241 @@ const fmtThaiDate = fmtShortDate;
         const yy = x.getFullYear();
         return `${dd}/${mm}/${yy}`;
       };
-      window.escapeHTML ||= (s)=>String(s||'')
-        .replaceAll('&','&amp;').replaceAll('<','&lt;')
-        .replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
 
-      function showModal(){ document.getElementById('customer-modal').style.display='flex'; }
-      function hideModal(){ document.getElementById('customer-modal').style.display='none'; }
+      function hideModal(){
+        document.getElementById('customer-modal').style.display='none';
+      }
       window.closeCustomerModal = hideModal;
 
-      // close when click outside panel
+      // คลิกนอก panel เพื่อปิด
       document.getElementById('customer-modal').addEventListener('click', e=>{
         const panel=document.querySelector('#customer-modal .panel');
-        if(!panel.contains(e.target)) hideModal();
+        if(panel && !panel.contains(e.target)) hideModal();
       });
-      document.addEventListener('keydown', e=>{ if(e.key==='Escape') hideModal(); });
 
-      function buildKey(name, phone){ return `${name||''}|${phone||''}`; }
+      // กด ESC เพื่อปิด
+      document.addEventListener('keydown', e=>{
+        if(e.key==='Escape') hideModal();
+      });
 
-      // Hook: any ".customer-link" will open modal
+      // เวลา click ชื่อ (.customer-link) ให้เปิด popup
       document.addEventListener('click', async function(e){
         const el = e.target.closest('.customer-link');
         if(!el) return;
-        const name = el.getAttribute('data-name') || el.textContent.trim();
+        const name  = el.getAttribute('data-name')  || el.textContent.trim();
         const phone = el.getAttribute('data-phone') || '';
         if(!(await ensureRecordsLoaded())) return;
-        openCustomerModal(buildKey(name, phone));
+        openCustomerModal(`${name}|${phone}`);
+      });
+    })();
+
+    // ===== ใช้ฟังก์ชันใหม่ที่ให้มา =====
+    async function openCustomerModal(key){
+      const records = (window.allCustomerRecords || []).filter(r=> `${r.name}|${r.phone||''}` === key);
+      if(records.length===0) {
+        const [nm, ph] = key.split('|');
+        const modal = document.getElementById('modal-content');
+        modal.innerHTML = `
+          <h3 style="font-size:16px; margin-bottom:4px;">📇 ${esc(nm||'-')}</h3>
+          <div style="font-size:12px;">📞 เบอร์: ${esc(ph||'-')}</div>
+          <div style="margin-top:10px;color:#64748b;font-size:12px;">ไม่พบประวัติการซื้อ</div>`;
+        document.getElementById('customer-modal').style.display='flex';
+        return;
+      }
+
+      // เรียงบิลจากใหม่ไปเก่า
+      records.sort((a,b)=> String(b.date||'').localeCompare(String(a.date||'')));
+
+      const first = records[0];
+      const customer = {
+        name: first.name,
+        phone: first.phone || '-',
+        opd: pad4(first.opd || '-')
+      };
+
+      // วันล่าสุด + วันไม่ได้มา
+      const latestRecord = records[0];
+      const lastDateStr = (latestRecord.date || '').slice(0,10);
+      const lastDate = new Date(lastDateStr);
+      const today = new Date();
+      const daysAbsent = isNaN(lastDate)
+        ? 0
+        : Math.floor((today - lastDate) / (1000*60*60*24));
+
+      // สรุปยอดเงิน
+      const paidRecords = records.filter(r => recordAmount(r) > 0);
+      const paidVisits = paidRecords.length;
+      const totalAmount = paidRecords.reduce((s,r)=> s + recordAmount(r), 0);
+      const average = paidVisits > 0 ? Math.round(totalAmount/paidVisits) : 0;
+
+      // รวมสินค้าแยกตามชื่อ
+      const allItems = {};
+      records.forEach(r=>{
+        (r.items || []).forEach(item=>{
+          let name = item;
+          const m = item.match(/\((.*?)\)/);
+          if (m) {
+            name = m[1];
+          } else {
+            name = item.split(' - ')[0];
+          }
+          const qtyMatch = item.match(/- (\d+) ชิ้น/);
+          const qty = qtyMatch ? parseInt(qtyMatch[1],10) : 1;
+          allItems[name] = (allItems[name] || 0) + qty;
+        });
       });
 
-      // ฟังก์ชันหลัก
-      window.openCustomerModal = function(key) {
-        const recs = (window.allCustomerRecords||[]).filter(r => `${r.name}|${r.phone||''}` === key);
-        if(!recs.length){
-          const [nm, ph] = key.split('|');
-          document.getElementById("modal-content").innerHTML = `
-            <div style="position:absolute; top:10px; right:10px;">
-              <button onclick="closeCustomerModal()" title="ปิด" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">❌</button>
-            </div>
-            <h3 style="font-size:18px;margin-bottom:4px;">📇 ${escapeHTML(nm||'-')}</h3>
-            <div>📞 <strong>เบอร์:</strong> ${escapeHTML(ph||'-')}</div>
-            <div style="margin-top:10px;color:#64748b;">ไม่พบประวัติการซื้อ</div>`;
-          showModal();
-          return;
-        }
-
-        const first = recs[0];
-        const customer = { name:first.name, phone:first.phone||'-', opd:first.opd||'-' };
-
-        const latestRecord = recs.reduce((latest,r)=> 
-          new Date(r.date) > new Date(latest.date)? r:latest, recs[0]);
-
-        const lastDate = new Date(latestRecord.date);
-        const today = new Date();
-        const daysAbsent = Math.floor((today - lastDate)/(1000*60*60*24));
-
-        const totalVisits = recs.length;
-        const paidRecords = recs.filter(r => parseFloat(r.amount||0) > 0);
-        const paidVisits = paidRecords.length;
-        const totalAmount = paidRecords.reduce((s,r)=>s+parseFloat(r.amount||0),0);
-        const average = paidVisits>0 ? Math.round(totalAmount/paidVisits) : 0;
-
-        const allItems = {};
-        recs.forEach(r => {
-          (r.items||[]).forEach(item=>{
-            let name = item;
-            const m = item.match(/\((.*?)\)/); name = m? m[1] : item.split(" - ")[0];
-            const q = item.match(/- (\d+) ชิ้น/); const qty = q? parseInt(q[1]) : 1;
-            allItems[name] = (allItems[name]||0) + qty;
-          });
+      // แยกหมวดด้วย subOptionsMap
+      const categorizedItems = {};
+      const subOptionsMap = window.subOptionsMap || {};
+      for(const [cat, names] of Object.entries(subOptionsMap)){
+        names.forEach(n=>{
+          if(allItems[n]){
+            (categorizedItems[cat] ??= []).push(`${esc(n)} : ${allItems[n]}`);
+            delete allItems[n];
+          }
         });
+      }
+      if(Object.keys(allItems).length){
+        (categorizedItems['อื่นๆ'] ??= []).push(
+          ...Object.entries(allItems).map(([n,q])=>`${esc(n)} : ${q}`)
+        );
+      }
 
-        const categoryMap = {
-          "โบทอค":["Aestox 50 u","Aestox 100 u","Allergan 50 u","Allergan 100 u","เฉพาะจุด","แบ่งไว้แล้ว","Nabota"],
-          "ฟิลเลอร์":["Neuramis สีดำ","Neuramis สีทอง","E.P.T.Q ระบุสีด้วย","Restylane ระบุสีด้วย"],
-          "งานผิว":["Meso Chanel","P - Cell","Aquatic","Hestina","Exosome","Rejuran","Belotero Revive","Sculptra","Juvelook","Aesthefill","Mesowink","AlphaArbutin","PRP","Biocollagen","Transamine"],
-          "ดริปผิว":["Snow White","Super Aurawhite","Vitamin Mix","Brain Booster","Energy Booster"],
-          "ทรีทเม้นท์":["ทรีทเมนต์หน้าใส","ทรีทเมนต์สิว","ทรีทเมนต์ฝ้า"],
-          "Fat/Hifu":["Bromi","Sisi","HIFU","HIFU แถม"],
-          "อื่นๆ":["ยาฉีดสลายฝ้า","ครีมทาฝ้า","ยาทานฝ้า","ไหมลิฟท์กรอบหน้า","ไหม PDO","ไหม Collagen","จ่ายเงิน/จองสินค้า"],
-          "โปรโมชั่น/อีเว้นพิเศษ":["สลายฟิลเลอร์","ไหม PDO","ปั่น RF","ไหมลิฟท์กรอบหน้า","ผลักวิตามิน"]
-        };
+      const itemSummary = Object.entries(categorizedItems)
+        .map(([cat, items])=>
+          `<div style="margin-bottom:4px;">
+             <strong>${esc(cat)}</strong>: ${items.join(' | ')}
+           </div>`
+        ).join('');
 
-        const categorizedItems = {};
-        for (const [cat, names] of Object.entries(categoryMap)) {
-          names.forEach(n => {
-            if (allItems[n]) {
-              (categorizedItems[cat] ||= []).push(`${n} : ${allItems[n]}`);
-              delete allItems[n];
+      // ประวัติการซื้อย้อนหลัง (ใหม่บนสุด)
+      const historyHtml = records.map(r=>{
+        const itemsHtml = (r.items||[]).map(item=>{
+          let name = item;
+          const m = item.match(/\((.*?)\)/);
+          if (m) {
+            name = m[1];
+          } else {
+            name = item.split(' - ')[0];
+          }
+          const qtyMatch=item.match(/- (\d+) ชิ้น/);
+          const qty = qtyMatch ? parseInt(qtyMatch[1],10) : 1;
+          return `<li>${esc(name)} : ${qty}</li>`;
+        }).join('');
+
+        const noteText = r.note
+          ? `<div style="font-size:11px; margin-top:2px; font-style:italic; color:#444;">
+               📝 หมายเหตุ: ${esc(r.note)}
+             </div>`
+          : '';
+
+        return `
+          <div style="margin-bottom:14px;">
+            <div style="font-weight:600; font-size:12px;">
+              📅 ${formatDate((r.date || '').slice(0,10))}
+            </div>
+            <ul style="padding-left:16px;margin:0;font-size:11px;">${itemsHtml}</ul>
+            <div style="margin-top:4px;color:#0a645a;font-size:11px;">
+              💵 ${Math.round(recordAmount(r)).toLocaleString()} บาท
+            </div>
+            ${noteText}
+            <hr style="margin:8px auto; border:0; border-top:1px dashed #ddd; width:60%;">
+          </div>`;
+      }).join('');
+
+      // ==== ดึง Sale Pitch ทั้งหมดของ OPD นี้ (แบบสั้น) ====
+      let pitchSectionHtml = '';
+      try{
+        const opdClean = (customer.opd || '').replace(/\D/g,'');
+        if (opdClean){
+          const res = await fetch(`/api/pitches?opd=${encodeURIComponent(opdClean)}`);
+          if (res.ok){
+            const pitches = await res.json() || [];
+            if (pitches.length){
+              pitches.sort((a,b)=> String(b.created_at||'').localeCompare(String(a.created_at||'')));
+
+              pitchSectionHtml = pitches.map(p=>{
+                const dIso = String(p.created_at || p.date || '').slice(0,10);
+                const d = formatDate(dIso);
+                return `
+                  <div style="padding:2px 0; font-size:11px; color:#374151;">
+                    ${d} — ${esc(p.promotion || '-')} — ${esc(p.outcome || '-')}
+                  </div>`;
+              }).join('');
+            } else {
+              pitchSectionHtml = `<div style="font-size:11px;color:#888;">ยังไม่มีข้อมูล Sale Pitch</div>`;
             }
-          });
+          } else {
+            pitchSectionHtml = `<div style="font-size:11px;color:#888;">โหลด Sale Pitch ไม่สำเร็จ</div>`;
+          }
+        } else {
+          pitchSectionHtml = `<div style="font-size:11px;color:#888;">ไม่มี OPD จึงดึง Sale Pitch ไม่ได้</div>`;
         }
-        if (Object.keys(allItems).length) {
-          (categorizedItems["อื่นๆ"] ||= []);
-          for (const [n,q] of Object.entries(allItems)) categorizedItems["อื่นๆ"].push(`${n} : ${q}`);
-        }
+      }catch(e){
+        console.error(e);
+        pitchSectionHtml = `<div style="font-size:11px;color:#888;">เกิดข้อผิดพลาดในการโหลด Sale Pitch</div>`;
+      }
 
-        const itemSummary = Object.entries(categorizedItems)
-          .map(([cat,items])=>`<div style="margin-bottom:6px;"><strong>${cat}</strong>: ${items.join(" | ")}</div>`).join("");
+      const modal = document.getElementById('modal-content');
+      modal.innerHTML = '';
 
-        const historyHtml = recs
-          .slice().sort((a,b)=>b.date.localeCompare(a.date))
-          .map(r=>{
-            const items = (r.items||[]).map(item=>{
-              const m = item.match(/\((.*?)\)/);
-              const name = m? m[1] : item.split(" - ")[0];
-              const q = item.match(/- (\d+) ชิ้น/); const qty = q? parseInt(q[1]) : 1;
-              return `<li>${escapeHTML(name)} : ${qty}</li>`;
-            }).join("");
-            const noteText = r.note ? `<div style="margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${escapeHTML(r.note)}</div>` : "";
-            return `
-              <div style="margin-bottom:16px;">
-                <div style="margin-bottom:4px;font-weight:bold;">📅 ${formatDate(r.date)}</div>
-                <ul style="padding-left:16px;margin:0;">${items}</ul>
-                <div style="margin-top:4px;color:#00796b;">💵 ยอด: ${parseFloat(r.amount||0).toLocaleString()} บาท</div>
-                ${noteText}
-                <hr style="margin: 10px auto; border: 0; border-top: 1px dashed #999; width: 60%;">
-              </div>`;
-          }).join("");
+      // ปุ่มบันทึกรูป (ด้านซ้ายบน ทำครั้งเดียว)
+      const box = document.getElementById('customer-modal-box');
+      if (box && !box.querySelector('#modal-save-controls')) {
+        const controls = document.createElement('div');
+        controls.id = 'modal-save-controls';
+        controls.style.cssText='position:absolute;top:10px;left:14px;display:flex;gap:10px;z-index:2;pointer-events:none;';
 
-        const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
+        const saveBtn = document.createElement('button');
+        saveBtn.title='บันทึกเป็นรูปภาพ';
+        saveBtn.type = 'button';
+        saveBtn.style.cssText='background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,.15); cursor:pointer; display:flex; align-items:center; justify-content:center; pointer-events:auto;';
+        saveBtn.textContent='💾';
+        saveBtn.addEventListener('click', saveModalAsImage);
 
-        document.getElementById("modal-content").innerHTML = `
-          <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
-            <button onclick="closeCustomerModal()" title="ปิดหน้าต่าง" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">❌</button>
-          </div>
+        controls.appendChild(saveBtn);
+        box.appendChild(controls);
+      }
 
-          <h3 style="font-size:18px;margin-bottom:4px;">📇 ${escapeHTML(customer.name)}</h3>
-          <div>🆔 <strong>OPD:</strong> ${escapeHTML(customer.opd)}</div>
-          <div>📞 <strong>เบอร์:</strong> ${escapeHTML(customer.phone)}</div>
-          <div>📅 <strong>วันล่าสุด:</strong> ${formatDate(latestRecord.date)} ${daysAbsentText}</div>
-          <div style="color:#00796b;"><strong>💰 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท</div>
-          <div>🔁 มาใช้บริการ: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
-          <div>💳 <strong>เฉลี่ยต่อครั้ง:</strong> ${Math.round(average).toLocaleString()} บาท</div>
+      const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
 
-          <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
-          <div style="font-weight:bold;">📦 สรุปรายการซื้อทั้งหมด:</div>
-          <div style="margin:6px 0 12px;">${itemSummary}</div>
-          <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
-          <div style="font-weight:bold;margin-bottom:6px;">🛍️ ประวัติการซื้อย้อนหลัง:</div>
-          ${historyHtml}
-          <div style="margin-top:10px;font-weight:bold;color:#b8860b;">💰 รวมทั้งหมด: ${totalAmount.toLocaleString()} บาท</div>`;
-        showModal();
-      };
-    })();
+      modal.innerHTML = `
+        <h3 style="font-size:16px; margin-bottom:4px;">📇 ${esc(customer.name)}</h3>
+        <div style="font-size:12px;">🆔 OPD: ${esc(customer.opd)}</div>
+        <div style="font-size:12px;">📞 เบอร์: ${esc(customer.phone)}</div>
+        <div style="font-size:12px;">📅 วันล่าสุด: ${formatDate(lastDateStr)} ${daysAbsentText}</div>
+        <div style="font-size:12px; color:#00796b;">
+          💰 ยอดรวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท
+        </div>
+        <div style="font-size:12px;">🔁 จำนวนครั้ง: ${records.length} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
+        <div style="font-size:12px;">💳 เฉลี่ยต่อครั้ง: ${average.toLocaleString()} บาท</div>
+
+        <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
+
+        <div style="font-weight:600; font-size:13px; margin-bottom:6px;">📦 สรุปรายการซื้อทั้งหมด:</div>
+        <div style="font-size:11px;">${itemSummary || '-'}</div>
+
+        <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
+
+        <div style="font-weight:600; font-size:13px; margin-bottom:4px;">🗣️ Sale Pitch (แบบสั้น):</div>
+        ${pitchSectionHtml}
+
+        <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
+
+        <div style="font-weight:600; font-size:13px; margin-bottom:6px;">🛍️ ประวัติการซื้อย้อนหลัง:</div>
+        ${historyHtml}
+
+        <div style="margin-top:10px;font-weight:bold;color:#b8860b;">
+          💰 รวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท
+        </div>
+      `;
+
+      document.getElementById('customer-modal').style.display='flex';
+    }
+
     /* ==================== End Customer Modal & Records Loader ==================== */
+
   </script>
 
 {% endblock %}
