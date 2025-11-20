@@ -4,8 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}CRM — Sales Pitch{% endblock %}</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
   {% block head %}
     <style>
     :root{
@@ -409,6 +410,65 @@
         font-size:9px;
       }
     }
+
+    /* ===== Responsive Small Mobile อันใหม่5555555555555555555555555555555555555555555555555555555555555555555555555555555===== */
+
+/* ===== Tab Style for Followup Summary ===== */
+    .tabs-wrap {
+      position: sticky; 
+      top: 55px; /* ความสูงประมาณ Appbar เพื่อให้ติดอยู่ใต้เมนูหลัก */
+      z-index: 30; 
+      background: var(--bg); /* สีเดียวกับพื้นหลังบังข้อความตอนเลื่อน */
+      padding: 10px 0 10px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 10px;
+      display: flex; 
+      gap: 8px; 
+      overflow-x: auto; /* เลื่อนซ้ายขวาได้ในมือถือ */
+      scrollbar-width: none; /* ซ่อน scrollbar */
+    }
+    .tabs-wrap::-webkit-scrollbar { display: none; }
+
+    .tab-btn {
+      flex: 1; 
+      min-width: 120px;
+      padding: 10px 8px; 
+      border: 1px solid var(--line); 
+      border-radius: 10px; 
+      background: #fff; 
+      color: var(--muted); 
+      cursor: pointer; 
+      font-weight: 700; 
+      font-size: 12px; 
+      text-align: center;
+      transition: all 0.2s;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+    }
+    
+    .tab-btn:hover { background: #f8fafc; }
+    .tab-btn.active {
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transform: translateY(-2px);
+    }
+
+    /* สีประจำแต่ละแท็บเมื่อ Active */
+    .tab-btn[data-tab="1"].active { background: #10b981; } /* เขียว */
+    .tab-btn[data-tab="2"].active { background: #f59e0b; } /* ส้ม */
+    .tab-btn[data-tab="3"].active { background: #ef4444; } /* แดง */
+    .tab-btn[data-tab="4"].active { background: #64748b; } /* เทา */
+
+    .tab-count {
+      font-size: 10px; 
+      background: rgba(255,255,255,0.25); 
+      padding: 2px 8px; 
+      border-radius: 20px;
+    }
+    .tab-btn:not(.active) .tab-count {
+      background: #e2e8f0; color: #64748b;
+    }
+    
   </style>
 
   {% endblock %}
@@ -417,7 +477,6 @@
 
 {% block content %}
 
-  <!-- Appbar -->
   <div class="appbar">
     <div class="appbar-inner">
       <div class="title">🎧 Sales Pitch</div>
@@ -433,7 +492,6 @@
 
   <div class="container">
 
-    <!-- ===== Section 1: New Plan / Create ===== -->
     <div class="section card" id="newPlanCard" style="display:none;">
       <div class="plan-header">
         <div>
@@ -474,13 +532,11 @@
         <button id="saveAllBtn" class="btn btn-primary">💾 บันทึกทั้งหมด</button>
       </div>
     </div>
-    <!-- ===== Section 2: Followup Summary ===== -->
     <div class="section card" id="summaryCard">
       <div class="summary-card-title">สรุปกลุ่มลูกค้าตามการติดตาม</div>
       <div id="summaryBody"></div>
     </div>
 
-    <!-- ===== Section3: History ===== -->
     <div class="section card">
       <div class="history-toolbar">
         <div class="field">
@@ -514,12 +570,10 @@
 
   </div>
 
-  <!-- Toast -->
   <div class="toast-wrap" id="toastWrap"></div>
 
-  <datalist id="customerList"><!-- options injected --></datalist>
+  <datalist id="customerList"></datalist>
 
-  <!-- Customer Modal -->
   <div id="customer-modal" aria-hidden="true">
     <div class="panel" id="customer-modal-box" style="position:relative;">
       <div style="position:absolute; top:10px; right:10px;">
@@ -544,21 +598,22 @@
       setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(6px)'; }, 2200);
       setTimeout(()=>{ el.remove(); }, 2800);
     };
+    
     const fmtShortDate = (iso)=>{
-  try{
-    const d = new Date(iso);
-    if (isNaN(d)) return iso || '';
-    const dd = String(d.getDate()).padStart(2,'0');
-    const mm = String(d.getMonth()+1).padStart(2,'0');
-    const yy = String(d.getFullYear()).slice(-2);
-    return `${dd}-${mm}-${yy}`; // ว-เดือน-ปี(2หลัก) ตัวเลขล้วน
-  }catch{
-    return iso || '';
-  }
-};
+      try{
+        const d = new Date(iso);
+        if (isNaN(d)) return iso || '';
+        const dd = String(d.getDate()).padStart(2,'0');
+        const mm = String(d.getMonth()+1).padStart(2,'0');
+        const yy = String(d.getFullYear()).slice(-2);
+        return `${dd}-${mm}-${yy}`; // ว-เดือน-ปี(2หลัก)
+      }catch{
+        return iso || '';
+      }
+    };
 
-// ใช้ตัวนี้แทนทุกที่ที่เคยเรียก fmtThaiDate
-const fmtThaiDate = fmtShortDate;
+    // ใช้ตัวนี้แทนทุกที่ที่เคยเรียก fmtThaiDate
+    const fmtThaiDate = fmtShortDate;
 
     const todayISO = ()=> new Date().toISOString().slice(0,10);
     const debounce = (fn,ms=300)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms);} };
@@ -585,7 +640,8 @@ const fmtThaiDate = fmtShortDate;
     let customerIndex = new Map();
     let customerByOPD = new Map();
     let recordsByKey = new Map();
-
+    
+    
     // ========= Elements =========
     const newPlanBtn = $('#newPlanBtn');
     const newPlanCard = $('#newPlanCard');
@@ -614,6 +670,7 @@ const fmtThaiDate = fmtShortDate;
     }, 300);
     const clearDraft = ()=> localStorage.removeItem(DRAFT_KEY);
 
+    
     // ========= Init =========
     (async function init(){
       // ฟิลเตอร์ History: ค่าเริ่มต้น = แสดงทั้งหมด
@@ -689,9 +746,6 @@ const fmtThaiDate = fmtShortDate;
         recordsByKey.get(key).push(r);
       });
     }
-
-
-
 
 
     function updatePlanTitle(){ const d = planDate.value || todayISO(); planTitle.textContent = `Sale Pitch วันที่ ${fmtThaiDate(d)}`; }
@@ -1036,7 +1090,10 @@ const fmtThaiDate = fmtShortDate;
         <div class="history-row" data-row data-id="${id}">
           <div data-cell="time">${time||'-'}</div>
           <div data-cell="name">
-            <span class="customer-link" data-name="${esc(name)}" data-phone="${esc(phone)}">${esc(name)}</span>
+            <span class="customer-link"
+                  data-name="${esc(name)}"
+                  data-phone="${esc(phone)}"
+                  data-opd="${esc(opd)}">${esc(name)}</span>
             <span style="color:#64748b;">• OPD ${opd}</span>
           </div>
           <div class="hide-sm" data-cell="promotion">${esc(promo)||''}</div>
@@ -1207,230 +1264,246 @@ const fmtThaiDate = fmtShortDate;
     }
       
 
+    // ========= Followup Summary (Logic 4 กลุ่ม + Tabs Sticky) =========
+    
+    // ตัวแปรเก็บสถานะ Tab ปัจจุบัน (Default = กลุ่ม 1)
+    let currentSummaryTab = 1;
 
+    function buildFollowupSummary(){
+      const wrap = document.getElementById('summaryBody');
+      if(!wrap) return;
 
-   function buildFollowupSummary(){
-  const wrap = document.getElementById('summaryBody');
-  if(!wrap) return;
+      if(!historyCache.length){
+        wrap.innerHTML = '<div class="summary-section"><div class="summary-empty">ยังไม่มีข้อมูลประวัติการโทร</div></div>';
+        return;
+      }
 
-  if(!historyCache.length){
-    wrap.innerHTML = '<div class="summary-section"><div class="summary-empty">ยังไม่มีข้อมูลประวัติการโทร</div></div>';
-    return;
-  }
-
-  // group pitch ต่อคน
-  const byCustomer = new Map();
-  historyCache.forEach(x=>{
-    const opd   = pad4(x.opd || '');
-    const cust  = customerByOPD.get(opd) || {};
-    const name  = (x.customer_name || cust.name || '').trim();
-    const phone = x.customer_phone || cust.phone || '';
-    const key   = makeCustomerKey(opd, name, phone);
-    if(!key) return;
-    if(!byCustomer.has(key)) byCustomer.set(key, {
-      opd, name: name || opd || '(ไม่ทราบชื่อ)', phone, pitches:[]
-    });
-    byCustomer.get(key).pitches.push(x);
-  });
-
-  const followTodo   = []; // คนที่ต้องตามต่อ
-  const lostContact  = []; // คนที่เลิกติดต่อ
-
-  byCustomer.forEach((cust, key)=>{
-    const pitches = cust.pitches
-      .slice()
-      .sort((a,b)=> (a.created_at||a.date||'').localeCompare(b.created_at||b.date||''));
-
-    // ===== ดึงประวัติการใช้บริการ =====
-    let recs = recordsByKey.get(key) || [];
-    if((!recs || !recs.length) && cust.opd){
-      const op = cust.opd;
-      recs = (window.allCustomerRecords || []).filter(r => pad4(r.opd || '') === op);
-    }
-    recs = recs || [];
-
-    // 1) หาวันที่มาใช้บริการล่าสุด (ถ้ามี)
-    let lastVisitDate = null;
-    recs.forEach(r=>{
-      const d = String(r.date || '').slice(0,10);
-      if(!d) return;
-      if(!lastVisitDate || d > lastVisitDate) lastVisitDate = d;
-    });
-
-    // 2) คนที่ต้องตามต่อ
-    const interestedPitches = pitches.filter(p => isInterested(p.outcome));
-    if(interestedPitches.length){
-      const lastInterested = interestedPitches[interestedPitches.length-1];
-      const interestDate = (lastInterested.created_at || lastInterested.date || '').slice(0,10);
-
-      // มีมาหลังสนใจไหม
-      const hasVisitAfterInterest = !!(lastVisitDate && lastVisitDate > interestDate);
-
-      // การติดต่อหลังจากตอบว่าสนใจ (ไม่เอาวันที่แล้ว ใช้ outcome ล้วน)
-      const followPitches = pitches.filter(p=>{
-        const d = (p.created_at || p.date || '').slice(0,10);
-        return d > interestDate;
+      // 1. Group Pitch ตามลูกค้า
+      const byCustomer = new Map();
+      historyCache.forEach(x=>{
+        const opd   = pad4(x.opd || '');
+        const cust  = customerByOPD.get(opd) || {};
+        const name  = (x.customer_name || cust.name || '').trim();
+        const phone = x.customer_phone || cust.phone || '';
+        const key   = makeCustomerKey(opd, name, phone);
+        if(!key) return;
+        if(!byCustomer.has(key)) byCustomer.set(key, {
+          opd,
+          name: name || opd || '(ไม่ทราบชื่อ)',
+          phone,
+          pitches:[]
+        });
+        byCustomer.get(key).pitches.push(x);
       });
 
-      const followTimeline = followPitches
-        .map(p => String(p.outcome || '').trim())
-        .filter(Boolean); // แค่ outcome ต่อกัน
+      // เตรียมถังใส่ 4 กลุ่ม
+      const groups = {
+        1: [], // Active Interest (มีใจ ต้องตามต่อ)
+        2: [], // Lost Interest (เคยมีใจ แต่หลุด)
+        3: [], // Closed (ไม่เคยสน + จบเคส >=3 ครั้ง)
+        4: []  // Pending (ไม่เคยสน + ตาม <3 ครั้ง)
+      };
 
-      const followCount = followTimeline.length;
+      // 2. วนลูปตัดสินใจทีละคน
+      byCustomer.forEach((cust, key)=>{
+        // เรียง pitch เก่า -> ใหม่
+        const pitches = cust.pitches.slice().sort((a,b)=> (a.created_at||a.date||'').localeCompare(b.created_at||b.date||''));
 
-      // สถานะล่าสุดจากการติดตาม
-      let status = 'กำลังติดตาม';
-      if(followPitches.some(p => /^ไม่สนใจ/.test(String(p.outcome||'').trim()))){
-        status = 'ไม่สนใจแล้ว';
-      }else if(followPitches.some(p => /ไม่รับสาย/.test(String(p.outcome||'')))){
-        status = 'ติดต่อไม่ได้';
-      }
-
-      // รายละเอียดตอนสนใจ: ตัดโปรออก เหลือ Outcome + โน้ต
-      const detailParts = [];
-      if(lastInterested.outcome) detailParts.push(lastInterested.outcome);
-      if(lastInterested.content) detailParts.push(`โน้ต: ${lastInterested.content}`);
-      const interestDetail = detailParts.join(' | ');
-
-      if(!hasVisitAfterInterest){
-        followTodo.push({
-          name: cust.name,
-          phone: cust.phone,
-          callDate: interestDate,
-          interestDetail,
-          followCount,
-          followTimeline,
-          status
+        // ตัดรอบด้วยวันมาล่าสุด (Visit)
+        let recs = recordsByKey.get(key) || [];
+        if((!recs || !recs.length) && cust.opd){
+          const op = cust.opd;
+          recs = (window.allCustomerRecords || []).filter(r => pad4(r.opd || '') === op);
+        }
+        let lastVisitDate = null;
+        recs.forEach(r=>{
+          const d = String(r.date || '').slice(0,10);
+          if(d && (!lastVisitDate || d > lastVisitDate)) lastVisitDate = d;
         });
-      }
-    }
 
-    // 3) คนที่เลิกติดต่อ
-    if(lastVisitDate){
-      const pitchesAfterVisit = pitches.filter(p=>{
-        const pd = (p.created_at || p.date || '').slice(0,10);
-        return pd > lastVisitDate;
+        // กรอง Pitch ที่เกิดหลังมา Visit
+        let activePitches = [];
+        if(lastVisitDate){
+          activePitches = pitches.filter(p=>{
+             const d = (p.created_at || p.date || '').slice(0,10);
+             return d > lastVisitDate; 
+          });
+        } else {
+          activePitches = pitches;
+        }
+
+        if(!activePitches.length) return;
+
+        // Variables for Logic
+        const lastPitch = activePitches[activePitches.length - 1];
+        const lastOutcome = String(lastPitch.outcome || '').trim();
+        const lastDate = (lastPitch.created_at || lastPitch.date || '').slice(0,10);
+        const count = activePitches.length;
+
+        // Check conditions
+        const interestPitch = activePitches.find(p => isInterested(p.outcome));
+        const hasEverBeenInterested = !!interestPitch;
+        const isCurrentlyReject = /^ไม่สนใจ/.test(lastOutcome);
+
+        // Timeline text
+        const timelineTexts = activePitches.map(p => p.outcome).filter(Boolean);
+
+        const dataObj = {
+          opd: cust.opd, name: cust.name, phone: cust.phone,
+          activePitches, lastVisitDate, lastDate, lastOutcome, count, timelineTexts, interestPitch
+        };
+
+        // === MASTER LOGIC SELECTION ===
+        if (hasEverBeenInterested) {
+          // [A] เคยบอกว่าสนใจ
+          // ถ้าล่าสุดปฏิเสธ หรือ ตามต่อหลังจากสนใจจนเหนื่อย (>=3 ครั้งนับจากสนใจ) -> กลุ่ม 2
+          // *Logic ตาม: นับเฉพาะครั้งที่เกิดหลังวันสนใจ*
+          const callsAfterInterest = activePitches.filter(p => (p.created_at||p.date) > (interestPitch.created_at||interestPitch.date)).length;
+          
+          if (isCurrentlyReject || callsAfterInterest >= 3) {
+            groups[2].push(dataObj); 
+          } else {
+            groups[1].push(dataObj);
+          }
+        } else {
+          // [B] ไม่เคยบอกว่าสนใจ
+          if (isCurrentlyReject || count >= 3) {
+            groups[3].push(dataObj); // ปฏิเสธ หรือ รวมกันเกิน 3 ครั้ง -> จบ (กลุ่ม 3)
+          } else {
+            groups[4].push(dataObj); // ยังไม่ครบ 3 ครั้ง -> ตามต่อ (กลุ่ม 4)
+          }
+        }
       });
 
-      if(pitchesAfterVisit.length >= 3){
-        const lastPitch = pitchesAfterVisit[pitchesAfterVisit.length-1];
-        const lastPitchDate = (lastPitch.created_at || lastPitch.date || '').slice(0,10);
+      // --- Sorting ---
+      groups[1].sort((a,b) => (b.interestPitch?.date||b.lastDate).localeCompare(a.interestPitch?.date||a.lastDate));
+      [2,3,4].forEach(g => groups[g].sort((a,b) => b.lastDate.localeCompare(a.lastDate)));
 
-        // timeline: เอาเฉพาะ outcome ต่อกันด้วย ,
-        const timeline = pitchesAfterVisit
-          .map(p => String(p.outcome || '').trim())
-          .filter(Boolean);
-
-        const lastNote = String(lastPitch.content || '').trim();
-
-        lostContact.push({
-          name: cust.name,
-          phone: cust.phone,
-          lastVisitDate,
-          lastDate: lastPitchDate,
-          count: pitchesAfterVisit.length,
-          timeline,
-          lastNote
-        });
-      }
-    }
-  });
-
-  // เรียงลิสต์
-  followTodo.sort((a,b)=> (b.callDate||'').localeCompare(a.callDate||''));          // คนที่ต้องตามต่อ: วันที่สนใจล่าสุด
-  lostContact.sort((a,b)=> (b.lastVisitDate||'').localeCompare(a.lastVisitDate||'')); // เลิกติดต่อ: วันที่มาล่าสุด
-
-  // helper: ชื่อเป็นลิงก์ popup
-  function renderCustomerCell(r, index){
-    const name = r.name || '';
-    const phone = r.phone || '';
-    const label = `${index}. ${name}`; // เพิ่มเลขลำดับหน้าชื่อ
-    return `<span class="customer-link" data-name="${esc(name)}" data-phone="${esc(phone)}">${esc(label)}</span>`;
-  }
-
-  function renderSection(title, rows, type){
-    if(!rows.length){
-      return `
-        <div class="summary-section">
-          <div class="summary-title">${title}</div>
-          <div class="summary-empty">ไม่มีรายการ</div>
-        </div>`;
-    }
-
-    let thead = '';
-    let tbody = '';
-
-    if(type === 'todo'){
-      thead = `
-        <tr>
-          <th>ลูกค้า</th>
-          <th>โทรล่าสุด (สนใจ)</th>
-          <th>รายละเอียดตอนสนใจ</th>
-          <th>ติดตามหลังสนใจ</th>
-          <th>สถานะล่าสุด</th>
-        </tr>`;
-      tbody = rows.map((r, idx)=>{
-        const followText = r.followCount
-          ? `ติดต่อเพิ่ม ${r.followCount} ครั้ง: ${r.followTimeline.join(', ')}`
-          : 'ยังไม่ได้ติดต่อซ้ำ';
+      // --- Render UI ---
+      
+      // 1. Render Tabs
+      const renderTabs = () => {
         return `
-          <tr>
-            <td>${renderCustomerCell(r, idx+1)}</td>
-            <td>${esc(fmtShortDate(r.callDate)||'-')}</td>
-            <td>${esc(r.interestDetail||'-')}</td>
-            <td>${esc(followText)}</td>
-            <td>${esc(r.status||'-')}</td>
+          <div class="tabs-wrap">
+            <button class="tab-btn ${currentSummaryTab===1?'active':''}" onclick="switchSummaryTab(1)">
+              <span>🟢 สนใจ/ตามต่อ</span>
+              <span class="tab-count">${groups[1].length}</span>
+            </button>
+            <button class="tab-btn ${currentSummaryTab===2?'active':''}" onclick="switchSummaryTab(2)">
+              <span>🟠 เคยสน/หลุด</span>
+              <span class="tab-count">${groups[2].length}</span>
+            </button>
+            <button class="tab-btn ${currentSummaryTab===3?'active':''}" onclick="switchSummaryTab(3)">
+              <span>🔴 เลิกตาม (>3)</span>
+              <span class="tab-count">${groups[3].length}</span>
+            </button>
+            <button class="tab-btn ${currentSummaryTab===4?'active':''}" onclick="switchSummaryTab(4)">
+              <span>🔵 ยังไม่ครบ 3</span>
+              <span class="tab-count">${groups[4].length}</span>
+            </button>
+          </div>
+        `;
+      };
+
+      // 2. Render Content Table
+      const renderContent = () => {
+        const list = groups[currentSummaryTab];
+        if(!list || !list.length) {
+          return `<div style="padding:30px; text-align:center; color:#9ca3af;">
+            <div style="font-size:40px; margin-bottom:10px;">📭</div>
+            ไม่มีรายชื่อในหมวดนี้
+          </div>`;
+        }
+
+        let thead = '';
+        if(currentSummaryTab === 1){
+           thead = `<tr><th width="25%">ลูกค้า</th><th width="30%">จุดเริ่มความสนใจ (Spark)</th><th width="25%">Timeline ตามต่อ</th><th width="20%">สถานะล่าสุด</th></tr>`;
+        } else if(currentSummaryTab === 2){
+           thead = `<tr><th width="25%">ลูกค้า</th><th width="30%">เคยสนใจเมื่อ</th><th width="45%">สาเหตุที่หลุด / สถานะจบ</th></tr>`;
+        } else if(currentSummaryTab === 3){
+           thead = `<tr><th width="30%">ลูกค้า</th><th width="20%">วันมาล่าสุด</th><th width="50%">ผลลัพธ์ (เกิน 3 ครั้ง/ปฏิเสธ)</th></tr>`;
+        } else {
+           thead = `<tr><th width="30%">ลูกค้า</th><th width="20%">โทรไปแล้ว (ครั้ง)</th><th width="50%">สถานะล่าสุด</th></tr>`;
+        }
+
+        const rows = list.map((r,idx) => {
+          const i = idx + 1;
+          const custHtml = `<span class="customer-link" data-name="${esc(r.name)}" data-phone="${esc(r.phone)}" data-opd="${esc(r.opd)}">${i}. ${esc(r.name)}</span>`;
+          
+          if(currentSummaryTab === 1){
+             const intDate = fmtShortDate(r.interestPitch.created_at || r.interestPitch.date);
+             const intNote = r.interestPitch.content || r.interestPitch.promotion || '-';
+             const after = r.activePitches.filter(p => (p.created_at||p.date) > (r.interestPitch.created_at||r.interestPitch.date));
+             const afterText = after.length 
+               ? after.map(x=>`<div><span style="color:#6b7280;font-size:10px;">${fmtShortDate(x.created_at||x.date)}:</span> ${x.outcome}</div>`).join('') 
+               : '<span style="color:#d1d5db; font-size:10px;">-รอติดตาม-</span>';
+             
+             return `<tr>
+               <td>${custHtml}</td>
+               <td style="background:#f0fdf4;">
+                 <div style="font-weight:700; color:#166534;">${intDate}</div>
+                 <div style="font-size:11px; color:#15803d;">${esc(intNote)}</div>
+               </td>
+               <td>${afterText}</td>
+               <td><span style="font-weight:700; color:#059669;">${esc(r.lastOutcome)}</span></td>
+             </tr>`;
+          }
+          
+          if(currentSummaryTab === 2){
+             const intDate = fmtShortDate(r.interestPitch.created_at || r.interestPitch.date);
+             return `<tr>
+               <td>${custHtml}</td>
+               <td style="color:#92400e; background:#fffbeb;">
+                 <div>📅 ${intDate}</div>
+                 <div style="font-size:11px;">${esc(r.interestPitch.content||'-')}</div>
+               </td>
+               <td>
+                 <div style="color:#b91c1c; font-weight:600;">${esc(r.lastOutcome)}</div>
+                 <div style="font-size:10px; color:#6b7280;">(ตามหลังสนใจไปแล้ว ${r.activePitches.length} ครั้ง)</div>
+               </td>
+             </tr>`;
+          }
+
+          if(currentSummaryTab === 3){
+             return `<tr>
+               <td>${custHtml}</td>
+               <td>${esc(fmtShortDate(r.lastVisitDate)||'-')}</td>
+               <td>
+                 <div><span style="color:#ef4444;">${esc(r.lastOutcome)}</span></div>
+                 <div style="font-size:10px; color:#6b7280;">ประวัติ: ${r.timelineTexts.join(' → ')} (รวม ${r.count} ครั้ง)</div>
+               </td>
+             </tr>`;
+          }
+          
+          // Tab 4
+          return `<tr>
+            <td>${custHtml}</td>
+            <td><strong>${r.count}</strong> / 3</td>
+            <td>${esc(r.lastOutcome)}</td>
           </tr>`;
-      }).join('');
-    }else if(type === 'lost'){
-      thead = `
-        <tr>
-          <th>ลูกค้า</th>
-          <th>วันมาล่าสุด</th>
-          <th>จำนวนครั้งที่โทรหลังจากนั้น</th>
-          <th>โทรล่าสุด</th>
-        </tr>`;
-      tbody = rows.map((r, idx)=>{
-        const baseText = `${r.count||0} ครั้ง` +
-          (r.timeline && r.timeline.length ? `: ${r.timeline.join(', ')}` : '');
-        const noteText = r.lastNote
-          ? `<div class="summary-last-note">โน้ตล่าสุด: ${esc(r.lastNote)}</div>`
-          : '';
-        return `
-          <tr>
-            <td>${renderCustomerCell(r, idx+1)}</td>
-            <td>${esc(fmtShortDate(r.lastVisitDate)||'-')}</td>
-            <td>${esc(baseText)}${noteText}</td>
-            <td>${esc(fmtShortDate(r.lastDate)||'-')}</td>
-          </tr>`;
-      }).join('');
+        }).join('');
+
+        return `<table class="summary-table" style="width:100%;"><thead>${thead}</thead><tbody>${rows}</tbody></table>`;
+      };
+
+      // Inject HTML
+      wrap.innerHTML = renderTabs() + `<div id="summaryContentArea">${renderContent()}</div>`;
+
+      // Expose switch function globally so onclick works
+      window.switchSummaryTab = (id) => {
+        currentSummaryTab = id;
+        // Re-render logic inside (dirty hack but simple)
+        // Better: just update active class and content
+        $$('.tab-btn').forEach(b => b.classList.toggle('active', parseInt(b.getAttribute('onclick').match(/\d/)[0]) === id));
+        const contentArea = document.getElementById('summaryContentArea');
+        if(contentArea) contentArea.innerHTML = renderContent();
+      };
     }
 
-    return `
-      <div class="summary-section">
-        <div class="summary-title">${title}</div>
-        <table class="summary-table">
-          <thead>${thead}</thead>
-          <tbody>${tbody}</tbody>
-        </table>
-      </div>`;
-  }
-
-  wrap.innerHTML =
-    renderSection('คนที่ต้องตามต่อ (เคยแจ้งว่าสนใจ แต่หลังจากนั้นยังไม่เข้ามาใช้บริการ)', followTodo, 'todo') +
-    renderSection('คนที่เลิกติดต่อ (มาล่าสุดแล้วโทรตามเพิ่มเติม ≥ 3 ครั้ง)', lostContact, 'lost');
-}
-
-
-
-
-
-
-        /* ==================== Customer Modal & Records Loader ==================== */
+    /* ==================== Customer Modal & Records Loader ==================== */
 
     let _recordsLoaded = false;
 
-    // โหลด reccord_sale (เหมือนเดิม)
     async function loadCustomerRecords(){
       try{
         const res = await fetch('/api/reccord_sale');
@@ -1452,13 +1525,12 @@ const fmtThaiDate = fmtShortDate;
       return _recordsLoaded;
     }
 
-    // ฟังก์ชันคิดจำนวนเงินต่อบิล (ถ้า backend มี logic พิเศษ ค่อยปรับตรงนี้)
     function recordAmount(r){
       const n = parseFloat(r.amount || 0);
       return isNaN(n) ? 0 : n;
     }
 
-    // map หมวดสินค้า (ใช้แทน categoryMap เดิม ถ้าไม่มี subOptionsMap จากหน้าอื่น)
+    // map สินค้าเริ่มต้น ถ้าไม่มี subOptionsMap จากที่อื่น
     (function ensureSubOptionsMap(){
       if (window.subOptionsMap) return;
       window.subOptionsMap = {
@@ -1495,7 +1567,42 @@ const fmtThaiDate = fmtShortDate;
       };
     })();
 
-    // helper สำหรับ save เป็นรูปภาพ (ใช้ร่วมกับ html2canvas ถ้ามี)
+    // formatDate (ใช้ใน modal)
+    window.formatDate ||= function (d) {
+      if (!d) return '-';
+      const x = new Date(d); if (isNaN(x)) return d;
+      const dd = String(x.getDate()).padStart(2,'0');
+      const mm = String(x.getMonth()+1).padStart(2,'0');
+      const yy = x.getFullYear();
+      return `${dd}/${mm}/${yy}`;
+    };
+
+    function showCustomerModal(){
+      const el = document.getElementById('customer-modal');
+      if(el) el.style.display = 'flex';
+    }
+    function hideCustomerModal(){
+      const el = document.getElementById('customer-modal');
+      if(el) el.style.display = 'none';
+    }
+    window.closeCustomerModal = hideCustomerModal;
+
+    // ปิดเมื่อคลิกนอก panel
+    (function(){
+      const modal = document.getElementById('customer-modal');
+      if(!modal) return;
+      modal.addEventListener('click', e=>{
+        const panel = modal.querySelector('.panel');
+        if(panel && !panel.contains(e.target)) hideCustomerModal();
+      });
+    })();
+
+    // ปิดเมื่อกด ESC
+    document.addEventListener('keydown', e=>{
+      if(e.key === 'Escape') hideCustomerModal();
+    });
+
+    // save modal เป็นรูป (ต้องมี html2canvas ในหน้า ถึงจะทำได้จริง)
     async function saveModalAsImage(){
       const box = document.getElementById('customer-modal-box');
       if(!box){
@@ -1503,7 +1610,7 @@ const fmtThaiDate = fmtShortDate;
         return;
       }
       if(typeof html2canvas === 'undefined'){
-        alert('ยังไม่ได้โหลด html2canvas');
+        alert('หน้านี้ยังไม่ได้โหลด html2canvas');
         return;
       }
       const canvas = await html2canvas(box);
@@ -1513,56 +1620,48 @@ const fmtThaiDate = fmtShortDate;
       link.click();
     }
 
-    // setup ปิด modal + hook click .customer-link
-    (function () {
-      // formatDate ถ้ายังไม่มี
-      window.formatDate ||= function (d) {
-        if (!d) return '-';
-        const x = new Date(d); if (isNaN(x)) return d;
-        const dd = String(x.getDate()).padStart(2,'0');
-        const mm = String(x.getMonth()+1).padStart(2,'0');
-        const yy = x.getFullYear();
-        return `${dd}/${mm}/${yy}`;
-      };
+    // คลิกชื่อลูกค้าเพื่อเปิด popup (ใช้ opd เป็น key หลัก)
+    document.addEventListener('click', async function(e){
+      const el = e.target.closest('.customer-link');
+      if(!el) return;
 
-      function hideModal(){
-        document.getElementById('customer-modal').style.display='none';
-      }
-      window.closeCustomerModal = hideModal;
+      const name  = el.getAttribute('data-name')  || el.textContent.trim();
+      const phone = el.getAttribute('data-phone') || '';
+      const opd   = el.getAttribute('data-opd')   || '';
 
-      // คลิกนอก panel เพื่อปิด
-      document.getElementById('customer-modal').addEventListener('click', e=>{
-        const panel=document.querySelector('#customer-modal .panel');
-        if(panel && !panel.contains(e.target)) hideModal();
-      });
+      if(!(await ensureRecordsLoaded())) return;
 
-      // กด ESC เพื่อปิด
-      document.addEventListener('keydown', e=>{
-        if(e.key==='Escape') hideModal();
-      });
+      const key = makeCustomerKey(opd, name, phone);
+      openCustomerModal(key);
+    });
 
-      // เวลา click ชื่อ (.customer-link) ให้เปิด popup
-      document.addEventListener('click', async function(e){
-        const el = e.target.closest('.customer-link');
-        if(!el) return;
-        const name  = el.getAttribute('data-name')  || el.textContent.trim();
-        const phone = el.getAttribute('data-phone') || '';
-        if(!(await ensureRecordsLoaded())) return;
-        openCustomerModal(`${name}|${phone}`);
-      });
-    })();
-
-    // ===== ใช้ฟังก์ชันใหม่ที่ให้มา =====
+    // ใช้ key จาก makeCustomerKey / recordsByKey เป็นหลัก
     async function openCustomerModal(key){
-      const records = (window.allCustomerRecords || []).filter(r=> `${r.name}|${r.phone||''}` === key);
-      if(records.length===0) {
-        const [nm, ph] = key.split('|');
+      let records = (typeof recordsByKey !== 'undefined' && recordsByKey.get(key)) || [];
+
+      // fallback เผื่อ index ยังไม่อัปเดต หรือ key เป็นรูปแบบอื่น
+      if (!records || !records.length){
+        const all = window.allCustomerRecords || [];
+
+        if (/^\d{4}$/.test(key)){                // key เป็น OPD
+          records = all.filter(r => pad4(r.opd || '') === key);
+        }else if (key.startsWith('phone:')){     // key เป็น phone:xxx
+          const phone = key.slice(6);
+          records = all.filter(r => String(r.phone || '') === phone);
+        }else{                                   // key เป็นชื่อ
+          const nm = String(key || '').trim();
+          records = all.filter(r => String(r.name || '').trim() === nm);
+        }
+      }
+
+      if(!records || !records.length){
         const modal = document.getElementById('modal-content');
         modal.innerHTML = `
-          <h3 style="font-size:16px; margin-bottom:4px;">📇 ${esc(nm||'-')}</h3>
-          <div style="font-size:12px;">📞 เบอร์: ${esc(ph||'-')}</div>
-          <div style="margin-top:10px;color:#64748b;font-size:12px;">ไม่พบประวัติการซื้อ</div>`;
-        document.getElementById('customer-modal').style.display='flex';
+          <h3 style="font-size:16px; margin-bottom:4px;">📇 ไม่พบประวัติ</h3>
+          <div style="font-size:12px;color:#64748b;">
+            ไม่มีประวัติการซื้อสำหรับลูกค้าคนนี้
+          </div>`;
+        showCustomerModal();
         return;
       }
 
@@ -1576,7 +1675,6 @@ const fmtThaiDate = fmtShortDate;
         opd: pad4(first.opd || '-')
       };
 
-      // วันล่าสุด + วันไม่ได้มา
       const latestRecord = records[0];
       const lastDateStr = (latestRecord.date || '').slice(0,10);
       const lastDate = new Date(lastDateStr);
@@ -1585,7 +1683,6 @@ const fmtThaiDate = fmtShortDate;
         ? 0
         : Math.floor((today - lastDate) / (1000*60*60*24));
 
-      // สรุปยอดเงิน
       const paidRecords = records.filter(r => recordAmount(r) > 0);
       const paidVisits = paidRecords.length;
       const totalAmount = paidRecords.reduce((s,r)=> s + recordAmount(r), 0);
@@ -1608,10 +1705,9 @@ const fmtThaiDate = fmtShortDate;
         });
       });
 
-      // แยกหมวดด้วย subOptionsMap
       const categorizedItems = {};
-      const subOptionsMap = window.subOptionsMap || {};
-      for(const [cat, names] of Object.entries(subOptionsMap)){
+      const map = window.subOptionsMap || {};
+      for(const [cat, names] of Object.entries(map)){
         names.forEach(n=>{
           if(allItems[n]){
             (categorizedItems[cat] ??= []).push(`${esc(n)} : ${allItems[n]}`);
@@ -1632,7 +1728,7 @@ const fmtThaiDate = fmtShortDate;
            </div>`
         ).join('');
 
-      // ประวัติการซื้อย้อนหลัง (ใหม่บนสุด)
+      // ประวัติการซื้อย้อนหลัง
       const historyHtml = records.map(r=>{
         const itemsHtml = (r.items||[]).map(item=>{
           let name = item;
@@ -1703,7 +1799,7 @@ const fmtThaiDate = fmtShortDate;
       const modal = document.getElementById('modal-content');
       modal.innerHTML = '';
 
-      // ปุ่มบันทึกรูป (ด้านซ้ายบน ทำครั้งเดียว)
+      // ปุ่มเซฟรูป (ซ้ายบน)
       const box = document.getElementById('customer-modal-box');
       if (box && !box.querySelector('#modal-save-controls')) {
         const controls = document.createElement('div');
@@ -1754,7 +1850,7 @@ const fmtThaiDate = fmtShortDate;
         </div>
       `;
 
-      document.getElementById('customer-modal').style.display='flex';
+      showCustomerModal();
     }
 
     /* ==================== End Customer Modal & Records Loader ==================== */

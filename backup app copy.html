@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import json
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta
 from collections import defaultdict, deque
 from typing import Any, Dict, List
 
@@ -74,7 +74,6 @@ def _rate_limited(bucket: Dict[str, deque], max_events: int, window_sec: int) ->
 # ⬇️ อนุญาตเฉพาะฟิลด์เหล่านี้ (ไม่มี vip และเพิ่ม profile)
 SAFE_CUSTOMER_FIELDS = {"name", "phone", "birthMonth", "note", "profile"}
 
-
 def login_required(view_func):
     def wrapper(*args, **kwargs):
         if "username" not in session:
@@ -83,12 +82,10 @@ def login_required(view_func):
     wrapper.__name__ = view_func.__name__
     return wrapper
 
-
 def normalize_opd(opd: Any) -> str:
     if opd is None:
         return ""
     return str(opd).strip().zfill(4)
-
 
 def safe_date_str(d: Any) -> str:
     # Expect 'YYYY-MM-DD...' and keep first 10 chars
@@ -96,6 +93,12 @@ def safe_date_str(d: Any) -> str:
         return ""
     return str(d)[:10]
 
+# --- NEW: sanitize helper — แปลง -, – , — ให้เป็นค่าว่าง ---
+def _clean_dash(v):
+    if v is None:
+        return None
+    s = str(v).strip()
+    return "" if s in {"-", "–", "—"} else s
 
 # =============================================================
 # Auth Views
@@ -133,13 +136,11 @@ def login():
             error = 'เกิดข้อผิดพลาดในการเชื่อมต่อกับระบบ'
     return render_template('login.html', error=error)
 
-
 @app.route('/logout')
 @login_required
 def logout():
     session.clear()
     return redirect(url_for('login'))
-
 
 @app.route('/pin-login', methods=['POST'])
 def pin_login():
@@ -160,7 +161,6 @@ def pin_login():
         app.logger.error(f"PIN LOGIN ERROR: {e}")
         return jsonify({"success": False})
 
-
 # =============================================================
 # Page Views (UI)
 # =============================================================
@@ -169,60 +169,60 @@ def pin_login():
 def dashboard():
     return render_template('dashboard.html', username=session['username'], role=session.get('role', ''))
 
-
 @app.route('/record_sales')
 @login_required
 def record_sales():
     return render_template('record_sales.html')
-
 
 @app.route('/sale_summary')
 @login_required
 def sale_summary():
     return render_template('sale-summary.html')
 
-
 @app.route('/record_customer')
 @login_required
 def record_customer():
     return render_template('record_customer.html')
-
 
 @app.route('/customer_list')
 @login_required
 def customer_list():
     return render_template('customer_list.html')
 
-
 @app.route('/oldsaledata')
 @login_required
 def oldsaledata():
     return render_template('oldsaledata.html')
-
 
 @app.route('/inventory')
 @login_required
 def inventory():
     return render_template('inventory.html')
 
-
 @app.route('/appointments')
 @login_required
 def appointments():
     return render_template('appointments.html')
-
 
 @app.route('/sales_chart')
 @login_required
 def sales_chart():
     return render_template('sales_chart.html')
 
-
 @app.route('/daily_sales_graph')
 @login_required
 def daily_sales_graph():
     return render_template('daily_sales_graph.html')
 
+@app.route('/crm')
+@login_required
+def crm():
+    return render_template('crm.html')
+
+@app.route('/staff')
+@login_required
+def staff():
+    return render_template('staff.html')
 
 # =============================================================
 # API — Sales & Customers
@@ -231,17 +231,46 @@ def daily_sales_graph():
 def test_route():
     return jsonify({"status": "ok"})
 
-
 @app.route('/api/customers')
 @login_required
 def api_customers():
+    """
+    ดึงลูกค้าทั้งหมด + แนบฟิลด์จากวิวสรุป Sales Pitch:
+      - sales_pitch_compact  : ล่าสุด 2 รายการ (สำหรับโชว์ในตาราง)
+      - sales_pitch_full     : รวมทั้งหมด (แสดงใน modal)
+      - pitch_count          : จำนวนรายการทั้งหมด
+    """
     try:
-        # จะ select * ก็ได้ ถ้าอยากจำกัดฟิลด์เปลี่ยนเป็น select(...) เฉพาะที่ใช้
-        response = supabase.table("customers").select("*").execute()
-        return jsonify(response.data)
+        # 1) customers
+        cust_res = supabase.table("customers").select("*").execute()
+        customers = cust_res.data or []
+
+        # 2) pitch latest 2 (compact)
+        lat_res = supabase.table("v_customer_pitch_latest2").select("*").execute()
+        latest_map: Dict[str, str] = {}
+        for r in lat_res.data or []:
+            latest_map[str(r.get("opd") or "")] = r.get("pitch_latest2") or ""
+
+        # 3) full summary (all)
+        sum_res = supabase.table("v_customer_pitch_summary").select("*").execute()
+        summary_map: Dict[str, Dict[str, Any]] = {}
+        for r in sum_res.data or []:
+            summary_map[str(r.get("opd") or "")] = {
+                "pitch_summary": r.get("pitch_summary") or "",
+                "pitch_count": r.get("pitch_count") or 0,
+            }
+
+        # 4) merge
+        for c in customers:
+            opd = str(c.get("opd") or "")
+            sm = summary_map.get(opd, {})
+            c["sales_pitch_compact"] = latest_map.get(opd, "")
+            c["sales_pitch_full"] = sm.get("pitch_summary", "")
+            c["pitch_count"] = sm.get("pitch_count", 0)
+
+        return jsonify(customers)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/api/update_customer', methods=['POST'])
 @login_required
@@ -260,7 +289,6 @@ def update_customer():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/api/add_customer', methods=['POST'])
 @login_required
 def add_customer():
@@ -268,16 +296,14 @@ def add_customer():
     data = dict(data or {})
     data['opd'] = normalize_opd(data.get('opd'))
     try:
-        check = supabase.table("customers").select("id").eq("opd", data['opd']).execute()
+        check = supabase.table("customers").select("opd").eq("opd", data['opd']).execute()
         if check.data:
             return jsonify({"error": "มี OPD นี้อยู่แล้ว"}), 400
-        # allow only known fields to be inserted (basic sanitation)
         payload = {k: v for k, v in data.items() if k in (SAFE_CUSTOMER_FIELDS | {"opd"})}
         supabase.table("customers").insert(payload).execute()
         return jsonify({"message": "เพิ่มลูกค้าสำเร็จ"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/api/delete_customer', methods=['POST'])
 @login_required
@@ -291,7 +317,6 @@ def delete_customer_legacy():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/api/delete_customer_and_sales', methods=['POST'])
 @login_required
 def delete_customer_and_sales():
@@ -303,7 +328,6 @@ def delete_customer_and_sales():
         return jsonify({"message": "ลบสำเร็จ"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/api/sales')
 @login_required
@@ -337,7 +361,6 @@ def api_sales():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/api/save_sales', methods=['POST'])
 @login_required
 def save_sales():
@@ -352,26 +375,24 @@ def save_sales():
     try:
         for rec in data:
             if not isinstance(rec, dict):
-                # skip malformed rows
                 continue
+
             # normalize
             date = safe_date_str(rec.get('date'))
             opd_4 = normalize_opd(rec.get('opd'))
 
-            # upsert customers from sales info (optional fields)
+            # ✅ upsert ข้อมูลลูกค้าแบบไม่ยุ่งกับ customers.note
             if opd_4 and rec.get('name'):
                 customer_data = {
                     'opd': opd_4,
                     'name': rec.get('name', ''),
                     'phone': rec.get('phone', ''),
                     'birthMonth': rec.get('birthMonth', ''),
-                    # 'vip': rec.get('vip', ''),  # ⬅️ ตัดทิ้ง
-                    'note': rec.get('note', ''),
-                    'profile': rec.get('profile', ''),  # ⬅️ เพิ่ม
+                    'profile': rec.get('profile', ''),  # หมายเหตุประจำลูกค้าถ้าอยากแก้ ให้แก้ผ่าน /api/update_customer เท่านั้น
                 }
                 supabase.table('customers').upsert(customer_data, on_conflict=['opd']).execute()
 
-            # prepare record for sales_records
+            # บันทึกยอดขาย (note ของ "บิล" อยู่ในตารางนี้เท่านั้น)
             items = rec.get('items') or []
             rec_db = {
                 'date': date,
@@ -380,18 +401,18 @@ def save_sales():
                 'phone': rec.get('phone', ''),
                 'amount': rec.get('amount'),
                 'payment': rec.get('payment'),
-                'note': rec.get('note', ''),
+                'note': rec.get('note', ''),           # ← note ของบิล
                 'item': json.dumps(items, ensure_ascii=False),
             }
 
             # UPDATE if id provided
             rec_id = rec.get('id')
             if rec_id:
-                resp = supabase.table('sales_records').update(rec_db).eq('id', rec_id).execute()
+                supabase.table('sales_records').update(rec_db).eq('id', rec_id).execute()
                 updated_count += 1
                 continue
 
-            # Basic duplicate guard (same opd+date+amount+payment+item+note)
+            # Duplicate guard (ใช้ opd+date+item+amount+payment+note)
             dup_q = (
                 supabase.table('sales_records')
                 .select('id')
@@ -408,7 +429,6 @@ def save_sales():
 
             dup = dup_q.execute().data
             if dup:
-                # skip insert if duplicate
                 continue
 
             supabase.table('sales_records').insert(rec_db).execute()
@@ -436,7 +456,6 @@ def delete_sales_record():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/api/cleanup_duplicates')
 @login_required
 def cleanup_duplicates():
@@ -459,6 +478,235 @@ def cleanup_duplicates():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# =============================================================
+# API — Sales Pitch (NEW)
+# =============================================================
+@app.route('/api/pitches')
+@login_required
+def get_pitches():
+    """ดึงรายการ pitch ทั้งหมดของลูกค้า (ล่าสุดก่อน)"""
+    opd = normalize_opd(request.args.get("opd", ""))
+    if not opd:
+        return jsonify({"error": "missing opd"}), 400
+    try:
+        res = (
+            supabase.table("customer_pitch_logs")
+            .select("*")
+            .eq("opd", opd)
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return jsonify(res.data or [])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/add_pitch', methods=['POST'])
+@login_required
+def add_pitch():
+    """เพิ่มบันทึก pitch ใหม่ (append)"""
+    data = request.get_json(force=True) or {}
+    opd = normalize_opd(data.get("opd"))
+    content = _clean_dash(data.get("content") or "")
+    channel = data.get("channel")
+    outcome = data.get("outcome")
+    author = session.get("username") or data.get("author")
+
+    if not opd or content is None:
+        return jsonify({"error": "opd and content required"}), 400
+
+    try:
+        ins = {
+            "opd": opd,
+            "content": content,
+            "channel": channel,
+            "outcome": outcome,
+            "author": author,
+        }
+        if 'promotion' in data:
+            ins["promotion"] = _clean_dash(data.get("promotion"))
+        r = supabase.table("customer_pitch_logs").insert(ins).execute()
+        row = (r.data or [{}])[0]
+        return jsonify({"message": "ok", "id": row.get("id"), "created_at": row.get("created_at")})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/add_pitches_bulk', methods=['POST'])
+@login_required
+def add_pitches_bulk():
+    """
+    รับหลายรายการในครั้งเดียว (batch)
+    Payload: [{date:'YYYY-MM-DD', opd:'0123', promotion:'...', outcome:'...', content:'...', channel:'call'}]
+    หมายเหตุ: ถ้ายังไม่ได้เพิ่มคอลัมน์ promotion ใน DB ฟิลด์นี้จะถูกละเลย (ไม่ทำให้พัง)
+    """
+    # ให้แน่ใจว่า to_insert มีอยู่แม้ throw ก่อน
+    to_insert: List[Dict[str, Any]] = []
+    try:
+        rows = request.get_json(force=True)
+        if not isinstance(rows, list):
+            return jsonify({"error": "payload_must_be_list"}), 400
+
+        author = session.get('username', '')
+
+        for r in rows:
+            date_str = (r.get('date') or '')[:10]
+            if not date_str:
+                date_str = datetime.utcnow().strftime('%Y-%m-%d')
+            # ใส่เวลา 12:00 UTC เพื่อกัน timezone ตัดวัน
+            created_at_iso = f"{date_str}T12:00:00Z"
+
+            rec: Dict[str, Any] = {
+                "opd": normalize_opd(r.get('opd')),
+                "content": _clean_dash(r.get('content') or ''),
+                "channel": r.get('channel') or None,
+                "outcome": r.get('outcome') or None,
+                "author": author or None,
+                "created_at": created_at_iso,
+            }
+            # แนบ promotion เฉพาะถ้ามีใน payload
+            if 'promotion' in r and r.get('promotion') is not None:
+                rec["promotion"] = _clean_dash(r.get('promotion'))
+
+            to_insert.append(rec)
+
+        if not to_insert:
+            return jsonify({"error": "empty"}), 400
+
+        supabase.table('customer_pitch_logs').insert(to_insert).execute()
+        return jsonify({"inserted": len(to_insert), "message": "ok"})
+    except Exception as e:
+        msg = str(e)
+        if 'promotion' in msg.lower() and to_insert:
+            try:
+                cleaned = [{k:v for k,v in r.items() if k != 'promotion'} for r in to_insert]
+                supabase.table('customer_pitch_logs').insert(cleaned).execute()
+                return jsonify({"inserted": len(cleaned), "message": "ok (promotion skipped)"}), 200
+            except Exception as e2:
+                return jsonify({"error": str(e2)}), 500
+        return jsonify({"error": msg}), 500
+
+@app.route('/api/pitches_by_date')
+@login_required
+def pitches_by_date():
+    """
+    ดึงประวัติ Pitch ตามช่วงวัน (ใช้ created_at)
+    Query:
+      from=YYYY-MM-DD  to=YYYY-MM-DD
+      q=keyword (optional)  outcome=...  channel=...
+    Return: list of logs (เรียงใหม่→เก่า)
+    """
+    try:
+        q_from = (request.args.get('from') or '').strip()
+        q_to = (request.args.get('to') or '').strip()
+        kw = (request.args.get('q') or '').strip().lower()
+        outcome = (request.args.get('outcome') or '').strip()
+        channel = (request.args.get('channel') or '').strip()
+
+        if not q_from or not q_to:
+            today = datetime.utcnow().strftime('%Y-%m-%d')
+            q_to = q_to or today
+            q_from = q_from or today
+
+        qry = (
+            supabase.table('customer_pitch_logs')
+            .select('*')
+            .gte('created_at', f'{q_from}T00:00:00Z')
+            .lte('created_at', f'{q_to}T23:59:59Z')
+            .order('created_at', desc=True)
+        )
+        if outcome:
+            qry = qry.eq('outcome', outcome)
+        if channel:
+            qry = qry.eq('channel', channel)
+
+        resp = qry.execute()
+        rows = resp.data or []
+
+        # กรอง keyword ฝั่งแอป (รวม promotion ด้วยถ้ามี)
+        if kw:
+            tmp = []
+            for r in rows:
+                s = ' '.join([
+                    str(r.get('opd') or ''),
+                    str(r.get('content') or ''),
+                    str(r.get('outcome') or ''),
+                    str(r.get('channel') or ''),
+                    str(r.get('author') or ''),
+                    str(r.get('promotion') or ''),
+                ]).lower()
+                if kw in s:
+                    tmp.append(r)
+            rows = tmp
+
+        # แนบ date ช่วย (YYYY-MM-DD)
+        for r in rows:
+            ts = str(r.get('created_at') or '')
+            r['date'] = ts[:10] if ts else None
+
+        return jsonify(rows)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ===== NEW: Update / Delete Pitch for inline editing =====
+@app.route('/api/update_pitch', methods=['PUT'])
+@login_required
+def update_pitch():
+    """
+    อัปเดตรายการ pitch ที่บันทึกไว้แล้ว
+    Body JSON: { id, promotion?, outcome?, content?, channel? }
+    """
+    data = request.get_json(force=True) or {}
+    rec_id = data.get('id')
+    if not rec_id:
+        return jsonify({"error": "missing id"}), 400
+
+    allowed = {'promotion', 'outcome', 'content', 'channel'}
+    payload = {k: _clean_dash(v) for k, v in data.items() if k in allowed}
+
+    if not payload:
+        return jsonify({"error": "no_fields_to_update"}), 400
+
+    try:
+        res = supabase.table('customer_pitch_logs').update(payload).eq('id', rec_id).execute()
+        if not res.data:
+            return jsonify({"error": "not_found"}), 404
+        return jsonify({"message": "updated", "row": res.data[0]})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/delete_pitch', methods=['DELETE'])
+@login_required
+def delete_pitch():
+    """
+    ลบรายการ pitch
+    ใช้ได้ทั้ง query string ?id=... หรือ ส่ง JSON {"id": ...}
+    """
+    rec_id = request.args.get('id')
+    if not rec_id:
+        body = request.get_json(silent=True) or {}
+        rec_id = body.get('id') if isinstance(body, dict) else None
+    if not rec_id:
+        return jsonify({"error": "missing id"}), 400
+
+    try:
+        res = supabase.table('customer_pitch_logs').delete().eq('id', rec_id).execute()
+        # Supabase จะคืน [] หากไม่มีแถวที่ลบ
+        if res.data is not None and len(res.data) == 0:
+            pass
+        return jsonify({"message": "deleted"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# --- NEW: one-off cleanup endpoint เพื่อล้างค่าขีดที่บันทึกค้างใน DB ---
+@app.route('/api/cleanup_pitch_dash', methods=['POST', 'GET'])
+@login_required
+def cleanup_pitch_dash():
+    try:
+        supabase.table('customer_pitch_logs').update({'content': ''}).in_('content', ['-', '–', '—']).execute()
+        supabase.table('customer_pitch_logs').update({'promotion': ''}).in_('promotion', ['-', '–', '—']).execute()
+        return jsonify({"message": "cleaned"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 # =============================================================
 # API — Oldsale & Inventory (kept for compatibility)
@@ -473,7 +721,6 @@ def api_oldsaledata():
         app.logger.error(f"ERROR loading oldsaledata: {e}")
         return jsonify({"error": str(e)}), 500
 
-
 @app.route("/api/inventory")
 @login_required
 def api_inventory():
@@ -483,18 +730,15 @@ def api_inventory():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route("/api/save_inventory", methods=["POST"])
 @login_required
 def api_save_inventory():
     data = request.get_json(force=True)
     try:
-        # Optional: Add simple duplicate check if you have a unique key
         supabase.table("inventory").insert(data).execute()
         return jsonify({"message": "success"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 # =============================================================
 # Main
@@ -502,14 +746,248 @@ def api_save_inventory():
 if __name__ == '__main__':
     # In production, run behind a proper WSGI server and set SESSION_COOKIE_SECURE=true
     app.run(debug=True)
-
-@app.route('/crm')
+@app.route('/api/reccord_sale')
 @login_required
-def crm():
-    return render_template('crm.html')
+def api_reccord_sale():
+    """
+    ดึงยอดขายสำหรับโมดัลลูกค้า (ใช้กับ front ที่เรียก reccord_sale)
+    Query (optional):
+      - name: ชื่อลูกค้า (ilike)
+      - phone: เบอร์ (ilike)
+      - opd: OPD (จะ zfill เป็น 4 ให้)
+      - since: YYYY-MM-DD (>=)
+      - until: YYYY-MM-DD (<=)
+      - limit: จำนวนสูงสุด (default 2000)
+    Return: list[{ id, date, opd, name, phone, amount, payment, note, items[] }]
+    """
+    try:
+        name  = (request.args.get('name') or '').strip()
+        phone = (request.args.get('phone') or '').strip()
+        opd_q = normalize_opd(request.args.get('opd')) if request.args.get('opd') else ''
+        since = safe_date_str(request.args.get('since')) if request.args.get('since') else ''
+        until = safe_date_str(request.args.get('until')) if request.args.get('until') else ''
+        try:
+            limit = max(1, min(20000, int(request.args.get('limit', '2000'))))
+        except Exception:
+            limit = 2000
+
+        q = supabase.table("sales_records").select("*")
+        if opd_q:
+            q = q.eq("opd", opd_q)
+        if name:
+            q = q.ilike("name", f"%{name}%")
+        if phone:
+            q = q.ilike("phone", f"%{phone}%")
+        if since:
+            q = q.gte("date", since)
+        if until:
+            q = q.lte("date", until)
+
+        # เรียงใหม่ -> เก่า
+        q = q.order("date", desc=True)
+
+        # ดึงแบบหน้า ๆ (range) เพื่อกัน response ใหญ่เกิน
+        out: List[Dict[str, Any]] = []
+        start = 0
+        page_size = 1000
+        while start < limit:
+            resp = q.range(start, start + min(page_size, limit - start) - 1).execute()
+            batch = resp.data or []
+            if not batch:
+                break
+            for r in batch:
+                # parse items
+                try:
+                    r['items'] = json.loads(r.get('item') or '[]')
+                except Exception:
+                    r['items'] = []
+                # normalize basic fields used by front
+                r['opd']  = normalize_opd(r.get('opd'))
+                r['date'] = safe_date_str(r.get('date'))
+            out.extend(batch)
+            if len(batch) < page_size:
+                break
+            start += page_size
+
+        # truncate เผื่อกรณีหน้าแรกใหญ่พอดี
+        if len(out) > limit:
+            out = out[:limit]
+
+        return jsonify(out)
+    except Exception as e:
+        app.logger.error(f"/api/reccord_sale error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# ===== TAX MODULE =====
+from math import isfinite
+
+def th_tax_brackets(amount: float) -> float:
+    """
+    คำนวณภาษีเงินได้บุคคลธรรมดาแบบก้าวหน้า (อัตราปัจจุบัน)
+    รับค่า amount = เงินได้สุทธิเพื่อคำนวณภาษี
+    คืนค่า: ภาษีทั้งปี (บาท)
+    """
+    if amount is None or amount <= 0:
+        return 0.0
+
+    bands = [
+        (150000, 0.00),
+        (150000, 0.05),
+        (200000, 0.10),
+        (250000, 0.15),
+        (250000, 0.20),
+        (1000000, 0.25),   # 1,000,001 - 2,000,000 (ช่วงกว้าง 1,000,000)
+        (3000000, 0.30),   # 2,000,001 - 5,000,000 (ช่วงกว้าง 3,000,000)
+        (float('inf'), 0.35),
+    ]
+    remain = amount
+    tax = 0.0
+    thresholds = [150000, 300000, 500000, 750000, 1000000, 2000000, 5000000]
+
+    prev_cap = 0.0
+    for cap, rate in [
+        (150000, 0.00),
+        (300000, 0.05),
+        (500000, 0.10),
+        (750000, 0.15),
+        (1000000, 0.20),
+        (2000000, 0.25),
+        (5000000, 0.30),
+        (float('inf'), 0.35),
+    ]:
+        slab_width = (cap - prev_cap) if isfinite(cap) else max(0.0, remain)
+        chunk = max(0.0, min(remain, slab_width))
+        tax += chunk * rate
+        remain -= chunk
+        prev_cap = cap
+        if remain <= 0:
+            break
+    return round(tax, 2)
 
 
-@app.route('/staff')
+def compute_tax_from_gross_sales_yearly(gross_year: float, social_sec: float = 0.0) -> dict:
+    """
+    คิดภาษีจาก 'ยอดขายทั้งปี' (รายได้ ม.40(8))
+    - หักค่าใช้จ่ายเหมา 60%
+    - หักค่าลดหย่อนส่วนตัว 60,000
+    - หักประกันสังคม (ถ้าส่ง) สูงสุด 9,000 (ค่าเริ่มต้น 0 ตามที่ผู้ใช้แจ้งว่าไม่มี)
+    """
+    if not gross_year or gross_year <= 0:
+        return {
+            "gross_year": 0.0,
+            "expense_lump": 0.0,
+            "net_after_expense": 0.0,
+            "allowance_personal": 60000.0,
+            "social_security": 0.0,
+            "taxable_income": 0.0,
+            "tax_year": 0.0,
+            "tax_month_avg": 0.0,
+            "effective_rate": 0.0,
+        }
+
+    expense_lump = round(gross_year * 0.60, 2)
+    net_after_expense = max(0.0, round(gross_year - expense_lump, 2))
+
+    allowance_personal = 60000.0
+    social_security = min(max(social_sec or 0.0, 0.0), 9000.0)
+
+    taxable_income = max(0.0, round(net_after_expense - allowance_personal - social_security, 2))
+    tax_year = th_tax_brackets(taxable_income)
+    tax_month_avg = round(tax_year / 12.0, 2) if tax_year > 0 else 0.0
+    effective_rate = round((tax_year / gross_year) * 100.0, 4) if gross_year > 0 else 0.0
+
+    return {
+        "gross_year": round(gross_year, 2),
+        "expense_lump": expense_lump,
+        "net_after_expense": net_after_expense,
+        "allowance_personal": allowance_personal,
+        "social_security": social_security,
+        "taxable_income": taxable_income,
+        "tax_year": tax_year,
+        "tax_month_avg": tax_month_avg,
+        "effective_rate": effective_rate,
+    }
+
+
+@app.route('/tax')
 @login_required
-def staff():
-    return render_template('staff.html')
+def tax_page():
+    # หน้า UI
+    return render_template('tax.html', username=session['username'])
+
+
+@app.route('/api/tax_summary')
+@login_required
+def api_tax_summary():
+    """
+    รับ year=YYYY (บังคับ)
+    ดึง sales_records ของปีนั้น (ใช้ field 'date' แบบ YYYY-MM-DD) -> sum(amount) รายเดือนและทั้งปี
+    คำนวณภาษีตามกติกาที่ผู้ใช้แจ้ง (ไม่มีคู่สมรส/บุตร/สิทธิเพิ่มเติม)
+    Query param เพิ่มเติม:
+      - sso (float) = ยอดประกันสังคมทั้งปี (ถ้ามี ใส่มา; ไม่ใส่ = 0)
+    """
+    try:
+        year_str = (request.args.get('year') or '').strip()
+        if not year_str.isdigit() or len(year_str) != 4:
+            return jsonify({"error": "year_required_as_YYYY"}), 400
+        year = int(year_str)
+
+        # optional social security
+        try:
+            sso = float(request.args.get('sso', '0') or '0')
+        except Exception:
+            sso = 0.0
+
+        # รวมยอดขายรายเดือน
+        month_sum = {m: 0.0 for m in range(1, 13)}
+        total = 0.0
+
+        # ดึงทีละหน้าเพื่อกัน response ใหญ่
+        q = (
+            supabase.table("sales_records")
+            .select("amount,date")
+            .gte("date", f"{year}-01-01")
+            .lte("date", f"{year}-12-31")
+            .order("date", desc=False)
+        )
+        start = 0
+        page = 1000
+        while True:
+            resp = q.range(start, start + page - 1).execute()
+            batch = resp.data or []
+            if not batch:
+                break
+            for r in batch:
+                amt = r.get('amount')
+                d = r.get('date') or ''
+                if amt is None:
+                    continue
+                try:
+                    y, m, _ = str(d)[:10].split('-')
+                    if int(y) == year:
+                        m_i = int(m)
+                        month_sum[m_i] = round(month_sum[m_i] + float(amt), 2)
+                        total = round(total + float(amt), 2)
+                except Exception:
+                    continue
+            if len(batch) < page:
+                break
+            start += page
+
+        tax = compute_tax_from_gross_sales_yearly(total, social_sec=sso)
+
+        # แพ็คผลรายเดือน (แปลงเป็น list เพื่อ JS ใช้ง่าย)
+        months = []
+        for m in range(1, 13):
+            months.append({
+                "month": m,
+                "gross": month_sum[m],
+            })
+
+        return jsonify({
+            "year": year,
+            "months": months,
+            "summary": tax,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
