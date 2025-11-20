@@ -388,7 +388,26 @@
 .summary-table tr:last-child td { border-bottom: none; }
 .customer-link { color: #0f766e; font-weight: 600; cursor: pointer; text-decoration: underline; }
 .customer-link:hover { color: #0d9488; }
+/* ===== ย่อตาราง Followup Summary ให้จิ๋วลง ===== */
+.summary-table { 
+    font-size: 11px !important; /* ลดขนาดตัวหนังสือในตาราง */
+}
 
+.summary-table th, 
+.summary-table td {
+    padding: 4px 8px !important; /* ลดช่องว่างขอบตาราง (บนล่าง 4px, ซ้ายขวา 8px) */
+    vertical-align: middle !important; /* จัดให้อยู่กึ่งกลางแนวตั้ง */
+}
+
+/* ปรับขนาดชื่อลูกค้าให้เด่นกว่านิดนึง แต่ไม่ใหญ่เทอะทะ */
+.customer-link { 
+    font-size: 12px !important; 
+}
+
+/* ถ้าอยากให้บรรทัด Timeline ที่ยาวๆ ตัวเล็กลงอีก */
+.summary-table td div {
+    line-height: 1.4; /* ระยะห่างบรรทัด */
+}
 </style>
 </head>
 <body>
