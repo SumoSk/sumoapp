@@ -1,16 +1,11 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-   <meta charset="utf-8">
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}App{% endblock %}</title>
   {% block head %}{% endblock %}
 
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>วิเคราะห์ลูกค้า</title>
-
-  <!-- ฟอนต์ -->
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -162,7 +157,6 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
 </head>
 <body>
   <div class="container">    
-    <!-- ฟิลเตอร์รวม (ย่อไว้เหมือนเดิม) -->
     <div class="section card">
       <div class="headline">ฟิลเตอร์การวิเคราะห์</div>
       <div class="filter-grid">
@@ -262,7 +256,6 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
       </div>
     </div>
 
-    <!-- 3) RFM & ABC -->
     <div class="section" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="card">
         <div class="headline">RFM Segments</div>
@@ -291,7 +284,6 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
       </div>
     </div>
 
-    <!-- 4) การ์ดย่อย 2 ใบ -->
     <div class="section grid-2">
       <div class="card">
         <div class="headline">การกระจายช่วงวันที่ไม่ได้มา (Recency Distribution)</div>
@@ -320,7 +312,6 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
       </div>
     </div>
 
-    <!-- 5) รายชื่อลูกค้าตามฟิลเตอร์ -->
     <div class="section card">
       <div class="headline">รายชื่อลูกค้าตามฟิลเตอร์</div>
       <div class="sub-muted">คลิกหัวตารางเพื่อจัดเรียง</div>
@@ -340,7 +331,6 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
             <th data-sort="str">ชั้น (ABC)</th>
             <th data-sort="num">Sale Pitch (วัน)</th>
             <th data-sort="str">Outcome (ล่าสุด)</th>
-            <!-- คอลัมน์ใหม่: Profile (แก้ไขได้) -->
             <th data-sort="str">Profile</th>
           </tr>
         </thead>
@@ -350,7 +340,6 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
 
   </div>
 
-  <!-- โมดัลลูกค้า -->
   <div id="customer-modal">
     <div class="box" onclick="event.stopPropagation();">
       <button class="close" onclick="closeCustomerModal()">✖</button>
@@ -358,8 +347,7 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
     </div>
   </div>
 
-  <!-- Modal: Pitch History -->
-<div id="pitch-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:10000; align-items:center; justify-content:center">
+  <div id="pitch-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:10000; align-items:center; justify-content:center">
   <div class="box" style="background:#fff;border-radius:16px;max-width:92vw;max-height:90vh;overflow:auto;padding:18px;position:relative;box-shadow:0 8px 30px rgba(0,0,0,.2)">
     <button class="close" onclick="closePitchModal()" style="position:absolute;right:10px;top:10px;width:36px;height:36px;border:none;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.15);cursor:pointer;background:#fff">✖</button>
     <div id="pitch-modal-content"></div>
@@ -367,7 +355,6 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
 </div>
 
 
-  <!-- Modal: เลือกช่วงเวลากำหนดเอง -->
   <div id="rangeModal" class="range-modal" style="display:none;">
     <div class="range-modal__backdrop" onclick="closeRangeModal()"></div>
     <div class="range-modal__panel">
@@ -973,8 +960,8 @@ async function hydrateLatestPitchesForVisibleRows(){
         }
       }
 
-      // อัปเดต DOM เฉพาะแถวนี้
-      const tr = document.querySelector(`#finalCustTable tbody tr[data-opd="${CSS.escape(opd)}"]`);
+      // อัปเดต DOM เฉพาะแถวนี้ (ลบ CSS.escape ออกแล้ว)
+      const tr = document.querySelector(`#finalCustTable tbody tr[data-opd="${opd}"]`);
       if(tr){
         const cellDays = tr.querySelector('.lp-cell');
         const cellOutcome = tr.querySelector('.lp-outcome');
