@@ -1013,12 +1013,51 @@
   function closeCustomerModal(){ document.getElementById("customer-modal").style.display = "none"; }
   function formatDate(d){ if(!d) return ''; const [y,m,day]=d.split('-'); return `${day}/${m}/${y.slice(-2)}`; }
 
-  async function openCustomerModal(key) {
+  // แยกฟังก์ชันดึง Pitch ออกมาต่างหาก เพื่อเรียกทีหลัง
+async function loadPitchDataIntoModal(opd) {
+  const container = document.getElementById("modal-pitch-container");
+  if (!container) return;
+
+  if (!opd || opd === '-' || opd === '0000') {
+    container.innerHTML = `<div class="sub-muted" style="font-size:11px;">ไม่มี OPD จึงดึง Sale Pitch ไม่ได้</div>`;
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
+    if (res.ok) {
+      const pitches = await res.json() || [];
+      if (pitches.length) {
+        pitches.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+        
+        const html = pitches.map(p => {
+          const d = formatDate(String(p.created_at || '').slice(0, 10));
+          return `
+            <div style="padding:2px 0; font-size:11px; color:#374151;">
+              ${d} — ${escapeHTML(p.promotion || '-')} — ${escapeHTML(p.outcome || '-')}
+            </div>`;
+        }).join("");
+        
+        container.innerHTML = html;
+      } else {
+        container.innerHTML = `<div class="sub-muted" style="font-size:11px;">ยังไม่มีข้อมูล Sale Pitch</div>`;
+      }
+    } else {
+      container.innerHTML = `<div class="sub-muted" style="font-size:11px;">โหลดไม่สำเร็จ</div>`;
+    }
+  } catch (e) {
+    console.error(e);
+    container.innerHTML = `<div class="sub-muted" style="font-size:11px;">เกิดข้อผิดพลาด</div>`;
+  }
+}
+
+// ฟังก์ชันหลัก ปรับให้ไม่ต้อง async รอ fetch แล้ว
+function openCustomerModal(key) {
   // key รูปแบบ "name|phone"
   const [name, phone = ''] = String(key).split('|');
   const norm = s => (s || '').trim().toLowerCase();
 
-  // ใช้ allCustomerRecords (โหลดจาก /api/sales แล้วข้างบน)
+  // ใช้ข้อมูลที่มีอยู่ในเครื่องอยู่แล้ว (เร็วมาก)
   const records = allCustomerRecords.filter(r =>
     norm(r.name) === norm(name) &&
     norm(r.phone || '') === norm(phone)
@@ -1047,46 +1086,32 @@
 
   const totalVisits = records.length;
 
-  // คิดเงินจาก amount ตรง ๆ
   const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
   const paidVisits = paidRecords.length;
   const totalAmount = paidRecords.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
   const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
 
-  // รวมจำนวนสินค้าตามหมวด
+  // รวมจำนวนสินค้าตามหมวด (Logic เดิม)
   const allItems = {};
   records.forEach(r => {
     (r.items || []).forEach(item => {
       let n = item;
       const m = item.match(/\((.*?)\)/);
       n = m ? m[1] : item.split(' - ')[0];
-
       const q = item.match(/- (\d+) ชิ้น/);
       const qty = q ? parseInt(q[1]) : 1;
-
       allItems[n] = (allItems[n] || 0) + qty;
     });
   });
 
   const categoryMap = {
-    "โบทอค": ["Aestox 50 u","Aestox 100 u","Allergan 50 u","Allergan 100 u","เฉพาะจุด","แบ่งไว้แล้ว","Nabota"],
-    "ฟิลเลอร์": ["Neuramis สีดำ","Neuramis สีทอง","E.P.T.Q ระบุสีด้วย","Restylane ระบุสีด้วย"],
-    "Fat/Hifu": ["Bromi","Sisi","HIFU","HIFU แถม"],
-    "งานผิว": [
-      "Meso Chanel","P - Cell","Aquatic","Hestina","Exosome","Rejuran",
-      "Belotero Revive","Sculptra","Juvelook","Aesthefill",
-      "PRP","Mesowink","สะกิดหน้าใส","Alphaarbutin","Transamine","Biocollagen"
-    ],
-    "ดริปผิว": ["Snow White","Super Aurawhite","Vitamin Mix","Brain Booster","Energy Booster"],
-    "ทรีทเม้นท์": [
-      "ทรีทเมนต์หน้าใส","ทรีทเมนต์สิว","ทรีทเมนต์ฝ้า",
-      "ผลักวิตามิน","ปั่น RF","กดสิว","subcisionสิว"
-    ],
-    "อื่นๆ": [
-      "ยาฉีดสลายฝ้า","ครีมทาฝ้า","ยาทานฝ้า",
-      "ไหมลิฟท์กรอบหน้า","ไหม PDO","ไหม Collagen",
-      "จ่ายเงิน/จองสินค้า","สลายฟิลเลอร์","PRPผม","จี้ไฝ"
-    ],
+    "โบทอค": ["Aestox 50 u", "Aestox 100 u", "Allergan 50 u", "Allergan 100 u", "เฉพาะจุด", "แบ่งไว้แล้ว", "Nabota"],
+    "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q ระบุสีด้วย", "Restylane ระบุสีด้วย"],
+    "Fat/Hifu": ["Bromi", "Sisi", "HIFU", "HIFU แถม"],
+    "งานผิว": ["Meso Chanel", "P - Cell", "Aquatic", "Hestina", "Exosome", "Rejuran", "Belotero Revive", "Sculptra", "Juvelook", "Aesthefill", "PRP", "Mesowink", "สะกิดหน้าใส", "Alphaarbutin", "Transamine", "Biocollagen"],
+    "ดริปผิว": ["Snow White", "Super Aurawhite", "Vitamin Mix", "Brain Booster", "Energy Booster"],
+    "ทรีทเม้นท์": ["ทรีทเมนต์หน้าใส", "ทรีทเมนต์สิว", "ทรีทเมนต์ฝ้า", "ผลักวิตามิน", "ปั่น RF", "กดสิว", "subcisionสิว"],
+    "อื่นๆ": ["ยาฉีดสลายฝ้า", "ครีมทาฝ้า", "ยาทานฝ้า", "ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen", "จ่ายเงิน/จองสินค้า", "สลายฟิลเลอร์", "PRPผม", "จี้ไฝ"],
     "โปรโมชั่น/อีเว้นพิเศษ": []
   };
 
@@ -1112,7 +1137,7 @@
       </div>
     `).join("");
 
-  // ประวัติการซื้อย้อนหลังแบบละเอียด
+  // ประวัติการซื้อย้อนหลัง
   const historyHtml = records.map(r => {
     const items = (r.items || []).map(item => {
       const m = item.match(/\((.*?)\)/);
@@ -1123,71 +1148,29 @@
     }).join("");
 
     const noteText = r.note
-      ? `<div style="font-size:11px; margin-top:2px; font-style:italic; color:#444;">
-           📝 หมายเหตุ: ${escapeHTML(r.note)}
-         </div>`
+      ? `<div style="font-size:11px; margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${escapeHTML(r.note)}</div>`
       : "";
 
     return `
       <div style="margin-bottom:14px;">
-        <div style="font-weight:600; font-size:12px;">
-          📅 ${formatDate((r.date || '').slice(0,10))}
-        </div>
+        <div style="font-weight:600; font-size:12px;">📅 ${formatDate((r.date || '').slice(0, 10))}</div>
         <ul style="padding-left:16px; margin:0; font-size:11px;">${items}</ul>
-        <div style="margin-top:4px; color:#0a645a; font-size:11px;">
-          💵 ${Math.round(parseFloat(r.amount || 0)).toLocaleString()} บาท
-        </div>
+        <div style="margin-top:4px; color:#0a645a; font-size:11px;">💵 ${Math.round(parseFloat(r.amount || 0)).toLocaleString()} บาท</div>
         ${noteText}
         <hr style="margin:8px auto; border:0; border-top:1px dashed #ddd; width:60%;">
       </div>
     `;
   }).join("");
 
-  // ==== Sale Pitch แบบสั้น: วันย่อ — โปร — Outcome (ล่าสุดบนสุด) ====
-  let pitchSectionHtml = '';
-
-  try {
-    const opd = customer.opd && customer.opd !== '-' ? customer.opd : '';
-    if (opd) {
-      const res = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
-      if (res.ok) {
-        const pitches = await res.json() || [];
-
-        if (pitches.length) {
-          pitches.sort((a,b)=> String(b.created_at||'').localeCompare(String(a.created_at||'')));
-
-          pitchSectionHtml = pitches.map(p => {
-            const d = formatDate(String(p.created_at || '').slice(0,10)); // dd/mm/yy
-            return `
-              <div style="padding:2px 0; font-size:11px; color:#374151;">
-                ${d} — ${escapeHTML(p.promotion || '-')} — ${escapeHTML(p.outcome || '-')}
-              </div>`;
-          }).join("");
-        } else {
-          pitchSectionHtml = `<div class="sub-muted" style="font-size:11px;">ยังไม่มีข้อมูล Sale Pitch</div>`;
-        }
-      } else {
-        pitchSectionHtml = `<div class="sub-muted" style="font-size:11px;">โหลด Sale Pitch ไม่สำเร็จ</div>`;
-      }
-    } else {
-      pitchSectionHtml = `<div class="sub-muted" style="font-size:11px;">ไม่มี OPD จึงดึง Sale Pitch ไม่ได้</div>`;
-    }
-  } catch (e) {
-    console.error(e);
-    pitchSectionHtml = `<div class="sub-muted" style="font-size:11px;">เกิดข้อผิดพลาดในการโหลด Sale Pitch</div>`;
-  }
-
   const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
 
-  // ใส่ HTML ลง modal
+  // === สร้าง HTML ใส่ Modal ทันที (ยังไม่รอ Pitch) ===
   document.getElementById("modal-content").innerHTML = `
     <h3 style="font-size:16px; margin-bottom:4px;">📇 ${escapeHTML(customer.name)}</h3>
     <div style="font-size:12px;">🆔 OPD: ${escapeHTML(customer.opd)}</div>
     <div style="font-size:12px;">📞 เบอร์: ${escapeHTML(customer.phone)}</div>
     <div style="font-size:12px;">📅 วันล่าสุด: ${formatDate(lastDateStr)} ${daysAbsentText}</div>
-    <div style="font-size:12px; color:#00796b;">
-      💰 ยอดรวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท
-    </div>
+    <div style="font-size:12px; color:#00796b;">💰 ยอดรวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท</div>
     <div style="font-size:12px;">🔁 จำนวนครั้ง: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
     <div style="font-size:12px;">💳 เฉลี่ยต่อครั้ง: ${average.toLocaleString()} บาท</div>
 
@@ -1199,7 +1182,9 @@
     <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
 
     <div style="font-weight:600; font-size:13px; margin-bottom:4px;">🗣️ Sale Pitch (แบบสั้น):</div>
-    ${pitchSectionHtml}
+    <div id="modal-pitch-container" style="min-height:30px;">
+       <span style="color:#666; font-size:11px;">⏳ กำลังโหลดข้อมูล...</span>
+    </div>
 
     <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
 
@@ -1207,7 +1192,11 @@
     ${historyHtml}
   `;
 
+  // 1. เปิด Modal ทันที! ไม่ต้องรอใคร
   document.getElementById("customer-modal").style.display = 'flex';
+
+  // 2. ค่อยไปดึงข้อมูล Sale Pitch มาแปะทีหลัง
+  loadPitchDataIntoModal(customer.opd);
 }
 
 
