@@ -4,200 +4,397 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="format-detection" content="telephone=no">
-  <title>คลังเวชภัณฑ์</title>
+  <title>คลังเวชภัณฑ์ | Inventory Dashboard</title>
 
-  <!-- ฟอนต์: โหลดนิ่ง ลดการเด้ง -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-    html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
-    body{
-      font-family:'Prompt',sans-serif;
-      background:#f4f4f4;
-      padding:20px; padding-bottom:120px;
-      font-size:13px; line-height:1.45;
-      margin:0;
-    }
-    h2{ text-align:center; color:#00695c; margin:0 0 14px; }
-
-    /* Month nav */
-    .month-nav{
-      display:flex; justify-content:center; gap:10px; margin-bottom:16px; flex-wrap:wrap;
-    }
-    .nav-btn{
-      background:#009688; color:#fff; border:none;
-      padding:8px 16px; font-size:15px; border-radius:8px;
-      display:flex; align-items:center; gap:8px; cursor:pointer;
-      transition:background .2s ease;
-    }
-    .nav-btn:hover{ background:#00796b; }
-    .nav-btn[disabled]{ opacity:.5; cursor:not-allowed; }
-    .nav-btn svg{ width:20px; height:20px; fill:currentColor; }
-
-    /* Table */
-    table{ border-collapse:collapse; width:100%; background:#fff; box-shadow:0 0 10px rgba(0,0,0,.05); }
-    th,td{ border:1px solid #ccc; padding:6px 8px; text-align:center; }
-    th{
-      background:#e0f2f1; color:#00695c; position:sticky; top:0; z-index:1;
-    }
-    td.name{ font-weight:600; text-align:left; }
-    td input[type="number"]{
-      width:90px; min-width:70px; box-sizing:border-box;
-      padding:4px; font-size:14px; text-align:center;
+    :root {
+      --primary: #00897b;
+      --primary-light: #e0f2f1;
+      --primary-dark: #00695c;
+      --text-main: #37474f;
+      --text-light: #78909c;
+      --bg-body: #f0f4f4;
+      --white: #ffffff;
+      --shadow-card: 0 4px 20px rgba(0,0,0,0.06);
+      --radius: 16px;
+      --success: #2e7d32;
+      --danger: #c62828;
     }
 
-    /* ค่าวันล่าสุด + diff ในช่องเดียวกัน */
-    .latest-cell .latest-val{ font-weight:600; }
-    .latest-cell .val-low{ color:#c62828; }           /* ค่าล่าสุดต่ำกว่าเกณฑ์ → แดง */
-    .latest-cell .diff-up{ color:#2e7d32; font-weight:600; }   /* ▲ เพิ่มขึ้น → เขียว */
-    .latest-cell .diff-down{ color:#c62828; font-weight:600; } /* ▼ ลดลง → แดง */
-    .latest-cell .diff-flat{ color:#555; }                      /* (0) หรือ (—) → เทา */
-    .latest-cell .sep{ display:inline-block; width:4px; }       /* เว้นนิดให้หายอึดอัด */
+    html { -webkit-text-size-adjust:100%; text-size-adjust:100%; box-sizing: border-box; }
+    *, *:before, *:after { box-sizing: inherit; }
 
-    .btn-bar{ margin-top:20px; text-align:center; }
-    .btn-bar .action-btn{
-      padding:10px 20px; font-size:15px; border:none; border-radius:8px;
-      cursor:pointer; background:#00796b; color:#fff; margin:0 10px;
-      transition:background .2s ease;
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: var(--bg-body);
+      color: var(--text-main);
+      margin: 0;
+      padding: 20px;
+      padding-bottom: 140px;
+      font-size: 14px;
+      line-height: 1.5;
     }
-    .btn-bar .action-btn:hover{ background:#004d40; }
 
-    /* Popup (Add Item) */
-    #popupForm{
-      position:fixed; inset:0; background:rgba(0,0,0,.5);
-      display:none; justify-content:center; align-items:center; z-index:9999;
+    h2 {
+      text-align: center;
+      color: var(--primary-dark);
+      margin: 0 0 15px;
+      font-weight: 600;
+      font-size: 1.5rem;
     }
-    #popupForm .form-box{
-      background:#fff; padding:20px 30px; border-radius:12px;
-      max-width:400px; width:100%; box-shadow:0 8px 30px rgba(0,0,0,.2); position:relative;
-    }
-    #popupForm h3{ margin:0 0 10px; color:#00695c; text-align:center; }
-    #popupForm label{ display:block; margin:10px 0 4px; font-weight:600; }
-    #popupForm input{ width:100%; padding:8px; font-size:15px; border-radius:6px; border:1px solid #ccc; }
-    #popupForm .popup-actions{ display:flex; justify-content:space-between; margin-top:18px; gap:10px; }
-    #popupForm button{ padding:8px 16px; font-size:15px; border:none; border-radius:6px; cursor:pointer; }
-    .submit-btn{ background:#00796b; color:#fff; }
-    .cancel-btn{ background:#ccc; color:#000; }
 
-    /* Single save btn in table */
-    .btn-single{
-      padding:6px 12px; font-size:14px; background:#009688; color:#fff;
-      border:none; border-radius:8px; cursor:pointer; transition:background .2s ease;
+    /* --- Month Navigation --- */
+    .month-nav {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      align-items: center;
     }
-    .btn-single:hover{ background:#00796b; }
+    .nav-btn {
+      background: var(--white);
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      padding: 6px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 50px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--primary);
+      color: var(--white);
+      box-shadow: 0 4px 10px rgba(0,121,107,0.3);
+    }
+    .nav-btn[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: #eee;
+      border-color: #ddd;
+      color: #999;
+    }
+    .nav-btn svg { width: 16px; height: 16px; fill: currentColor; }
+    
+    .month-label {
+        font-size: 1.1em; font-weight: 600; color: var(--primary-dark);
+        min-width: 100px; text-align: center;
+    }
 
-    /* Floating menu */
-    .floating-toggle{
-      position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
-      background:rgba(0,128,128,0); width:58px; height:58px; border-radius:50%;
-      box-shadow:0 4px 16px rgba(0,0,0,.1);
-      display:flex; justify-content:center; align-items:center;
-      z-index:1000; cursor:pointer;
+    /* --- 📊 DASHBOARD GRID LAYOUT --- */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      margin-bottom: 25px;
     }
-    .floating-toggle img{ width:60px; height:60px; }
-    .floating-menu{
-      position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
-      background:#fff; border-radius:16px; padding:10px; display:none;
-      flex-direction:column; align-items:center; gap:10px; box-shadow:0 6px 20px rgba(0,0,0,.2);
-      z-index:999; max-height:60vh; overflow-y:auto;
+
+    .dash-cat-card {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.03);
     }
-    .floating-menu a img{ width:52px; height:52px; }
+
+    .dash-cat-title {
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 12px;
+      font-size: 1.1em;
+      border-bottom: 2px solid var(--primary-light);
+      padding-bottom: 6px;
+      display: flex; justify-content: space-between;
+    }
+    .dash-date-hint { font-size: 0.7em; color: #999; font-weight: 400; align-self: flex-end; }
+
+    .dash-item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px dashed #eee;
+    }
+    .dash-item-row:last-child { border-bottom: none; }
+
+    .dash-name {
+      font-weight: 500;
+      color: #444;
+      flex: 1;
+      padding-right: 10px;
+    }
+    
+    .dash-stats {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .dash-curr {
+      font-weight: 700;
+      font-size: 1.1em;
+      color: var(--primary-dark);
+      min-width: 40px;
+      text-align: right;
+    }
+    .dash-trend {
+      font-size: 0.85em;
+      min-width: 50px;
+      text-align: right;
+    }
+
+    .t-up { color: var(--success); }
+    .t-down { color: var(--danger); }
+    .t-flat { color: #ccc; }
+
+
+    /* --- Table Styles --- */
+    .table-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.02);
+    }
+    .table-wrapper { overflow-x: auto; width: 100%; }
+    table { width: 100%; border-collapse: collapse; min-width: 600px; }
+    th, td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; }
+    th {
+      background: var(--primary);
+      color: var(--white);
+      font-weight: 500;
+      white-space: nowrap;
+      position: sticky; top: 0; z-index: 10;
+    }
+    th input[type="date"] {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.4);
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    th input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+
+    td.name { text-align: left; font-weight: 500; color: var(--primary-dark); min-width: 150px; }
+    
+    tr.category-header { background: var(--primary-light); text-align: left; }
+    tr.category-header td {
+      font-weight: 600; color: var(--primary-dark);
+      padding: 8px 15px; font-size: 1em; text-transform: uppercase;
+      letter-spacing: 0.5px; border-top: 2px solid #fff;
+    }
+
+    td input[type="number"] {
+      width: 70px; text-align: center; padding: 6px;
+      border: 1px solid #ddd; border-radius: 8px;
+      font-size: 14px; background: #fafafa;
+    }
+    td input[type="number"]:focus { outline: none; border-color: var(--primary); background: #fff; }
+
+    .btn-single {
+      background: var(--primary-light); color: var(--primary-dark);
+      border: none; padding: 6px 12px; border-radius: 6px;
+      font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-single:hover { background: var(--primary); color: #fff; }
+
+    /* Logic สีในตาราง */
+    .latest-cell { position: relative; }
+    .latest-val { font-weight: 700; font-size: 1.1em; color: #333; }
+    .latest-val.val-low { color: var(--danger); }
+    .diff-badge {
+      display: inline-block; font-size: 0.8em; margin-left: 4px;
+      padding: 1px 5px; border-radius: 4px; font-weight: 500;
+    }
+    .diff-up { color: var(--success); background: #e8f5e9; }
+    .diff-down { color: var(--danger); background: #ffebee; }
+    .diff-flat { color: #9aa0a6; background: #f1f3f4; }
+
+    /* --- Action Bar --- */
+    .btn-bar { margin-top: 25px; display: flex; justify-content: center; gap: 16px; }
+    .action-btn {
+      border: none; padding: 12px 24px; font-size: 15px; font-weight: 600;
+      border-radius: 50px; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    #btnAdd { background: #fff; color: var(--primary); border: 1px solid var(--primary); }
+    #btnAdd:hover { background: #f0fdfc; transform: translateY(-2px); }
+    #btnSaveAll { background: linear-gradient(135deg, #00897b, #004d40); color: #fff; }
+    #btnSaveAll:hover { box-shadow: 0 6px 15px rgba(0,137,123,0.4); transform: translateY(-2px); }
+
+    /* --- Popup & Menu --- */
+    #popupForm {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+      display: none; justify-content: center; align-items: center; z-index: 9999;
+    }
+    .form-box {
+      background: #fff; padding: 25px; border-radius: 20px;
+      width: 90%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    }
+    .form-box h3 { text-align: center; color: var(--primary); margin-bottom: 15px; }
+    .form-box input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; }
+    .popup-actions { display: flex; gap: 10px; margin-top: 10px; }
+    .popup-actions button { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .submit-btn { background: var(--primary); color: #fff; }
+    .cancel-btn { background: #f5f5f5; color: #666; }
+
+    .floating-toggle {
+      position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
+      width: 65px; height: 65px; cursor: pointer; z-index: 2000;
+      transition: transform 0.2s;
+    }
+    .floating-toggle:hover { transform: translateX(-50%) scale(1.05); }
+    .floating-toggle img { width: 100%; height: 100%; drop-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .floating-menu {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,255,255,0.95); border-radius: 24px; padding: 15px;
+      display: none; flex-direction: column; gap: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 1999;
+      backdrop-filter: blur(10px); max-height: 60vh; overflow-y: auto;
+    }
+    .floating-menu img { width: 50px; height: 50px; }
+
   </style>
 </head>
 <body>
 
-  <h2>คลังเวชภัณฑ์</h2>
+  <h2>📦 คลังเวชภัณฑ์</h2>
 
-  <!-- Month Nav (SVG icons: ไม่พึ่งฟอนต์ภายนอก) -->
   <div class="month-nav">
-    <button class="nav-btn" id="btnPrev" type="button" aria-label="ดูเดือนก่อนหน้า">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-      ดูก่อนหน้า
+    <button class="nav-btn" id="btnPrev" type="button">
+      <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+      เดือนก่อน
     </button>
-    <button class="nav-btn" id="btnNext" type="button" aria-label="ดูเดือนถัดไป">
-      ดูถัดไป
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+    <div class="month-label" id="monthLabel">loading...</div>
+    <button class="nav-btn" id="btnNext" type="button">
+      เดือนถัดไป
+      <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
     </button>
   </div>
 
-  <table>
-    <thead>
-      <tr id="tableHeader"></tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
+  <div id="dashboardGrid" class="dashboard-grid">
+     </div>
+
+  <div class="table-card">
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr id="tableHeader"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
 
   <div class="btn-bar">
-    <button class="action-btn" id="btnAdd" type="button">➕ เพิ่มเวชภัณฑ์ใหม่</button>
-    <button class="action-btn" id="btnSaveAll" type="button">💾 บันทึกทั้งหมด</button>
+    <button class="action-btn" id="btnAdd" type="button">
+      <span style="font-size:1.2em">＋</span> เพิ่มรายการ
+    </button>
+    <button class="action-btn" id="btnSaveAll" type="button">
+      <span style="font-size:1.2em">💾</span> บันทึกทั้งหมด
+    </button>
   </div>
 
-  <!-- Popup Form -->
-  <div id="popupForm" role="dialog" aria-modal="true" aria-labelledby="addTitle">
-    <div class="form-box" id="popupBox">
-      <h3 id="addTitle">เพิ่มเวชภัณฑ์ใหม่</h3>
-      <label for="newName">ชื่อเวชภัณฑ์</label>
-      <input type="text" id="newName" />
-      <label for="newQty">จำนวน</label>
-      <input type="number" id="newQty" min="0" step="1" inputmode="numeric" />
-      <label for="newDate">วันที่</label>
+  <div id="popupForm">
+    <div class="form-box">
+      <h3>✨ เพิ่มเวชภัณฑ์ใหม่</h3>
+      <label>ชื่อเวชภัณฑ์</label>
+      <input type="text" id="newName" placeholder="เช่น Syringe 20ml" />
+      <label>จำนวน</label>
+      <input type="number" id="newQty" min="0" placeholder="0" inputmode="numeric" />
+      <label>วันที่ตรวจนับ</label>
       <input type="date" id="newDate" />
       <div class="popup-actions">
-        <button class="submit-btn" id="popupSubmit" type="button">บันทึก</button>
-        <button class="cancel-btn" id="popupCancel" type="button">ยกเลิก</button>
+        <button class="cancel-btn" id="popupCancel">ยกเลิก</button>
+        <button class="submit-btn" id="popupSubmit">บันทึก</button>
       </div>
     </div>
   </div>
 
-  <!-- Floating menu -->
   <div id="floatingToggle" class="floating-toggle">
     <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu">
   </div>
-  <div id="floatingMenu" class="floating-menu" aria-hidden="true">
-  <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}" alt="Dashboard"></a>
-  <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}" alt="Sale summary"></a>
-  <a href="{{ url_for('crm') }}"><img src="{{ url_for('static', filename='icon/icon_crm.png') }}" alt="CRM"></a>
-  <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}" alt="Record sales"></a>
-  <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}" alt="Customer list"></a>
-  <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}" alt="Record customer"></a>
-  <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}" alt="Old customers"></a>
-  <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}" alt="Inventory"></a>
-  <a href="{{ url_for('staff') }}"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}" alt="Staff"></a>
-  <a href="{{ url_for('appointments') }}"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}" alt="Appointments"></a>
-</div>
+  <div id="floatingMenu" class="floating-menu">
+    <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}" title="Dashboard"></a>
+    <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}" title="Sale summary"></a>
+    <a href="{{ url_for('crm') }}"><img src="{{ url_for('static', filename='icon/icon_crm.png') }}" title="CRM"></a>
+    <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}" title="Record sales"></a>
+    <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}" title="Customer list"></a>
+    <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}" title="Record customer"></a>
+    <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}" title="Old customers"></a>
+    <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}" title="Inventory"></a>
+    <a href="{{ url_for('staff') }}"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}" title="Staff"></a>
+    <a href="{{ url_for('appointments') }}"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}" title="Appointments"></a>
+  </div>
 
   <script>
   document.addEventListener('DOMContentLoaded', () => {
-    // ===== Fixed list & State =====
-    const fixedItemList = [
-      "Syringe 10","Syringe 5","Syringe 3","Syringe 1",
-      "เข็ม 32","เข็ม 30","เข็ม 24","เข็ม 18Gx1","เข็ม 18Gx1 1/2",
-      "Cannula","Medicut","ผีเสื้อ 24","ผีเสื้อ 25","Set IV","หลอด PRR",
-      "Nss 1000 ML","Nss 100 ML","Nss 5 ML","SWI 5 ML","ถุงมือ S",
-      "สำลีก้อน","สำลีแผ่น","ยาชา (ครีม)","Swabs","แอลกอฮอล์",
-      "ยาทาฝ้า","ยาทาสิว","อะโลเจล","Scrub","Milky"
-    ];
+    
+    // ===== 1. CATEGORIES (UPDATED) =====
+    // ดักจับทั้ง "B12" และ "b12" และ "ยาฉีดสิว" ทั้งมี/ไม่มี #เข็ม
+    const categories = {
+      "💉 อุปกรณ์ฉีด/เจาะ": [
+        "Syringe 10","Syringe 5","Syringe 3","Syringe 1",
+        "เข็ม 32","เข็ม 30","เข็ม 24","เข็ม 18Gx1","เข็ม 18Gx1 1/2",
+        "Cannula","Medicut","ผีเสื้อ 24","ผีเสื้อ 25","Set IV","หลอด PRR"
+      ],
+      "💧 น้ำเกลือ / ยา / สกินแคร์": [
+        "Nss 1000 ML","Nss 100 ML","Nss 5 ML","SWI 5 ML","Milky","B100","วิตามินซี","ชาแนล #เข็ม","ยานีดฉีดสิว #เข็ม","ทรานสมิน #เข็ม","เมโสวิ้ง",
+        // ของใหม่ (ดักหลายแบบเพื่อความชัวร์)
+        "b12", "B12", "B 12", 
+        "ยาฉีดสิว", "ยาฉีดสิว #เข็ม", "อสิติน",
+        // ของเดิมกลุ่มยาทา
+        "ยาชา (ครีม)","ยาทาฝ้า","ยาทาสิว","อะโลเจล","Scrub","ทรานสมิน"
+      ],
+      "🧤 เวชภัณฑ์สิ้นเปลือง": [
+        "ถุงมือ S","สำลีก้อน","สำลีแผ่น","Swabs","แอลกอฮอล์","ไมโครพอร์ เทปขุ่น IV"
+      ]
+    };
 
-    let sortedItemList = [...fixedItemList];
-    let allData = [];          // [{ item_name, date, quantity }]
-    let allDates = [];         // unique dates (YYYY-MM-DD) desc
-    let uniqueMonths = [];     // ['YYYY-MM'] desc
-    let currentMonthIdx = 0;   // index in uniqueMonths
-    let groupedData = {};      // { item_name: { 'YYYY-MM-DD': qty } }
+    const fixedItemList = Object.values(categories).flat();
+    
+    // Variables
+    let allData = [];
+    let allDates = [];
+    let uniqueMonths = [];
+    let currentMonthIdx = 0;
+    let groupedData = {};
 
-    // ===== Helpers =====
+    // Helpers
     const $ = (sel, root=document) => root.querySelector(sel);
     const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
     const escapeHtml = s => String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
-    const todayIso = () => new Date().toISOString().slice(0,10);
-    const monthOf = d => d.slice(0,7); // 'YYYY-MM'
+    
+    const todayIso = () => {
+        const d = new Date();
+        const offset = d.getTimezoneOffset() * 60000;
+        return (new Date(d - offset)).toISOString().slice(0, 10);
+    };
+
+    const monthOf = d => d.slice(0,7); 
 
     function formatDateTH(dateStr){
       const d = new Date(dateStr);
       if (Number.isNaN(d.getTime())) return dateStr;
       return d.toLocaleDateString('th-TH', { day:'2-digit', month:'2-digit', year:'2-digit' });
+    }
+    
+    function formatMonthYearTH(ym) {
+        if(!ym) return "";
+        const [y, m] = ym.split('-');
+        const thMonths = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+        return `${thMonths[parseInt(m)-1]} ${parseInt(y)+543}`;
     }
 
     function buildGrouped(){
@@ -207,282 +404,285 @@
       }
     }
 
-    function extendWithNewItems(){
-      const allItems = new Set(allData.map(d => d.item_name));
-      const extra = Array.from(allItems).filter(n => !fixedItemList.includes(n));
-      extra.sort((a,b) => a.localeCompare(b, 'th'));
-      sortedItemList = [...fixedItemList, ...extra];
-    }
-
     function computeCalendars(){
       const dateSet = new Set(allData.map(d => d.date));
       allDates = Array.from(dateSet).sort((a,b) => new Date(b) - new Date(a));
-
       const monthSet = new Set(allDates.map(d => monthOf(d)));
-      uniqueMonths = Array.from(monthSet).sort((a,b) => a < b ? 1 : (a > b ? -1 : 0)); // desc
-
-      if (uniqueMonths.length === 0) {
-        const t = todayIso().slice(0,7);
-        uniqueMonths = [t];
-      }
-      currentMonthIdx = 0; // เริ่มที่เดือนล่าสุดเสมอ
+      uniqueMonths = Array.from(monthSet).sort((a,b) => a < b ? 1 : (a > b ? -1 : 0));
+      if (uniqueMonths.length === 0) uniqueMonths = [todayIso().slice(0,7)];
+      currentMonthIdx = 0;
     }
 
     function getSelectedMonth(){ return uniqueMonths[currentMonthIdx]; }
     function getFilteredDates(){
       const ym = getSelectedMonth();
-      const dates = allDates.filter(d => d.startsWith(ym)).sort(); // asc
-      return dates.slice(-3); // 3 วันที่ล่าสุดของเดือนนั้น (ซ้าย->ขวา)
+      const dates = allDates.filter(d => d.startsWith(ym)).sort();
+      return dates.slice(-3); // Show last 3 days
     }
-
     function defaultInputDateForMonth(){
       const ym = getSelectedMonth();
       const dates = allDates.filter(d => d.startsWith(ym)).sort();
-      if (dates.length) return dates[dates.length - 1]; // ล่าสุดในเดือน
-      return ym + '-01';
+      if (dates.length) return dates[dates.length - 1];
+      return todayIso();
+    }
+    function lowThresholdFor(name){
+      if(name.includes("Syringe")) return 20;
+      if(name.includes("เข็ม")) return 20;
+      if(name.includes("Nss")) return 5;
+      return 10;
     }
 
-    // เกณฑ์สีแดงของ "ค่าวันล่าสุด" ตามลำดับแถว (1-based)
-    function lowThresholdForIndex(idx1){
-      if (idx1>=1 && idx1<=10) return 30;
-      if (idx1>=11 && idx1<=14) return 10;
-      if (idx1===18) return 10;
-      if (idx1===20) return 2;
-      return null;
+    // ===== 📊 DASHBOARD GRID RENDER (LATEST DAY) =====
+    function renderDashboard() {
+        const grid = $('#dashboardGrid');
+        if(!grid) return;
+        grid.innerHTML = ''; // Clear
+
+        // Get Latest date in current view (Rightmost column)
+        const filteredDates = getFilteredDates();
+        if (filteredDates.length === 0) {
+             grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#aaa;">ไม่มีข้อมูล</div>';
+             return;
+        }
+        
+        const latestDate = filteredDates[filteredDates.length - 1];
+        // Find previous date (for comparison)
+        const prevDate = filteredDates.length >= 2 ? filteredDates[filteredDates.length - 2] : null;
+
+        const displayDateTH = formatDateTH(latestDate);
+
+        // Prepare Display Map (Combine Categories + Others)
+        const allKnownItems = new Set(fixedItemList);
+        const dataItems = new Set(Object.keys(groupedData));
+        const uncategorized = Array.from(dataItems).filter(x => !allKnownItems.has(x)).sort();
+        
+        const displayMap = { ...categories };
+        if(uncategorized.length > 0) displayMap["📦 อื่นๆ (Others)"] = uncategorized;
+
+        // Render Cards
+        let hasContent = false;
+
+        Object.entries(displayMap).forEach(([catName, items]) => {
+            // Filter items that have usage > 0 in latest or prev date
+            const activeItems = items.filter(name => {
+                // Show if it has data today OR it is a fixed item
+                return groupedData[name] !== undefined; 
+            });
+
+            if(activeItems.length === 0) return;
+            hasContent = true;
+
+            const card = document.createElement('div');
+            card.className = 'dash-cat-card';
+            
+            let itemRowsHtml = '';
+            activeItems.forEach(name => {
+                const curr = Number((groupedData[name]?.[latestDate] ?? 0).toFixed(2));
+                const prev = Number((groupedData[name]?.[prevDate] ?? 0).toFixed(2));
+                const diff = Number((curr - prev).toFixed(2));
+                
+                let trendHtml = `<span class="dash-trend t-flat">-</span>`;
+                if(prevDate) {
+                    if(diff > 0) trendHtml = `<span class="dash-trend t-up">▲${diff}</span>`;
+                    else if(diff < 0) trendHtml = `<span class="dash-trend t-down">▼${Math.abs(diff)}</span>`;
+                    else trendHtml = `<span class="dash-trend t-flat">0</span>`;
+                }
+
+                // Show only if value exists or fixed item
+                itemRowsHtml += `
+                    <div class="dash-item-row">
+                        <div class="dash-name">${escapeHtml(name)}</div>
+                        <div class="dash-stats">
+                            <span class="dash-curr">${curr.toLocaleString()}</span>
+                            ${trendHtml}
+                        </div>
+                    </div>
+                `;
+            });
+
+            card.innerHTML = `
+                <div class="dash-cat-title">
+                    ${escapeHtml(catName)}
+                    <span class="dash-date-hint">${displayDateTH}</span>
+                </div>
+                ${itemRowsHtml}
+            `;
+            grid.appendChild(card);
+        });
+
+        if(!hasContent) {
+            grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#aaa; padding:20px;">ไม่มีข้อมูลการใช้ในเดือนนี้</div>';
+        }
     }
 
-    // ===== Fetch & Init =====
+    // ===== Fetch =====
     async function fetchData(){
       try{
-        const res = await fetch('/api/inventory', { headers:{ 'Accept':'application/json' }});
-        if (!res.ok) throw new Error('bad status');
-        allData = await res.json();
-        // normalize
-        allData = (Array.isArray(allData) ? allData : []).map(r => ({
-          item_name: r.item_name ?? '',
-          date: r.date ?? todayIso(),
-          quantity: Number(r.quantity ?? 0)
-        }));
-      }catch(e){
-        allData = [];
-      }
+        // One-time fetch (Backend handles full data)
+        const res = await fetch('/api/inventory');
+        if (!res.ok) throw new Error('Network err');
+        const rawData = await res.json();
+
+        allData = (Array.isArray(rawData) ? rawData : []).map(r => {
+            let dStr = r.date ? String(r.date) : todayIso();
+            if (dStr.includes('T')) dStr = dStr.split('T')[0];
+            return { item_name: (r.item_name||'').trim(), date: dStr.substring(0, 10), quantity: Number(r.quantity ?? 0) };
+        });
+      }catch(e){ console.error(e); allData = []; }
+      
       computeCalendars();
       buildGrouped();
-      extendWithNewItems();
-      renderTable();
+      renderTable(); // Render Table first to get dates
+      renderDashboard(); // Render Grid Dashboard using dates from table logic
       updateNavButtons();
     }
 
-    // ===== Rendering =====
+    // ===== Render Table =====
     function renderTable(){
       const headerRow = $('#tableHeader');
       const tbody = $('#tableBody');
-      if (!headerRow || !tbody) return;
+      const label = $('#monthLabel');
+      
+      if(label) label.textContent = formatMonthYearTH(getSelectedMonth());
 
+      if (!headerRow || !tbody) return;
       const filteredDates = getFilteredDates();
       const inputDateDefault = defaultInputDateForMonth();
 
       headerRow.innerHTML =
-        `<th>ลำดับ</th><th>ชื่อเวชภัณฑ์</th>` +
+        `<th>สินค้า</th>` +
         filteredDates.map(d => `<th>${formatDateTH(d)}</th>`).join('') +
-        `<th><input type="date" id="inputDate" value="${inputDateDefault}"></th><th>จัดการ</th>`;
+        `<th><input type="date" id="inputDate" value="${inputDateDefault}"></th>
+         <th style="width:80px">Action</th>`;
 
       tbody.innerHTML = '';
-      sortedItemList.forEach((name, idx) => {
-        const vals = filteredDates.map(d => groupedData[name]?.[d]);
-        const cells = [];
+      const allKnownItems = new Set(fixedItemList);
+      const dataItems = new Set(Object.keys(groupedData));
+      const uncategorized = Array.from(dataItems).filter(x => !allKnownItems.has(x)).sort();
+      const displayMap = { ...categories };
+      if(uncategorized.length > 0) displayMap["📦 อื่นๆ (Others)"] = uncategorized;
 
-        // วนคอลัมน์วันที่
-        for (let i=0;i<filteredDates.length;i++){
-          const v = vals[i];
-          const isLatest = (i === filteredDates.length - 1);
-          if (!isLatest){
-            cells.push(`<td>${Number.isFinite(v) ? v : '-'}</td>`);
-          } else {
-            // คอลัมน์ล่าสุด: แสดงค่า + diff (เทียบคอลัมน์ก่อนหน้า)
-            const prev = vals.length>=2 ? vals[filteredDates.length - 2] : undefined;
-            let diffHtml = `<span class="diff-flat">(—)</span>`;
-            if (Number.isFinite(v) && Number.isFinite(prev)){
-              const diff = v - prev;
-              diffHtml =
-                diff > 0 ? `<span class="diff-up">(▲ ${diff})</span>` :
-                diff < 0 ? `<span class="diff-down">(▼ ${Math.abs(diff)})</span>` :
-                           `<span class="diff-flat">(0)</span>`;
-            } else if (Number.isFinite(v) && !Number.isFinite(prev)){
-              // มีค่าใหม่ แต่ไม่มีค่าก่อนหน้า
-              diffHtml = `<span class="diff-flat">(—)</span>`;
-            }
+      Object.entries(displayMap).forEach(([catName, items]) => {
+          const validItems = items.filter(name => fixedItemList.includes(name) || groupedData[name]);
+          if(validItems.length === 0) return;
 
-            // สีแดงของ "ค่าวันล่าสุด" ตามเกณฑ์ลำดับแถว
-            const idx1 = idx + 1;
-            const thr = lowThresholdForIndex(idx1);
-            const valClass = (Number.isFinite(v) && thr !== null && v < thr) ? 'val-low' : '';
-            const vText = Number.isFinite(v) ? v : '-';
+          const catTr = document.createElement('tr');
+          catTr.className = 'category-header';
+          catTr.innerHTML = `<td colspan="${filteredDates.length + 3}">${escapeHtml(catName)}</td>`;
+          tbody.appendChild(catTr);
 
-            cells.push(
-              `<td class="latest-cell"><span class="latest-val ${valClass}">${vText}</span><span class="sep"></span>${diffHtml}</td>`
-            );
-          }
-        }
-
-        const tr = document.createElement('tr');
-        tr.innerHTML =
-          `<td>${idx+1}</td>` +
-          `<td class="name">${escapeHtml(name)}</td>` +
-          cells.join('') +
-          `<td><input type="number" min="0" step="1" inputmode="numeric" data-item="${escapeHtml(name)}"></td>` +
-          `<td><button class="btn-single" type="button" data-item="${escapeHtml(name)}">บันทึก</button></td>`;
-        tbody.appendChild(tr);
+          validItems.forEach((name) => {
+              const vals = filteredDates.map(d => groupedData[name]?.[d]);
+              const cells = [];
+              for (let i=0; i<filteredDates.length; i++){
+                  const v = vals[i];
+                  const isLatest = (i === filteredDates.length - 1);
+                  if (!isLatest){
+                      cells.push(`<td>${Number.isFinite(v) ? v : '-'}</td>`);
+                  } else {
+                      const prev = vals.length >= 2 ? vals[filteredDates.length - 2] : undefined;
+                      let diffHtml = `<span class="diff-badge diff-flat">-</span>`;
+                      if (Number.isFinite(v) && Number.isFinite(prev)){
+                          const diff = Number((v - prev).toFixed(2));
+                          if(diff > 0) diffHtml = `<span class="diff-badge diff-up">▲${diff}</span>`;
+                          else if(diff < 0) diffHtml = `<span class="diff-badge diff-down">▼${Math.abs(diff)}</span>`;
+                          else diffHtml = `<span class="diff-badge diff-flat">0</span>`;
+                      }
+                      const thr = lowThresholdFor(name);
+                      const isLow = (Number.isFinite(v) && v < thr);
+                      const valClass = isLow ? 'val-low' : '';
+                      const vText = Number.isFinite(v) ? v : '-';
+                      cells.push(`<td class="latest-cell"><span class="latest-val ${valClass}">${vText}</span>${diffHtml}</td>`);
+                  }
+              }
+              const tr = document.createElement('tr');
+              tr.innerHTML = `<td class="name">${escapeHtml(name)}</td>` + cells.join('') +
+                  `<td><input type="number" min="0" step="1" inputmode="numeric" data-item="${escapeHtml(name)}"></td>` +
+                  `<td><button class="btn-single" type="button" data-item="${escapeHtml(name)}">บันทึก</button></td>`;
+              tbody.appendChild(tr);
+          });
       });
     }
 
     function updateNavButtons(){
       const prev = $('#btnPrev'), next = $('#btnNext');
-      // ควบคุมเดือนจาก uniqueMonths (เรียงจากใหม่->เก่า)
       if (prev) prev.disabled = currentMonthIdx >= (uniqueMonths.length - 1);
       if (next) next.disabled = currentMonthIdx <= 0;
     }
 
-    // ===== Save logic =====
+    // ===== Save & Events =====
     function isDuplicateEntry(itemName, date, qty){
-      return allData.some(entry => entry.item_name === itemName && entry.date === date && Number(entry.quantity) === Number(qty));
+       return allData.some(entry => entry.item_name === itemName && entry.date === date && Number(entry.quantity) === Number(qty));
     }
-
     async function saveData(payload){
       try{
-        const res = await fetch('/api/save_inventory', {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json' },
-          body: JSON.stringify(payload)
-        });
+        const res = await fetch('/api/save_inventory', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
         if(!res.ok) throw new Error('bad status');
         await res.json();
-        alert('✅ บันทึกสำเร็จ');
-        await fetchData(); // refresh table + state
-      }catch(e){
-        alert('❌ เกิดข้อผิดพลาด');
-      }
+        const btn = $('#btnSaveAll'); const oldText = btn.innerHTML;
+        btn.innerHTML = '✅ เรียบร้อย'; btn.style.background = '#43a047';
+        setTimeout(() => { btn.innerHTML = oldText; btn.style.background = ''; }, 2000);
+        await fetchData();
+      }catch(e){ alert('❌ เกิดข้อผิดพลาด'); }
     }
 
-    // ===== Events =====
-    // Month nav
-    $('#btnPrev')?.addEventListener('click', () => {
-      if (currentMonthIdx < uniqueMonths.length - 1){
-        currentMonthIdx++;
-        renderTable();
-        updateNavButtons();
-      }
-    });
-    $('#btnNext')?.addEventListener('click', () => {
-      if (currentMonthIdx > 0){
-        currentMonthIdx--;
-        renderTable();
-        updateNavButtons();
-      }
-    });
-
-    // Single row save (event delegation)
     $('#tableBody')?.addEventListener('click', (e) => {
       const btn = e.target.closest('.btn-single');
       if (!btn) return;
       const itemName = btn.dataset.item;
-      const inputDateEl = $('#inputDate');
-      const inputEl = $('#tableBody').querySelector(`input[data-item="${CSS.escape(itemName)}"]`);
-      const inputDate = inputDateEl?.value || '';
+      const tr = btn.closest('tr');
+      const inputEl = tr ? tr.querySelector('input[type="number"]') : null;
+      const inputDate = $('#inputDate')?.value || '';
       const qtyStr = inputEl?.value?.trim();
-
       if (!inputDate || !qtyStr){ alert('กรุณากรอกข้อมูลให้ครบ'); return; }
       const nQty = Number(qtyStr);
       if (Number.isNaN(nQty) || nQty < 0){ alert('จำนวนไม่ถูกต้อง'); return; }
-
-      if (isDuplicateEntry(itemName, inputDate, nQty)){
-        alert(`⚠️ ข้อมูลซ้ำ:\nเวชภัณฑ์: ${itemName}\nวันที่: ${inputDate}\nจำนวน: ${nQty}`);
-        return;
-      }
+      if (isDuplicateEntry(itemName, inputDate, nQty)){ if(!confirm(`⚠️ ข้อมูลซ้ำ ยืนยันบันทึกซ้ำ?`)) return; }
       saveData([{ item_name:itemName, date:inputDate, quantity:nQty }]);
+      inputEl.value = '';
     });
 
-    // Save all
     $('#btnSaveAll')?.addEventListener('click', () => {
       const inputDate = $('#inputDate')?.value || '';
       if (!inputDate){ alert('กรุณาเลือกวันที่ก่อนบันทึก'); return; }
-
-      const payload = [];
-      const duplicateList = [];
-
+      const payload = []; const duplicateList = [];
       $$('#tableBody input[type="number"]').forEach(input => {
-        const val = input.value.trim();
-        if (val === '') return;
-        const name = input.dataset.item;
-        const qty = Number(val);
+        const val = input.value.trim(); if (val === '') return;
+        const name = input.dataset.item; const qty = Number(val);
         if (Number.isNaN(qty) || qty < 0) return;
-
-        if (isDuplicateEntry(name, inputDate, qty)){
-          duplicateList.push(`- ${name} | ${inputDate} | ${qty}`);
-        }else{
-          payload.push({ item_name:name, date:inputDate, quantity:qty });
-        }
+        if (isDuplicateEntry(name, inputDate, qty)) duplicateList.push(name);
+        else payload.push({ item_name:name, date:inputDate, quantity:qty });
       });
-
-      if (duplicateList.length){
-        alert(`⚠️ มีข้อมูลซ้ำ ${duplicateList.length} รายการ ไม่ได้บันทึก:\n\n${duplicateList.join('\n')}`);
-      }
-      if (!payload.length){
-        alert('ไม่มีข้อมูลใหม่ที่ต้องบันทึก');
-        return;
-      }
-      saveData(payload);
+      if (duplicateList.length){ if(!confirm(`มีรายการซ้ำ ${duplicateList.length} รายการ ต้องการบันทึกส่วนที่ไม่ซ้ำหรือไม่?`)) return; }
+      if (!payload.length && !duplicateList.length){ alert('ไม่พบข้อมูลใหม่'); return; }
+      if(payload.length) saveData(payload);
     });
 
-    // Popup (Add item)
     const popup = $('#popupForm');
-    function showAddPopup(){
-      $('#newName').value = '';
-      $('#newQty').value = '';
-      $('#newDate').value = $('#inputDate')?.value || todayIso();
-      popup.style.display = 'flex';
-      setTimeout(() => $('#newName')?.focus(), 10);
-    }
-    function hideAddPopup(){ popup.style.display = 'none'; }
-
-    $('#btnAdd')?.addEventListener('click', showAddPopup);
-    $('#popupCancel')?.addEventListener('click', hideAddPopup);
+    $('#btnAdd')?.addEventListener('click', () => {
+       $('#newName').value = ''; $('#newQty').value = ''; $('#newDate').value = $('#inputDate')?.value || todayIso();
+       popup.style.display = 'flex'; setTimeout(() => $('#newName').focus(), 50);
+    });
+    const hidePopup = () => popup.style.display = 'none';
+    $('#popupCancel')?.addEventListener('click', hidePopup);
+    popup.addEventListener('click', e => { if(e.target === popup) hidePopup(); });
     $('#popupSubmit')?.addEventListener('click', () => {
-      const name = $('#newName').value.trim();
-      const qty = Number($('#newQty').value);
-      const date = $('#newDate').value;
-
-      if (!name || !Number.isFinite(qty) || qty < 0 || !date){
-        alert('กรุณากรอกข้อมูลให้ครบ'); return;
-      }
-      if (isDuplicateEntry(name, date, qty)){
-        alert('⚠️ ข้อมูลนี้มีอยู่แล้วในระบบ (ชื่อ, วันที่, จำนวน ตรงกัน)');
-        return;
-      }
-      saveData([{ item_name:name, date, quantity:qty }]);
-      hideAddPopup();
-    });
-    // ปิดด้วยคลิกพื้นหลัง
-    $('#popupForm')?.addEventListener('click', (e) => { if (e.target === e.currentTarget) hideAddPopup(); });
-    // ปิดด้วย ESC
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideAddPopup(); });
-
-    // Floating menu
-    const floatingToggle = $('#floatingToggle');
-    const floatingMenu = $('#floatingMenu');
-    function toggleFloatingMenu(){
-      if (!floatingMenu) return;
-      floatingMenu.style.display = (floatingMenu.style.display === 'flex') ? 'none' : 'flex';
-    }
-    floatingToggle?.addEventListener('click', (e) => { e.stopPropagation(); toggleFloatingMenu(); });
-    document.addEventListener('click', (e) => {
-      if (!floatingToggle || !floatingMenu) return;
-      if (!floatingToggle.contains(e.target) && !floatingMenu.contains(e.target)){
-        floatingMenu.style.display = 'none';
-      }
+       const name = $('#newName').value.trim(); const qty = Number($('#newQty').value); const date = $('#newDate').value;
+       if(!name || !date || qty < 0) { alert('ข้อมูลไม่ครบ'); return; }
+       saveData([{ item_name:name, date, quantity:qty }]); hidePopup();
     });
 
-    // Start
+    $('#btnPrev')?.addEventListener('click', () => {
+      if(currentMonthIdx < uniqueMonths.length - 1){ currentMonthIdx++; renderTable(); renderDashboard(); updateNavButtons(); }
+    });
+    $('#btnNext')?.addEventListener('click', () => {
+      if(currentMonthIdx > 0){ currentMonthIdx--; renderTable(); renderDashboard(); updateNavButtons(); }
+    });
+
+    const menu = $('#floatingMenu'); const toggle = $('#floatingToggle');
+    toggle?.addEventListener('click', (e) => { e.stopPropagation(); menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex'; });
+    document.addEventListener('click', (e) => { if(menu && toggle && !menu.contains(e.target) && !toggle.contains(e.target)) menu.style.display = 'none'; });
+
     fetchData();
   });
   </script>

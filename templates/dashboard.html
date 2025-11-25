@@ -408,6 +408,113 @@
 .summary-table td div {
     line-height: 1.4; /* ระยะห่างบรรทัด */
 }
+
+
+/* =========================================
+   🔙 RESET: กลับสู่ค่าเริ่มต้น (Original Teal Theme)
+   ========================================= */
+
+/* 1. พื้นหลังและฟอนต์ */
+body {
+    background-color: white !important;
+    color: black !important;
+    font-family: 'Prompt', 'Segoe UI', sans-serif !important;
+}
+
+/* 2. กล่องต่างๆ กลับมาเป็นทรงเดิม */
+.menu-bar, .top10-box, .chart-container, .summary-list, 
+.lead-score-box, .summary-box, .filter-section, 
+#mainTitle, #customer-modal-box, .range-modal__panel {
+    background: #fff !important;
+    border-radius: 12px !important; /* กลับมาโค้งน้อยลง */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
+    border: none !important;
+}
+
+/* 3. หัวข้อสี Teal */
+h3, .group-header, #mainTitle .month {
+    color: teal !important;
+    font-weight: bold !important;
+}
+#mainTitle {
+    background-color: #e0f2f1 !important; /* สีเขียวอ่อนเดิม */
+    border: none !important;
+}
+#mainTitle .total { color: #009688 !important; }
+
+/* 4. ปุ่มกลับเป็นสี่เหลี่ยมมนๆ สี Teal */
+button, .add-product-button, .search-button, 
+.month-nav button, .tab-btn {
+    border-radius: 6px !important; /* กลับมาเหลี่ยม */
+    letter-spacing: normal !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ปุ่มหลัก */
+.month-nav button, .search-button, .btn-primary, #openRangeBtn {
+    background: teal !important; /* สี Teal เดิม */
+    color: white !important;
+}
+.month-nav button:hover, .search-button:hover {
+    background-color: #00796b !important;
+    transform: none !important;
+}
+#clearRangeBtn {
+    background-color: #607d8b !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* 5. Input ฟอร์ม */
+input, select {
+    border: 1px solid #ccc !important;
+    background-color: #fff !important;
+    border-radius: 8px !important;
+    padding: 6px 8px !important;
+    color: black !important;
+    box-shadow: none !important;
+}
+input:focus, select:focus {
+    border-color: teal !important;
+}
+
+/* 6. ตัวเลขและการเงิน */
+.top10-box li span.amount, .lead-money {
+    color: #009688 !important;
+}
+.badge, .lead-score-badge {
+    background: #e0f2f1 !important;
+    color: #004d40 !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Modal Backdrop ธรรมดา (ไม่เบลอ) */
+#customer-modal, #group-modal, #group-modal-legacy, .range-modal {
+    backdrop-filter: none !important;
+    background-color: rgba(0,0,0,0.5) !important;
+}
+
+/* เส้นขอบตาราง */
+.top10-box li, #leadScoreList li, .summary-table th, .summary-table td {
+    border-bottom: 1px dashed #ddd !important;
+}
+
+/* Tab Active */
+.tab-btn.active {
+    color: #0f766e !important; 
+    border-bottom-color: #0f766e !important;
+    background: #fff !important;
+}
+.tab-count {
+    background: #cbd5e1 !important; 
+    color: #334155 !important;
+}
+.tab-btn.active .tab-count {
+    background: #ccfbf1 !important; 
+    color: #0f766e !important;
+}
 </style>
 </head>
 <body>
