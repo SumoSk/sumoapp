@@ -335,34 +335,54 @@ def delete_customer_and_sales():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# --- แก้ไขแล้ว: รองรับ start_date / end_date เพื่อความเร็ว ---
 @app.route('/api/sales')
 @login_required
 def api_sales():
     try:
+        # 1. รับค่า Parameter จากหน้าบ้าน
         opd = normalize_opd(request.args.get('opd', '').strip()) if request.args.get('opd') else ''
         date = safe_date_str(request.args.get('date', '').strip()) if request.args.get('date') else ''
+        
+        # ✅ รับค่าช่วงเวลาเพิ่ม (นี่คือจุดเปลี่ยนความเร็ว)
+        start_date = safe_date_str(request.args.get('start_date', '').strip()) if request.args.get('start_date') else ''
+        end_date = safe_date_str(request.args.get('end_date', '').strip()) if request.args.get('end_date') else ''
+
         q = supabase.table("sales_records").select("*")
+
+        # 2. สั่งกรองที่ Database ทันที (Server-Side Filtering)
         if opd:
             q = q.eq("opd", opd)
         if date:
             q = q.eq("date", date)
-        # paginate manually (range cap)
+        
+        # ✅ ถ้ามีวันที่ส่งมา ให้ตัดข้อมูลที่ไม่เกี่ยวออกไปเลย ไม่ต้องโหลดมาให้หนัก
+        if start_date:
+            q = q.gte("date", start_date)
+        if end_date:
+            q = q.lte("date", end_date)
+
+        # 3. ดึงข้อมูล (Pagination Loop)
         start = 0
         limit = 1000
-        all_data: List[Dict[str, Any]] = []
+        all_data = []
         while True:
             resp = q.range(start, start + limit - 1).execute()
             batch = resp.data or []
             all_data.extend(batch)
+            
             if len(batch) < limit:
                 break
             start += limit
+        
+        # แปลง item text -> items json (เหมือนเดิม)
         for r in all_data:
             if 'item' in r:
                 try:
                     r['items'] = json.loads(r['item'])
                 except Exception:
                     r['items'] = []
+            
         return jsonify(all_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

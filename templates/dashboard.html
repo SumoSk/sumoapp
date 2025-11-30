@@ -597,10 +597,11 @@ input:focus, select:focus {
   <h3>📞 ลูกค้าที่ควรตามในเดือนนี้</h3>
   <div class="lead-score-sub">
     ระบบจะดูจาก <b>= มูลค่าลูกค้า (ยอดรวม + จำนวนครั้ง + บิลเฉลี่ย) + คะแนนหายไปนาน (ดีที่สุดช่วง 46–120 วัน) และตัดคนที่มา 45 วัน</b><br>
-    
+     
   </div>
   <ul id="leadScoreList">
-    </ul>
+      <li style="text-align:center; padding:10px; color:#666;">⏳ กำลังคำนวณคะแนนและดึงข้อมูล Sale Pitch...</li>
+  </ul>
 </div>
 
 <div id="group-modal" style="display:none;position:fixed;inset:0;background-color:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
@@ -713,33 +714,44 @@ input:focus, select:focus {
     refreshCustomerList();
   }
 
-  // ปรับปรุงฟังก์ชันโหลดข้อมูลหลัก ให้รองรับ loadDataForSummary
+  // ปรับปรุงฟังก์ชันโหลดข้อมูลหลัก ให้รองรับ loadDataForSummary แบบ Lazy Load
   function fetchAllCustomerRecords() {
     return fetch("/api/sales")
       .then(res => res.json())
       .then(records => { 
           allCustomerRecords = records; 
-          // เมื่อโหลดเสร็จ ให้รันส่วนอื่นต่อ
+          // *** แก้ไข: โหลดข้อมูลสรุปทีหลัง (Lazy Load) เพื่อไม่ให้หน้าค้าง ***
           if(records.length > 0) {
-             loadDataForSummary();
+              setTimeout(() => {
+                  loadDataForSummary();
+              }, 1000); // รอ 1 วินาที ให้หน้าจอหลักเสร็จก่อนค่อยโหลด Pitch
           }
       })
       .catch(err => { console.error("❌ โหลดข้อมูลทั้งหมดไม่สำเร็จ:", err); });
   }
 
   function fetchDataAndUpdate() {
+    // ถ้ามีข้อมูลแล้ว ให้ใช้เลย
     if (allSalesRecords.length > 0 && allCustomerRecords.length > 0) {
       updateDashboard(allSalesRecords);
+      // *** แก้ไข: เรียกฟังก์ชันหนักๆ ทีหลัง (Lazy Load) ***
+      setTimeout(() => {
+         buildLeadScoreList();
+      }, 500); // รอ 0.5 วิ
     } else {
+      // ถ้ายังไม่มีข้อมูล ให้โหลดใหม่
       Promise.all([
         fetch("/api/sales").then(res => res.json()),
-        fetchAllCustomerRecords()
+        // fetchAllCustomerRecords จะถูกเรียกแยกต่างหากข้างล่าง
       ]).then(([salesRecords]) => {
         allSalesRecords = salesRecords;
         updateDashboard(allSalesRecords);
+        // *** แก้ไข: เรียกฟังก์ชันหนักๆ ทีหลัง ***
+        setTimeout(() => {
+           buildLeadScoreList();
+        }, 800);
       }).catch(err => {
         console.error("❌ โหลดข้อมูลไม่สำเร็จ:", err);
-        // alert("เกิดข้อผิดพลาดในการโหลดข้อมูล");
       });
     }
   }
@@ -909,10 +921,9 @@ input:focus, select:focus {
         </div>`;
     }).join('');
     
-   // หลังสรุปหมวดสินค้า เสร็จแล้ว -> สร้าง list ลูกค้าที่ควรโทรก่อน
-   if (typeof buildLeadScoreList === 'function') {
-      buildLeadScoreList();
-   }
+   // *** แก้ไข: ตัดส่วน buildLeadScoreList ออกจากตรงนี้ เพื่อไม่ให้บล็อกการทำงาน ***
+   // (ย้ายไปเรียกข้างนอกด้วย setTimeout แทน)
+
     // Top 10
     const top10 = Object.values(customerMap).sort((a,b)=>b.amount-a.amount).slice(0,10);
     document.getElementById('top10List').innerHTML = top10.map((c) => {
@@ -1877,7 +1888,7 @@ async function buildLeadScoreList() {
 
   // 5. แสดงผล
   ul.innerHTML = enriched.map(c => {
-    const avg    = Math.round(c.averageBill || 0).toLocaleString();
+    const avg     = Math.round(c.averageBill || 0).toLocaleString();
     const total = Math.round(c.totalAmount || 0).toLocaleString();
     const last  = new Date(c.lastDate).toLocaleDateString('th-TH', {
       day: '2-digit', month: 'short', year: '2-digit'

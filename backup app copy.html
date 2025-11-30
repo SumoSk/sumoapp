@@ -5,6 +5,7 @@ import json
 import time
 from datetime import datetime, timedelta
 from collections import defaultdict, deque
+from math import isfinite
 from typing import Any, Dict, List
 
 from flask import (
@@ -223,6 +224,11 @@ def crm():
 @login_required
 def staff():
     return render_template('staff.html')
+
+@app.route('/tax')
+@login_required
+def tax_page():
+    return render_template('tax.html', username=session['username'])
 
 # =============================================================
 # API — Sales & Customers
@@ -707,45 +713,9 @@ def cleanup_pitch_dash():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 # =============================================================
-# API — Oldsale & Inventory (kept for compatibility)
+# API — Reccord Sale (Extra)
 # =============================================================
-@app.route('/api/oldsaledata')
-@login_required
-def api_oldsaledata():
-    try:
-        response = supabase.table("oldsaledata").select("*").execute()
-        return jsonify(response.data)
-    except Exception as e:
-        app.logger.error(f"ERROR loading oldsaledata: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/api/inventory")
-@login_required
-def api_inventory():
-    try:
-        res = supabase.table("inventory").select("*").execute()
-        return jsonify(res.data)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/api/save_inventory", methods=["POST"])
-@login_required
-def api_save_inventory():
-    data = request.get_json(force=True)
-    try:
-        supabase.table("inventory").insert(data).execute()
-        return jsonify({"message": "success"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# =============================================================
-# Main
-# =============================================================
-if __name__ == '__main__':
-    # In production, run behind a proper WSGI server and set SESSION_COOKIE_SECURE=true
-    app.run(debug=True)
 @app.route('/api/reccord_sale')
 @login_required
 def api_reccord_sale():
@@ -818,9 +788,60 @@ def api_reccord_sale():
         app.logger.error(f"/api/reccord_sale error: {e}")
         return jsonify({"error": str(e)}), 500
 
-# ===== TAX MODULE =====
-from math import isfinite
+# =============================================================
+# API — Oldsale & Inventory (kept for compatibility)
+# =============================================================
+@app.route('/api/oldsaledata')
+@login_required
+def api_oldsaledata():
+    try:
+        response = supabase.table("oldsaledata").select("*").execute()
+        return jsonify(response.data)
+    except Exception as e:
+        app.logger.error(f"ERROR loading oldsaledata: {e}")
+        return jsonify({"error": str(e)}), 500
 
+@app.route("/api/inventory")
+@login_required
+def api_inventory():
+    try:
+        # ใช้สูตร "ทยอยดึงจนกว่าจะหมด" (Pagination Loop) ชัวร์ที่สุด!
+        all_data = []
+        start = 0
+        limit = 1000  # ดึงทีละ 1,000
+        
+        while True:
+            # สั่งดึงช่วงที่กำหนด เช่น 0-999, 1000-1999
+            res = supabase.table("inventory").select("*").range(start, start + limit - 1).execute()
+            batch = res.data or []
+            
+            # เอาของใหม่ไปรวมกับกองใหญ่
+            all_data.extend(batch)
+            
+            # ถ้าดึงมาได้น้อยกว่า limit แสดงว่าหมดแล้ว หยุดวน
+            if len(batch) < limit:
+                break
+            
+            # ขยับไปดึงช่วงถัดไป
+            start += limit
+            
+        return jsonify(all_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/save_inventory", methods=["POST"])
+@login_required
+def api_save_inventory():
+    data = request.get_json(force=True)
+    try:
+        supabase.table("inventory").insert(data).execute()
+        return jsonify({"message": "success"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# =============================================================
+# API — Tax Module
+# =============================================================
 def th_tax_brackets(amount: float) -> float:
     """
     คำนวณภาษีเงินได้บุคคลธรรมดาแบบก้าวหน้า (อัตราปัจจุบัน)
@@ -830,22 +851,11 @@ def th_tax_brackets(amount: float) -> float:
     if amount is None or amount <= 0:
         return 0.0
 
-    bands = [
-        (150000, 0.00),
-        (150000, 0.05),
-        (200000, 0.10),
-        (250000, 0.15),
-        (250000, 0.20),
-        (1000000, 0.25),   # 1,000,001 - 2,000,000 (ช่วงกว้าง 1,000,000)
-        (3000000, 0.30),   # 2,000,001 - 5,000,000 (ช่วงกว้าง 3,000,000)
-        (float('inf'), 0.35),
-    ]
     remain = amount
     tax = 0.0
-    thresholds = [150000, 300000, 500000, 750000, 1000000, 2000000, 5000000]
-
     prev_cap = 0.0
-    for cap, rate in [
+    # (upper_bound, rate)
+    brackets = [
         (150000, 0.00),
         (300000, 0.05),
         (500000, 0.10),
@@ -854,7 +864,9 @@ def th_tax_brackets(amount: float) -> float:
         (2000000, 0.25),
         (5000000, 0.30),
         (float('inf'), 0.35),
-    ]:
+    ]
+
+    for cap, rate in brackets:
         slab_width = (cap - prev_cap) if isfinite(cap) else max(0.0, remain)
         chunk = max(0.0, min(remain, slab_width))
         tax += chunk * rate
@@ -907,14 +919,6 @@ def compute_tax_from_gross_sales_yearly(gross_year: float, social_sec: float = 0
         "tax_month_avg": tax_month_avg,
         "effective_rate": effective_rate,
     }
-
-
-@app.route('/tax')
-@login_required
-def tax_page():
-    # หน้า UI
-    return render_template('tax.html', username=session['username'])
-
 
 @app.route('/api/tax_summary')
 @login_required
@@ -991,3 +995,11 @@ def api_tax_summary():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# =============================================================
+# Main
+# =============================================================
+if __name__ == '__main__':
+    # In production, run behind a proper WSGI server and set SESSION_COOKIE_SECURE=true
+    app.run(debug=True)
