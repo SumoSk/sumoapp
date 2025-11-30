@@ -570,20 +570,20 @@ input:focus, select:focus {
 </div>
 
 <div id="mainTitle">
-  <div class="month"></div>
-  <div class="total"></div>
+  <div class="month">...</div>
+  <div class="total">กำลังโหลดข้อมูล...</div>
   <div class="compare" style="margin-top: 6px;"></div>
 </div>
 
 <div class="top10-box">
   <h3>Top 10 ลูกค้าใช้จ่ายสูงสุด</h3>
-  <ul id="top10List"></ul>
+  <ul id="top10List"><li style="text-align:center; color:#999;">กำลังโหลดข้อมูล...</li></ul>
   <p id="totalCustomer" onclick="toggleCustomerList()" style="text-align:center; margin-top: 10px; font-weight: bold; color: teal; cursor: pointer;"></p>
   <ul id="allCustomerList" style="display:none; padding-top: 10px;"></ul>
 </div>
 
 <div class="chart-summary-row">
-  <div class="summary-list" id="summaryList"></div>
+  <div class="summary-list" id="summaryList"><div style="text-align:center; color:#999; grid-column: 1 / -1;">กำลังโหลดข้อมูลสินค้า...</div></div>
 </div>
 <div id="filter-placeholder"></div>
 
@@ -597,10 +597,11 @@ input:focus, select:focus {
   <h3>📞 ลูกค้าที่ควรตามในเดือนนี้</h3>
   <div class="lead-score-sub">
     ระบบจะดูจาก <b>= มูลค่าลูกค้า (ยอดรวม + จำนวนครั้ง + บิลเฉลี่ย) + คะแนนหายไปนาน (ดีที่สุดช่วง 46–120 วัน) และตัดคนที่มา 45 วัน</b><br>
-    
+     
   </div>
   <ul id="leadScoreList">
-    </ul>
+    <li style="text-align:center; color:#999; padding:10px;">กำลังวิเคราะห์ข้อมูล...</li>
+  </ul>
 </div>
 
 <div id="group-modal" style="display:none;position:fixed;inset:0;background-color:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
@@ -611,6 +612,23 @@ input:focus, select:focus {
     </div>
     <div style="margin-top: 20px;" id="groupSelectedList"></div>
   </div>
+</div>
+
+<div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
+  <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu" style="width:60px;height:60px;">
+</div>
+
+<div id="floatingMenu" class="floating-menu" aria-hidden="true">
+  <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}" alt="Dashboard"></a>
+  <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}" alt="Sale summary"></a>
+  <a href="{{ url_for('crm') }}"><img src="{{ url_for('static', filename='icon/icon_crm.png') }}" alt="CRM"></a>
+  <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}" alt="Record sales"></a>
+  <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}" alt="Customer list"></a>
+  <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}" alt="Record customer"></a>
+  <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}" alt="Old customers"></a>
+  <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}" alt="Inventory"></a>
+  <a href="{{ url_for('staff') }}"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}" alt="Staff"></a>
+  <a href="{{ url_for('appointments') }}"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}" alt="Appointments"></a>
 </div>
 
 <script>
@@ -911,7 +929,7 @@ input:focus, select:focus {
     
    // หลังสรุปหมวดสินค้า เสร็จแล้ว -> สร้าง list ลูกค้าที่ควรโทรก่อน
    if (typeof buildLeadScoreList === 'function') {
-      buildLeadScoreList();
+     buildLeadScoreList();
    }
     // Top 10
     const top10 = Object.values(customerMap).sort((a,b)=>b.amount-a.amount).slice(0,10);
@@ -967,9 +985,6 @@ input:focus, select:focus {
     document.getElementById('totalCustomer').textContent =
       `จำนวนลูกค้าที่มาใช้บริการทั้งหมด ${Object.keys(customerMap).length} คน (กดดูเพิ่มเติม)`;
   }
-
-  fetchDataAndUpdate();
-  fetchAllCustomerRecords();
 
   // === คลิกกรอบสรุปเดือนเพื่อเปิด popup รายวัน ===
   document.getElementById('mainTitle').addEventListener('click', openMonthlySalesPopup);
@@ -2181,23 +2196,16 @@ async function buildLeadScoreList() {
         renderFollowupSummaryUI();
     };
 
+    // ===== ส่วนสำคัญที่พลอยแก้ให้ใหม่: เรียกใช้งานข้อมูลหลังโหลดหน้าเว็บเสร็จ =====
+    document.addEventListener('DOMContentLoaded', function() {
+        // โค้ด HTML พร้อมแล้ว แต่ข้อมูลยังไม่มา
+        // ใส่ Loading state ไว้ก่อน (พลอยใส่ไว้ใน HTML body แล้ว)
+        
+        // เริ่มโหลดข้อมูล
+        fetchDataAndUpdate();
+        fetchAllCustomerRecords();
+    });
+
 </script>
-
-<div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
-  <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu" style="width:60px;height:60px;">
-</div>
-
-<div id="floatingMenu" class="floating-menu" aria-hidden="true">
-  <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}" alt="Dashboard"></a>
-  <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}" alt="Sale summary"></a>
-  <a href="{{ url_for('crm') }}"><img src="{{ url_for('static', filename='icon/icon_crm.png') }}" alt="CRM"></a>
-  <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}" alt="Record sales"></a>
-  <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}" alt="Customer list"></a>
-  <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}" alt="Record customer"></a>
-  <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}" alt="Old customers"></a>
-  <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}" alt="Inventory"></a>
-  <a href="{{ url_for('staff') }}"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}" alt="Staff"></a>
-  <a href="{{ url_for('appointments') }}"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}" alt="Appointments"></a>
-</div>
 </body>
 </html>
