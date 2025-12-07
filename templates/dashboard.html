@@ -588,8 +588,13 @@ input:focus, select:focus {
 <div id="filter-placeholder"></div>
 
 <div class="summary-box" id="summaryBody">
-  <div style="padding:20px; text-align:center; color:#64748b;">
-    กำลังโหลดข้อมูลประวัติการโทร... ⏳
+  <div style="padding:40px; text-align:center; color:#64748b;">
+    <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" style="width:64px; opacity:0.5; margin-bottom:16px;">
+    <h3 style="margin:0 0 10px; color:#475569;">ระบบติดตาม Sale Pitch</h3>
+    <p style="font-size:13px; margin-bottom:20px;">ข้อมูลส่วนนี้มีขนาดใหญ่ กดปุ่มด้านล่างเพื่อโหลดข้อมูลค่ะ</p>
+    <button onclick="loadDataForSummary()" style="background-color:teal; color:white; border:none; padding:10px 24px; border-radius:30px; cursor:pointer; font-size:14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s;">
+      🚀 โหลดข้อมูลการติดตาม (Summary)
+    </button>
   </div>
 </div>
 
@@ -731,15 +736,16 @@ input:focus, select:focus {
     refreshCustomerList();
   }
 
-  // ปรับปรุงฟังก์ชันโหลดข้อมูลหลัก ให้รองรับ loadDataForSummary
+  // ปรับปรุงฟังก์ชันโหลดข้อมูลหลัก (พลอยเอา loadDataForSummary ออกแล้วนะคะ)
   function fetchAllCustomerRecords() {
     return fetch("/api/sales")
       .then(res => res.json())
       .then(records => { 
           allCustomerRecords = records; 
-          // เมื่อโหลดเสร็จ ให้รันส่วนอื่นต่อ
+          
+          // ถ้าโหลดข้อมูลการขายเสร็จแล้ว ให้คำนวณ Lead Score (รายชื่อคนควรโทร) แบบเบื้องต้นทันที
           if(records.length > 0) {
-             loadDataForSummary();
+             buildLeadScoreList(); // คำนวณคะแนนและโชว์ชื่อก่อน (ยังไม่ดึง Pitch)
           }
       })
       .catch(err => { console.error("❌ โหลดข้อมูลทั้งหมดไม่สำเร็จ:", err); });
@@ -1813,8 +1819,9 @@ function computeLeadScoreForCustomer(core) {
   // ปัดให้เป็นเลขเต็มสวย ๆ
   return Math.round(rawScore);
 }
+// ตัวแปรเก็บรายชื่อ Top 45 ไว้รอโหลดข้อมูลเสริม
+let topLeadCandidates = [];
 
-// ===== โค้ดใหม่ที่พลอยแก้ให้ (วางแทนที่อันเดิม) =====
 async function buildLeadScoreList() {
   const ul = document.getElementById('leadScoreList');
   if (!ul || !allCustomerRecords.length) return;
@@ -1822,7 +1829,7 @@ async function buildLeadScoreList() {
   const grouped = {};
   const today = new Date();
 
-  // 1. รวมข้อมูลลูกค้า
+  // 1. รวมข้อมูลลูกค้า (ทำงานเร็วมาก)
   allCustomerRecords.forEach(r => {
     const key = `${r.name}|${r.phone}`;
     if (!grouped[key]) {
@@ -1837,7 +1844,7 @@ async function buildLeadScoreList() {
     grouped[key].records.push(r);
   });
 
-  // 2. คำนวณคะแนน (ยังไม่ดึงข้อมูลการโทร เพื่อความเร็ว)
+  // 2. คำนวณคะแนน
   let scored = Object.values(grouped).map(c => {
     const recs = c.records;
     const totalVisits = recs.length;
@@ -1869,63 +1876,93 @@ async function buildLeadScoreList() {
     return { ...core, score };
   });
 
-  // 3. คัดเลือกคนที่จะแสดงผลมาก่อน (แก้ตรงนี้แหละที่ทำให้เร็วขึ้น!)
-  // กรองและเรียงลำดับ "ก่อน" จะไปดึงข้อมูล Sale Pitch
-  const topCandidates = scored
-    .filter(c => c.absentDays > 45) // หายไปนานกว่า 45 วัน
-    .filter(c => c.score >= 20)     // คะแนนถึงเกณฑ์
-    .sort((a, b) => b.score - a.score) // เรียงคะแนนมากไปน้อย
-    .slice(0, 45); // *** ตัดเอาแค่ 45 คนแรกเท่านั้น ***
+  // 3. คัดเลือก Top 45 (ยังไม่ดึง Pitch!)
+  topLeadCandidates = scored
+    .filter(c => c.absentDays > 45) 
+    .filter(c => c.score >= 20)      
+    .sort((a, b) => b.score - a.score) 
+    .slice(0, 45);
 
-  if (!topCandidates.length) {
-    ul.innerHTML = `<li class="lead-score-meta">
+  if (!topLeadCandidates.length) {
+    ul.innerHTML = `<li class="lead-score-meta" style="text-align:center; padding:20px;">
       ยังไม่มีลูกค้าที่เข้าเกณฑ์ (เช่น หายเกิน 45 วัน และมีมูลค่าพอสมควร)
     </li>`;
     return;
   }
 
-  // 4. ค่อยดึงข้อมูล Sale Pitch เฉพาะ 45 คนนี้ (จากเดิมดึงเป็นร้อยเป็นพัน)
-  const enriched = await Promise.all(topCandidates.map(async c => {
-    const pitch = await fetchLatestPitchForOPD(c.opd);
-    return { ...c, pitch };
-  }));
+  // 4. สร้างปุ่มกดโหลดข้อมูล Pitch
+  const loadButtonHTML = `
+    <li style="text-align:center; padding:10px; background:#f0fdfa; border-bottom:1px dashed #ccc;">
+      <button onclick="loadLeadPitches()" id="btnLoadLeadPitches" style="background:teal; color:white; border:none; padding:6px 16px; border-radius:20px; font-size:12px; cursor:pointer;">
+        🔄 กดเพื่อโหลดประวัติการโทรล่าสุด (${topLeadCandidates.length} คน)
+      </button>
+    </li>
+  `;
 
-  // 5. แสดงผล
-  ul.innerHTML = enriched.map(c => {
-    const avg    = Math.round(c.averageBill || 0).toLocaleString();
+  // 5. แสดงผลรายชื่อ (แต่ข้อมูลการโทรยังว่างอยู่)
+  const listHTML = topLeadCandidates.map(c => {
+    const avg  = Math.round(c.averageBill || 0).toLocaleString();
     const total = Math.round(c.totalAmount || 0).toLocaleString();
     const last  = new Date(c.lastDate).toLocaleDateString('th-TH', {
       day: '2-digit', month: 'short', year: '2-digit'
     });
-    const key = c.key;
-
-    // Sale pitch
-    let pitchDateText = 'ยังไม่เคยโทร';
-    let pitchOutcomeShort = '—';
-    if (c.pitch && c.pitch.date) {
-      pitchDateText = formatDate(String(c.pitch.date).slice(0, 10));
-      const raw = c.pitch.outcome || c.pitch.content || '';
-      pitchOutcomeShort = raw ? raw : '—';
-    }
+    
+    // สร้าง ID ให้ Element เพื่อรอรับข้อมูล
+    const pitchId = `pitch-info-${c.opd}`;
 
     return `
       <li>
-        <span class="lead-name" onclick="openCustomerModal('${key}')">
+        <span class="lead-name" onclick="openCustomerModal('${c.key}')">
           ${escapeHTML(c.name || '-')}
         </span>
-        <span class="lead-score-badge">คะแนนโทร: ${c.score}</span>
+        <span class="lead-score-badge">คะแนน: ${c.score}</span>
         <span class="lead-score-meta">
-          ⏳ ไม่มาแล้ว <span class="lead-absent">${c.absentDays} วัน</span>
-          • 💰 ยอดรวม ${total} บ.
-          • 💳 เฉลี่ย/บิล ${avg} บ.
-          • 🔁 มา ${c.totalVisits} ครั้ง
+          ⏳ ไม่มา <span class="lead-absent">${c.absentDays} วัน</span>
+          • 💰 รวม ${total} บ.
           • 📅 มาล่าสุด: ${last}
-          • 📞 โทรล่าสุด: ${escapeHTML(pitchDateText)}
-          • ผล: ${escapeHTML(pitchOutcomeShort)}
+          <div id="${pitchId}" style="margin-top:2px; color:#666; font-style:italic;">
+             📞 ประวัติโทร: (กดปุ่มด้านบนเพื่อดู)
+          </div>
         </span>
       </li>
     `;
   }).join('');
+
+  ul.innerHTML = loadButtonHTML + listHTML;
+}
+
+// ฟังก์ชันใหม่: โหลดข้อมูล Pitch เมื่อกดปุ่มเท่านั้น
+async function loadLeadPitches() {
+  const btn = document.getElementById('btnLoadLeadPitches');
+  if(btn) {
+      btn.innerHTML = '⏳ กำลังโหลดข้อมูล...';
+      btn.disabled = true;
+      btn.style.opacity = 0.7;
+  }
+
+  // ไล่ดึงข้อมูลทีละคน (Parallel request)
+  await Promise.all(topLeadCandidates.map(async c => {
+    const pitch = await fetchLatestPitchForOPD(c.opd);
+    
+    // อัปเดตหน้าจอเฉพาะจุด
+    const el = document.getElementById(`pitch-info-${c.opd}`);
+    if(el) {
+        let text = 'ยังไม่เคยโทร';
+        let color = '#9ca3af'; // gray
+        
+        if (pitch && pitch.date) {
+            const d = formatDate(String(pitch.date).slice(0, 10));
+            const raw = pitch.outcome || pitch.content || '—';
+            text = `${d}: ${raw}`;
+            color = '#059669'; // green
+        }
+        
+        el.innerHTML = `📞 <span style="color:${color}; font-weight:500;">${escapeHTML(text)}</span>`;
+        el.style.fontStyle = 'normal';
+    }
+  }));
+
+  if(btn) btn.style.display = 'none'; // ซ่อนปุ่มเมื่อโหลดเสร็จ
 }
 
 // ========= Followup Summary (Logic แยกโหลดข้อมูล Top 100) =========
@@ -1936,67 +1973,54 @@ async function buildLeadScoreList() {
     let customerByOPD = new Map();
     let recordsByKey = new Map();
 
-    // ฟังก์ชันหลัก: โหลดข้อมูลลูกค้าเพื่อมาทำสรุป (แก้ให้ดึงเยอะขึ้น)
+    // ฟังก์ชันหลัก: โหลดข้อมูลลูกค้าเพื่อมาทำสรุป (ทำงานเมื่อกดปุ่ม)
     async function loadDataForSummary() {
         const wrap = document.getElementById('summaryBody');
         if(!wrap) return;
         
-        wrap.innerHTML = `<div style="padding:30px; text-align:center; color:#64748b;">
-            กำลังประมวลผลข้อมูลลูกค้าทั้งหมด... ⏳
+        // แสดงสถานะกำลังโหลด
+        wrap.innerHTML = `<div style="padding:40px; text-align:center; color:#64748b;">
+            <div style="font-size:24px; animation: spin 1s linear infinite; display:inline-block;">⏳</div>
+            <h3 style="margin:10px 0;">กำลังประมวลผล Sale Pitch...</h3>
+            <p>กรุณารอสักครู่ ระบบกำลังดึงประวัติการคุยกับลูกค้า 1,000 คนล่าสุด</p>
         </div>`;
 
-        // 1. รอให้ข้อมูลการขาย (Sales Records) โหลดเสร็จก่อน
+        // 1. เช็คว่าข้อมูลพื้นฐานมารึยัง
         if (!allCustomerRecords || !allCustomerRecords.length) {
-            return; // ถ้ายังไม่มีข้อมูล ให้รอรอบถัดไป
+            // ถ้าเผลอกดตอนข้อมูลหลักยังไม่มา
+            alert("กำลังโหลดข้อมูลรายชื่อลูกค้า กรุณารอสักครู่แล้วกดใหม่ค่ะ");
+            return; 
         }
+        
+        // ... (โค้ดส่วนที่เหลือเหมือนเดิม ตั้งแต่บรรทัด // 2. เตรียมข้อมูล Customer Map จนจบฟังก์ชัน) ...
+        // ... (copy โค้ดเดิมในส่วน 2, 3, 4 มาวางต่อได้เลยค่ะ พลอยแก้แค่ส่วนหัวให้มี Loading สวยๆ) ...
         
         // 2. เตรียมข้อมูล Customer Map
         customerByOPD.clear();
         recordsByKey.clear();
-        
         const customerStats = new Map();
 
         allCustomerRecords.forEach(r => {
             const opd = pad4(r.opd);
-            // ถ้าไม่มี OPD ข้ามไปเลย เพราะเช็ค Pitch ไม่ได้
             if (opd === '0000' || opd === '-' || !opd) return;
-            
             const key = makeCustomerKey(opd, r.name, r.phone);
-            
-            // เก็บ Records by key
             if (!recordsByKey.has(key)) recordsByKey.set(key, []);
             recordsByKey.get(key).push(r);
-
-            // เก็บ Customer Info By OPD
-            if (!customerByOPD.has(opd)) {
-                customerByOPD.set(opd, { name: r.name, phone: r.phone, opd: opd });
-            }
-
-            // เก็บไว้ในรายการที่จะไปดึง Pitch
-            if (!customerStats.has(key)) {
-                customerStats.set(key, { 
-                    opd, name: r.name, phone: r.phone, 
-                    total: 0, lastDate: '1970-01-01' 
-                });
-            }
+            if (!customerByOPD.has(opd)) customerByOPD.set(opd, { name: r.name, phone: r.phone, opd: opd });
+            if (!customerStats.has(key)) customerStats.set(key, { opd, name: r.name, phone: r.phone, total: 0, lastDate: '1970-01-01' });
             const c = customerStats.get(key);
             c.total += parseFloat(r.amount || 0);
             if ((r.date||'') > c.lastDate) c.lastDate = r.date;
         });
 
         const allCusts = Array.from(customerStats.values());
-        
-        // --- แก้ไข: เพิ่มจำนวนลิมิตให้เยอะขึ้น (จากเดิม 100 เป็น 1000 หรือเอาทั้งหมด) ---
-        // เอาคนที่มาล่าสุดขึ้นก่อน เพื่อให้เจอคนที่เพิ่งคุย
         const targetList = allCusts.sort((a, b) => b.lastDate.localeCompare(a.lastDate)).slice(0, 1000);
-        
         const targetOPDs = new Set(targetList.map(c => c.opd));
 
         // 3. ดึง Pitch ของลูกค้าเหล่านี้
         const promises = Array.from(targetOPDs).map(opd => fetchAllPitchesForOPD(opd));
         const results = await Promise.all(promises);
 
-        // เก็บผลลัพธ์ลง Cache
         summaryDataCache = results.flat().filter(x => x !== null);
 
         // 4. สร้างตาราง
