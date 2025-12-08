@@ -144,6 +144,86 @@
     
     /* บังคับใช้ Prompt */
     * { font-family: 'Prompt', sans-serif !important; -webkit-font-smoothing: antialiased; }
+
+    /* ===== Mobile Compact Mode: ย่อส่วนเมื่อเปิดในมือถือ ===== */
+    @media (max-width: 600px) {
+      :root {
+        --shrink: 0.85; /* ลดขนาดฟอนต์รวมเหลือ 85% */
+      }
+      body {
+        padding: 4px; /* ลดขอบจอด้านนอก */
+      }
+      .container {
+        padding: 10px; /* ลดขอบกล่องขาว */
+        border-radius: 12px;
+        margin: 5px auto;
+      }
+      h2 {
+        font-size: 16px;
+        margin-bottom: 10px;
+      }
+      /* ปรับปุ่มเลือกเดือนให้เล็กลง */
+      .month-btn {
+        padding: 4px 10px;
+        font-size: 11px;
+      }
+      .month-nav {
+        gap: 5px;
+        margin-bottom: 12px;
+      }
+      
+      /* บีบการ์ดสรุปยอดให้กะทัดรัด */
+      .summary-grid {
+        gap: 8px; /* ลดช่องว่างระหว่างการ์ด */
+        grid-template-columns: 1fr; /* บังคับเรียงเดี่ยว */
+      }
+      .stat-card {
+        padding: 10px; /* ลดพื้นที่ว่างในการ์ด */
+      }
+      .stat-card h4 {
+        margin-bottom: 4px;
+        font-size: 12px;
+      }
+      .stat-card .total-highlight {
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+      
+      /* บีบตารางให้แน่นสุดๆ */
+      table {
+        margin-top: 10px;
+      }
+      th, td {
+        padding: 6px 3px; /* ลดช่องว่างในตาราง */
+        font-size: 11px;
+      }
+      /* ซ่อนชื่อคอลัมน์บางอันที่เดาได้เพื่อประหยัดที่ */
+      thead th:nth-child(1) { width: 20px; } /* ลำดับ */
+      
+      /* ปรับส่วนหัววันที่ในตาราง */
+      .day-header td {
+        padding: 4px 8px;
+        font-size: 11.5px;
+      }
+      
+      /* ปรับปุ่มเมนูลอย */
+      .floating-toggle {
+        width: 50px;
+        height: 50px;
+        bottom: 15px;
+      }
+      .floating-toggle img {
+        width: 50px !important;
+        height: 50px !important;
+      }
+      .search-fab {
+        width: 42px;
+        height: 42px;
+      }
+      .search-wrap {
+        bottom: 80px;
+      }
+    }
   </style>
 </head>
 <body>
