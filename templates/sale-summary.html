@@ -178,14 +178,14 @@
         grid-template-columns: 1fr; /* บังคับเรียงเดี่ยว */
       }
       .stat-card {
-        padding: 10px; /* ลดพื้นที่ว่างในการ์ด */
+        padding: 8px; /* ลดพื้นที่ว่างในการ์ด */
       }
       .stat-card h4 {
         margin-bottom: 4px;
-        font-size: 10px;
+        font-size: 8px;
       }
       .stat-card .total-highlight {
-        font-size: 10px;
+        font-size: 8px;
         margin-bottom: 4px;
       }
       
@@ -224,6 +224,9 @@
         bottom: 80px;
       }
     }
+/* ซ่อนหัวตารางทุกกรณี */
+thead { display: none !important; }
+
   </style>
 </head>
 <body>
@@ -528,7 +531,7 @@
       tableWrapper.innerHTML = '<h3 style="font-size:16px; color:#555; margin-bottom:10px;">📄 รายละเอียดบิลรายวัน</h3>';
       
       const table = document.createElement('table');
-      table.innerHTML = `<thead><tr><th style="width:30px;">#</th><th>ชื่อลูกค้า</th><th>เบอร์</th><th>รายการ</th><th>ยอด (บาท)</th></tr></thead><tbody></tbody>`;
+      table.innerHTML = `<tbody></tbody>`;
       const tbody = table.querySelector('tbody');
       const sortedRecs = recs.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
 
@@ -678,7 +681,7 @@
       tableWrapper.innerHTML = '<h3 style="font-size:16px; color:#555; margin-bottom:10px;">📄 รายละเอียดบิลรายวัน</h3>';
 
       const table = document.createElement('table');
-      table.innerHTML = `<thead><tr><th style="width:30px;">#</th><th>ชื่อลูกค้า</th><th>เบอร์</th><th>รายการ</th><th>ยอด (บาท)</th></tr></thead><tbody></tbody>`;
+      table.innerHTML = `<tbody></tbody>`;
       const tbody = table.querySelector('tbody');
 
       const sortedRecs = recs.sort((a,b)=> new Date(b.date) - new Date(a.date));
