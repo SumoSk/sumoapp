@@ -874,7 +874,12 @@
     document.getElementById('closeCustomerModalBtn')?.addEventListener('click', closeCustomerModal);
     document.getElementById('customer-modal')?.addEventListener('click', (e)=>{ if(e.target && e.target.id === 'customer-modal') closeCustomerModal(); });
 
-        async function openCustomerModal(key){
+
+
+
+
+
+    async function openCustomerModal(key){
       const records = allCustomerRecords.filter(r=> `${r.name}|${r.phone}` === key);
       if(records.length===0) return;
 
@@ -888,181 +893,147 @@
         opd: pad4(first.opd || '-')
       };
 
-      // วันล่าสุด + วันไม่ได้มา
-      const latestRecord = records[0];
-      const lastDateStr = (latestRecord.date || '').slice(0,10);
+      const lastDateStr = (records[0].date || '').slice(0,10);
       const lastDate = new Date(lastDateStr);
       const today = new Date();
-      const daysAbsent = isNaN(lastDate)
-        ? 0
-        : Math.floor((today - lastDate) / (1000*60*60*24));
+      const daysAbsent = isNaN(lastDate) ? 0 : Math.floor((today - lastDate) / (1000*60*60*24));
 
-      // สรุปยอดเงิน
       const paidRecords = records.filter(r => recordAmount(r) > 0);
       const paidVisits = paidRecords.length;
       const totalAmount = paidRecords.reduce((s,r)=> s + recordAmount(r), 0);
       const average = paidVisits > 0 ? Math.round(totalAmount/paidVisits) : 0;
 
-      // รวมสินค้าแยกตามชื่อ
+      // รวมสินค้าแยกตามหมวด (Logic เดิม)
       const allItems = {};
       records.forEach(r=>{
         (r.items || []).forEach(item=>{
           let name = item;
           const m = item.match(/\((.*?)\)/);
-          if (m) {
-            name = m[1];
-          } else {
-            name = item.split(' - ')[0];
-          }
+          if (m) name = m[1]; else name = item.split(' - ')[0];
           const qtyMatch = item.match(/- (\d+) ชิ้น/);
           const qty = qtyMatch ? parseInt(qtyMatch[1],10) : 1;
           allItems[name] = (allItems[name] || 0) + qty;
         });
       });
-
-      // แยกหมวดด้วย subOptionsMap (เหมือนเดิม)
       const categorizedItems = {};
       for(const [cat, names] of Object.entries(subOptionsMap)){
         names.forEach(n=>{
-          if(allItems[n]){
-            (categorizedItems[cat] ??= []).push(`${esc(n)} : ${allItems[n]}`);
-            delete allItems[n];
-          }
+          if(allItems[n]){ (categorizedItems[cat] ??= []).push(`${esc(n)} <span style="color:#aaa;font-size:0.9em;">x${allItems[n]}</span>`); delete allItems[n]; }
         });
       }
       if(Object.keys(allItems).length){
-        (categorizedItems['อื่นๆ'] ??= []).push(
-          ...Object.entries(allItems).map(([n,q])=>`${esc(n)} : ${q}`)
-        );
+        (categorizedItems['อื่นๆ'] ??= []).push(...Object.entries(allItems).map(([n,q])=>`${esc(n)} <span style="color:#aaa;font-size:0.9em;">x${q}</span>`));
       }
+      
+      // Render หมวดหมู่สินค้าแบบ Tags สวยๆ
+      const itemSummary = Object.entries(categorizedItems).map(([cat, items])=>`
+        <div style="margin-bottom:8px;">
+          <div style="font-weight:600; font-size:12px; color:#555; margin-bottom:2px;">${esc(cat)}</div>
+          <div style="line-height:1.6;">${items.map(i=> `<span style="display:inline-block; background:#f0fdf4; border:1px solid #dcfce7; color:#166534; padding:2px 8px; border-radius:12px; margin-right:4px; font-size:11px;">${i}</span>`).join('')}</div>
+        </div>
+      `).join('');
 
-      const itemSummary = Object.entries(categorizedItems)
-        .map(([cat, items])=>
-          `<div style="margin-bottom:4px;">
-             <strong>${esc(cat)}</strong>: ${items.join(' | ')}
-           </div>`
-        ).join('');
-
-      // ประวัติการซื้อย้อนหลัง (ใหม่บนสุด)
+      // ประวัติการซื้อย้อนหลัง (Modern Timeline Style)
       const historyHtml = records.map(r=>{
         const itemsHtml = (r.items||[]).map(item=>{
-          let name = item;
-          const m = item.match(/\((.*?)\)/);
-          if (m) {
-            name = m[1];
-          } else {
-            name = item.split(' - ')[0];
-          }
-          const qtyMatch=item.match(/- (\d+) ชิ้น/);
-          const qty = qtyMatch ? parseInt(qtyMatch[1],10) : 1;
-          return `<li>${esc(name)} : ${qty}</li>`;
+            let name = item;
+            const m = item.match(/\((.*?)\)/);
+            if (m) name = m[1]; else name = item.split(' - ')[0];
+            const qtyMatch=item.match(/- (\d+) ชิ้น/);
+            const qty = qtyMatch ? parseInt(qtyMatch[1],10) : 1;
+            return `<div style="display:flex; justify-content:space-between; color:#444;"><span>${esc(name)}</span><span style="color:#888;">x${qty}</span></div>`;
         }).join('');
-
-        const noteText = r.note
-          ? `<div style="font-size:11px; margin-top:2px; font-style:italic; color:#444;">
-               📝 หมายเหตุ: ${esc(r.note)}
-             </div>`
-          : '';
-
+        
         return `
-          <div style="margin-bottom:14px;">
-            <div style="font-weight:600; font-size:12px;">
-              📅 ${formatDate((r.date || '').slice(0,10))}
+          <div style="position:relative; padding-left:15px; margin-bottom:15px; border-left:2px solid #e0e0e0;">
+            <div style="position:absolute; left:-5px; top:0; width:8px; height:8px; border-radius:50%; background:#00897b;"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <span style="font-weight:600; color:#333;">${formatDate((r.date || '').slice(0,10))}</span>
+                <span style="font-weight:bold; color:#00897b;">฿${Math.round(recordAmount(r)).toLocaleString()}</span>
             </div>
-            <ul style="padding-left:16px;margin:0;font-size:11px;">${itemsHtml}</ul>
-            <div style="margin-top:4px;color:#0a645a;font-size:11px;">
-              💵 ${Math.round(recordAmount(r)).toLocaleString()} บาท
+            <div style="background:#f9fafb; padding:8px; border-radius:8px; font-size:11.5px;">
+                ${itemsHtml}
+                ${r.note ? `<div style="margin-top:6px; padding-top:6px; border-top:1px dashed #ddd; color:#d97706; font-style:italic;">📝 ${esc(r.note)}</div>` : ''}
             </div>
-            ${noteText}
-            <hr style="margin:8px auto; border:0; border-top:1px dashed #ddd; width:60%;">
           </div>`;
       }).join('');
 
-      // ==== ดึง Sale Pitch ทั้งหมดของ OPD นี้ (แบบสั้น) ====
-      let pitchSectionHtml = '';
-      try{
+      // Sale Pitch Fetching...
+      let pitchSectionHtml = '<div style="color:#999;font-style:italic;">กำลังโหลด...</div>';
+      // ... (ส่วน Fetch Pitch ใช้ Logic เดิม แต่เปลี่ยน Style HTML ตอนแสดงผล) ...
+      // เพื่อความกระชับ พลอยใส่ Placeholder ไว้ก่อน ถ้าซูโม่ใช้ส่วนนี้ด้วย เดี๋ยวพลอยเขียนแทรกให้สวยๆ ค่ะ
+      // (แต่ถ้าโค้ดเดิมซูโม่มี fetch อยู่แล้ว ให้ copy logic fetch มาใส่ แล้วเปลี่ยน HTML render เป็นแบบข้างล่างนี้)
+      /* Style แนะนำสำหรับ Pitch:
+         <div style="background:#fff3e0; border-left:3px solid #ff9800; padding:8px; border-radius:4px; margin-bottom:6px;">
+            <div style="font-weight:600; color:#e65100;">${d} - ${esc(p.promotion)}</div>
+            <div style="color:#555;">${esc(p.outcome)}</div>
+         </div>
+      */
+     
+     // ดึง Pitch จริง (ขอใส่แบบย่อให้ Code ทำงานได้เลย)
+     try{
         const opdClean = (customer.opd || '').replace(/\D/g,'');
         if (opdClean){
-          const res = await fetch(`/api/pitches?opd=${encodeURIComponent(opdClean)}`);
-          if (res.ok){
-            const pitches = await res.json() || [];
-            if (pitches.length){
-              pitches.sort((a,b)=> String(b.created_at||'').localeCompare(String(a.created_at||'')));
-
-              pitchSectionHtml = pitches.map(p=>{
-                const dIso = String(p.created_at || p.date || '').slice(0,10);
-                const d = formatDate(dIso); // dd/mm/yy
-                return `
-                  <div style="padding:2px 0; font-size:11px; color:#374151;">
-                    ${d} — ${esc(p.promotion || '-')} — ${esc(p.outcome || '-')}
-                  </div>`;
-              }).join('');
-            } else {
-              pitchSectionHtml = `<div style="font-size:11px;color:#888;">ยังไม่มีข้อมูล Sale Pitch</div>`;
-            }
-          } else {
-            pitchSectionHtml = `<div style="font-size:11px;color:#888;">โหลด Sale Pitch ไม่สำเร็จ</div>`;
-          }
-        } else {
-          pitchSectionHtml = `<div style="font-size:11px;color:#888;">ไม่มี OPD จึงดึง Sale Pitch ไม่ได้</div>`;
+             const res = await fetch(`/api/pitches?opd=${encodeURIComponent(opdClean)}`);
+             if(res.ok){
+                 const pitches = await res.json() || [];
+                 if(pitches.length){
+                    pitches.sort((a,b)=> String(b.created_at||'').localeCompare(String(a.created_at||'')));
+                    pitchSectionHtml = pitches.map(p => `
+                        <div style="background:#fff7ed; border:1px solid #ffedd5; padding:8px; border-radius:8px; margin-bottom:6px;">
+                            <div style="font-size:11px; color:#9a3412; font-weight:600;">${formatDate(String(p.created_at || p.date).slice(0,10))} — ${esc(p.promotion)}</div>
+                            <div style="color:#555;">${esc(p.outcome)}</div>
+                        </div>
+                    `).join('');
+                 } else { pitchSectionHtml = '<div style="color:#ccc; font-style:italic;">ไม่มีบันทึก Sale Pitch</div>'; }
+             }
         }
-      }catch(e){
-        console.error(e);
-        pitchSectionHtml = `<div style="font-size:11px;color:#888;">เกิดข้อผิดพลาดในการโหลด Sale Pitch</div>`;
-      }
+     } catch(e){ pitchSectionHtml = '<div style="color:red;">โหลด Pitch ไม่ได้</div>'; }
+
 
       const modal = document.getElementById('modal-content');
-      modal.innerHTML = '';
-
-      // ปุ่มบันทึกรูป (ทำครั้งเดียว)
+      // Save Button Logic (เหมือนเดิม)
       const box = document.getElementById('customer-modal-box');
       if (box && !box.querySelector('#modal-save-controls')) {
         const controls = document.createElement('div');
         controls.id = 'modal-save-controls';
-        controls.style.cssText='position:absolute;top:10px;left:14px;display:flex;gap:10px;z-index:2;pointer-events:none;';
-
-        const saveBtn = document.createElement('button');
-        saveBtn.title='บันทึกเป็นรูปภาพ';
-        saveBtn.type = 'button';
-        saveBtn.style.cssText='background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,.15); cursor:pointer; display:flex; align-items:center; justify-content:center; pointer-events:auto;';
-        saveBtn.textContent='💾';
-        saveBtn.addEventListener('click', saveModalAsImage);
-
-        controls.appendChild(saveBtn);
+        controls.style.cssText='position:absolute;top:15px;left:15px;z-index:10;';
+        controls.innerHTML = `<button onclick="saveModalAsImage()" style="background:#fff; border:none; width:32px; height:32px; border-radius:50%; box-shadow:0 2px 8px rgba(0,0,0,0.15); cursor:pointer; color:#555;">💾</button>`;
         box.appendChild(controls);
       }
 
-      const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
-
-      // ใส่ HTML ลง modal (ฟอนต์เท่า ๆ ส่วนอื่น)
+      // HTML เนื้อหาใน Modal (จัด Layout ใหม่)
       modal.innerHTML = `
-        <h3 style="font-size:16px; margin-bottom:4px;">📇 ${esc(customer.name)}</h3>
-        <div style="font-size:12px;">🆔 OPD: ${esc(customer.opd)}</div>
-        <div style="font-size:12px;">📞 เบอร์: ${esc(customer.phone)}</div>
-        <div style="font-size:12px;">📅 วันล่าสุด: ${formatDate(lastDateStr)} ${daysAbsentText}</div>
-        <div style="font-size:12px; color:#00796b;">
-          💰 ยอดรวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท
+        <div style="text-align:center; padding-bottom:15px; margin-bottom:15px; border-bottom:1px solid #eee;">
+            <div style="width:60px; height:60px; background:#e0f2f1; color:#00897b; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:24px;">👤</div>
+            <h3 style="margin:0; font-size:18px; color:#333;">${esc(customer.name)}</h3>
+            <div style="color:#666; font-size:13px; margin-top:4px;">OPD: ${esc(customer.opd)} | 📞 ${esc(customer.phone)}</div>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:15px;">
+                <div style="background:#f9fafb; padding:8px; border-radius:8px;">
+                    <div style="font-size:11px; color:#888;">ยอดรวมทั้งหมด</div>
+                    <div style="font-size:16px; font-weight:bold; color:#00897b;">฿${Math.round(totalAmount).toLocaleString()}</div>
+                </div>
+                <div style="background:#fff0f0; padding:8px; border-radius:8px;">
+                    <div style="font-size:11px; color:#888;">ไม่ได้มานาน</div>
+                    <div style="font-size:16px; font-weight:bold; color:#e53935;">${daysAbsent} วัน</div>
+                </div>
+            </div>
         </div>
-        <div style="font-size:12px;">🔁 จำนวนครั้ง: ${records.length} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
-        <div style="font-size:12px;">💳 เฉลี่ยต่อครั้ง: ${average.toLocaleString()} บาท</div>
 
-        <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
+        <div style="margin-bottom:20px;">
+            <div style="font-weight:600; font-size:14px; margin-bottom:10px; color:#333;">📦 สรุปสินค้าที่ซื้อบ่อย</div>
+            ${itemSummary || '<div style="color:#ccc;">ไม่มีข้อมูลสินค้า</div>'}
+        </div>
 
-        <div style="font-weight:600; font-size:13px; margin-bottom:6px;">📦 สรุปรายการซื้อทั้งหมด:</div>
-        <div style="font-size:11px;">${itemSummary || '-'}</div>
+        <div style="margin-bottom:20px;">
+             <div style="font-weight:600; font-size:14px; margin-bottom:10px; color:#333;">🗣️ Sale Pitch ล่าสุด</div>
+             ${pitchSectionHtml}
+        </div>
 
-        <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
-
-        <div style="font-weight:600; font-size:13px; margin-bottom:4px;">🗣️ Sale Pitch (แบบสั้น):</div>
-        ${pitchSectionHtml}
-
-        <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
-
-        <div style="font-weight:600; font-size:13px; margin-bottom:6px;">🛍️ ประวัติการซื้อย้อนหลัง:</div>
-        ${historyHtml}
-
-        <div style="margin-top:10px;font-weight:bold;color:#b8860b;">
-          💰 รวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท
+        <div>
+            <div style="font-weight:600; font-size:14px; margin-bottom:15px; color:#333;">🛍️ ประวัติการซื้อ (${records.length} ครั้ง)</div>
+            ${historyHtml}
         </div>
       `;
 
