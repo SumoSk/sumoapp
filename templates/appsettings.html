@@ -1,0 +1,331 @@
+<!-- templates/appsettings.html -->
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Setting</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif;margin:0;background:#f6f7fb;}
+    .wrap{max-width:980px;margin:0 auto;padding:16px;}
+    .card{background:#fff;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,.08);padding:14px;margin-bottom:12px;}
+    h1{font-size:20px;margin:6px 0 12px;}
+    h2{font-size:16px;margin:0 0 10px;}
+    .row{display:flex;gap:10px;flex-wrap:wrap;}
+    .row > *{flex:1;}
+    input,select,button{padding:10px;border-radius:10px;border:1px solid #d7dbe6;font-size:14px;}
+    button{cursor:pointer;border:none;background:#1f6feb;color:#fff;}
+    button.secondary{background:#5b6475;}
+    button.danger{background:#d93b3b;}
+    button.ghost{background:#eef1f7;color:#222;}
+    table{width:100%;border-collapse:collapse;}
+    th,td{padding:10px;border-bottom:1px solid #eef1f7;text-align:left;font-size:14px;vertical-align:top;}
+    .tag{display:inline-block;padding:2px 8px;border-radius:999px;background:#eef1f7;font-size:12px;margin-left:6px;}
+    .tag.old{background:#fff2cc;}
+    .muted{color:#667085;font-size:12px;}
+    .tabs{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+    .tabs button{background:#eef1f7;color:#111;}
+    .tabs button.active{background:#111;color:#fff;}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>ตั้งค่า (สินค้า / หมวด / ถังขยะ)</h1>
+      <div class="muted">ล็อกอินเหมือนเดิม • ลบทิ้ง = ไป “ถังขยะ/เก่า” ไม่กระทบบิลเก่า</div>
+    </div>
+
+    <div class="card">
+      <div class="tabs">
+        <button id="tabCats" class="active">หมวดสินค้า</button>
+        <button id="tabProds">สินค้า</button>
+        <button id="tabTrash">ถังขยะ <span class="tag old">เก่า</span></button>
+      </div>
+
+      <!-- ============ CATEGORIES ============ -->
+      <div id="panelCats">
+        <h2>เพิ่มหมวด</h2>
+        <div class="row">
+          <input id="catName" placeholder="ชื่อหมวด" />
+          <input id="catSort" type="number" placeholder="ลำดับ (sort_order)" value="0" />
+          <select id="catActive">
+            <option value="true">ใช้งาน</option>
+            <option value="false">ปิด</option>
+          </select>
+          <button id="btnAddCat">เพิ่ม</button>
+        </div>
+
+        <hr style="border:none;border-top:1px solid #eef1f7;margin:14px 0;">
+
+        <h2>รายการหมวด</h2>
+        <div style="overflow:auto;">
+          <table id="catsTable">
+            <thead>
+              <tr>
+                <th>ชื่อ</th>
+                <th>ลำดับ</th>
+                <th>สถานะ</th>
+                <th style="width:240px;">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============ PRODUCTS ============ -->
+      <div id="panelProds" style="display:none;">
+        <h2>เพิ่มสินค้า</h2>
+        <div class="row">
+          <select id="prodCat"></select>
+          <input id="prodName" placeholder="ชื่อสินค้า" />
+          <input id="prodPrice" type="number" step="0.01" placeholder="ราคาตั้งต้น (ถ้าไม่ใช้ปล่อยว่าง)" />
+          <input id="prodSort" type="number" placeholder="ลำดับ (sort_order)" value="0" />
+          <select id="prodActive">
+            <option value="true">ใช้งาน</option>
+            <option value="false">ปิด</option>
+          </select>
+          <button id="btnAddProd">เพิ่ม</button>
+        </div>
+
+        <hr style="border:none;border-top:1px solid #eef1f7;margin:14px 0;">
+
+        <h2>รายการสินค้า</h2>
+        <div style="overflow:auto;">
+          <table id="prodsTable">
+            <thead>
+              <tr>
+                <th>ชื่อ</th>
+                <th>หมวด</th>
+                <th>ราคา</th>
+                <th>ลำดับ</th>
+                <th>สถานะ</th>
+                <th style="width:320px;">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============ TRASH ============ -->
+      <div id="panelTrash" style="display:none;">
+        <h2>ถังขยะ <span class="tag old">เก่า</span></h2>
+        <div class="muted">รายการที่ “ลบ” จะมาอยู่ตรงนี้ (deleted_at ไม่ว่าง) — กู้คืนได้</div>
+        <div style="overflow:auto;margin-top:10px;">
+          <table id="trashTable">
+            <thead>
+              <tr>
+                <th>ชื่อ</th>
+                <th>หมวด</th>
+                <th>ลบเมื่อ</th>
+                <th style="width:220px;">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    {% include 'floating_menu.html' %}
+  </div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  let categories = [];
+  let products = [];
+
+  function setTab(which){
+    $('tabCats').classList.toggle('active', which==='cats');
+    $('tabProds').classList.toggle('active', which==='prods');
+    $('tabTrash').classList.toggle('active', which==='trash');
+    $('panelCats').style.display = which==='cats' ? '' : 'none';
+    $('panelProds').style.display = which==='prods' ? '' : 'none';
+    $('panelTrash').style.display = which==='trash' ? '' : 'none';
+  }
+
+  $('tabCats').onclick = ()=>setTab('cats');
+  $('tabProds').onclick = ()=>setTab('prods');
+  $('tabTrash').onclick = ()=>setTab('trash');
+
+  async function api(url, method='GET', body=null){
+    const opt = { method, headers: {} };
+    if(body){
+      opt.headers['Content-Type'] = 'application/json';
+      opt.body = JSON.stringify(body);
+    }
+    const res = await fetch(url, opt);
+    const data = await res.json().catch(()=> ({}));
+    if(!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+    return data;
+  }
+
+  function renderCatSelect(){
+    const sel = $('prodCat');
+    sel.innerHTML = '';
+    categories
+      .slice()
+      .sort((a,b)=> (a.sort_order||0)-(b.sort_order||0) || (a.name||'').localeCompare(b.name||''))
+      .forEach(c=>{
+        const op=document.createElement('option');
+        op.value=c.id;
+        op.textContent = `${c.name}${c.is_active ? '' : ' (ปิด)'}`;
+        sel.appendChild(op);
+      });
+  }
+
+  function renderCatsTable(){
+    const tb = $('catsTable').querySelector('tbody');
+    tb.innerHTML='';
+    categories.forEach(c=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td><input value="${(c.name||'').replaceAll('"','&quot;')}" data-k="name"></td>
+        <td><input type="number" value="${c.sort_order ?? 0}" data-k="sort_order"></td>
+        <td>
+          <select data-k="is_active">
+            <option value="true" ${c.is_active ? 'selected':''}>ใช้งาน</option>
+            <option value="false" ${!c.is_active ? 'selected':''}>ปิด</option>
+          </select>
+        </td>
+        <td class="actions">
+          <button class="secondary" data-act="save">บันทึก</button>
+        </td>
+      `;
+      tr.querySelector('[data-act="save"]').onclick = async ()=>{
+        const name = tr.querySelector('[data-k="name"]').value.trim();
+        const sort_order = parseInt(tr.querySelector('[data-k="sort_order"]').value || '0', 10);
+        const is_active = (tr.querySelector('[data-k="is_active"]').value === 'true');
+        await api('/api/categories','PUT',{id:c.id,name,sort_order,is_active});
+        await loadAll();
+        alert('บันทึกแล้ว');
+      };
+      tb.appendChild(tr);
+    });
+  }
+
+  function catNameById(id){
+    const c = categories.find(x=>x.id===id);
+    return c ? c.name : '-';
+  }
+
+  function renderProdsTable(){
+    const tb = $('prodsTable').querySelector('tbody');
+    tb.innerHTML='';
+
+    const active = products.filter(p=> !p.deleted_at);
+    active.forEach(p=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td><input value="${(p.name||'').replaceAll('"','&quot;')}" data-k="name"></td>
+        <td>
+          <select data-k="category_id">
+            ${categories.map(c=>`<option value="${c.id}" ${c.id===p.category_id?'selected':''}>${c.name}</option>`).join('')}
+          </select>
+        </td>
+        <td><input type="number" step="0.01" value="${p.default_price ?? ''}" data-k="default_price"></td>
+        <td><input type="number" value="${p.sort_order ?? 0}" data-k="sort_order"></td>
+        <td>
+          <select data-k="is_active">
+            <option value="true" ${p.is_active ? 'selected':''}>ใช้งาน</option>
+            <option value="false" ${!p.is_active ? 'selected':''}>ปิด</option>
+          </select>
+        </td>
+        <td class="actions">
+          <button class="secondary" data-act="save">บันทึก</button>
+          <button class="danger" data-act="trash">ลบ (ไปถังขยะ)</button>
+        </td>
+      `;
+
+      tr.querySelector('[data-act="save"]').onclick = async ()=>{
+        const name = tr.querySelector('[data-k="name"]').value.trim();
+        const category_id = tr.querySelector('[data-k="category_id"]').value;
+        const default_price = tr.querySelector('[data-k="default_price"]').value;
+        const sort_order = parseInt(tr.querySelector('[data-k="sort_order"]').value || '0', 10);
+        const is_active = (tr.querySelector('[data-k="is_active"]').value === 'true');
+        await api('/api/products','PUT',{id:p.id,name,category_id,default_price,sort_order,is_active});
+        await loadAll();
+        alert('บันทึกแล้ว');
+      };
+
+      tr.querySelector('[data-act="trash"]').onclick = async ()=>{
+        if(!confirm('ย้ายไปถังขยะใช่ไหม? (บิลเก่าไม่กระทบ)')) return;
+        await api('/api/products','DELETE',{id:p.id});
+        await loadAll();
+      };
+
+      tb.appendChild(tr);
+    });
+  }
+
+  function renderTrash(){
+    const tb = $('trashTable').querySelector('tbody');
+    tb.innerHTML='';
+    const trash = products.filter(p=> !!p.deleted_at);
+
+    trash.forEach(p=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td>${p.name} <span class="tag old">เก่า</span></td>
+        <td>${catNameById(p.category_id)}</td>
+        <td class="muted">${String(p.deleted_at||'').replace('T',' ').replace('Z','')}</td>
+        <td class="actions">
+          <button class="secondary" data-act="restore">กู้คืน</button>
+        </td>
+      `;
+      tr.querySelector('[data-act="restore"]').onclick = async ()=>{
+        await api('/api/products_restore','POST',{id:p.id});
+        await loadAll();
+      };
+      tb.appendChild(tr);
+    });
+  }
+
+  async function loadAll(){
+    categories = await api('/api/categories');
+    products = await api('/api/products');
+    renderCatSelect();
+    renderCatsTable();
+    renderProdsTable();
+    renderTrash();
+  }
+
+  $('btnAddCat').onclick = async ()=>{
+    const name = $('catName').value.trim();
+    const sort_order = parseInt($('catSort').value || '0', 10);
+    const is_active = ($('catActive').value === 'true');
+    if(!name) return alert('กรอกชื่อหมวดก่อน');
+    await api('/api/categories','POST',{name,sort_order,is_active});
+    $('catName').value='';
+    $('catSort').value='0';
+    $('catActive').value='true';
+    await loadAll();
+  };
+
+  $('btnAddProd').onclick = async ()=>{
+    const category_id = $('prodCat').value;
+    const name = $('prodName').value.trim();
+    const default_price = $('prodPrice').value;
+    const sort_order = parseInt($('prodSort').value || '0', 10);
+    const is_active = ($('prodActive').value === 'true');
+    if(!category_id) return alert('เลือกหมวดก่อน');
+    if(!name) return alert('กรอกชื่อสินค้าก่อน');
+
+    await api('/api/products','POST',{category_id,name,default_price,sort_order,is_active});
+    $('prodName').value='';
+    $('prodPrice').value='';
+    $('prodSort').value='0';
+    $('prodActive').value='true';
+    await loadAll();
+  };
+
+  loadAll().catch(err=>{
+    console.error(err);
+    alert('โหลดข้อมูลไม่สำเร็จ: ' + err.message);
+  });
+</script>
+</body>
+</html>

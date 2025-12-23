@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import json
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict, deque
 from math import isfinite
 from typing import Any, Dict, List
@@ -16,11 +16,11 @@ from flask import (
     url_for,
     session,
     jsonify,
-    abort,
 )
 from werkzeug.security import check_password_hash
 from dotenv import load_dotenv
 from supabase import create_client, Client
+from functools import wraps
 
 # =============================================================
 # Environment & App Setup
@@ -30,7 +30,6 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", os.urandom(32))
 
-# Harden cookies (works on HTTPS; set SECURE only in prod if needed)
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
@@ -48,225 +47,262 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # =============================================================
 # Simple rate limiters (in-memory)
 # =============================================================
-# Basic sliding window limiter per IP for sensitive endpoints
 _LOGIN_ATTEMPTS: Dict[str, deque] = defaultdict(deque)
 _PIN_ATTEMPTS: Dict[str, deque] = defaultdict(deque)
 
-RATE_WINDOW_SEC = 300  # 5 minutes
+RATE_WINDOW_SEC = 300
 MAX_LOGIN_ATTEMPTS = 10
 MAX_PIN_ATTEMPTS = 20
+
 
 def _rate_limited(bucket: Dict[str, deque], max_events: int, window_sec: int) -> bool:
     ip = request.headers.get("X-Forwarded-For", request.remote_addr or "-")
     dq = bucket[ip]
     now = time.time()
-    # drop old
     while dq and (now - dq[0] > window_sec):
         dq.popleft()
-    # check
     if len(dq) >= max_events:
         return True
     dq.append(now)
     return False
 
+
 # =============================================================
 # Helpers
 # =============================================================
-# ⬇️ อนุญาตเฉพาะฟิลด์เหล่านี้ (ไม่มี vip และเพิ่ม profile)
 SAFE_CUSTOMER_FIELDS = {"name", "phone", "birthMonth", "note", "profile"}
 
+
 def login_required(view_func):
+    @wraps(view_func)
     def wrapper(*args, **kwargs):
         if "username" not in session:
             return redirect(url_for("login"))
         return view_func(*args, **kwargs)
-    wrapper.__name__ = view_func.__name__
+
     return wrapper
+
 
 def normalize_opd(opd: Any) -> str:
     if opd is None:
         return ""
     return str(opd).strip().zfill(4)
 
+
 def safe_date_str(d: Any) -> str:
-    # Expect 'YYYY-MM-DD...' and keep first 10 chars
     if not d:
         return ""
     return str(d)[:10]
 
-# --- NEW: sanitize helper — แปลง -, – , — ให้เป็นค่าว่าง ---
+
 def _clean_dash(v):
     if v is None:
         return None
     s = str(v).strip()
     return "" if s in {"-", "–", "—"} else s
 
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
 # =============================================================
 # Auth Views
 # =============================================================
-@app.route('/', methods=['GET', 'POST'])
+@app.route("/", methods=["GET", "POST"])
 def login():
     error = None
-    if request.method == 'POST':
+    if request.method == "POST":
         if _rate_limited(_LOGIN_ATTEMPTS, MAX_LOGIN_ATTEMPTS, RATE_WINDOW_SEC):
-            error = 'พยายามเข้าสู่ระบบถี่เกินไป กรุณารอสักครู่'
-            return render_template('login.html', error=error), 429
+            error = "พยายามเข้าสู่ระบบถี่เกินไป กรุณารอสักครู่"
+            return render_template("login.html", error=error), 429
 
-        username = (request.form.get('username') or '').strip()
-        password = (request.form.get('password') or '').strip()
+        username = (request.form.get("username") or "").strip()
+        password = (request.form.get("password") or "").strip()
 
         try:
-            result = supabase.table("users").select("*").eq("username", username).single().execute()
+            result = (
+                supabase.table("users")
+                .select("*")
+                .eq("username", username)
+                .single()
+                .execute()
+            )
             user = result.data
             if user:
-                stored = user.get('password_hash') or ''
+                stored = user.get("password_hash") or ""
                 ok = False
                 try:
-                    # supports werkzeug hash e.g. pbkdf2:sha256:...
                     ok = check_password_hash(stored, password)
                 except Exception:
                     ok = False
-                # Fallback for legacy plain-text (encourage migrating to hashes)
+
                 if ok or stored == password:
                     session.permanent = True
-                    session['username'] = user.get('username', username)
-                    session['role'] = user.get('role', '')
-                    return redirect(url_for('dashboard'))
-            error = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
+                    session["username"] = user.get("username", username)
+                    session["role"] = user.get("role", "")
+                    return redirect(url_for("dashboard"))
+            error = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"
         except Exception:
-            error = 'เกิดข้อผิดพลาดในการเชื่อมต่อกับระบบ'
-    return render_template('login.html', error=error)
+            error = "เกิดข้อผิดพลาดในการเชื่อมต่อกับระบบ"
 
-@app.route('/logout')
+    return render_template("login.html", error=error)
+
+
+@app.route("/logout")
 @login_required
 def logout():
     session.clear()
-    return redirect(url_for('login'))
+    return redirect(url_for("login"))
 
-@app.route('/pin-login', methods=['POST'])
+
+@app.route("/pin-login", methods=["POST"])
 def pin_login():
     if _rate_limited(_PIN_ATTEMPTS, MAX_PIN_ATTEMPTS, RATE_WINDOW_SEC):
         return jsonify({"success": False, "error": "too_many_requests"}), 429
+
     data = request.get_json(silent=True) or {}
-    pin = (data.get('pin') or '').strip()
+    pin = (data.get("pin") or "").strip()
     try:
         result = supabase.table("users").select("*").eq("pin", pin).single().execute()
         user = result.data
         if user:
             session.permanent = True
-            session['username'] = user.get('username')
-            session['role'] = user.get('role', '')
+            session["username"] = user.get("username")
+            session["role"] = user.get("role", "")
             return jsonify({"success": True})
         return jsonify({"success": False})
     except Exception as e:
         app.logger.error(f"PIN LOGIN ERROR: {e}")
         return jsonify({"success": False})
 
+
 # =============================================================
 # Page Views (UI)
 # =============================================================
-@app.route('/dashboard')
+@app.route("/dashboard")
 @login_required
 def dashboard():
-    return render_template('dashboard.html', username=session['username'], role=session.get('role', ''))
+    return render_template(
+        "dashboard.html", username=session["username"], role=session.get("role", "")
+    )
 
-@app.route('/record_sales')
+
+@app.route("/record_sales")
 @login_required
 def record_sales():
-    return render_template('record_sales.html')
+    return render_template("record_sales.html")
 
-@app.route('/sale_summary')
+
+@app.route("/sale_summary")
 @login_required
 def sale_summary():
-    return render_template('sale-summary.html')
+    return render_template("sale-summary.html")
 
-@app.route('/record_customer')
+
+@app.route("/record_customer")
 @login_required
 def record_customer():
-    return render_template('record_customer.html')
+    return render_template("record_customer.html")
 
-@app.route('/customer_list')
+
+@app.route("/customer_list")
 @login_required
 def customer_list():
-    return render_template('customer_list.html')
+    return render_template("customer_list.html")
 
-@app.route('/oldsaledata')
+
+@app.route("/oldsaledata")
 @login_required
 def oldsaledata():
-    return render_template('oldsaledata.html')
+    return render_template("oldsaledata.html")
 
-@app.route('/inventory')
+
+@app.route("/inventory")
 @login_required
 def inventory():
-    return render_template('inventory.html')
+    return render_template("inventory.html")
 
-@app.route('/appointments')
+
+@app.route("/appointments")
 @login_required
 def appointments():
-    return render_template('appointments.html')
+    return render_template("appointments.html")
 
-@app.route('/sales_chart')
+
+@app.route("/sales_chart")
 @login_required
 def sales_chart():
-    return render_template('sales_chart.html')
+    return render_template("sales_chart.html")
 
-@app.route('/daily_sales_graph')
+
+@app.route("/daily_sales_graph")
 @login_required
 def daily_sales_graph():
-    return render_template('daily_sales_graph.html')
+    return render_template("daily_sales_graph.html")
 
-@app.route('/crm')
+
+@app.route("/crm")
 @login_required
 def crm():
-    return render_template('crm.html')
+    return render_template("crm.html")
 
-@app.route('/staff')
+
+@app.route("/staff")
 @login_required
 def staff():
-    return render_template('staff.html')
+    return render_template("staff.html")
 
-@app.route('/tax')
+
+@app.route("/tax")
 @login_required
 def tax_page():
-    return render_template('tax.html', username=session['username'])
+    return render_template("tax.html", username=session["username"])
+
+
+# ✅ Settings page (ล็อกอินเหมือนเดิม)
+@app.route("/appsettings")
+@login_required
+def appsettings():
+    return render_template(
+        "appsettings.html",
+        username=session.get("username"),
+        role=session.get("role", ""),
+    )
+
 
 # =============================================================
-# API — Sales & Customers
+# API — Health
 # =============================================================
-@app.route('/api/test')
+@app.route("/api/test")
 def test_route():
     return jsonify({"status": "ok"})
 
-@app.route('/api/customers')
+
+# =============================================================
+# API — Customers
+# =============================================================
+@app.route("/api/customers")
 @login_required
 def api_customers():
-    """
-    ดึงลูกค้าทั้งหมด + แนบฟิลด์จากวิวสรุป Sales Pitch:
-      - sales_pitch_compact  : ล่าสุด 2 รายการ (สำหรับโชว์ในตาราง)
-      - sales_pitch_full     : รวมทั้งหมด (แสดงใน modal)
-      - pitch_count          : จำนวนรายการทั้งหมด
-    """
     try:
-        # 1) customers
         cust_res = supabase.table("customers").select("*").execute()
         customers = cust_res.data or []
 
-        # 2) pitch latest 2 (compact)
         lat_res = supabase.table("v_customer_pitch_latest2").select("*").execute()
         latest_map: Dict[str, str] = {}
         for r in lat_res.data or []:
             latest_map[str(r.get("opd") or "")] = r.get("pitch_latest2") or ""
 
-        # 3) full summary (all)
         sum_res = supabase.table("v_customer_pitch_summary").select("*").execute()
         summary_map: Dict[str, Dict[str, Any]] = {}
         for r in sum_res.data or []:
+            # ✅ FIX: วงเล็บให้ถูก
             summary_map[str(r.get("opd") or "")] = {
                 "pitch_summary": r.get("pitch_summary") or "",
                 "pitch_count": r.get("pitch_count") or 0,
             }
 
-        # 4) merge
         for c in customers:
             opd = str(c.get("opd") or "")
             sm = summary_map.get(opd, {})
@@ -278,13 +314,14 @@ def api_customers():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/update_customer', methods=['POST'])
+
+@app.route("/api/update_customer", methods=["POST"])
 @login_required
 def update_customer():
     data = request.get_json(force=True)
-    opd = normalize_opd(data.get('opd'))
-    field = (data.get('field') or '').strip()
-    value = data.get('value')
+    opd = normalize_opd(data.get("opd"))
+    field = (data.get("field") or "").strip()
+    value = data.get("value")
 
     if field not in SAFE_CUSTOMER_FIELDS:
         return jsonify({"error": "field_not_allowed"}), 400
@@ -295,14 +332,15 @@ def update_customer():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/add_customer', methods=['POST'])
+
+@app.route("/api/add_customer", methods=["POST"])
 @login_required
 def add_customer():
     data = request.get_json(force=True)
     data = dict(data or {})
-    data['opd'] = normalize_opd(data.get('opd'))
+    data["opd"] = normalize_opd(data.get("opd"))
     try:
-        check = supabase.table("customers").select("opd").eq("opd", data['opd']).execute()
+        check = supabase.table("customers").select("opd").eq("opd", data["opd"]).execute()
         if check.data:
             return jsonify({"error": "มี OPD นี้อยู่แล้ว"}), 400
         payload = {k: v for k, v in data.items() if k in (SAFE_CUSTOMER_FIELDS | {"opd"})}
@@ -311,58 +349,54 @@ def add_customer():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/delete_customer', methods=['POST'])
+
+@app.route("/api/delete_customer", methods=["POST"])
 @login_required
 def delete_customer_legacy():
-    # legacy behavior: delete sales by OPD only (keeps customer row)
     data = request.get_json(force=True)
-    opd = normalize_opd(data.get('opd'))
+    opd = normalize_opd(data.get("opd"))
     try:
         supabase.table("sales_records").delete().eq("opd", opd).execute()
         return jsonify({"message": "ลบสำเร็จ (เฉพาะยอดขาย)"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/delete_customer_and_sales', methods=['POST'])
+
+@app.route("/api/delete_customer_and_sales", methods=["POST"])
 @login_required
 def delete_customer_and_sales():
     data = request.get_json(force=True)
-    opd = normalize_opd(data.get('opd'))
+    opd = normalize_opd(data.get("opd"))
     try:
-        supabase.table('sales_records').delete().eq('opd', opd).execute()
-        supabase.table('customers').delete().eq('opd', opd).execute()
+        supabase.table("sales_records").delete().eq("opd", opd).execute()
+        supabase.table("customers").delete().eq("opd", opd).execute()
         return jsonify({"message": "ลบสำเร็จ"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# --- แก้ไขแล้ว: รองรับ start_date / end_date เพื่อความเร็ว ---
-@app.route('/api/sales')
+
+# =============================================================
+# API — Sales
+# =============================================================
+@app.route("/api/sales")
 @login_required
 def api_sales():
     try:
-        # 1. รับค่า Parameter จากหน้าบ้าน
-        opd = normalize_opd(request.args.get('opd', '').strip()) if request.args.get('opd') else ''
-        date = safe_date_str(request.args.get('date', '').strip()) if request.args.get('date') else ''
-        
-        # ✅ รับค่าช่วงเวลาเพิ่ม (นี่คือจุดเปลี่ยนความเร็ว)
-        start_date = safe_date_str(request.args.get('start_date', '').strip()) if request.args.get('start_date') else ''
-        end_date = safe_date_str(request.args.get('end_date', '').strip()) if request.args.get('end_date') else ''
+        opd = normalize_opd(request.args.get("opd", "").strip()) if request.args.get("opd") else ""
+        date = safe_date_str(request.args.get("date", "").strip()) if request.args.get("date") else ""
+        start_date = safe_date_str(request.args.get("start_date", "").strip()) if request.args.get("start_date") else ""
+        end_date = safe_date_str(request.args.get("end_date", "").strip()) if request.args.get("end_date") else ""
 
         q = supabase.table("sales_records").select("*")
-
-        # 2. สั่งกรองที่ Database ทันที (Server-Side Filtering)
         if opd:
             q = q.eq("opd", opd)
         if date:
             q = q.eq("date", date)
-        
-        # ✅ ถ้ามีวันที่ส่งมา ให้ตัดข้อมูลที่ไม่เกี่ยวออกไปเลย ไม่ต้องโหลดมาให้หนัก
         if start_date:
             q = q.gte("date", start_date)
         if end_date:
             q = q.lte("date", end_date)
 
-        # 3. ดึงข้อมูล (Pagination Loop)
         start = 0
         limit = 1000
         all_data = []
@@ -370,27 +404,25 @@ def api_sales():
             resp = q.range(start, start + limit - 1).execute()
             batch = resp.data or []
             all_data.extend(batch)
-            
             if len(batch) < limit:
                 break
             start += limit
-        
-        # แปลง item text -> items json (เหมือนเดิม)
+
         for r in all_data:
-            if 'item' in r:
+            if "item" in r:
                 try:
-                    r['items'] = json.loads(r['item'])
+                    r["items"] = json.loads(r["item"])
                 except Exception:
-                    r['items'] = []
-            
+                    r["items"] = []
+
         return jsonify(all_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/save_sales', methods=['POST'])
+
+@app.route("/api/save_sales", methods=["POST"])
 @login_required
 def save_sales():
-    # Accept a list of records. Each record may include `id` for update.
     data = request.get_json(force=True)
     if not isinstance(data, list):
         return jsonify({"error": "payload_must_be_list"}), 400
@@ -403,78 +435,79 @@ def save_sales():
             if not isinstance(rec, dict):
                 continue
 
-            # normalize
-            date = safe_date_str(rec.get('date'))
-            opd_4 = normalize_opd(rec.get('opd'))
+            date = safe_date_str(rec.get("date"))
+            opd_4 = normalize_opd(rec.get("opd"))
 
-            # ✅ upsert ข้อมูลลูกค้าแบบไม่ยุ่งกับ customers.note
-            if opd_4 and rec.get('name'):
+            # ✅ FIX: sanitize amount ให้เป็น float หรือ None (กัน "" ชน numeric)
+            amt = rec.get("amount")
+            if amt in ("", None):
+                amt = None
+            else:
+                try:
+                    amt = float(amt)
+                except Exception:
+                    amt = None
+
+            if opd_4 and rec.get("name"):
                 customer_data = {
-                    'opd': opd_4,
-                    'name': rec.get('name', ''),
-                    'phone': rec.get('phone', ''),
-                    'birthMonth': rec.get('birthMonth', ''),
-                    'profile': rec.get('profile', ''),  # หมายเหตุประจำลูกค้าถ้าอยากแก้ ให้แก้ผ่าน /api/update_customer เท่านั้น
+                    "opd": opd_4,
+                    "name": rec.get("name", ""),
+                    "phone": rec.get("phone", ""),
+                    "birthMonth": rec.get("birthMonth", ""),
+                    "profile": rec.get("profile", ""),
                 }
-                supabase.table('customers').upsert(customer_data, on_conflict=['opd']).execute()
+                supabase.table("customers").upsert(customer_data, on_conflict=["opd"]).execute()
 
-            # บันทึกยอดขาย (note ของ "บิล" อยู่ในตารางนี้เท่านั้น)
-            items = rec.get('items') or []
+            items = rec.get("items") or []
             rec_db = {
-                'date': date,
-                'opd': opd_4,
-                'name': rec.get('name', ''),
-                'phone': rec.get('phone', ''),
-                'amount': rec.get('amount'),
-                'payment': rec.get('payment'),
-                'note': rec.get('note', ''),           # ← note ของบิล
-                'item': json.dumps(items, ensure_ascii=False),
+                "date": date,
+                "opd": opd_4,
+                "name": rec.get("name", ""),
+                "phone": rec.get("phone", ""),
+                "amount": amt,  # ✅ ใช้ค่าที่ sanitize แล้ว
+                "payment": rec.get("payment"),
+                "note": rec.get("note", ""),
+                "item": json.dumps(items, ensure_ascii=False),
             }
 
-            # UPDATE if id provided
-            rec_id = rec.get('id')
+            rec_id = rec.get("id")
             if rec_id:
-                supabase.table('sales_records').update(rec_db).eq('id', rec_id).execute()
+                supabase.table("sales_records").update(rec_db).eq("id", rec_id).execute()
                 updated_count += 1
                 continue
 
-            # Duplicate guard (ใช้ opd+date+item+amount+payment+note)
             dup_q = (
-                supabase.table('sales_records')
-                .select('id')
-                .eq('opd', rec_db['opd'])
-                .eq('date', rec_db['date'])
-                .eq('item', rec_db['item'])
+                supabase.table("sales_records")
+                .select("id")
+                .eq("opd", rec_db["opd"])
+                .eq("date", rec_db["date"])
+                .eq("item", rec_db["item"])
             )
-            if rec_db.get('amount') is not None:
-                dup_q = dup_q.eq('amount', rec_db['amount'])
-            if rec_db.get('payment') is not None:
-                dup_q = dup_q.eq('payment', rec_db['payment'])
-            if rec_db.get('note'):
-                dup_q = dup_q.eq('note', rec_db['note'])
+            if rec_db.get("amount") is not None:
+                dup_q = dup_q.eq("amount", rec_db["amount"])
+            if rec_db.get("payment") is not None:
+                dup_q = dup_q.eq("payment", rec_db["payment"])
+            if rec_db.get("note"):
+                dup_q = dup_q.eq("note", rec_db["note"])
 
             dup = dup_q.execute().data
             if dup:
                 continue
 
-            supabase.table('sales_records').insert(rec_db).execute()
+            supabase.table("sales_records").insert(rec_db).execute()
             inserted_count += 1
 
-        return jsonify({
-            "message": "บันทึกสำเร็จ",
-            "inserted": inserted_count,
-            "updated": updated_count,
-        })
+        return jsonify({"message": "บันทึกสำเร็จ", "inserted": inserted_count, "updated": updated_count})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/api/delete_sales_record', methods=['POST'])
+@app.route("/api/delete_sales_record", methods=["POST"])
 @login_required
 def delete_sales_record():
     try:
         payload = request.get_json(force=True) or {}
-        record_id = payload.get('id')
+        record_id = payload.get("id")
         if not record_id:
             return jsonify({"error": "Missing ID"}), 400
         supabase.table("sales_records").delete().eq("id", record_id).execute()
@@ -482,7 +515,8 @@ def delete_sales_record():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/cleanup_duplicates')
+
+@app.route("/api/cleanup_duplicates")
 @login_required
 def cleanup_duplicates():
     try:
@@ -490,27 +524,256 @@ def cleanup_duplicates():
         all_data = response.data or []
         seen: Dict[Any, List[Dict[str, Any]]] = defaultdict(list)
         for row in all_data:
-            key = (row.get('opd'), safe_date_str(row.get('date')), row.get('amount'), row.get('payment'), row.get('item'), row.get('note'))
+            key = (
+                row.get("opd"),
+                safe_date_str(row.get("date")),
+                row.get("amount"),
+                row.get("payment"),
+                row.get("item"),
+                row.get("note"),
+            )
             seen[key].append(row)
+
         deleted = 0
         for rows in seen.values():
             if len(rows) > 1:
-                # keep the first, delete the rest
-                ids_to_delete = [r['id'] for r in rows[1:] if 'id' in r]
+                ids_to_delete = [r["id"] for r in rows[1:] if "id" in r]
                 if ids_to_delete:
                     supabase.table("sales_records").delete().in_("id", ids_to_delete).execute()
                     deleted += len(ids_to_delete)
+
         return jsonify({"message": f"ลบรายการซ้ำทั้งหมด {deleted} รายการเรียบร้อยแล้ว"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 # =============================================================
-# API — Sales Pitch (NEW)
+# ✅ Product Catalog APIs (ใช้กับ record_sales + appsettings)
 # =============================================================
-@app.route('/api/pitches')
+@app.route("/api/products_map")
+@login_required
+def api_products_map():
+    """
+    return แบบเดิมที่หน้า record_sales ใช้ง่าย:
+    {
+      "map": { "หมวด": [{"name": "...", "default_price": 0, "id": "..."}] },
+      "categories": [{"id":..,"name":..}],
+    }
+    เฉพาะที่ยังใช้งาน: categories.is_active=true และ products.is_active=true และ products.deleted_at is null
+    """
+    try:
+        cats = (
+            supabase.table("product_categories")
+            .select("id,name,sort_order,is_active")
+            .eq("is_active", True)
+            .order("sort_order", desc=False)
+            .order("name", desc=False)
+            .execute()
+        ).data or []
+
+        cat_ids = [c["id"] for c in cats if c.get("id")]
+        if not cat_ids:
+            return jsonify({"map": {}, "categories": []})
+
+        prods_q = (
+            supabase.table("products")
+            .select("id,name,default_price,sort_order,category_id,is_active,deleted_at")
+            .in_("category_id", cat_ids)
+            .eq("is_active", True)
+            .is_("deleted_at", "null")
+            .order("sort_order", desc=False)
+            .order("name", desc=False)
+        )
+        prods = (prods_q.execute().data or [])
+
+        # group
+        id_to_name = {c["id"]: c["name"] for c in cats}
+        out: Dict[str, List[Dict[str, Any]]] = {c["name"]: [] for c in cats}
+        for p in prods:
+            cn = id_to_name.get(p.get("category_id"))
+            if not cn:
+                continue
+            out.setdefault(cn, []).append({
+                "id": p.get("id"),
+                "name": p.get("name"),
+                "default_price": p.get("default_price"),
+                "sort_order": p.get("sort_order", 0),
+            })
+
+        return jsonify({"map": out, "categories": cats})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/categories", methods=["GET", "POST", "PUT"])
+@login_required
+def api_categories():
+    # NOTE: หมวด “ไม่ทำ soft delete” ในรอบนี้ (กันพังตอนสินค้าอ้างอิง)
+    if request.method == "GET":
+        try:
+            res = (
+                supabase.table("product_categories")
+                .select("*")
+                .order("sort_order", desc=False)
+                .order("name", desc=False)
+                .execute()
+            )
+            return jsonify(res.data or [])
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    data = request.get_json(force=True) or {}
+
+    try:
+        if request.method == "POST":
+            name = (data.get("name") or "").strip()
+            if not name:
+                return jsonify({"error": "missing_name"}), 400
+            payload = {
+                "name": name,
+                "sort_order": int(data.get("sort_order") or 0),
+                "is_active": bool(data.get("is_active", True)),
+            }
+            supabase.table("product_categories").insert(payload).execute()
+            return jsonify({"message": "ok"})
+
+        if request.method == "PUT":
+            cid = data.get("id")
+            if not cid:
+                return jsonify({"error": "missing_id"}), 400
+            patch = {}
+            if "name" in data:
+                patch["name"] = (data.get("name") or "").strip()
+            if "sort_order" in data:
+                patch["sort_order"] = int(data.get("sort_order") or 0)
+            if "is_active" in data:
+                patch["is_active"] = bool(data.get("is_active"))
+            if not patch:
+                return jsonify({"error": "no_fields"}), 400
+            supabase.table("product_categories").update(patch).eq("id", cid).execute()
+            return jsonify({"message": "ok"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/products", methods=["GET", "POST", "PUT", "DELETE"])
+@login_required
+def api_products():
+    """
+    ✅ DELETE = soft delete -> set deleted_at + is_active=false
+    """
+    if request.method == "GET":
+        try:
+            res = (
+                supabase.table("products")
+                .select("*")
+                .order("sort_order", desc=False)
+                .order("name", desc=False)
+                .execute()
+            )
+            return jsonify(res.data or [])
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    data = request.get_json(force=True) or {}
+
+    try:
+        if request.method == "POST":
+            category_id = data.get("category_id")
+            name = (data.get("name") or "").strip()
+            if not category_id or not name:
+                return jsonify({"error": "missing_category_or_name"}), 400
+
+            dp = data.get("default_price", None)
+            default_price = None
+            if dp is not None and dp != "":
+                try:
+                    default_price = float(dp)
+                except Exception:
+                    return jsonify({"error": "invalid_default_price"}), 400
+
+            payload = {
+                "category_id": category_id,
+                "name": name,
+                "default_price": default_price,
+                "sort_order": int(data.get("sort_order") or 0),
+                "is_active": bool(data.get("is_active", True)),
+            }
+            supabase.table("products").insert(payload).execute()
+            return jsonify({"message": "ok"})
+
+        if request.method == "PUT":
+            pid = data.get("id")
+            if not pid:
+                return jsonify({"error": "missing_id"}), 400
+
+            patch = {}
+            if "category_id" in data:
+                patch["category_id"] = data.get("category_id")
+            if "name" in data:
+                patch["name"] = (data.get("name") or "").strip()
+            if "sort_order" in data:
+                patch["sort_order"] = int(data.get("sort_order") or 0)
+            if "is_active" in data:
+                patch["is_active"] = bool(data.get("is_active"))
+            if "default_price" in data:
+                dp = data.get("default_price")
+                if dp is None or dp == "":
+                    patch["default_price"] = None
+                else:
+                    try:
+                        patch["default_price"] = float(dp)
+                    except Exception:
+                        return jsonify({"error": "invalid_default_price"}), 400
+
+            if "deleted_at" in data:
+                # allow UI to restore by sending deleted_at=null
+                patch["deleted_at"] = data.get("deleted_at")
+
+            if not patch:
+                return jsonify({"error": "no_fields"}), 400
+
+            supabase.table("products").update(patch).eq("id", pid).execute()
+            return jsonify({"message": "ok"})
+
+        if request.method == "DELETE":
+            pid = data.get("id")
+            if not pid:
+                return jsonify({"error": "missing_id"}), 400
+            supabase.table("products").update({
+                "deleted_at": _utc_now_iso(),
+                "is_active": False,
+            }).eq("id", pid).execute()
+            return jsonify({"message": "trashed"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/products_restore", methods=["POST"])
+@login_required
+def api_products_restore():
+    data = request.get_json(force=True) or {}
+    pid = data.get("id")
+    if not pid:
+        return jsonify({"error": "missing_id"}), 400
+    try:
+        supabase.table("products").update({
+            "deleted_at": None,
+            "is_active": True,
+        }).eq("id", pid).execute()
+        return jsonify({"message": "restored"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# =============================================================
+# API — Sales Pitch (เดิมของคุณ)
+# =============================================================
+@app.route("/api/pitches")
 @login_required
 def get_pitches():
-    """ดึงรายการ pitch ทั้งหมดของลูกค้า (ล่าสุดก่อน)"""
     opd = normalize_opd(request.args.get("opd", ""))
     if not opd:
         return jsonify({"error": "missing opd"}), 400
@@ -526,10 +789,10 @@ def get_pitches():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/add_pitch', methods=['POST'])
+
+@app.route("/api/add_pitch", methods=["POST"])
 @login_required
 def add_pitch():
-    """เพิ่มบันทึก pitch ใหม่ (append)"""
     data = request.get_json(force=True) or {}
     opd = normalize_opd(data.get("opd"))
     content = _clean_dash(data.get("content") or "")
@@ -541,14 +804,8 @@ def add_pitch():
         return jsonify({"error": "opd and content required"}), 400
 
     try:
-        ins = {
-            "opd": opd,
-            "content": content,
-            "channel": channel,
-            "outcome": outcome,
-            "author": author,
-        }
-        if 'promotion' in data:
+        ins = {"opd": opd, "content": content, "channel": channel, "outcome": outcome, "author": author}
+        if "promotion" in data:
             ins["promotion"] = _clean_dash(data.get("promotion"))
         r = supabase.table("customer_pitch_logs").insert(ins).execute()
         row = (r.data or [{}])[0]
@@ -556,208 +813,169 @@ def add_pitch():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/add_pitches_bulk', methods=['POST'])
+
+@app.route("/api/add_pitches_bulk", methods=["POST"])
 @login_required
 def add_pitches_bulk():
-    """
-    รับหลายรายการในครั้งเดียว (batch)
-    Payload: [{date:'YYYY-MM-DD', opd:'0123', promotion:'...', outcome:'...', content:'...', channel:'call'}]
-    หมายเหตุ: ถ้ายังไม่ได้เพิ่มคอลัมน์ promotion ใน DB ฟิลด์นี้จะถูกละเลย (ไม่ทำให้พัง)
-    """
-    # ให้แน่ใจว่า to_insert มีอยู่แม้ throw ก่อน
     to_insert: List[Dict[str, Any]] = []
     try:
         rows = request.get_json(force=True)
         if not isinstance(rows, list):
             return jsonify({"error": "payload_must_be_list"}), 400
 
-        author = session.get('username', '')
+        author = session.get("username", "")
 
         for r in rows:
-            date_str = (r.get('date') or '')[:10]
-            if not date_str:
-                date_str = datetime.utcnow().strftime('%Y-%m-%d')
-            # ใส่เวลา 12:00 UTC เพื่อกัน timezone ตัดวัน
+            date_str = (r.get("date") or "")[:10] or datetime.utcnow().strftime("%Y-%m-%d")
             created_at_iso = f"{date_str}T12:00:00Z"
 
             rec: Dict[str, Any] = {
-                "opd": normalize_opd(r.get('opd')),
-                "content": _clean_dash(r.get('content') or ''),
-                "channel": r.get('channel') or None,
-                "outcome": r.get('outcome') or None,
+                "opd": normalize_opd(r.get("opd")),
+                "content": _clean_dash(r.get("content") or ""),
+                "channel": r.get("channel") or None,
+                "outcome": r.get("outcome") or None,
                 "author": author or None,
                 "created_at": created_at_iso,
             }
-            # แนบ promotion เฉพาะถ้ามีใน payload
-            if 'promotion' in r and r.get('promotion') is not None:
-                rec["promotion"] = _clean_dash(r.get('promotion'))
-
+            if "promotion" in r and r.get("promotion") is not None:
+                rec["promotion"] = _clean_dash(r.get("promotion"))
             to_insert.append(rec)
 
         if not to_insert:
             return jsonify({"error": "empty"}), 400
 
-        supabase.table('customer_pitch_logs').insert(to_insert).execute()
+        supabase.table("customer_pitch_logs").insert(to_insert).execute()
         return jsonify({"inserted": len(to_insert), "message": "ok"})
     except Exception as e:
         msg = str(e)
-        if 'promotion' in msg.lower() and to_insert:
+        if "promotion" in msg.lower() and to_insert:
             try:
-                cleaned = [{k:v for k,v in r.items() if k != 'promotion'} for r in to_insert]
-                supabase.table('customer_pitch_logs').insert(cleaned).execute()
+                cleaned = [{k: v for k, v in r.items() if k != "promotion"} for r in to_insert]
+                supabase.table("customer_pitch_logs").insert(cleaned).execute()
                 return jsonify({"inserted": len(cleaned), "message": "ok (promotion skipped)"}), 200
             except Exception as e2:
                 return jsonify({"error": str(e2)}), 500
         return jsonify({"error": msg}), 500
 
-@app.route('/api/pitches_by_date')
+
+@app.route("/api/pitches_by_date")
 @login_required
 def pitches_by_date():
-    """
-    ดึงประวัติ Pitch ตามช่วงวัน (ใช้ created_at)
-    Query:
-      from=YYYY-MM-DD  to=YYYY-MM-DD
-      q=keyword (optional)  outcome=...  channel=...
-    Return: list of logs (เรียงใหม่→เก่า)
-    """
     try:
-        q_from = (request.args.get('from') or '').strip()
-        q_to = (request.args.get('to') or '').strip()
-        kw = (request.args.get('q') or '').strip().lower()
-        outcome = (request.args.get('outcome') or '').strip()
-        channel = (request.args.get('channel') or '').strip()
+        q_from = (request.args.get("from") or "").strip()
+        q_to = (request.args.get("to") or "").strip()
+        kw = (request.args.get("q") or "").strip().lower()
+        outcome = (request.args.get("outcome") or "").strip()
+        channel = (request.args.get("channel") or "").strip()
 
         if not q_from or not q_to:
-            today = datetime.utcnow().strftime('%Y-%m-%d')
+            today = datetime.utcnow().strftime("%Y-%m-%d")
             q_to = q_to or today
             q_from = q_from or today
 
         qry = (
-            supabase.table('customer_pitch_logs')
-            .select('*')
-            .gte('created_at', f'{q_from}T00:00:00Z')
-            .lte('created_at', f'{q_to}T23:59:59Z')
-            .order('created_at', desc=True)
+            supabase.table("customer_pitch_logs")
+            .select("*")
+            .gte("created_at", f"{q_from}T00:00:00Z")
+            .lte("created_at", f"{q_to}T23:59:59Z")
+            .order("created_at", desc=True)
         )
         if outcome:
-            qry = qry.eq('outcome', outcome)
+            qry = qry.eq("outcome", outcome)
         if channel:
-            qry = qry.eq('channel', channel)
+            qry = qry.eq("channel", channel)
 
         resp = qry.execute()
         rows = resp.data or []
 
-        # กรอง keyword ฝั่งแอป (รวม promotion ด้วยถ้ามี)
         if kw:
             tmp = []
             for r in rows:
-                s = ' '.join([
-                    str(r.get('opd') or ''),
-                    str(r.get('content') or ''),
-                    str(r.get('outcome') or ''),
-                    str(r.get('channel') or ''),
-                    str(r.get('author') or ''),
-                    str(r.get('promotion') or ''),
+                s = " ".join([
+                    str(r.get("opd") or ""),
+                    str(r.get("content") or ""),
+                    str(r.get("outcome") or ""),
+                    str(r.get("channel") or ""),
+                    str(r.get("author") or ""),
+                    str(r.get("promotion") or ""),
                 ]).lower()
                 if kw in s:
                     tmp.append(r)
             rows = tmp
 
-        # แนบ date ช่วย (YYYY-MM-DD)
         for r in rows:
-            ts = str(r.get('created_at') or '')
-            r['date'] = ts[:10] if ts else None
+            ts = str(r.get("created_at") or "")
+            r["date"] = ts[:10] if ts else None
 
         return jsonify(rows)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ===== NEW: Update / Delete Pitch for inline editing =====
-@app.route('/api/update_pitch', methods=['PUT'])
+
+@app.route("/api/update_pitch", methods=["PUT"])
 @login_required
 def update_pitch():
-    """
-    อัปเดตรายการ pitch ที่บันทึกไว้แล้ว
-    Body JSON: { id, promotion?, outcome?, content?, channel? }
-    """
     data = request.get_json(force=True) or {}
-    rec_id = data.get('id')
+    rec_id = data.get("id")
     if not rec_id:
         return jsonify({"error": "missing id"}), 400
 
-    allowed = {'promotion', 'outcome', 'content', 'channel'}
+    allowed = {"promotion", "outcome", "content", "channel"}
     payload = {k: _clean_dash(v) for k, v in data.items() if k in allowed}
-
     if not payload:
         return jsonify({"error": "no_fields_to_update"}), 400
 
     try:
-        res = supabase.table('customer_pitch_logs').update(payload).eq('id', rec_id).execute()
+        res = supabase.table("customer_pitch_logs").update(payload).eq("id", rec_id).execute()
         if not res.data:
             return jsonify({"error": "not_found"}), 404
         return jsonify({"message": "updated", "row": res.data[0]})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/delete_pitch', methods=['DELETE'])
+
+@app.route("/api/delete_pitch", methods=["DELETE"])
 @login_required
 def delete_pitch():
-    """
-    ลบรายการ pitch
-    ใช้ได้ทั้ง query string ?id=... หรือ ส่ง JSON {"id": ...}
-    """
-    rec_id = request.args.get('id')
+    rec_id = request.args.get("id")
     if not rec_id:
         body = request.get_json(silent=True) or {}
-        rec_id = body.get('id') if isinstance(body, dict) else None
+        rec_id = body.get("id") if isinstance(body, dict) else None
     if not rec_id:
         return jsonify({"error": "missing id"}), 400
 
     try:
-        res = supabase.table('customer_pitch_logs').delete().eq('id', rec_id).execute()
-        # Supabase จะคืน [] หากไม่มีแถวที่ลบ
-        if res.data is not None and len(res.data) == 0:
-            pass
+        supabase.table("customer_pitch_logs").delete().eq("id", rec_id).execute()
         return jsonify({"message": "deleted"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# --- NEW: one-off cleanup endpoint เพื่อล้างค่าขีดที่บันทึกค้างใน DB ---
-@app.route('/api/cleanup_pitch_dash', methods=['POST', 'GET'])
+
+@app.route("/api/cleanup_pitch_dash", methods=["POST", "GET"])
 @login_required
 def cleanup_pitch_dash():
     try:
-        supabase.table('customer_pitch_logs').update({'content': ''}).in_('content', ['-', '–', '—']).execute()
-        supabase.table('customer_pitch_logs').update({'promotion': ''}).in_('promotion', ['-', '–', '—']).execute()
+        supabase.table("customer_pitch_logs").update({"content": ""}).in_("content", ["-", "–", "—"]).execute()
+        supabase.table("customer_pitch_logs").update({"promotion": ""}).in_("promotion", ["-", "–", "—"]).execute()
         return jsonify({"message": "cleaned"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 # =============================================================
 # API — Reccord Sale (Extra)
 # =============================================================
-@app.route('/api/reccord_sale')
+@app.route("/api/reccord_sale")
 @login_required
 def api_reccord_sale():
-    """
-    ดึงยอดขายสำหรับโมดัลลูกค้า (ใช้กับ front ที่เรียก reccord_sale)
-    Query (optional):
-      - name: ชื่อลูกค้า (ilike)
-      - phone: เบอร์ (ilike)
-      - opd: OPD (จะ zfill เป็น 4 ให้)
-      - since: YYYY-MM-DD (>=)
-      - until: YYYY-MM-DD (<=)
-      - limit: จำนวนสูงสุด (default 2000)
-    Return: list[{ id, date, opd, name, phone, amount, payment, note, items[] }]
-    """
     try:
-        name  = (request.args.get('name') or '').strip()
-        phone = (request.args.get('phone') or '').strip()
-        opd_q = normalize_opd(request.args.get('opd')) if request.args.get('opd') else ''
-        since = safe_date_str(request.args.get('since')) if request.args.get('since') else ''
-        until = safe_date_str(request.args.get('until')) if request.args.get('until') else ''
+        name = (request.args.get("name") or "").strip()
+        phone = (request.args.get("phone") or "").strip()
+        opd_q = normalize_opd(request.args.get("opd")) if request.args.get("opd") else ""
+        since = safe_date_str(request.args.get("since")) if request.args.get("since") else ""
+        until = safe_date_str(request.args.get("until")) if request.args.get("until") else ""
         try:
-            limit = max(1, min(20000, int(request.args.get('limit', '2000'))))
+            limit = max(1, min(20000, int(request.args.get("limit", "2000"))))
         except Exception:
             limit = 2000
 
@@ -773,10 +991,8 @@ def api_reccord_sale():
         if until:
             q = q.lte("date", until)
 
-        # เรียงใหม่ -> เก่า
         q = q.order("date", desc=True)
 
-        # ดึงแบบหน้า ๆ (range) เพื่อกัน response ใหญ่เกิน
         out: List[Dict[str, Any]] = []
         start = 0
         page_size = 1000
@@ -786,20 +1002,17 @@ def api_reccord_sale():
             if not batch:
                 break
             for r in batch:
-                # parse items
                 try:
-                    r['items'] = json.loads(r.get('item') or '[]')
+                    r["items"] = json.loads(r.get("item") or "[]")
                 except Exception:
-                    r['items'] = []
-                # normalize basic fields used by front
-                r['opd']  = normalize_opd(r.get('opd'))
-                r['date'] = safe_date_str(r.get('date'))
+                    r["items"] = []
+                r["opd"] = normalize_opd(r.get("opd"))
+                r["date"] = safe_date_str(r.get("date"))
             out.extend(batch)
             if len(batch) < page_size:
                 break
             start += page_size
 
-        # truncate เผื่อกรณีหน้าแรกใหญ่พอดี
         if len(out) > limit:
             out = out[:limit]
 
@@ -808,10 +1021,11 @@ def api_reccord_sale():
         app.logger.error(f"/api/reccord_sale error: {e}")
         return jsonify({"error": str(e)}), 500
 
+
 # =============================================================
-# API — Oldsale & Inventory (kept for compatibility)
+# API — Oldsale & Inventory (compat)
 # =============================================================
-@app.route('/api/oldsaledata')
+@app.route("/api/oldsaledata")
 @login_required
 def api_oldsaledata():
     try:
@@ -821,33 +1035,25 @@ def api_oldsaledata():
         app.logger.error(f"ERROR loading oldsaledata: {e}")
         return jsonify({"error": str(e)}), 500
 
+
 @app.route("/api/inventory")
 @login_required
 def api_inventory():
     try:
-        # ใช้สูตร "ทยอยดึงจนกว่าจะหมด" (Pagination Loop) ชัวร์ที่สุด!
         all_data = []
         start = 0
-        limit = 1000  # ดึงทีละ 1,000
-        
+        limit = 1000
         while True:
-            # สั่งดึงช่วงที่กำหนด เช่น 0-999, 1000-1999
             res = supabase.table("inventory").select("*").range(start, start + limit - 1).execute()
             batch = res.data or []
-            
-            # เอาของใหม่ไปรวมกับกองใหญ่
             all_data.extend(batch)
-            
-            # ถ้าดึงมาได้น้อยกว่า limit แสดงว่าหมดแล้ว หยุดวน
             if len(batch) < limit:
                 break
-            
-            # ขยับไปดึงช่วงถัดไป
             start += limit
-            
         return jsonify(all_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route("/api/save_inventory", methods=["POST"])
 @login_required
@@ -859,22 +1065,17 @@ def api_save_inventory():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 # =============================================================
-# API — Tax Module
+# API — Tax Module (เดิมของคุณ)
 # =============================================================
 def th_tax_brackets(amount: float) -> float:
-    """
-    คำนวณภาษีเงินได้บุคคลธรรมดาแบบก้าวหน้า (อัตราปัจจุบัน)
-    รับค่า amount = เงินได้สุทธิเพื่อคำนวณภาษี
-    คืนค่า: ภาษีทั้งปี (บาท)
-    """
     if amount is None or amount <= 0:
         return 0.0
 
     remain = amount
     tax = 0.0
     prev_cap = 0.0
-    # (upper_bound, rate)
     brackets = [
         (150000, 0.00),
         (300000, 0.05),
@@ -883,7 +1084,7 @@ def th_tax_brackets(amount: float) -> float:
         (1000000, 0.20),
         (2000000, 0.25),
         (5000000, 0.30),
-        (float('inf'), 0.35),
+        (float("inf"), 0.35),
     ]
 
     for cap, rate in brackets:
@@ -898,12 +1099,6 @@ def th_tax_brackets(amount: float) -> float:
 
 
 def compute_tax_from_gross_sales_yearly(gross_year: float, social_sec: float = 0.0) -> dict:
-    """
-    คิดภาษีจาก 'ยอดขายทั้งปี' (รายได้ ม.40(8))
-    - หักค่าใช้จ่ายเหมา 60%
-    - หักค่าลดหย่อนส่วนตัว 60,000
-    - หักประกันสังคม (ถ้าส่ง) สูงสุด 9,000 (ค่าเริ่มต้น 0 ตามที่ผู้ใช้แจ้งว่าไม่มี)
-    """
     if not gross_year or gross_year <= 0:
         return {
             "gross_year": 0.0,
@@ -940,33 +1135,24 @@ def compute_tax_from_gross_sales_yearly(gross_year: float, social_sec: float = 0
         "effective_rate": effective_rate,
     }
 
-@app.route('/api/tax_summary')
+
+@app.route("/api/tax_summary")
 @login_required
 def api_tax_summary():
-    """
-    รับ year=YYYY (บังคับ)
-    ดึง sales_records ของปีนั้น (ใช้ field 'date' แบบ YYYY-MM-DD) -> sum(amount) รายเดือนและทั้งปี
-    คำนวณภาษีตามกติกาที่ผู้ใช้แจ้ง (ไม่มีคู่สมรส/บุตร/สิทธิเพิ่มเติม)
-    Query param เพิ่มเติม:
-      - sso (float) = ยอดประกันสังคมทั้งปี (ถ้ามี ใส่มา; ไม่ใส่ = 0)
-    """
     try:
-        year_str = (request.args.get('year') or '').strip()
+        year_str = (request.args.get("year") or "").strip()
         if not year_str.isdigit() or len(year_str) != 4:
             return jsonify({"error": "year_required_as_YYYY"}), 400
         year = int(year_str)
 
-        # optional social security
         try:
-            sso = float(request.args.get('sso', '0') or '0')
+            sso = float(request.args.get("sso", "0") or "0")
         except Exception:
             sso = 0.0
 
-        # รวมยอดขายรายเดือน
         month_sum = {m: 0.0 for m in range(1, 13)}
         total = 0.0
 
-        # ดึงทีละหน้าเพื่อกัน response ใหญ่
         q = (
             supabase.table("sales_records")
             .select("amount,date")
@@ -982,12 +1168,12 @@ def api_tax_summary():
             if not batch:
                 break
             for r in batch:
-                amt = r.get('amount')
-                d = r.get('date') or ''
+                amt = r.get("amount")
+                d = r.get("date") or ""
                 if amt is None:
                     continue
                 try:
-                    y, m, _ = str(d)[:10].split('-')
+                    y, m, _ = str(d)[:10].split("-")
                     if int(y) == year:
                         m_i = int(m)
                         month_sum[m_i] = round(month_sum[m_i] + float(amt), 2)
@@ -1000,19 +1186,8 @@ def api_tax_summary():
 
         tax = compute_tax_from_gross_sales_yearly(total, social_sec=sso)
 
-        # แพ็คผลรายเดือน (แปลงเป็น list เพื่อ JS ใช้ง่าย)
-        months = []
-        for m in range(1, 13):
-            months.append({
-                "month": m,
-                "gross": month_sum[m],
-            })
-
-        return jsonify({
-            "year": year,
-            "months": months,
-            "summary": tax,
-        })
+        months = [{"month": m, "gross": month_sum[m]} for m in range(1, 13)]
+        return jsonify({"year": year, "months": months, "summary": tax})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -1020,6 +1195,5 @@ def api_tax_summary():
 # =============================================================
 # Main
 # =============================================================
-if __name__ == '__main__':
-    # In production, run behind a proper WSGI server and set SESSION_COOKIE_SECURE=true
+if __name__ == "__main__":
     app.run(debug=True)

@@ -1,4 +1,4 @@
-<!-- floating_menu.html -->
+<!-- templates/floating_menu.html -->
 <style>
   .floating-toggle {
     position: fixed;
@@ -22,9 +22,7 @@
     box-shadow: 0 6px 20px rgba(0,0,0,0.2);
     z-index: 999; max-height: 60vh; overflow-y: auto;
   }
-  .floating-menu a img {
-    width: 52px; height: 52px;
-  }
+  .floating-menu a img { width: 52px; height: 52px; }
 </style>
 
 <div id="floatingToggle" class="floating-toggle" aria-label="Toggle menu" role="button" tabindex="0">
@@ -42,11 +40,16 @@
   <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}" alt="Inventory"></a>
   <a href="{{ url_for('staff') }}"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}" alt="Staff"></a>
   <a href="{{ url_for('appointments') }}"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}" alt="Appointments"></a>
+
+  <!-- ✅ setting -->
+  <a href="{{ url_for('appsettings') }}"><img src="{{ url_for('static', filename='icon/icon_setting.png') }}" alt="Setting"></a>
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', () => {
   const toggleBtn = document.getElementById('floatingToggle');
   const menu = document.getElementById('floatingMenu');
+  if (!toggleBtn || !menu) return;
 
   function setMenu(open) {
     menu.style.display = open ? 'flex' : 'none';
@@ -56,21 +59,17 @@
     setMenu(menu.style.display !== 'flex');
   }
 
-  // open/close
   toggleBtn.addEventListener('click', toggleFloatingMenu);
   toggleBtn.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleFloatingMenu(); }
   });
 
-  // click outside to close
   document.addEventListener('click', (e) => {
     if (!toggleBtn.contains(e.target) && !menu.contains(e.target)) setMenu(false);
   });
 
-  // ESC to close
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') setMenu(false);
   });
+});
 </script>
-
-
