@@ -456,22 +456,40 @@
     }
 
     @media print{
-      body *{ visibility:hidden !important; }
-      #receiptOverlay, #receiptOverlay *{ visibility:visible !important; }
-      #receiptOverlay{
-        position:absolute; inset:0;
-        background:#fff !important;
-        padding:0 !important;
-      }
-      .receipt-box{
-        box-shadow:none !important;
-        max-height:none !important;
-        border-radius:0 !important;
-        width:100% !important;
-      }
-      .receipt-actions{ display:none !important; }
-      .sig-actions{ display:none !important; }
-    }
+  body *{
+    visibility:hidden !important;
+  }
+
+  #receiptOverlay,
+  #receiptOverlay *{
+    visibility:visible !important;
+  }
+
+  #receiptOverlay{
+    position: fixed;
+    inset: 0;
+    background:#fff !important;
+
+    /* ✅ ชิดบน */
+    display: block;
+    padding-top: 20mm;   /* ระยะขอบบน ปรับได้ 15–25mm */
+  }
+
+  .receipt-box{
+    box-shadow:none !important;
+    border-radius:0 !important;
+
+    width: 190mm;        /* กว้างพอดี A4 */
+    margin: 0 auto;      /* จัดกลางแนวนอน */
+  }
+
+  /* ❌ ไม่พิมพ์ปุ่ม */
+  .receipt-actions,
+  .sig-actions{
+    display:none !important;
+  }
+}
+
 
     /* ====== Signature Pad ====== */
     .sig-wrap{
@@ -492,18 +510,18 @@
       box-shadow:0 8px 18px rgba(2,8,23,.05);
     }
     .sig-label{
-      font-size:12px;
+      font-size:4x;
       color:#0b7660;
-      font-weight:900;
-      margin-bottom:8px;
+      font-weight:600;
+      margin-bottom:6px;
     }
     .sig-pad{
-      width:100%;
-      height:140px;
-      border-radius:12px;
-      background:#fff;
-      touch-action:none;
-    }
+  width:100%;
+  height:60px; /* ✅ เดิม 140px -> เล็กลงนิดนึง */
+  border-radius:10px;
+  background:#fff;
+  touch-action:none;
+}
     .sig-actions{
       display:flex;
       justify-content:flex-end;
@@ -512,13 +530,17 @@
       margin-top:8px;
     }
     .sig-btn{
-      border:1px solid #d1d5db;
-      background:#fff;
-      border-radius:10px;
-      padding:8px 10px;
-      font-weight:800;
-      cursor:pointer;
-    }
+  border:1px solid #d1d5db;
+  background:#fff;
+
+  border-radius:6px;     /* ⬅️ มุมเล็กลง */
+  padding:2px 6px;       /* ⬅️ เตี้ยลงมาก */
+  font-size:4px;        /* ⬅️ ตัวหนังสือเล็กลง */
+  font-weight:700;
+
+  line-height:1.2;
+  cursor:pointer;
+}
     .sig-btn:hover{ background:#f3f4f6; }
 
     .sig-under{
@@ -540,6 +562,13 @@
       .sig-card{ box-shadow:none !important; border:1px solid #111 !important; }
       .sig-under{ border-top:1px solid #111 !important; }
     }
+
+    /* ===== ซ่อนปุ่มตอน capture รูป ===== */
+.capture-mode .receipt-actions,
+.capture-mode .sig-actions,
+.capture-mode button {
+  display: none !important;
+}
   </style>
 </head>
 
@@ -878,7 +907,7 @@
         <b style="display:block;color:#0b7660;margin-bottom:6px;">ชื่อสำหรับแสดงใต้ลายเซ็นในใบเสร็จ</b>
         <div class="row" style="flex-wrap:wrap;gap:10px;">
           <div class="grow">
-            <label class="muted">1) ผู้มีอำนาจออกหลักฐานการรับเงิน</label>
+            <label class="muted">1) ผู้มีอำนาจออกหลักฐาน</label>
             <input id="sig_authorized" type="text" placeholder="เช่น พญ.ปิยะฎา จินดาหลวง">
           </div>
           <div class="grow">
@@ -926,7 +955,7 @@
       <div class="sig-wrap">
         <div class="sig-grid">
           <div class="sig-card">
-            <div class="sig-label">1) ผู้มีอำนาจออกหลักฐานการรับเงิน</div>
+            <div class="sig-label">1) ผู้มีอำนาจออกหลักฐาน</div>
             <canvas id="sigPad_authorized" class="sig-pad"></canvas>
             <div class="sig-actions">
               <button type="button" class="sig-btn" onclick="clearSig('authorized')">ล้าง</button>
@@ -960,13 +989,14 @@
       </div>
 
       <div class="receipt-actions" style="display:flex;justify-content:center;gap:10px;margin-top:14px;flex-wrap:wrap;">
-        <button class="btn btn-outline" onclick="closeReceipt()">ปิด</button>
-        <button class="btn btn-primary" onclick="window.print()">พิมพ์ใบเสร็จ</button>
-      </div>
-    </div>
+  <button class="btn btn-outline" onclick="closeReceipt()">ปิด</button>
+  <button class="btn btn-outline" onclick="saveReceiptImage()">บันทึกภาพ</button>
+  <button class="btn btn-primary" onclick="window.print()">พิมพ์ใบเสร็จ</button>
+</div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <script>
     // =========================
@@ -2463,6 +2493,48 @@ document.getElementById('pc_opd').textContent = opdVal;
       setupSigPad('customer');
       setupSigPad('receiver');
     }
+
+async function saveReceiptImage(){
+  const overlay = document.getElementById('receiptOverlay');
+  const box = overlay?.querySelector('.receipt-box');
+  if(!box) return alert('ไม่พบใบเสร็จสำหรับบันทึกภาพ');
+
+  try{
+    // ✅ เข้าโหมด capture (ซ่อนปุ่ม)
+    overlay.classList.add('capture-mode');
+
+    // รอให้ DOM update ก่อน capture
+    await new Promise(r => setTimeout(r, 50));
+
+    const canvas = await html2canvas(box, {
+      backgroundColor: '#ffffff',
+      scale: Math.max(2, window.devicePixelRatio || 1),
+      useCORS: true
+    });
+
+    const dataUrl = canvas.toDataURL('image/png');
+
+    const opd = (document.getElementById('opd')?.value || '0000').trim();
+    const date = (document.getElementById('date')?.value || '').trim();
+    const fileName = `receipt_${opd}_${date || 'date'}.png`;
+
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+  }catch(err){
+    console.error(err);
+    alert('บันทึกภาพไม่สำเร็จ');
+  }finally{
+    // ✅ ออกจากโหมด capture
+    overlay.classList.remove('capture-mode');
+  }
+}
+
+
   </script>
 
   <!-- ✅ floating menu -->
