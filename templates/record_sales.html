@@ -446,7 +446,7 @@
       text-align:right;
       margin-top:10px;
       font-weight:900;
-      font-size:15px;
+      font-size:12px;
     }
     .fineprint{
       margin-top:14px;
@@ -1121,11 +1121,9 @@
           186/4 ม.5 ต.เวียงยอง อ.เมือง จังหวัดลำพูน 51000<br>
           โทรศัพท์ 0614296596
         </div>
-        <div style="margin-top:10px; font-size:8px; font-weight:900; color:#111827;">
-  เลขที่ใบเสร็จ: <span id="receiptNo">-</span>
-  </div>
-
-      </div>
+        <div style="margin-top:10px; font-size:8px; font-weight:900; color:#111827;"> เลขที่ใบเสร็จ: <span id="receiptNo">-</span>   &nbsp;&nbsp;|&nbsp;&nbsp;   วันที่ออกใบเสร็จ: <span id="receiptIssueDate">-</span></div>
+ </div> 
+      
 
       <div id="receiptContent"></div>
 
@@ -1178,7 +1176,7 @@
   <button class="btn btn-primary" onclick="window.print()">พิมพ์ใบเสร็จ</button>
 </div>
   </div>
-
+</div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -2122,6 +2120,13 @@ async function issueReceiptFromForm(){
     const receiptNoEl = document.getElementById('receiptNo');
     if(receiptNoEl) receiptNoEl.textContent = showNo;
 
+    // ===== A) วันที่ออกใบเสร็จ (จากวันที่ในฟอร์ม) =====
+const issueDateISO = (document.getElementById('date')?.value || '').slice(0,10);
+const issueDateText = issueDateISO ? formatDate(issueDateISO) : '-';
+
+const issueEl = document.getElementById('receiptIssueDate');
+if(issueEl) issueEl.textContent = issueDateText;
+
     const total = Math.floor(Number(document.getElementById('amount').value || 0));
 
     // ✅ รายการจากฟอร์ม
@@ -2168,9 +2173,14 @@ async function issueReceiptFromForm(){
     `;
 
     closePayPopup();
-    const ov = document.getElementById('receiptOverlay');
-    ov.style.display = 'flex';
-    ov.setAttribute('aria-hidden','false');
+const ov = document.getElementById('receiptOverlay');
+ov.style.display = 'flex';
+ov.setAttribute('aria-hidden','false');
+
+// ✅ ตั้งวันที่หลัง overlay แสดงแล้ว (ชัวร์)
+requestAnimationFrame(() => {
+  setReceiptIssueDateFromISO(document.getElementById('date')?.value || '');
+});
 
     applySigNamesToReceipt();
     requestAnimationFrame(() => initAllSigPads());
@@ -2804,6 +2814,60 @@ async function saveReceiptImage(){
     const fullW = box.scrollWidth;
     const fullH = box.scrollHeight;
 
+
+// ✅ ทำ input/textarea ให้กลายเป็นตัวหนังสือชั่วคราว (html2canvas ชอบ)
+const replaced = [];
+const makeSpanFromInput = (inp) => {
+  const span = document.createElement('span');
+  span.textContent = inp.value || inp.getAttribute('value') || '';
+  // ทำให้หน้าตาคล้าย input เดิม
+  const cs = getComputedStyle(inp);
+  span.style.display = 'block';
+  span.style.width = cs.width;
+  span.style.textAlign = cs.textAlign;
+  span.style.fontSize = cs.fontSize;
+  span.style.fontWeight = cs.fontWeight;
+  span.style.color = cs.color;
+  span.style.padding = cs.padding;
+  span.style.margin = cs.margin;
+  span.style.lineHeight = cs.lineHeight;
+  span.style.whiteSpace = 'pre-wrap';
+  return span;
+};
+
+// 1) แทนชื่อใต้ลายเซ็น (input.sig-under-input) ด้วย span
+box.querySelectorAll('input.sig-under-input').forEach(inp => {
+  const span = makeSpanFromInput(inp);
+  inp.style.display = 'none';
+  inp.insertAdjacentElement('afterend', span);
+  replaced.push({ type:'input', inp, span });
+});
+
+// 2) แทน textarea ข้อมูลผู้รับการรักษา ด้วย div (เพื่อให้จับขึ้นรูปแน่ ๆ)
+const ta = box.querySelector('#receipt_patient_info');
+let taDiv = null;
+if (ta) {
+  taDiv = document.createElement('div');
+  taDiv.textContent = ta.value || '';
+  const cs = getComputedStyle(ta);
+  taDiv.style.whiteSpace = 'pre-wrap';
+  taDiv.style.fontSize = cs.fontSize;
+  taDiv.style.fontWeight = cs.fontWeight;
+  taDiv.style.color = cs.color;
+  taDiv.style.lineHeight = cs.lineHeight;
+  taDiv.style.marginTop = cs.marginTop;
+  taDiv.style.padding = cs.padding;
+  taDiv.style.minHeight = cs.minHeight || '32px';
+  taDiv.style.border = 'none';
+  taDiv.style.background = 'transparent';
+
+  ta.style.display = 'none';
+  ta.insertAdjacentElement('afterend', taDiv);
+}
+
+
+
+
     const canvas = await html2canvas(box, {
       backgroundColor: '#ffffff',
       scale: Math.max(2, window.devicePixelRatio || 1),
@@ -3017,7 +3081,12 @@ function openReceiptFromRecord(id){
 
   const receiptNoEl = document.getElementById('receiptNo');
   if(receiptNoEl) receiptNoEl.textContent = showNo;
+// ===== B) วันที่ออกใบเสร็จ (จากวันที่ใน record) =====
+const issueDateISO = (rec.date || '').slice(0,10);
+const issueDateText = issueDateISO ? formatDate(issueDateISO) : '-';
 
+const issueEl = document.getElementById('receiptIssueDate');
+if(issueEl) issueEl.textContent = issueDateText;
   // ✅ ตารางตามวันที่ของ record
   const { tbody, sum } = buildReceiptRowsMixedFromDate(total, rows, rec.date);
 
@@ -3057,7 +3126,8 @@ function openReceiptFromRecord(id){
   const ov = document.getElementById('receiptOverlay');
   ov.style.display = 'flex';
   ov.setAttribute('aria-hidden','false');
-
+// วันที่ออกใบเสร็จ = วันที่ของ record
+setReceiptIssueDateFromISO(rec.date || '');
   applySigNamesToReceipt();
   requestAnimationFrame(() => initAllSigPads());
 }
@@ -3072,6 +3142,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+function setReceiptIssueDateFromISO(dateISO){
+  const el = document.getElementById('receiptIssueDate');
+  if(!el) return;
+
+  if(!dateISO){
+    el.textContent = '-';
+    return;
+  }
+
+  el.textContent = formatDate(dateISO.slice(0,10));
+}
+
 
   </script>
 
