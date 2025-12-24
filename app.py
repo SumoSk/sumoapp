@@ -3,10 +3,11 @@ from __future__ import annotations
 import os
 import json
 import time
+import hashlib
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict, deque
 from math import isfinite
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 from flask import (
     Flask,
@@ -104,6 +105,207 @@ def _clean_dash(v):
 
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def _ensure_items(val: Any) -> Any:
+    """
+    JSON Handling Correction:
+    - ถ้าเป็น list/dict อยู่แล้ว ใช้เลย
+    - ถ้าเป็น string ค่อย json.loads
+    - อื่น ๆ ให้ fallback เป็น []
+    """
+    if isinstance(val, (list, dict)):
+        return val
+    if isinstance(val, str):
+        s = val.strip()
+        if not s:
+            return []
+        try:
+            return json.loads(s)
+        except Exception:
+            return []
+    return []
+
+
+def _parse_year_from_date(date_s: str) -> Optional[int]:
+    """
+    รับ 'YYYY-MM-DD' หรือค่าอื่น ๆ แล้วพยายามได้ปีเป็น int
+    """
+    if not date_s:
+        return None
+    s = safe_date_str(date_s)
+    if len(s) >= 4 and s[:4].isdigit():
+        try:
+            return int(s[:4])
+        except Exception:
+            return None
+    return None
+
+
+def _pad4(n: int) -> str:
+    return str(int(n)).zfill(4)
+
+
+def make_idempotency_key(
+    date: Any,
+    opd: Any,
+    amount: Any,
+    payment_method: Any,
+    items: Any,
+) -> str:
+    """
+    Task 3.1: Helper Function - Idempotency Hash
+    """
+    opd_4 = normalize_opd(opd)
+    date_s = safe_date_str(date)
+
+    # amount normalize (stable)
+    try:
+        amt = float(amount)
+    except Exception:
+        amt = 0.0
+
+    pm = (payment_method or "")
+    items_norm = _ensure_items(items)
+
+    # ทำ canonical สำหรับ items
+    # ถ้าเป็น list ของ dict -> sort ด้วย json string canonical เพื่อกันสลับลำดับคีย์
+    canonical_items = items_norm
+    try:
+        if isinstance(items_norm, list):
+            canonical_items = sorted(
+                items_norm,
+                key=lambda x: json.dumps(x, ensure_ascii=False, sort_keys=True)
+                if isinstance(x, (dict, list))
+                else str(x),
+            )
+    except Exception:
+        canonical_items = items_norm
+
+    payload = {
+        "date": date_s,
+        "opd": opd_4,
+        "amount": round(amt, 2),
+        "payment_method": str(pm),
+        "items": canonical_items,
+    }
+    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _client_ip() -> str:
+    return request.headers.get("X-Forwarded-For", request.remote_addr or "-")
+
+
+def _validate_issue_payload(data: Dict[str, Any]) -> Tuple[bool, str]:
+    opd = normalize_opd(data.get("opd"))
+    if not opd or len(opd) != 4:
+        return False, "invalid_opd"
+
+    date_s = safe_date_str(data.get("date"))
+    if not date_s:
+        return False, "missing_date"
+    y = _parse_year_from_date(date_s)
+    if not y or y < 2000 or y > 2100:
+        return False, "invalid_date"
+
+    amt = data.get("amount")
+    try:
+        amt_f = float(amt)
+    except Exception:
+        return False, "invalid_amount"
+    if amt_f <= 0:
+        return False, "amount_must_be_positive"
+
+    items = _ensure_items(data.get("items"))
+    if not isinstance(items, list) or len(items) == 0:
+        return False, "items_required"
+
+    return True, ""
+
+
+def _get_sales_created_at(row: Dict[str, Any]) -> str:
+    """
+    created_at อาจมี/ไม่มีใน schema; ถ้าไม่มีให้ใช้ empty string (จะไปก่อน/หลังตาม sort)
+    """
+    v = row.get("created_at") or ""
+    return str(v)
+
+
+def _ensure_counter_row(year: int) -> None:
+    """
+    ทำให้ receipt_counters_orig มี row ของ year นี้ (ถ้าไม่มี)
+    - พยายาม insert; ถ้าชนก็ปล่อยผ่าน
+    """
+    try:
+        existing = (
+            supabase.table("receipt_counters_orig")
+            .select("year,next_seq")
+            .eq("year", year)
+            .maybe_single()
+            .execute()
+        )
+        if existing.data:
+            return
+    except Exception:
+        # maybe_single อาจไม่รองรับในบางเวอร์ชัน; fallback
+        try:
+            ex2 = (
+                supabase.table("receipt_counters_orig")
+                .select("year,next_seq")
+                .eq("year", year)
+                .execute()
+            )
+            if ex2.data:
+                return
+        except Exception:
+            pass
+
+    try:
+        supabase.table("receipt_counters_orig").insert({"year": year, "next_seq": 1}).execute()
+    except Exception:
+        # ชน unique ก็โอเค
+        return
+
+
+def _next_orig_seq_atomic(year: int, max_retries: int = 10) -> int:
+    """
+    พยายามทำ atomic-ish increment ด้วย optimistic concurrency:
+    1) select next_seq
+    2) update where year=Y and next_seq=curr set next_seq=curr+1
+       - ถ้า update ไม่คืน data -> แปลว่ามีคนชิงไปแล้ว retry
+    """
+    _ensure_counter_row(year)
+
+    last_err: Optional[Exception] = None
+    for _ in range(max_retries):
+        try:
+            res = (
+                supabase.table("receipt_counters_orig")
+                .select("next_seq")
+                .eq("year", year)
+                .single()
+                .execute()
+            )
+            curr = int(res.data.get("next_seq") or 1)
+
+            upd = (
+                supabase.table("receipt_counters_orig")
+                .update({"next_seq": curr + 1})
+                .eq("year", year)
+                .eq("next_seq", curr)
+                .execute()
+            )
+            if upd.data:
+                return curr
+        except Exception as e:
+            last_err = e
+            # short backoff to reduce collisions
+            time.sleep(0.03)
+
+    if last_err:
+        raise last_err
+    raise RuntimeError("failed_to_increment_counter")
 
 
 # =============================================================
@@ -297,7 +499,6 @@ def api_customers():
         sum_res = supabase.table("v_customer_pitch_summary").select("*").execute()
         summary_map: Dict[str, Dict[str, Any]] = {}
         for r in sum_res.data or []:
-            # ✅ FIX: วงเล็บให้ถูก
             summary_map[str(r.get("opd") or "")] = {
                 "pitch_summary": r.get("pitch_summary") or "",
                 "pitch_count": r.get("pitch_count") or 0,
@@ -376,6 +577,209 @@ def delete_customer_and_sales():
 
 
 # =============================================================
+# ✅ NEW API — Receipt System (Original & Display Mode)
+# =============================================================
+@app.route("/api/sales_issue_receipt", methods=["POST"])
+@login_required
+def sales_issue_receipt():
+    """
+    Task 3.2: API - Issue Receipt (สำคัญที่สุด)
+    - ออกเลข RC-YYYY-XXXX แบบ immutable
+    - มี idempotency_key ป้องกันออกซ้ำ
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        if not isinstance(data, dict):
+            return jsonify({"success": False, "error": "invalid_payload"}), 400
+
+        ok, err = _validate_issue_payload(data)
+        if not ok:
+            return jsonify({"success": False, "error": err}), 400
+
+        date_s = safe_date_str(data.get("date"))
+        year = _parse_year_from_date(date_s)  # validated above
+        assert year is not None
+
+        opd_4 = normalize_opd(data.get("opd"))
+
+        # amount sanitize
+        amount = float(data.get("amount"))
+
+        # items sanitize + store as json string in `item`
+        items = _ensure_items(data.get("items"))
+        if not isinstance(items, list):
+            items = []
+
+        payment_method = data.get("payment_method")
+        # compat: ถ้า front ส่ง payment มา
+        if payment_method is None:
+            payment_method = data.get("payment")
+
+        idempotency_key = make_idempotency_key(
+            date=date_s,
+            opd=opd_4,
+            amount=amount,
+            payment_method=payment_method,
+            items=items,
+        )
+
+        # 1) Check duplicate where same idempotency_key and already issued (orig_no not null)
+        dup = (
+            supabase.table("sales_records")
+            .select("*")
+            .eq("idempotency_key", idempotency_key)
+            .not_.is_("orig_no", "null")
+            .order("orig_issued_at", desc=True)
+            .limit(1)
+            .execute()
+        ).data
+        if dup:
+            row = dup[0]
+            return jsonify(
+                {
+                    "success": True,
+                    "id": row.get("id"),
+                    "orig_no": row.get("orig_no"),
+                    "disp_no": row.get("disp_no"),
+                    "receipt_status": row.get("receipt_status"),
+                    "idempotency_key": row.get("idempotency_key"),
+                    "duplicate": True,
+                }
+            ), 200
+
+        # 2) New: get next seq and insert
+        seq = _next_orig_seq_atomic(year)
+        orig_no = f"RC-{year}-{_pad4(seq)}"
+
+        insert_payload = {
+            "date": date_s,
+            "opd": opd_4,
+            "name": data.get("name", "") or "",
+            "phone": data.get("phone", "") or "",
+            "amount": amount,
+            # compat columns used elsewhere
+            "payment": payment_method,
+            "note": data.get("note", "") or "",
+            "item": json.dumps(items, ensure_ascii=False),
+            # receipt system fields
+            "orig_year": year,
+            "orig_seq": seq,
+            "orig_no": orig_no,
+            "orig_issued_at": _utc_now_iso(),
+            "receipt_status": (data.get("receipt_status") or "issued"),
+            "idempotency_key": idempotency_key,
+        }
+
+        ins = supabase.table("sales_records").insert(insert_payload).execute()
+        row = (ins.data or [{}])[0]
+
+        return jsonify(
+            {
+                "success": True,
+                "id": row.get("id"),
+                "orig_no": orig_no,
+                "disp_no": row.get("disp_no"),
+                "receipt_status": row.get("receipt_status") or "issued",
+                "idempotency_key": idempotency_key,
+            }
+        ), 200
+
+    except Exception as e:
+        app.logger.error(f"/api/sales_issue_receipt error: {e}")
+        return jsonify({"success": False, "error": "server_error", "detail": str(e)}), 500
+
+
+@app.route("/api/rebuild_display_receipts", methods=["POST"])
+@login_required
+def rebuild_display_receipts():
+    """
+    Task 3.3: API - Rebuild Display Numbers (Red Button)
+    Input: { "year": 2025 }
+    - เลือกเฉพาะ receipt_status='issued'
+    - sort: date ASC, created_at ASC, id ASC
+    - assign RB-YYYY-XXXX ใหม่
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        if not isinstance(data, dict):
+            return jsonify({"success": False, "error": "invalid_payload"}), 400
+
+        year = data.get("year")
+        try:
+            year_i = int(year)
+        except Exception:
+            return jsonify({"success": False, "error": "invalid_year"}), 400
+        if year_i < 2000 or year_i > 2100:
+            return jsonify({"success": False, "error": "invalid_year"}), 400
+
+        # ดึง records ปีนั้น (ใช้ date range เป็นหลัก กันข้อมูล orig_year ว่าง)
+        start_date = f"{year_i}-01-01"
+        end_date = f"{year_i}-12-31"
+
+        q = (
+            supabase.table("sales_records")
+            .select("id,date,created_at,disp_version,receipt_status")
+            .gte("date", start_date)
+            .lte("date", end_date)
+            .eq("receipt_status", "issued")
+            .order("date", desc=False)
+        )
+
+        # created_at / id อาจจะต้อง order เพิ่ม (postgrest รองรับ multi order ด้วย .order ซ้ำ)
+        q = q.order("created_at", desc=False)
+        q = q.order("id", desc=False)
+
+        all_rows: List[Dict[str, Any]] = []
+        start = 0
+        limit = 1000
+        while True:
+            resp = q.range(start, start + limit - 1).execute()
+            batch = resp.data or []
+            all_rows.extend(batch)
+            if len(batch) < limit:
+                break
+            start += limit
+
+        # กันกรณี created_at ไม่มี (บาง schema) -> sort ใน python อีกรอบให้แน่น
+        def sort_key(r: Dict[str, Any]):
+            return (safe_date_str(r.get("date")), _get_sales_created_at(r), str(r.get("id")))
+
+        all_rows.sort(key=sort_key)
+
+        # loop update
+        updated = 0
+        seq = 1
+        for r in all_rows:
+            rid = r.get("id")
+            if not rid:
+                continue
+
+            disp_no = f"RB-{year_i}-{_pad4(seq)}"
+            old_v = r.get("disp_version")
+            try:
+                old_v_i = int(old_v) if old_v is not None else 0
+            except Exception:
+                old_v_i = 0
+
+            patch = {
+                "disp_year": year_i,
+                "disp_seq": seq,
+                "disp_no": disp_no,
+                "disp_version": old_v_i + 1,
+            }
+
+            supabase.table("sales_records").update(patch).eq("id", rid).execute()
+            updated += 1
+            seq += 1
+
+        return jsonify({"success": True, "count": updated}), 200
+
+    except Exception as e:
+        app.logger.error(f"/api/rebuild_display_receipts error: {e}")
+        return jsonify({"success": False, "error": "server_error", "detail": str(e)}), 500
+
+
+# =============================================================
 # API — Sales
 # =============================================================
 @app.route("/api/sales")
@@ -408,12 +812,10 @@ def api_sales():
                 break
             start += limit
 
+        # ✅ FIX: JSON Handling Correction
         for r in all_data:
             if "item" in r:
-                try:
-                    r["items"] = json.loads(r["item"])
-                except Exception:
-                    r["items"] = []
+                r["items"] = _ensure_items(r.get("item"))
 
         return jsonify(all_data)
     except Exception as e:
@@ -438,7 +840,7 @@ def save_sales():
             date = safe_date_str(rec.get("date"))
             opd_4 = normalize_opd(rec.get("opd"))
 
-            # ✅ FIX: sanitize amount ให้เป็น float หรือ None (กัน "" ชน numeric)
+            # ✅ sanitize amount ให้เป็น float หรือ None (กัน "" ชน numeric)
             amt = rec.get("amount")
             if amt in ("", None):
                 amt = None
@@ -458,13 +860,17 @@ def save_sales():
                 }
                 supabase.table("customers").upsert(customer_data, on_conflict=["opd"]).execute()
 
-            items = rec.get("items") or []
+            # ✅ FIX: items ใช้ rule ใหม่
+            items = _ensure_items(rec.get("items") or rec.get("item") or [])
+            if not isinstance(items, list):
+                items = []
+
             rec_db = {
                 "date": date,
                 "opd": opd_4,
                 "name": rec.get("name", ""),
                 "phone": rec.get("phone", ""),
-                "amount": amt,  # ✅ ใช้ค่าที่ sanitize แล้ว
+                "amount": amt,
                 "payment": rec.get("payment"),
                 "note": rec.get("note", ""),
                 "item": json.dumps(items, ensure_ascii=False),
@@ -472,10 +878,13 @@ def save_sales():
 
             rec_id = rec.get("id")
             if rec_id:
+                # ✅ BUGFIX: อย่าเผลอ overwrite receipt fields ถ้า record มีการออกใบเสร็จแล้ว
+                # เราอัปเดตเฉพาะ field ยอดขายพื้นฐาน
                 supabase.table("sales_records").update(rec_db).eq("id", rec_id).execute()
                 updated_count += 1
                 continue
 
+            # ✅ BUGFIX: ตรวจ dup ให้ robust (ใช้ item string + opd + date + amount + payment)
             dup_q = (
                 supabase.table("sales_records")
                 .select("id")
@@ -510,6 +919,19 @@ def delete_sales_record():
         record_id = payload.get("id")
         if not record_id:
             return jsonify({"error": "Missing ID"}), 400
+
+        # ✅ BUGFIX: ถ้า record มี orig_no แล้ว (ออกใบเสร็จจริง) แนะนำไม่ให้ลบแบบเงียบ ๆ
+        # แต่เพื่อไม่ให้พัง flow เดิม: ถ้าต้องการ strict ให้เปลี่ยนเป็น return 400
+        rec = (
+            supabase.table("sales_records")
+            .select("id,orig_no")
+            .eq("id", record_id)
+            .single()
+            .execute()
+        ).data
+        if rec and rec.get("orig_no"):
+            return jsonify({"error": "cannot_delete_issued_receipt", "message": "รายการนี้ออกใบเสร็จ (RC) แล้ว ไม่อนุญาตให้ลบ"}), 400
+
         supabase.table("sales_records").delete().eq("id", record_id).execute()
         return jsonify({"message": "ลบสำเร็จ"})
     except Exception as e:
@@ -523,6 +945,7 @@ def cleanup_duplicates():
         response = supabase.table("sales_records").select("*").execute()
         all_data = response.data or []
         seen: Dict[Any, List[Dict[str, Any]]] = defaultdict(list)
+
         for row in all_data:
             key = (
                 row.get("opd"),
@@ -531,13 +954,24 @@ def cleanup_duplicates():
                 row.get("payment"),
                 row.get("item"),
                 row.get("note"),
+                # ✅ BUGFIX: ถ้าออกใบเสร็จแล้วให้ถือว่าไม่ใช่ dup ของรายการที่ยังไม่ออก
+                row.get("orig_no") or "",
             )
             seen[key].append(row)
 
         deleted = 0
         for rows in seen.values():
             if len(rows) > 1:
-                ids_to_delete = [r["id"] for r in rows[1:] if "id" in r]
+                # ✅ BUGFIX: ไม่ลบอันที่มี orig_no ถ้ามี
+                keep = None
+                for r in rows:
+                    if r.get("orig_no"):
+                        keep = r
+                        break
+                if keep is None:
+                    keep = rows[0]
+
+                ids_to_delete = [r["id"] for r in rows if r.get("id") and r.get("id") != keep.get("id")]
                 if ids_to_delete:
                     supabase.table("sales_records").delete().in_("id", ids_to_delete).execute()
                     deleted += len(ids_to_delete)
@@ -586,19 +1020,20 @@ def api_products_map():
         )
         prods = (prods_q.execute().data or [])
 
-        # group
         id_to_name = {c["id"]: c["name"] for c in cats}
         out: Dict[str, List[Dict[str, Any]]] = {c["name"]: [] for c in cats}
         for p in prods:
             cn = id_to_name.get(p.get("category_id"))
             if not cn:
                 continue
-            out.setdefault(cn, []).append({
-                "id": p.get("id"),
-                "name": p.get("name"),
-                "default_price": p.get("default_price"),
-                "sort_order": p.get("sort_order", 0),
-            })
+            out.setdefault(cn, []).append(
+                {
+                    "id": p.get("id"),
+                    "name": p.get("name"),
+                    "default_price": p.get("default_price"),
+                    "sort_order": p.get("sort_order", 0),
+                }
+            )
 
         return jsonify({"map": out, "categories": cats})
     except Exception as e:
@@ -728,7 +1163,6 @@ def api_products():
                         return jsonify({"error": "invalid_default_price"}), 400
 
             if "deleted_at" in data:
-                # allow UI to restore by sending deleted_at=null
                 patch["deleted_at"] = data.get("deleted_at")
 
             if not patch:
@@ -741,10 +1175,12 @@ def api_products():
             pid = data.get("id")
             if not pid:
                 return jsonify({"error": "missing_id"}), 400
-            supabase.table("products").update({
-                "deleted_at": _utc_now_iso(),
-                "is_active": False,
-            }).eq("id", pid).execute()
+            supabase.table("products").update(
+                {
+                    "deleted_at": _utc_now_iso(),
+                    "is_active": False,
+                }
+            ).eq("id", pid).execute()
             return jsonify({"message": "trashed"})
 
     except Exception as e:
@@ -759,10 +1195,12 @@ def api_products_restore():
     if not pid:
         return jsonify({"error": "missing_id"}), 400
     try:
-        supabase.table("products").update({
-            "deleted_at": None,
-            "is_active": True,
-        }).eq("id", pid).execute()
+        supabase.table("products").update(
+            {
+                "deleted_at": None,
+                "is_active": True,
+            }
+        ).eq("id", pid).execute()
         return jsonify({"message": "restored"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -891,14 +1329,16 @@ def pitches_by_date():
         if kw:
             tmp = []
             for r in rows:
-                s = " ".join([
-                    str(r.get("opd") or ""),
-                    str(r.get("content") or ""),
-                    str(r.get("outcome") or ""),
-                    str(r.get("channel") or ""),
-                    str(r.get("author") or ""),
-                    str(r.get("promotion") or ""),
-                ]).lower()
+                s = " ".join(
+                    [
+                        str(r.get("opd") or ""),
+                        str(r.get("content") or ""),
+                        str(r.get("outcome") or ""),
+                        str(r.get("channel") or ""),
+                        str(r.get("author") or ""),
+                        str(r.get("promotion") or ""),
+                    ]
+                ).lower()
                 if kw in s:
                     tmp.append(r)
             rows = tmp
@@ -1002,10 +1442,8 @@ def api_reccord_sale():
             if not batch:
                 break
             for r in batch:
-                try:
-                    r["items"] = json.loads(r.get("item") or "[]")
-                except Exception:
-                    r["items"] = []
+                # ✅ FIX: JSON Handling Correction
+                r["items"] = _ensure_items(r.get("item"))
                 r["opd"] = normalize_opd(r.get("opd"))
                 r["date"] = safe_date_str(r.get("date"))
             out.extend(batch)

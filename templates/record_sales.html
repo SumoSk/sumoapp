@@ -590,6 +590,108 @@
   font-size:10px !important;  /* ปรับ 9-11 ได้ */
   padding:4px 6px !important; /* ถ้าอยากให้แถวเตี้ยลง */
 }
+
+/* ทำให้กล่องในแท็บ 4 ไม่กว้างเกิน และอยู่กึ่งกลาง */
+#tab-settings .edit-panel{
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+/* ลดความกว้าง label ใน field-row ของแท็บ 4 ให้นุ่มขึ้น */
+#tab-settings .field-row{
+  grid-template-columns: 120px 1fr;
+}
+
+/* มือถือ: ให้เรียงเป็นคอลัมน์เดียว */
+@media (max-width:700px){
+  #tab-settings .field-row{
+    grid-template-columns: 1fr;
+  }
+}
+
+#tab-settings .btn-danger{
+  width: auto;
+  min-width: 260px;
+}
+
+@media print{
+  #receipt_patient_info{
+    border: 1px solid #111 !important;
+    border-radius: 0 !important;
+    resize: none !important;
+  }
+}
+
+
+
+/* ===== Receipt: patient info textarea (no box, seamless) ===== */
+#receiptOverlay #receipt_patient_info{
+  border: none !important;          /* ❌ ไม่มีกรอบ */
+  border-radius: 0 !important;
+  outline: none !important;
+  background: transparent !important; /* สีเดียวกับพื้น */
+  box-shadow: none !important;
+
+  padding: 0 !important;            /* ไม่ดันขอบ */
+  margin-top: 4px;
+
+  font-size: 8px !important;        /* ตามที่ตกลง */
+  line-height: 1.3 !important;
+  resize: none !important;
+
+  height: auto !important;
+  min-height: 32px;
+}
+
+/* กัน focus แล้วเด้งกรอบ */
+#receiptOverlay #receipt_patient_info:focus{
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* เวลา print ให้เนียนเหมือนตัวหนังสือปกติ */
+@media print{
+  #receiptOverlay #receipt_patient_info{
+    border: none !important;
+    background: transparent !important;
+  }
+}
+
+
+
+
+/* ===== Signature name input (no border, printable) ===== */
+.sig-under-input{
+  width: 100%;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+
+  text-align: center;
+  font-size: 8px;
+  font-weight: 700;
+  color: #111;
+
+  padding: 2px 0;
+}
+
+/* กัน focus แล้วขึ้นกรอบ */
+.sig-under-input:focus{
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* print: ให้เหมือนข้อความธรรมดา */
+@media print{
+  .sig-under-input{
+    border: none !important;
+    background: transparent !important;
+  }
+}
+
   </style>
 </head>
 
@@ -609,6 +711,8 @@
               onclick="switchTab('tab-opd', this)">2) แก้ไข/ตรวจสอบ OPD</button>
       <button type="button" class="tab-btn" role="tab" aria-selected="false"
               onclick="switchTab('tab-ar', this)">3) ลูกค้าค้างชำระ</button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false"
+        onclick="switchTab('tab-settings', this)">4) ตั้งค่าเลขใบเสร็จ</button>
     </div>
 
     <!-- =========================
@@ -821,6 +925,56 @@
       </div>
     </div>
   </div>
+<!-- =========================
+     TAB 4: SETTINGS (REBUILD DISPLAY RECEIPTS)
+     ========================= -->
+<div id="tab-settings" class="tab-content" role="tabpanel" aria-label="ตั้งค่าเลขใบเสร็จ">
+  <div class="edit-panel" style="margin-top:0;">
+    <div class="section-title">🧩 ตั้งค่าเลขใบเสร็จ (Display Number)</div>
+    <p class="section-sub">
+      ปุ่มแดงจะ “จัดเรียงเลขใบเสร็จใหม่” เฉพาะรายการที่สถานะ issued ในปีที่เลือก (RB-YYYY-XXXX)
+    </p>
+
+    <div class="field-row">
+      <label for="rebuildYear">เลือกปี</label>
+      <select id="rebuildYear"></select>
+    </div>
+
+    <div class="center-actions" style="justify-content:flex-start;">
+      <button type="button" class="btn btn-danger" onclick="rebuildDisplayReceipts()">
+        จัดเรียงเลขใบเสร็จใหม่ (Rebuild Display)
+      </button>
+    </div>
+
+    <div class="muted" style="margin-top:10px;">
+      หมายเหตุ: เลข RC (Original) ไม่ถูกกระทบ และห้ามเปลี่ยนโดยเด็ดขาด
+    </div>
+    <div class="edit-panel" style="margin-top:14px;">
+    <div class="section-title">🧾 ดูใบเสร็จ</div>
+<p class="section-sub">ค้นหาจาก วัน/เดือน/ปี/OPD แล้วกด “ดูใบเสร็จ” เพื่อเปิดใบเสร็จแบบเต็ม</p>
+
+    <div class="field-row">
+      <label for="slipOPD">OPD</label>
+      <input type="text" id="slipOPD" placeholder="เช่น 0007" inputmode="numeric" maxlength="4" oninput="digitsOnly(this)">
+    </div>
+
+    <div class="field-row">
+      <label>วัน / เดือน / ปี</label>
+      <div class="row nowrap">
+        <select id="slipDay" class="grow"></select>
+        <select id="slipMonth" class="grow"></select>
+        <select id="slipYear" class="grow"></select>
+       <button type="button" class="btn btn-outline" onclick="searchReceipts()">ค้นหา</button>
+
+      </div>
+    </div>
+
+    <div id="slipResult" style="margin-top:12px;"></div>
+  </div>
+  </div>
+</div>
+  
+
 
   <!-- =========================
        POPUP: ชำระเงิน (สรุปเคสนี้ + QR)  ✅ ไม่บันทึก/ไม่ยิง API
@@ -843,7 +997,8 @@
 
           <div class="bill-head">
   <div class="bill-field">
-    <div class="k">ชื่อลูกค้า</div>
+    <div class="k">ชื่อผู้รับการรักษา</div>
+
     <div class="v" id="pc_name">-</div>
   </div>
 
@@ -915,14 +1070,14 @@
         </div>
 
         <div class="field" style="grid-column:1/-1;">
-          <b>ข้อมูลลูกค้า (ชื่อ–ที่อยู่)</b>
-          <textarea
-            id="pay_note_input"
-            rows="3"
-            placeholder="ชื่อ–นามสกุลลูกค้า
-ที่อยู่ลูกค้า"
-            style="width:100%;margin-top:6px;border:1px solid #d1d5db;border-radius:10px;padding:8px;font-size:14px;resize:vertical;"
-          ></textarea>
+          <b>ข้อมูลผู้รับการรักษา (ชื่อ–ที่อยู่)</b>
+<textarea
+  id="pay_note_input"
+  rows="3"
+  placeholder="ชื่อ–นามสกุลผู้รับการรักษา
+ที่อยู่ผู้รับการรักษา"
+  style="width:100%;margin-top:6px;border:1px solid #d1d5db;border-radius:10px;padding:8px;font-size:14px;resize:vertical;"
+></textarea>
         </div>
       </div>
 
@@ -931,7 +1086,8 @@
         <div class="row" style="flex-wrap:wrap;gap:10px;">
           <div class="grow">
             <label class="muted">1) ผู้มีอำนาจออกหลักฐาน</label>
-            <input id="sig_authorized" type="text" placeholder="เช่น พญ.ปิยะฎา จินดาหลวง">
+            <input id="sig_authorized" type="text" value="พญ.ปิยะฎา จินดาหลวง" readonly>
+
           </div>
           <div class="grow">
             <label class="muted">2) ผู้ใช้บริการ</label>
@@ -965,6 +1121,10 @@
           186/4 ม.5 ต.เวียงยอง อ.เมือง จังหวัดลำพูน 51000<br>
           โทรศัพท์ 0614296596
         </div>
+        <div style="margin-top:10px; font-size:8px; font-weight:900; color:#111827;">
+  เลขที่ใบเสร็จ: <span id="receiptNo">-</span>
+  </div>
+
       </div>
 
       <div id="receiptContent"></div>
@@ -987,7 +1147,7 @@
             <div class="sig-actions">
               <button type="button" class="sig-btn" onclick="clearSig('authorized')">ล้าง</button>
             </div>
-            <div class="sig-under" id="sigUnder_authorized"></div>
+            <input  class="sig-under-input"  id="sigUnder_authorized"  type="text"  value="พญ.ปิยะฎา จินดาหลวง"  readonly>
           </div>
 
           <div class="sig-card">
@@ -996,7 +1156,7 @@
             <div class="sig-actions">
               <button type="button" class="sig-btn" onclick="clearSig('customer')">ล้าง</button>
             </div>
-            <div class="sig-under" id="sigUnder_customer"></div>
+            <input  class="sig-under-input"  id="sigUnder_customer"  type="text"  placeholder="พิมพ์ชื่อ">
           </div>
 
           <div class="sig-card">
@@ -1005,7 +1165,7 @@
             <div class="sig-actions">
               <button type="button" class="sig-btn" onclick="clearSig('receiver')">ล้าง</button>
             </div>
-            <div class="sig-under" id="sigUnder_receiver"></div>
+            <input   class="sig-under-input"  id="sigUnder_receiver"  type="text"  placeholder="พิมพ์ชื่อ">
           </div>
         </div>
       </div>
@@ -1195,6 +1355,45 @@
       recalcAmount();
       refreshActionButtonsState();
     });
+
+    initRebuildYearDropdown();
+function initRebuildYearDropdown(){
+  const sel = document.getElementById('rebuildYear');
+  if(!sel) return;
+
+  const y = new Date().getFullYear();
+  const years = [];
+  for(let i=y-3; i<=y+1; i++) years.push(i);
+
+  sel.innerHTML = years.map(v=>`<option value="${v}">${v}</option>`).join('');
+  sel.value = String(y);
+}
+
+
+async function rebuildDisplayReceipts(){
+  const sel = document.getElementById('rebuildYear');
+  const year = Number(sel?.value || 0);
+  if(!year) return alert('กรุณาเลือกปี');
+
+  if(!confirm(`ยืนยันการจัดเลขใหม่สำหรับปี ${year}?`)) return;
+
+  try{
+    const res = await fetch('/api/rebuild_display_receipts', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ year })
+    });
+    const data = await res.json().catch(()=> ({}));
+    if(!res.ok || data.success !== true){
+      throw new Error(data.error || 'จัดเลขใหม่ไม่สำเร็จ');
+    }
+    alert(`✅ จัดเรียงเลขใหม่สำเร็จ: ${data.count || 0} รายการ`);
+  }catch(e){
+    console.error(e);
+    alert(`❌ ${e.message || 'เกิดข้อผิดพลาด'}`);
+  }
+}
+
 
     // =========================
     // ---------- UI helpers ----------
@@ -1816,7 +2015,7 @@ document.getElementById('pc_opd').textContent = opdVal;
       const a = document.getElementById('sig_authorized');
       const c = document.getElementById('sig_customer');
       const r = document.getElementById('sig_receiver');
-      if(a && !a.value) a.value = 'พญ.ปิยะฎา จินดาหลวง';
+      if(a){  a.value = 'พญ.ปิยะฎา จินดาหลวง';  a.readOnly = true;}
       if(c && !c.value) c.value = name;
       if(r && !r.value) r.value = '';
 
@@ -1832,18 +2031,18 @@ document.getElementById('pc_opd').textContent = opdVal;
     }
 
     function applySigNamesToReceipt(){
-      const a = (document.getElementById('sig_authorized')?.value || '').trim();
-      const c = (document.getElementById('sig_customer')?.value || '').trim();
-      const r = (document.getElementById('sig_receiver')?.value || '').trim();
+  const a = (document.getElementById('sig_authorized')?.value || '').trim();
+  const c = (document.getElementById('sig_customer')?.value || '').trim();
+  const r = (document.getElementById('sig_receiver')?.value || '').trim();
 
-      const ua = document.getElementById('sigUnder_authorized');
-      const uc = document.getElementById('sigUnder_customer');
-      const ur = document.getElementById('sigUnder_receiver');
+  const ua = document.getElementById('sigUnder_authorized');
+  const uc = document.getElementById('sigUnder_customer');
+  const ur = document.getElementById('sigUnder_receiver');
 
-      if(ua) ua.textContent = a ? `(${a})` : '';
-      if(uc) uc.textContent = c ? `(${c})` : '';
-      if(ur) ur.textContent = r ? `(${r})` : '';
-    }
+  if(ua) ua.value = a;
+  if(uc) uc.value = c;
+  if(ur) ur.value = r;
+}
 
     // =========================
     // ✅ ใบเสร็จแบบเต็ม: ใช้ “กระจายยอดแบบผสมราคา” เหมือน popup ชำระเงิน
@@ -1875,58 +2074,116 @@ document.getElementById('pc_opd').textContent = opdVal;
       return { tbody, sum: dist.total, warn: dist.warn };
     }
 
-    function openReceiptFromPay(){
-      const total = Math.floor(Number(document.getElementById('amount').value || 0));
-      const customerInfo = (document.getElementById('pay_note_input')?.value || '').trim();
 
-      const { rows } = collectItemsForReceiptAndSave();
-      if(!rows.length) return alert('กรุณาเลือกรายการอย่างน้อย 1 รายการ');
+async function issueReceiptFromForm(){
+  const opd = (document.getElementById('opd').value||'').trim();
+  const date = (document.getElementById('date').value||'').slice(0,10);
+  const amount = Math.floor(Number(document.getElementById('amount').value||0));
+  const payment_method = getPayment();
 
-      const { tbody, sum } = buildReceiptRowsMixed(total, rows);
+  if(!isValidOPD(opd)) throw new Error('กรุณากรอก OPD 4 หลักให้ครบ');
+  if(!date) throw new Error('กรุณาเลือกวันที่');
+  if(!Number.isFinite(amount) || amount<=0) throw new Error('กรุณากรอกยอดขายรวมให้ถูกต้อง');
 
-      document.getElementById('receiptContent').innerHTML = `
-        <table class="receipt-table">
-          <thead>
-            <tr>
-              <th colspan="7" style="text-align:center; font-weight:900;">
-                ค่าตรวจรักษาและหัตถการทางการแพทย์
-              </th>
-            </tr>
-            <tr>
-              <th style="width:60px;">ลำดับ</th>
-              <th>รายการ</th>
-              <th style="width:70px;">จำนวน</th>
-              <th style="width:130px;">ราคาต่อรายการ (บาท)</th>
-              <th style="width:120px;">รวมบรรทัด (บาท)</th>
-              <th style="width:130px;">วันที่เริ่มบริการ</th>
-              <th style="width:130px;">วันที่สิ้นสุดบริการ</th>
-            </tr>
-          </thead>
-          <tbody>${tbody}</tbody>
-        </table>
+  // ใช้ items แบบ list of dict ตามสเปค (ไม่ใช่ string)
+  const items = collectItemsFromForm(); // [{label, qty, price}]
+  if(!items.length) throw new Error('กรุณาเลือกรายการอย่างน้อย 1 รายการ');
 
-        <div class="receipt-total">
-          รวมเป็นเงินทั้งสิ้น ${sum.toLocaleString()} บาท
-        </div>
+  const payload = { date, opd, amount, payment_method, items };
 
-        <div class="receipt-section" style="margin-top:14px; font-size:12px; line-height:1.7;">
-          <b>ข้อมูลลูกค้า (ชื่อ–ที่อยู่):</b><br>
-          ${customerInfo ? nl2brSafe(customerInfo) : '-'}
-        </div>
-      `;
+  const res = await fetch('/api/sales_issue_receipt', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
 
-      closePayPopup();
+  const data = await res.json().catch(()=> ({}));
+  if(!res.ok || !data || data.success !== true){
+    throw new Error(data.error || 'ออกเลขใบเสร็จไม่สำเร็จ');
+  }
+  return data; // {success, orig_no, disp_no, id}
+}
 
-      const ov = document.getElementById('receiptOverlay');
-      ov.style.display = 'flex';
-      ov.setAttribute('aria-hidden','false');
 
-      applySigNamesToReceipt();
 
-      requestAnimationFrame(() => {
-        initAllSigPads();
-      });
-    }
+
+    async function openReceiptFromPay(){
+  const btn = document.querySelector('#payOverlay .btn.btn-primary');
+  if(btn) btn.disabled = true;
+
+  try{
+    const issued = await issueReceiptFromForm();
+    const dispNo = (issued.disp_no || '').trim();
+    const origNo = (issued.orig_no || '').trim();
+    const showNo = (dispNo)
+      ? dispNo
+      : (origNo ? origNo.replace(/^RC-/, 'RB-') : '-');
+
+    const receiptNoEl = document.getElementById('receiptNo');
+    if(receiptNoEl) receiptNoEl.textContent = showNo;
+
+    const total = Math.floor(Number(document.getElementById('amount').value || 0));
+
+    // ✅ รายการจากฟอร์ม
+    const { rows } = collectItemsForReceiptAndSave();
+    if(!rows.length) throw new Error('กรุณาเลือกรายการอย่างน้อย 1 รายการ');
+
+    // ✅ สร้างตารางกลับมา
+    const { tbody, sum } = buildReceiptRowsMixed(total, rows);
+
+    // ✅ ข้อมูลผู้รับการรักษา (เอาค่าจาก popup มาเป็นค่าเริ่มต้น แต่บนใบเสร็จแก้ได้)
+    const patientInfo = (document.getElementById('pay_note_input')?.value || '').trim();
+
+    document.getElementById('receiptContent').innerHTML = `
+      <table class="receipt-table">
+        <thead>
+          <tr>
+            <th colspan="7" style="text-align:center; font-weight:900;">
+              ค่าตรวจรักษาและหัตถการทางการแพทย์
+            </th>
+          </tr>
+          <tr>
+            <th style="width:60px;">ลำดับ</th>
+            <th>รายการ</th>
+            <th style="width:70px;">จำนวน</th>
+            <th style="width:130px;">ราคาต่อรายการ (บาท)</th>
+            <th style="width:120px;">รวมบรรทัด (บาท)</th>
+            <th style="width:130px;">วันที่เริ่มบริการ</th>
+            <th style="width:130px;">วันที่สิ้นสุดบริการ</th>
+          </tr>
+        </thead>
+        <tbody>${tbody}</tbody>
+      </table>
+
+      <div class="receipt-total">
+        รวมเป็นเงินทั้งสิ้น ${sum.toLocaleString()} บาท
+      </div>
+
+      <div class="receipt-section">
+        <b>ข้อมูลผู้รับการรักษา (ชื่อ–ที่อยู่):</b><br>
+        <textarea id="receipt_patient_info" rows="2"
+          placeholder="ชื่อ–นามสกุลผู้รับการรักษา&#10;ที่อยู่ผู้รับการรักษา"
+        >${safe(patientInfo)}</textarea>
+      </div>
+    `;
+
+    closePayPopup();
+    const ov = document.getElementById('receiptOverlay');
+    ov.style.display = 'flex';
+    ov.setAttribute('aria-hidden','false');
+
+    applySigNamesToReceipt();
+    requestAnimationFrame(() => initAllSigPads());
+
+  }catch(err){
+    console.error(err);
+    alert(err.message || 'ออกใบเสร็จไม่สำเร็จ');
+  }finally{
+    if(btn) btn.disabled = false;
+  }
+}
+
+
 
     function closeReceipt(){
       const ov = document.getElementById('receiptOverlay');
@@ -2589,7 +2846,232 @@ async function saveReceiptImage(){
   }
 }
 
+// =========================
+// TAB4: Slip Viewer (filter วัน/เดือน/ปี/OPD)
+// ใช้ /api/sales (ดึงทั้งหมด) แล้วกรองฝั่งหน้าเว็บ
+// =========================
+document.addEventListener('DOMContentLoaded', () => {
+  initSlipFilters();
+});
 
+function initSlipFilters(){
+  const dSel = document.getElementById('slipDay');
+  const mSel = document.getElementById('slipMonth');
+  const ySel = document.getElementById('slipYear');
+  if(!dSel || !mSel || !ySel) return;
+
+  // วัน
+  let dOpt = `<option value="">วัน (ทั้งหมด)</option>`;
+  for(let d=1; d<=31; d++){
+    dOpt += `<option value="${String(d).padStart(2,'0')}">${d}</option>`;
+  }
+  dSel.innerHTML = dOpt;
+
+  // เดือน
+  let mOpt = `<option value="">เดือน (ทั้งหมด)</option>`;
+  for(let m=1; m<=12; m++){
+    const mm = String(m).padStart(2,'0');
+    mOpt += `<option value="${mm}">${m}</option>`;
+  }
+  mSel.innerHTML = mOpt;
+
+  // ปี (ใช้แนวเดียวกับ rebuildYear)
+  const y = new Date().getFullYear();
+  let yOpt = `<option value="">ปี (ทั้งหมด)</option>`;
+  for(let i=y-3; i<=y+1; i++){
+    yOpt += `<option value="${i}">${i}</option>`;
+  }
+  ySel.innerHTML = yOpt;
+  ySel.value = String(y);
+}
+
+async function searchReceipts(){
+  const result = document.getElementById('slipResult');
+  if(!result) return;
+
+  const opdRaw = (document.getElementById('slipOPD')?.value || '').trim();
+  const day  = (document.getElementById('slipDay')?.value || '').trim();
+  const month= (document.getElementById('slipMonth')?.value || '').trim();
+  const year = (document.getElementById('slipYear')?.value || '').trim();
+
+  if(opdRaw && !/^\d{4}$/.test(opdRaw)){
+    alert('กรุณากรอก OPD ให้ครบ 4 หลัก (เช่น 0007)');
+    return;
+  }
+
+  result.innerHTML = `<div class="muted">กำลังค้นหา…</div>`;
+
+  try{
+    const rows = await ensureAllSales();
+
+    const filtered = (rows || []).filter(r => {
+      const d = String((r.date||'')).slice(0,10);
+      const [yy, mm, dd] = d.split('-');
+
+      if(opdRaw && String(r.opd||'').trim().padStart(4,'0') !== opdRaw) return false;
+      if(year && yy !== year) return false;
+      if(month && mm !== month) return false;
+      if(day && dd !== day) return false;
+      return true;
+    })
+    .sort((a,b)=> new Date((b.date||'').slice(0,10)) - new Date((a.date||'').slice(0,10)));
+
+    if(filtered.length === 0){
+      result.innerHTML = `<div class="muted">ไม่พบรายการตามเงื่อนไข</div>`;
+      return;
+    }
+
+    result.innerHTML = filtered.map(r=>{
+      const date = formatDate(String(r.date||'').slice(0,10));
+      const opd  = String(r.opd||'').trim().padStart(4,'0');
+      const name = r.name || '-';
+      const amount = Number(r.amount||0);
+      const amtStr = Number.isFinite(amount) ? amount.toLocaleString() : '0';
+
+      const dispNo = (r.disp_no || r.display_no || '').trim();
+      const origNo = (r.orig_no || '').trim();
+      const shownNo = dispNo || origNo || '-';
+
+      return `
+        <div class="card">
+          <div class="left">
+            <div><strong>${safe(name)}</strong> <span class="muted">OPD: ${safe(opd)}</span></div>
+            <div class="muted">📅 ${safe(date)} • 💰 ${safe(amtStr)} บาท • 🧾 ${safe(shownNo)}</div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn-primary" onclick="openReceiptFromRecord('${r.id}')">ดูใบเสร็จ</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  }catch(err){
+    console.error(err);
+    result.innerHTML = `<div class="muted">ค้นหาไม่สำเร็จ</div>`;
+    alert(err.message || 'ค้นหาไม่สำเร็จ');
+  }
+}
+
+
+function findAnySaleById(id){
+  return (allSales || []).find(x => String(x.id) === String(id)) || null;
+}
+
+function parseItemsStringToRows(items){
+  // items ที่บันทึกเดิมเป็น array of string: "label - qty ชิ้น x price บาท"
+  const out = [];
+  (Array.isArray(items) ? items : []).forEach(line=>{
+    const m = String(line).match(/^(.*?) ?(?:\((.*?)\))? - (\d+(?:\.\d+)?) ชิ้น x (\d+(?:\.\d+)?) บาท/);
+    if(m){
+      const main = (m[1]||'').trim();
+      const sub  = (m[2]||'').trim();
+      const qty  = Math.max(1, Math.floor(Number(m[3]||1)));
+      const price= Math.max(0, Math.floor(Number(m[4]||0)));
+      const label = sub ? `${main} (${sub})` : main;
+      out.push({ label, qty, price });
+    }else{
+      // ถ้า format ไม่ตรง ก็ยัดเป็นรายการ 1 ชิ้น ราคา 0
+      const label = String(line||'').trim();
+      if(label) out.push({ label, qty:1, price:0 });
+    }
+  });
+  return out;
+}
+
+function buildReceiptRowsMixedFromDate(total, rows, dateISO){
+  const dateStr = formatDate(String(dateISO||'').slice(0,10));
+  const dist = distributeMixedAmount(total, rows);
+
+  let tbody = '';
+  dist.lines.forEach((r, idx)=>{
+    const qty = Math.max(1, Math.floor(Number(r.qty||1) || 1));
+    const unit = Number.isFinite(r.unit) ? r.unit : (qty ? Math.floor(r.lineTotal / qty) : Math.floor(r.lineTotal));
+
+    tbody += `
+      <tr>
+        <td style="text-align:center;">${idx+1}</td>
+        <td>${safe(r.label)}</td>
+        <td style="text-align:center;">${qty}</td>
+        <td style="text-align:right;">${unit.toLocaleString()}</td>
+        <td style="text-align:right;">${Math.floor(r.lineTotal).toLocaleString()}</td>
+        <td style="text-align:center;">${safe(dateStr)}</td>
+        <td style="text-align:center;">${safe(dateStr)}</td>
+      </tr>
+    `;
+  });
+
+  return { tbody, sum: dist.total, warn: dist.warn };
+}
+
+function openReceiptFromRecord(id){
+  const rec = findAnySaleById(id);
+  if(!rec) return alert('ไม่พบรายการนี้');
+
+  const total = Math.floor(Number(rec.amount||0));
+  const rows = parseItemsStringToRows(rec.items || []);
+  if(!rows.length) return alert('รายการนี้ไม่มีรายละเอียด items');
+
+  const dispNo = (rec.disp_no || rec.display_no || '').trim();
+  const origNo = (rec.orig_no || '').trim();
+  const showNo = dispNo ? dispNo : (origNo ? origNo.replace(/^RC-/, 'RB-') : '-');
+
+  const receiptNoEl = document.getElementById('receiptNo');
+  if(receiptNoEl) receiptNoEl.textContent = showNo;
+
+  // ✅ ตารางตามวันที่ของ record
+  const { tbody, sum } = buildReceiptRowsMixedFromDate(total, rows, rec.date);
+
+  document.getElementById('receiptContent').innerHTML = `
+    <table class="receipt-table">
+      <thead>
+        <tr>
+          <th colspan="7" style="text-align:center; font-weight:900;">
+            ค่าตรวจรักษาและหัตถการทางการแพทย์
+          </th>
+        </tr>
+        <tr>
+          <th style="width:60px;">ลำดับ</th>
+          <th>รายการ</th>
+          <th style="width:70px;">จำนวน</th>
+          <th style="width:130px;">ราคาต่อรายการ (บาท)</th>
+          <th style="width:120px;">รวมบรรทัด (บาท)</th>
+          <th style="width:130px;">วันที่เริ่มบริการ</th>
+          <th style="width:130px;">วันที่สิ้นสุดบริการ</th>
+        </tr>
+      </thead>
+      <tbody>${tbody}</tbody>
+    </table>
+
+    <div class="receipt-total">
+      รวมเป็นเงินทั้งสิ้น ${sum.toLocaleString()} บาท
+    </div>
+
+    <div class="receipt-section">
+      <b>ข้อมูลผู้รับการรักษา (ชื่อ–ที่อยู่):</b><br>
+      <textarea id="receipt_patient_info" rows="2"
+        placeholder="ชื่อ–นามสกุลผู้รับการรักษา&#10;ที่อยู่ผู้รับการรักษา"
+      ></textarea>
+    </div>
+  `;
+
+  const ov = document.getElementById('receiptOverlay');
+  ov.style.display = 'flex';
+  ov.setAttribute('aria-hidden','false');
+
+  applySigNamesToReceipt();
+  requestAnimationFrame(() => initAllSigPads());
+}
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const ipt = document.getElementById('slipOPD');
+  if(ipt){
+    ipt.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){ e.preventDefault(); searchReceipts(); }
+    });
+  }
+});
 
   </script>
 
