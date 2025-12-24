@@ -395,7 +395,7 @@
       border-radius:16px;
       padding:22px;
       box-shadow:0 20px 60px rgba(0,0,0,.25);
-      font-size:14px;
+      font-size:8px;
     }
     .receipt-header{
       text-align:center;
@@ -425,12 +425,12 @@
       line-height:1.45;
       margin-top:6px;
     }
-    .receipt-section{ margin-top:12px; }
+    .receipt-section{ margin-top:8px; }
     .receipt-table{
       width:100%;
       border-collapse:collapse;
       margin-top:10px;
-      font-size:13px;
+      font-size:8px;
     }
     .receipt-table th,
     .receipt-table td{
@@ -582,6 +582,14 @@
   overflow: visible !important;
 }
 
+/* ✅ ลดเฉพาะตารางใบเสร็จ */
+#receiptOverlay .receipt-table th{
+  font-size:10px !important;
+}
+#receiptOverlay .receipt-table td{
+  font-size:10px !important;  /* ปรับ 9-11 ได้ */
+  padding:4px 6px !important; /* ถ้าอยากให้แถวเตี้ยลง */
+}
   </style>
 </head>
 
@@ -966,6 +974,10 @@
         (1) ในกรณีที่ผู้บริโภคยังไม่ได้ใช้บริการภายในระยะเวลาเจ็ดวันนับจากวันที่ได้ชำระเงิน ให้ผู้ประกอบธุรกิจคืนเงินเต็มจำนวน กรณีที่ชำระค่าบริการผ่านบัตรเครดิต ให้ผู้ประกอบธุรกิจมีสิทธิหักค่าธรรมเนียมการใช้บัตรเครดิตได้<br>
         (2) ในกรณีที่ผู้ประกอบธุรกิจปิดกิจการ ปิดปรับปรุง หรือย้ายสถานที่ให้บริการ โดยผู้บริโภคไม่อาจใช้บริการแห่งอื่นหรือสาขาอื่นได้โดยสะดวก หรือไม่สามารถให้บริการเสริมความงามได้ตามเงื่อนไขที่ตกลงไว้ หรือให้บริการล่าช้าเกินสมควร หรือให้บริการที่ไม่เหมาะสมอันอาจก่อให้เกิดอันตรายแก่ผู้บริโภคและผู้ประกอบธุรกิจไม่สามารถแก้ไขการให้บริการนั้นได้ หรือผู้บริโภคมีหลักฐานรับรองจากแพทย์ว่าหากใช้บริการเสริมความงามต่อไปอาจเป็นเหตุให้ผู้บริโภคได้รับอันตรายต่อสุขภาพหรือร่างกาย ให้ผู้ประกอบธุรกิจคืนเงินตามสัดส่วนที่ยังไม่ได้ให้บริการ
       </div>
+      <div class="fineprint" style="margin-top:14px;">
+        <b>หมายเหตุ:</b><br>
+        ผู้ประกอบธุรกิจต้องส่งมอบหลักฐานการรับเงินให้แก่ผู้บริโภคทันที ที่ได้รับการชำระค่าตรวจรักษาและหัตถการทางการแพทย์จากผู้บริโภค
+      </div>
 
       <div class="sig-wrap">
         <div class="sig-grid">
@@ -998,10 +1010,7 @@
         </div>
       </div>
 
-      <div class="fineprint" style="margin-top:14px;">
-        <b>หมายเหตุ:</b><br>
-        ผู้ประกอบธุรกิจต้องส่งมอบหลักฐานการรับเงินให้แก่ผู้บริโภคทันที ที่ได้รับการชำระค่าตรวจรักษาและหัตถการทางการแพทย์จากผู้บริโภค
-      </div>
+      
 
       <div class="receipt-actions" style="display:flex;justify-content:center;gap:10px;margin-top:14px;flex-wrap:wrap;">
   <button class="btn btn-outline" onclick="closeReceipt()">ปิด</button>
