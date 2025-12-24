@@ -1,130 +1,590 @@
-<!-- templates/appsettings.html -->
+<!-- templates/appsettings.html  (FULL) -->
 <!doctype html>
 <html lang="th">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Setting</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1, viewport-fit=cover" />
+  <title>ตั้งค่า</title>
+
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif;margin:0;background:#f6f7fb;}
-    .wrap{max-width:980px;margin:0 auto;padding:16px;}
-    .card{background:#fff;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,.08);padding:14px;margin-bottom:12px;}
-    h1{font-size:20px;margin:6px 0 12px;}
-    h2{font-size:16px;margin:0 0 10px;}
-    .row{display:flex;gap:10px;flex-wrap:wrap;}
-    .row > *{flex:1;}
-    input,select,button{padding:10px;border-radius:10px;border:1px solid #d7dbe6;font-size:14px;}
-    button{cursor:pointer;border:none;background:#1f6feb;color:#fff;}
-    button.secondary{background:#5b6475;}
-    button.danger{background:#d93b3b;}
-    button.ghost{background:#eef1f7;color:#222;}
-    table{width:100%;border-collapse:collapse;}
-    th,td{padding:10px;border-bottom:1px solid #eef1f7;text-align:left;font-size:14px;vertical-align:top;}
-    .tag{display:inline-block;padding:2px 8px;border-radius:999px;background:#eef1f7;font-size:12px;margin-left:6px;}
-    .tag.old{background:#fff2cc;}
-    .muted{color:#667085;font-size:12px;}
-    .tabs{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
-    .tabs button{background:#eef1f7;color:#111;}
-    .tabs button.active{background:#111;color:#fff;}
-    .actions{display:flex;gap:8px;flex-wrap:wrap;}
+    :root{
+      --teal:#0f766e;
+      --teal-600:#0d9488;
+      --bg:#f7f7f7;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --danger:#c62828;
+      --shadow-soft: 0 10px 30px rgba(0,0,0,.08);
+      --radius:16px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif;
+      margin:0;
+      background: var(--bg);
+      color:#111827;
+      padding: 10px 10px 140px;
+      font-size:12px; /* ตามที่ขอ: 12 ให้หมด */
+    }
+
+    .wrap{max-width:980px;margin:0 auto;padding:6px 6px 0;}
+
+    .topbar{
+      background: linear-gradient(135deg, rgba(15,118,110,.10), rgba(13,148,136,.06));
+      border:1px solid rgba(15,118,110,.10);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-soft);
+      padding:14px 14px 12px;
+      margin-bottom:12px;
+    }
+    .title{display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
+    h1{font-size:16px; margin:0; letter-spacing:.2px;}
+    .subtitle{color:var(--muted); font-size:12px; margin-top:6px; line-height:1.4}
+    .pill{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:6px 10px; border-radius:999px;
+      background: rgba(15,118,110,.10);
+      color: var(--teal);
+      font-size:12px;
+      white-space:nowrap;
+      border:1px solid rgba(15,118,110,.15);
+    }
+
+    .card{
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-soft);
+      padding: 12px;
+      border:1px solid rgba(17,24,39,.06);
+      margin-bottom:12px;
+    }
+
+    .tabsWrap{
+      position: sticky;
+      top: 8px;
+      z-index: 5;
+      background: rgba(247,247,247,.88);
+      backdrop-filter: blur(10px);
+      padding: 8px 0 10px;
+      margin: -4px 0 10px;
+    }
+    .tabs{display:flex; gap:8px; flex-wrap:wrap;}
+    .tabBtn{
+      appearance:none;
+      border:1px solid rgba(17,24,39,.10);
+      background:#fff;
+      color:#111827;
+      border-radius:999px;
+      padding:9px 12px;
+      font-size:12px;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      box-shadow: 0 6px 16px rgba(0,0,0,.06);
+      transition: transform .08s ease, box-shadow .12s ease, background .12s ease;
+    }
+    .tabBtn:active{transform: translateY(1px)}
+    .tabBtn.active{
+      background: linear-gradient(135deg, rgba(15,118,110,.14), rgba(13,148,136,.10));
+      border-color: rgba(15,118,110,.35);
+      color: var(--teal);
+      box-shadow: 0 10px 22px rgba(15,118,110,.12);
+      font-weight: 700;
+    }
+
+    .tag{
+      display:inline-block;
+      padding:2px 8px;
+      border-radius:999px;
+      background: #eef1f7;
+      font-size:12px;
+      border: 1px solid rgba(17,24,39,.08);
+    }
+    .tag.old{background:#fff7d6;border-color: rgba(202,138,4,.25); color:#92400e;}
+    .tag.off{background:#fdecec;border-color: rgba(198,40,40,.25); color:#8a1d1d;}
+    .tag.on{background:#e9fbf7;border-color: rgba(13,148,136,.25); color:#0b5d56;}
+    .muted{color:var(--muted); font-size:12px}
+
+    h2{font-size:12px; margin: 8px 0 10px; letter-spacing:.2px;}
+
+    .bar{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin: 8px 0 10px;
+    }
+    .bar .grow{flex:1; min-width: 220px;}
+    .bar .right{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+    .field{display:flex; flex-direction:column; gap:6px;}
+    .field label{font-size:12px; color:var(--muted);}
+
+    input,select,button,textarea{
+      font: inherit;
+      font-size:12px;
+      border-radius: 12px;
+      border:1px solid rgba(17,24,39,.14);
+      padding: 8px 9px;
+      outline:none;
+      background:#fff;
+      transition: box-shadow .12s ease, border-color .12s ease, transform .08s ease;
+    }
+    textarea{min-height:74px; resize:vertical}
+    input:focus,select:focus,textarea:focus{
+      border-color: rgba(13,148,136,.55);
+      box-shadow: 0 0 0 4px rgba(13,148,136,.14);
+    }
+
+    .btn{
+      cursor:pointer;
+      border:none;
+      color:#fff;
+      background: linear-gradient(135deg, var(--teal), var(--teal-600));
+      box-shadow: 0 10px 22px rgba(15,118,110,.18);
+      font-weight:700;
+      white-space:nowrap;
+      padding: 8px 10px;
+    }
+    .btn:active{transform: translateY(1px)}
+    .btn.secondary{background:#111827; box-shadow: 0 10px 22px rgba(0,0,0,.16);}
+    .btn.ghost{
+      background:#eef7f6;
+      color: var(--teal);
+      border:1px solid rgba(15,118,110,.18);
+      box-shadow:none;
+      font-weight:700;
+    }
+    .btn.danger{
+      background: linear-gradient(135deg, #d32f2f, #b71c1c);
+      box-shadow: 0 10px 22px rgba(211,47,47,.18);
+    }
+    .btn.small{padding:7px 9px; font-size:12px; box-shadow:none}
+    .btn.small.secondary{box-shadow:none}
+    .btn.small.ghost{box-shadow:none}
+
+    /* Lists */
+    .list{
+      border:1px solid rgba(17,24,39,.08);
+      border-radius: 14px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .rowItem{
+      display:grid;
+      grid-template-columns: 1.4fr .9fr .7fr auto;
+      gap:10px;
+      padding: 10px 10px;
+      border-bottom:1px solid rgba(17,24,39,.06);
+      align-items:center;
+    }
+    .rowItem:last-child{border-bottom:none}
+    .rowMain{display:flex; flex-direction:column; gap:4px; min-width:0;}
+    .nameLine{display:flex; align-items:center; gap:8px; min-width:0;}
+    .nameLine b{font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+    .subLine{font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+    .mini{font-size:12px; color:var(--muted);}
+    .actions{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+
+    @media (max-width: 780px){
+      .rowItem{grid-template-columns: 1fr; gap:8px;}
+      .actions{justify-content:flex-start}
+    }
+
+    /* Drawer */
+    .backdrop{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.35);
+      display:none;
+      z-index: 50;
+    }
+    .drawer{
+      position:fixed;
+      top:0; right:0;
+      height:100%;
+      width:min(420px, 92vw);
+      background:#fff;
+      border-left:1px solid rgba(17,24,39,.10);
+      box-shadow: -20px 0 60px rgba(0,0,0,.20);
+      transform: translateX(100%);
+      transition: transform .18s ease;
+      z-index: 60;
+      display:flex;
+      flex-direction:column;
+    }
+    .drawer.open{transform: translateX(0)}
+    .backdrop.show{display:block}
+    .drawerHeader{
+      padding: 12px;
+      border-bottom:1px solid rgba(17,24,39,.08);
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+    }
+    .drawerTitle{display:flex; flex-direction:column; gap:4px; min-width:0;}
+    .drawerTitle b{font-size:12px}
+    .drawerBody{
+      padding: 12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      overflow:auto;
+    }
+    .drawerFooter{
+      padding: 12px;
+      border-top:1px solid rgba(17,24,39,.08);
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .grid2{display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+    .closeBtn{
+      border:1px solid rgba(17,24,39,.12);
+      background:#fff;
+      color:#111827;
+      box-shadow:none;
+      padding: 8px 10px;
+      border-radius: 12px;
+      cursor:pointer;
+    }
+
+    /* Toast */
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 16px;
+      transform: translateX(-50%);
+      background: rgba(17,24,39,.92);
+      color:#fff;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size:12px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.22);
+      display:none;
+      z-index: 80;
+      max-width: 92vw;
+      text-align:center;
+    }
+
+    /* ===== Receipt Composer (Paper) ===== */
+    .rcWrap{
+      display:grid;
+      grid-template-columns: 1fr 360px;
+      gap:12px;
+      align-items:start;
+    }
+    .rcStage{
+      background: #fff;
+      border: 1px solid rgba(17,24,39,.10);
+      border-radius: 14px;
+      box-shadow: var(--shadow-soft);
+      padding: 12px;
+    }
+    .paperOuter{
+      width:100%;
+      display:flex;
+      justify-content:center;
+      padding: 8px 0;
+    }
+    .paper{
+      width: min(600px, 90vw);
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid rgba(17,24,39,.14);
+      box-shadow: 0 12px 26px rgba(0,0,0,.10);
+      position: relative;
+      overflow:hidden;
+      touch-action: none;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+    canvas#rcCanvas{
+      width:100%;
+      height:100%;
+      display:block;
+      pointer-events:none;
+    }
+
+    .rcSide{
+      background:#fff;
+      border:1px solid rgba(17,24,39,.08);
+      border-radius: 14px;
+      box-shadow: var(--shadow-soft);
+      padding: 12px;
+      position: sticky;
+      top: 72px;
+    }
+    .sep{border:none;border-top:1px solid rgba(17,24,39,.08); margin: 10px 0;}
+    .rangeRow{display:flex; gap:10px; align-items:center;}
+    input[type="range"]{width:100%; padding:0; border:none; box-shadow:none;}
+
+    .miniBtnRow{display:flex; gap:8px; flex-wrap:wrap;}
+    .miniBtnRow .btn{flex:1}
+    .btnRow{display:flex; gap:8px; flex-wrap:wrap;}
+    .btnRow .btn{flex:1}
+
+    .noteBox{
+      background: rgba(15,118,110,.06);
+      border: 1px solid rgba(15,118,110,.14);
+      border-radius: 12px;
+      padding: 10px;
+      color:#0f3d3a;
+      line-height:1.4;
+    }
+
+    .selectedInfo{
+      border:1px dashed rgba(15,118,110,.35);
+      background: rgba(15,118,110,.06);
+      border-radius: 12px;
+      padding: 10px;
+      line-height:1.4;
+    }
+
+    .modePill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      border:1px solid rgba(17,24,39,.12);
+      background:#fff;
+      white-space:nowrap;
+    }
+    .modePill.danger{
+      border-color: rgba(211,47,47,.25);
+      background: rgba(211,47,47,.08);
+      color:#8a1d1d;
+      font-weight:700;
+    }
+
+    @media (max-width: 920px){
+      .rcWrap{grid-template-columns: 1fr;}
+      .rcSide{position:relative; top:auto;}
+    }
   </style>
 </head>
+
 <body>
   <div class="wrap">
-    <div class="card">
-      <h1>ตั้งค่า (สินค้า / หมวด / ถังขยะ)</h1>
-      <div class="muted">ล็อกอินเหมือนเดิม • ลบทิ้ง = ไป “ถังขยะ/เก่า” ไม่กระทบบิลเก่า</div>
+
+    <div class="topbar">
+      <div class="title">
+        <div>
+          <h1>ตั้งค่า</h1>
+          <div class="subtitle">จัดหมวดและสินค้าให้เรียบร้อย บิลเก่าไม่กระทบ ลบแล้วกู้คืนได้</div>
+        </div>
+        <div class="pill">🧾 ใช้ล็อกอินเดิม</div>
+      </div>
     </div>
 
     <div class="card">
-      <div class="tabs">
-        <button id="tabCats" class="active">หมวดสินค้า</button>
-        <button id="tabProds">สินค้า</button>
-        <button id="tabTrash">ถังขยะ <span class="tag old">เก่า</span></button>
+      <div class="tabsWrap">
+        <div class="tabs">
+          <button id="tabCats" class="tabBtn active" type="button">หมวดสินค้า</button>
+          <button id="tabProds" class="tabBtn" type="button">สินค้า</button>
+          <button id="tabTrash" class="tabBtn" type="button">ถังขยะ <span class="tag old">เก่า</span></button>
+          <button id="tabRC" class="tabBtn" type="button">สร้างA4</button>
+        </div>
       </div>
 
       <!-- ============ CATEGORIES ============ -->
       <div id="panelCats">
-        <h2>เพิ่มหมวด</h2>
-        <div class="row">
-          <input id="catName" placeholder="ชื่อหมวด" />
-          <input id="catSort" type="number" placeholder="ลำดับ (sort_order)" value="0" />
-          <select id="catActive">
-            <option value="true">ใช้งาน</option>
-            <option value="false">ปิด</option>
-          </select>
-          <button id="btnAddCat">เพิ่ม</button>
+        <div class="bar">
+          <div class="field grow">
+            <label>ค้นหา</label>
+            <input id="catSearch" placeholder="พิมพ์ชื่อหมวด..." />
+          </div>
+          <div class="field" style="min-width:170px;">
+            <label>สถานะ</label>
+            <select id="catFilterActive">
+              <option value="all">ทั้งหมด</option>
+              <option value="true">ใช้งาน</option>
+              <option value="false">ปิด</option>
+            </select>
+          </div>
+          <div class="right">
+            <button class="btn" id="btnOpenAddCat" type="button">+ เพิ่มหมวด</button>
+          </div>
         </div>
-
-        <hr style="border:none;border-top:1px solid #eef1f7;margin:14px 0;">
-
-        <h2>รายการหมวด</h2>
-        <div style="overflow:auto;">
-          <table id="catsTable">
-            <thead>
-              <tr>
-                <th>ชื่อ</th>
-                <th>ลำดับ</th>
-                <th>สถานะ</th>
-                <th style="width:240px;">จัดการ</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
+        <div class="list" id="catsList"></div>
       </div>
 
       <!-- ============ PRODUCTS ============ -->
       <div id="panelProds" style="display:none;">
-        <h2>เพิ่มสินค้า</h2>
-        <div class="row">
-          <select id="prodCat"></select>
-          <input id="prodName" placeholder="ชื่อสินค้า" />
-          <input id="prodPrice" type="number" step="0.01" placeholder="ราคาตั้งต้น (ถ้าไม่ใช้ปล่อยว่าง)" />
-          <input id="prodSort" type="number" placeholder="ลำดับ (sort_order)" value="0" />
-          <select id="prodActive">
-            <option value="true">ใช้งาน</option>
-            <option value="false">ปิด</option>
-          </select>
-          <button id="btnAddProd">เพิ่ม</button>
+        <div class="bar">
+          <div class="field grow">
+            <label>ค้นหา</label>
+            <input id="prodSearch" placeholder="พิมพ์ชื่อสินค้า..." />
+          </div>
+          <div class="field" style="min-width:170px;">
+            <label>หมวด</label>
+            <select id="prodFilterCat">
+              <option value="all">ทั้งหมด</option>
+            </select>
+          </div>
+          <div class="field" style="min-width:170px;">
+            <label>สถานะ</label>
+            <select id="prodFilterActive">
+              <option value="all">ทั้งหมด</option>
+              <option value="true">ใช้งาน</option>
+              <option value="false">ปิด</option>
+            </select>
+          </div>
+          <div class="right">
+            <button class="btn" id="btnOpenAddProd" type="button">+ เพิ่มสินค้า</button>
+          </div>
         </div>
-
-        <hr style="border:none;border-top:1px solid #eef1f7;margin:14px 0;">
-
-        <h2>รายการสินค้า</h2>
-        <div style="overflow:auto;">
-          <table id="prodsTable">
-            <thead>
-              <tr>
-                <th>ชื่อ</th>
-                <th>หมวด</th>
-                <th>ราคา</th>
-                <th>ลำดับ</th>
-                <th>สถานะ</th>
-                <th style="width:320px;">จัดการ</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
+        <div class="list" id="prodsList"></div>
       </div>
 
       <!-- ============ TRASH ============ -->
       <div id="panelTrash" style="display:none;">
-        <h2>ถังขยะ <span class="tag old">เก่า</span></h2>
-        <div class="muted">รายการที่ “ลบ” จะมาอยู่ตรงนี้ (deleted_at ไม่ว่าง) — กู้คืนได้</div>
-        <div style="overflow:auto;margin-top:10px;">
-          <table id="trashTable">
-            <thead>
-              <tr>
-                <th>ชื่อ</th>
-                <th>หมวด</th>
-                <th>ลบเมื่อ</th>
-                <th style="width:220px;">จัดการ</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+        <div class="muted">รายการที่ “ลบ” จะอยู่ตรงนี้ (deleted_at ไม่ว่าง) กู้คืนได้</div>
+        <div class="bar">
+          <div class="field grow">
+            <label>ค้นหา</label>
+            <input id="trashSearch" placeholder="ค้นหาในถังขยะ..." />
+          </div>
+        </div>
+        <div class="list" id="trashList"></div>
+      </div>
+
+      <!-- ============ RECEIPT COMPOSER ============ -->
+      <div id="panelRC" style="display:none;">
+        <div class="rcWrap">
+          <div class="rcStage">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+              <div>
+                <h2 style="margin:0 0 6px;">Receipt Composer (ลายเซ็น/ตราประทับ/ข้อความ)</h2>
+                <div class="muted">นิ้วเดียวลาก = ย้าย | สองนิ้ว pinch = ย่อ/ขยาย | สองนิ้วหมุน = rotate | แตะเพื่อเลือกเลเยอร์</div>
+              </div>
+              <div id="rcModePill" class="modePill">โหมดปกติ</div>
+            </div>
+
+            <div class="paperOuter">
+              <div class="paper" id="rcPaper">
+                <canvas id="rcCanvas"></canvas>
+              </div>
+            </div>
+
+            <div class="muted" style="line-height:1.4;">
+              เคล็ดลับ: ใส่ลายเซ็นเป็นรูป PNG จะง่ายสุด แต่ถ้าเป็นรูปพื้นหลังขาว ใช้ “ไดคัทวาดเส้นล้อม” ได้เลย
+            </div>
+          </div>
+
+          <div class="rcSide">
+            <div class="grid2">
+              <div class="field">
+                <label>ขนาดกระดาษ</label>
+                <select id="rcPaperSize">
+                  <option value="A3">A3</option>
+                  <option value="A4" selected>A4</option>
+                  <option value="A5">A5</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>แนว</label>
+                <select id="rcPaperOri">
+                  <option value="portrait" selected>ตั้ง</option>
+                  <option value="landscape">นอน</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="btnRow" style="margin-top:10px;">
+              <button class="btn" id="btnRcAddImage" type="button">+ เพิ่มรูป</button>
+              <button class="btn secondary" id="btnRcAddText" type="button">+ ข้อความ</button>
+            </div>
+            <input id="rcFile" type="file" accept="image/*" multiple style="display:none;">
+
+            <hr class="sep">
+
+            <div id="rcSelectedBox" class="selectedInfo">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <b>เลเยอร์ที่เลือก</b>
+                <span class="muted" id="rcSelType">-</span>
+              </div>
+              <div class="muted" id="rcSelHint" style="margin-top:6px;">แตะบนกระดาษเพื่อเลือกเลเยอร์</div>
+
+              <div id="rcTextControls" style="display:none; margin-top:10px;">
+                <div class="field">
+                  <label>ข้อความ</label>
+                  <textarea id="rcTextValue" placeholder="พิมพ์ข้อความ..."></textarea>
+                </div>
+                <div class="grid2">
+                  <div class="field">
+                    <label>ขนาด</label>
+                    <input id="rcFontSize" type="number" min="8" max="96" value="22">
+                  </div>
+                  <div class="field">
+                    <label>จัดแนว</label>
+                    <select id="rcAlign">
+                      <option value="left">ซ้าย</option>
+                      <option value="center">กลาง</option>
+                      <option value="right">ขวา</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="grid2">
+                  <button class="btn ghost" id="rcBold" type="button">หนา/ปกติ</button>
+                  <button class="btn ghost" id="rcColor" type="button">สีดำ/น้ำเงิน</button>
+                </div>
+              </div>
+
+              <div id="rcCommonControls" style="margin-top:10px; display:none;">
+                <div class="field">
+                  <label>ความทึบ (opacity)</label>
+                  <div class="rangeRow">
+                    <input id="rcOpacity" type="range" min="10" max="100" value="100">
+                    <span class="muted" id="rcOpacityTxt">100%</span>
+                  </div>
+                </div>
+
+                <div class="grid2">
+                  <button class="btn ghost" id="rcBringFront" type="button">ขึ้นหน้า</button>
+                  <button class="btn ghost" id="rcSendBack" type="button">ลงหลัง</button>
+                </div>
+
+                <div class="grid2">
+                  <button class="btn ghost" id="rcDuplicate" type="button">ทำซ้ำ</button>
+                  <button class="btn danger" id="rcDelete" type="button">ลบ</button>
+                </div>
+
+                <div class="btnRow" style="margin-top:8px;">
+                  <button class="btn small ghost" id="rcCenter" type="button">จัดกลาง</button>
+                  <button class="btn small ghost" id="rcResetTransform" type="button">รีเซ็ต</button>
+                </div>
+
+                <div class="btnRow" style="margin-top:8px;">
+                  <button class="btn danger" id="rcCutout" type="button">✂️ ไดคัท (วาดเส้นล้อม)</button>
+                </div>
+              </div>
+            </div>
+
+            <hr class="sep">
+
+            <div class="field">
+              <label>คุณภาพไฟล์</label>
+              <select id="rcDpi">
+                <option value="150">150 DPI (เบา/เร็ว)</option>
+                <option value="200" selected>200 DPI (กำลังดี)</option>
+                <option value="300">300 DPI (คม/ไฟล์ใหญ่)</option>
+              </select>
+            </div>
+
+            <div class="btnRow" style="margin-top:10px;">
+              <button class="btn secondary" id="rcSave" type="button">บันทึกเป็นรูป</button>
+              <button class="btn" id="rcShare" type="button">แชร์</button>
+            </div>
+
+            <div class="noteBox" style="margin-top:10px;">
+              โหมดไดคัท: วาดเส้นล้อม “ส่วนที่ต้องการเก็บ” แล้วกด “เสร็จ”<br>
+              (ด้านนอกเส้นจะโปร่งใส)
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -132,24 +592,55 @@
     {% include 'floating_menu.html' %}
   </div>
 
+  <!-- Drawer + backdrop -->
+  <div id="backdrop" class="backdrop"></div>
+  <div id="drawer" class="drawer" aria-hidden="true">
+    <div class="drawerHeader">
+      <div class="drawerTitle">
+        <b id="drawerHeading">แก้ไข</b>
+        <div class="muted" id="drawerSub">กรอกข้อมูลแล้วกดบันทึก</div>
+      </div>
+      <button class="closeBtn" id="btnCloseDrawer" type="button">ปิด</button>
+    </div>
+    <div class="drawerBody" id="drawerBody"></div>
+    <div class="drawerFooter" id="drawerFooter"></div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
 <script>
   const $ = (id) => document.getElementById(id);
 
   let categories = [];
   let products = [];
+  let drawerState = { type: null, mode: null, data: null };
+
+  function toast(msg){
+    const t = $('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(()=>{ t.style.display='none'; }, 1400);
+  }
 
   function setTab(which){
     $('tabCats').classList.toggle('active', which==='cats');
     $('tabProds').classList.toggle('active', which==='prods');
     $('tabTrash').classList.toggle('active', which==='trash');
+    $('tabRC').classList.toggle('active', which==='rc');
+
     $('panelCats').style.display = which==='cats' ? '' : 'none';
     $('panelProds').style.display = which==='prods' ? '' : 'none';
     $('panelTrash').style.display = which==='trash' ? '' : 'none';
+    $('panelRC').style.display = which==='rc' ? '' : 'none';
+
+    if(which==='rc') requestAnimationFrame(()=>RC.draw());
   }
 
   $('tabCats').onclick = ()=>setTab('cats');
   $('tabProds').onclick = ()=>setTab('prods');
   $('tabTrash').onclick = ()=>setTab('trash');
+  $('tabRC').onclick = ()=>setTab('rc');
 
   async function api(url, method='GET', body=null){
     const opt = { method, headers: {} };
@@ -163,165 +654,1282 @@
     return data;
   }
 
-  function renderCatSelect(){
-    const sel = $('prodCat');
-    sel.innerHTML = '';
-    categories
-      .slice()
-      .sort((a,b)=> (a.sort_order||0)-(b.sort_order||0) || (a.name||'').localeCompare(b.name||''))
-      .forEach(c=>{
-        const op=document.createElement('option');
-        op.value=c.id;
-        op.textContent = `${c.name}${c.is_active ? '' : ' (ปิด)'}`;
-        sel.appendChild(op);
-      });
-  }
-
-  function renderCatsTable(){
-    const tb = $('catsTable').querySelector('tbody');
-    tb.innerHTML='';
-    categories.forEach(c=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML = `
-        <td><input value="${(c.name||'').replaceAll('"','&quot;')}" data-k="name"></td>
-        <td><input type="number" value="${c.sort_order ?? 0}" data-k="sort_order"></td>
-        <td>
-          <select data-k="is_active">
-            <option value="true" ${c.is_active ? 'selected':''}>ใช้งาน</option>
-            <option value="false" ${!c.is_active ? 'selected':''}>ปิด</option>
-          </select>
-        </td>
-        <td class="actions">
-          <button class="secondary" data-act="save">บันทึก</button>
-        </td>
-      `;
-      tr.querySelector('[data-act="save"]').onclick = async ()=>{
-        const name = tr.querySelector('[data-k="name"]').value.trim();
-        const sort_order = parseInt(tr.querySelector('[data-k="sort_order"]').value || '0', 10);
-        const is_active = (tr.querySelector('[data-k="is_active"]').value === 'true');
-        await api('/api/categories','PUT',{id:c.id,name,sort_order,is_active});
-        await loadAll();
-        alert('บันทึกแล้ว');
-      };
-      tb.appendChild(tr);
-    });
-  }
-
   function catNameById(id){
-    const c = categories.find(x=>x.id===id);
+    const c = categories.find(x=>String(x.id)===String(id));
     return c ? c.name : '-';
   }
 
-  function renderProdsTable(){
-    const tb = $('prodsTable').querySelector('tbody');
-    tb.innerHTML='';
+  function money(v){
+    if(v===null || v===undefined || v==='') return '-';
+    const n = Number(v);
+    if(Number.isNaN(n)) return String(v);
+    return n.toFixed(2);
+  }
 
-    const active = products.filter(p=> !p.deleted_at);
-    active.forEach(p=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML = `
-        <td><input value="${(p.name||'').replaceAll('"','&quot;')}" data-k="name"></td>
-        <td>
-          <select data-k="category_id">
-            ${categories.map(c=>`<option value="${c.id}" ${c.id===p.category_id?'selected':''}>${c.name}</option>`).join('')}
-          </select>
-        </td>
-        <td><input type="number" step="0.01" value="${p.default_price ?? ''}" data-k="default_price"></td>
-        <td><input type="number" value="${p.sort_order ?? 0}" data-k="sort_order"></td>
-        <td>
-          <select data-k="is_active">
-            <option value="true" ${p.is_active ? 'selected':''}>ใช้งาน</option>
-            <option value="false" ${!p.is_active ? 'selected':''}>ปิด</option>
-          </select>
-        </td>
-        <td class="actions">
-          <button class="secondary" data-act="save">บันทึก</button>
-          <button class="danger" data-act="trash">ลบ (ไปถังขยะ)</button>
-        </td>
+  function escapeHtml(s){
+    return String(s ?? '')
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'","&#39;");
+  }
+
+  function openDrawer({type, mode, data}){
+    drawerState = {type, mode, data};
+    $('backdrop').classList.add('show');
+    $('drawer').classList.add('open');
+    $('drawer').setAttribute('aria-hidden','false');
+    renderDrawer();
+  }
+  function closeDrawer(){
+    $('backdrop').classList.remove('show');
+    $('drawer').classList.remove('open');
+    $('drawer').setAttribute('aria-hidden','true');
+    drawerState = { type:null, mode:null, data:null };
+  }
+  $('backdrop').onclick = closeDrawer;
+  $('btnCloseDrawer').onclick = closeDrawer;
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeDrawer(); });
+
+  function renderDrawer(){
+    const {type, mode, data} = drawerState;
+    const body = $('drawerBody');
+    const footer = $('drawerFooter');
+    body.innerHTML = '';
+    footer.innerHTML = '';
+
+    if(type === 'cat'){
+      $('drawerHeading').textContent = (mode==='add') ? 'เพิ่มหมวดสินค้า' : 'แก้ไขหมวดสินค้า';
+      $('drawerSub').textContent = 'ตั้งชื่อหมวดและสถานะให้เรียบร้อย';
+
+      const name = (data?.name ?? '');
+      const sort_order = (data?.sort_order ?? 0);
+      const is_active = (data?.is_active ?? true);
+
+      body.innerHTML = `
+        <div class="field">
+          <label>ชื่อหมวด</label>
+          <input id="d_cat_name" value="${escapeHtml(name)}" placeholder="เช่น ค่ายา / ค่าบริการ" />
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>ลำดับ (sort_order)</label>
+            <input id="d_cat_sort" type="number" value="${escapeHtml(String(sort_order))}" />
+          </div>
+          <div class="field">
+            <label>สถานะ</label>
+            <select id="d_cat_active">
+              <option value="true" ${is_active ? 'selected':''}>ใช้งาน</option>
+              <option value="false" ${!is_active ? 'selected':''}>ปิด</option>
+            </select>
+          </div>
+        </div>
       `;
 
-      tr.querySelector('[data-act="save"]').onclick = async ()=>{
-        const name = tr.querySelector('[data-k="name"]').value.trim();
-        const category_id = tr.querySelector('[data-k="category_id"]').value;
-        const default_price = tr.querySelector('[data-k="default_price"]').value;
-        const sort_order = parseInt(tr.querySelector('[data-k="sort_order"]').value || '0', 10);
-        const is_active = (tr.querySelector('[data-k="is_active"]').value === 'true');
-        await api('/api/products','PUT',{id:p.id,name,category_id,default_price,sort_order,is_active});
+      const btnCancel = document.createElement('button');
+      btnCancel.className = 'btn ghost';
+      btnCancel.type = 'button';
+      btnCancel.textContent = 'ยกเลิก';
+      btnCancel.onclick = closeDrawer;
+
+      const btnSave = document.createElement('button');
+      btnSave.className = 'btn secondary';
+      btnSave.type = 'button';
+      btnSave.textContent = 'บันทึก';
+      btnSave.onclick = async ()=>{
+        const name2 = $('d_cat_name').value.trim();
+        const sort2 = parseInt($('d_cat_sort').value || '0', 10);
+        const active2 = ($('d_cat_active').value === 'true');
+        if(!name2) return toast('กรอกชื่อหมวดก่อน');
+
+        if(mode==='add'){
+          await api('/api/categories','POST',{name:name2, sort_order:sort2, is_active:active2});
+          toast('เพิ่มหมวดแล้ว');
+        }else{
+          await api('/api/categories','PUT',{id:data.id, name:name2, sort_order:sort2, is_active:active2});
+          toast('บันทึกแล้ว');
+        }
+        closeDrawer();
         await loadAll();
-        alert('บันทึกแล้ว');
       };
 
-      tr.querySelector('[data-act="trash"]').onclick = async ()=>{
-        if(!confirm('ย้ายไปถังขยะใช่ไหม? (บิลเก่าไม่กระทบ)')) return;
-        await api('/api/products','DELETE',{id:p.id});
+      footer.appendChild(btnCancel);
+      footer.appendChild(btnSave);
+      return;
+    }
+
+    if(type === 'prod'){
+      $('drawerHeading').textContent = (mode==='add') ? 'เพิ่มสินค้า' : 'แก้ไขสินค้า';
+      $('drawerSub').textContent = 'กำหนดหมวด ราคาเริ่มต้น และสถานะ';
+
+      const name = (data?.name ?? '');
+      const category_id = (data?.category_id ?? (categories[0]?.id ?? ''));
+      const default_price = (data?.default_price ?? '');
+      const sort_order = (data?.sort_order ?? 0);
+      const is_active = (data?.is_active ?? true);
+
+      body.innerHTML = `
+        <div class="field">
+          <label>หมวด</label>
+          <select id="d_prod_cat">
+            ${categories
+              .slice()
+              .sort((a,b)=> (a.sort_order||0)-(b.sort_order||0) || (a.name||'').localeCompare(b.name||''))
+              .map(c=>`<option value="${c.id}" ${String(c.id)===String(category_id)?'selected':''}>${escapeHtml(c.name)}${c.is_active?'':' (ปิด)'}</option>`)
+              .join('')}
+          </select>
+        </div>
+
+        <div class="field">
+          <label>ชื่อสินค้า</label>
+          <input id="d_prod_name" value="${escapeHtml(name)}" placeholder="เช่น ค่าตรวจ / ค่ายา..." />
+        </div>
+
+        <div class="grid2">
+          <div class="field">
+            <label>ราคาตั้งต้น</label>
+            <input id="d_prod_price" type="number" step="0.01" value="${escapeHtml(String(default_price))}" placeholder="ปล่อยว่างได้" />
+          </div>
+          <div class="field">
+            <label>ลำดับ (sort_order)</label>
+            <input id="d_prod_sort" type="number" value="${escapeHtml(String(sort_order))}" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>สถานะ</label>
+          <select id="d_prod_active">
+            <option value="true" ${is_active ? 'selected':''}>ใช้งาน</option>
+            <option value="false" ${!is_active ? 'selected':''}>ปิด</option>
+          </select>
+        </div>
+      `;
+
+      const btnCancel = document.createElement('button');
+      btnCancel.className = 'btn ghost';
+      btnCancel.type = 'button';
+      btnCancel.textContent = 'ยกเลิก';
+      btnCancel.onclick = closeDrawer;
+
+      const btnSave = document.createElement('button');
+      btnSave.className = 'btn secondary';
+      btnSave.type = 'button';
+      btnSave.textContent = 'บันทึก';
+      btnSave.onclick = async ()=>{
+        const category_id2 = $('d_prod_cat').value;
+        const name2 = $('d_prod_name').value.trim();
+        const default_price2 = $('d_prod_price').value;
+        const sort2 = parseInt($('d_prod_sort').value || '0', 10);
+        const active2 = ($('d_prod_active').value === 'true');
+        if(!category_id2) return toast('เลือกหมวดก่อน');
+        if(!name2) return toast('กรอกชื่อสินค้าก่อน');
+
+        if(mode==='add'){
+          await api('/api/products','POST',{category_id:category_id2, name:name2, default_price:default_price2, sort_order:sort2, is_active:active2});
+          toast('เพิ่มสินค้าแล้ว');
+        }else{
+          await api('/api/products','PUT',{id:data.id, category_id:category_id2, name:name2, default_price:default_price2, sort_order:sort2, is_active:active2});
+          toast('บันทึกแล้ว');
+        }
+        closeDrawer();
         await loadAll();
       };
 
-      tb.appendChild(tr);
+      footer.appendChild(btnCancel);
+
+      if(mode==='edit'){
+        const btnTrash = document.createElement('button');
+        btnTrash.className = 'btn danger';
+        btnTrash.type = 'button';
+        btnTrash.textContent = 'ลบ (ไปถังขยะ)';
+        btnTrash.onclick = async ()=>{
+          if(!confirm('ย้ายไปถังขยะใช่ไหม? (บิลเก่าไม่กระทบ)')) return;
+          await api('/api/products','DELETE',{id:data.id});
+          toast('ย้ายไปถังขยะแล้ว');
+          closeDrawer();
+          await loadAll();
+        };
+        footer.appendChild(btnTrash);
+      }
+
+      footer.appendChild(btnSave);
+      return;
+    }
+
+    if(type === 'trash'){
+      $('drawerHeading').textContent = 'กู้คืนสินค้า';
+      $('drawerSub').textContent = 'กู้คืนแล้วจะกลับไปอยู่รายการสินค้า';
+
+      body.innerHTML = `
+        <div class="field">
+          <label>สินค้า</label>
+          <input value="${escapeHtml(data?.name ?? '')}" disabled />
+        </div>
+        <div class="field">
+          <label>หมวด</label>
+          <input value="${escapeHtml(catNameById(data?.category_id))}" disabled />
+        </div>
+        <div class="field">
+          <label>ลบเมื่อ</label>
+          <input value="${escapeHtml(String(data?.deleted_at||'').replace('T',' ').replace('Z',''))}" disabled />
+        </div>
+      `;
+
+      const btnCancel = document.createElement('button');
+      btnCancel.className = 'btn ghost';
+      btnCancel.type = 'button';
+      btnCancel.textContent = 'ยกเลิก';
+      btnCancel.onclick = closeDrawer;
+
+      const btnRestore = document.createElement('button');
+      btnRestore.className = 'btn secondary';
+      btnRestore.type = 'button';
+      btnRestore.textContent = 'กู้คืน';
+      btnRestore.onclick = async ()=>{
+        await api('/api/products_restore','POST',{id:data.id});
+        toast('กู้คืนแล้ว');
+        closeDrawer();
+        await loadAll();
+      };
+
+      footer.appendChild(btnCancel);
+      footer.appendChild(btnRestore);
+      return;
+    }
+  }
+
+  function renderProdFilterCat(){
+    const sel = $('prodFilterCat');
+    const current = sel.value || 'all';
+    sel.innerHTML = `<option value="all">ทั้งหมด</option>` + categories
+      .slice()
+      .sort((a,b)=> (a.sort_order||0)-(b.sort_order||0) || (a.name||'').localeCompare(b.name||''))
+      .map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`)
+      .join('');
+    sel.value = (Array.from(sel.options).some(o=>o.value===current)) ? current : 'all';
+  }
+
+  function renderCatsList(){
+    const q = ($('catSearch').value || '').trim().toLowerCase();
+    const f = $('catFilterActive').value;
+
+    const list = $('catsList');
+    list.innerHTML = '';
+
+    const rows = categories
+      .slice()
+      .sort((a,b)=> (a.sort_order||0)-(b.sort_order||0) || (a.name||'').localeCompare(b.name||''))
+      .filter(c=>{
+        if(q && !String(c.name||'').toLowerCase().includes(q)) return false;
+        if(f==='true' && !c.is_active) return false;
+        if(f==='false' && c.is_active) return false;
+        return true;
+      });
+
+    if(rows.length===0){
+      list.innerHTML = `<div class="rowItem"><div class="mini">ไม่พบข้อมูล</div></div>`;
+      return;
+    }
+
+    rows.forEach(c=>{
+      const el = document.createElement('div');
+      el.className = 'rowItem';
+      el.innerHTML = `
+        <div class="rowMain">
+          <div class="nameLine">
+            <b title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</b>
+            ${c.is_active ? `<span class="tag on">ใช้งาน</span>` : `<span class="tag off">ปิด</span>`}
+          </div>
+          <div class="subLine">sort_order: ${escapeHtml(String(c.sort_order ?? 0))}</div>
+        </div>
+        <div class="mini">ไอดี: ${escapeHtml(String(c.id))}</div>
+        <div class="mini"></div>
+        <div class="actions">
+          <button class="btn secondary" type="button">แก้ไข</button>
+        </div>
+      `;
+      el.querySelector('button').onclick = ()=> openDrawer({type:'cat', mode:'edit', data:c});
+      list.appendChild(el);
     });
   }
 
-  function renderTrash(){
-    const tb = $('trashTable').querySelector('tbody');
-    tb.innerHTML='';
-    const trash = products.filter(p=> !!p.deleted_at);
+  function renderProdsList(){
+    const q = ($('prodSearch').value || '').trim().toLowerCase();
+    const cat = $('prodFilterCat').value;
+    const f = $('prodFilterActive').value;
+
+    const list = $('prodsList');
+    list.innerHTML = '';
+
+    const active = products.filter(p=> !p.deleted_at);
+
+    const rows = active
+      .slice()
+      .sort((a,b)=> (a.sort_order||0)-(b.sort_order||0) || (a.name||'').localeCompare(b.name||''))
+      .filter(p=>{
+        if(q && !String(p.name||'').toLowerCase().includes(q)) return false;
+        if(cat!=='all' && String(p.category_id)!==String(cat)) return false;
+        if(f==='true' && !p.is_active) return false;
+        if(f==='false' && p.is_active) return false;
+        return true;
+      });
+
+    if(rows.length===0){
+      list.innerHTML = `<div class="rowItem"><div class="mini">ไม่พบข้อมูล</div></div>`;
+      return;
+    }
+
+    rows.forEach(p=>{
+      const el = document.createElement('div');
+      el.className = 'rowItem';
+      el.innerHTML = `
+        <div class="rowMain">
+          <div class="nameLine">
+            <b title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</b>
+            ${p.is_active ? `<span class="tag on">ใช้งาน</span>` : `<span class="tag off">ปิด</span>`}
+          </div>
+          <div class="subLine">${escapeHtml(catNameById(p.category_id))} • ราคา: ${escapeHtml(money(p.default_price))} • sort_order: ${escapeHtml(String(p.sort_order ?? 0))}</div>
+        </div>
+        <div class="mini">หมวด: ${escapeHtml(catNameById(p.category_id))}</div>
+        <div class="mini">฿ ${escapeHtml(money(p.default_price))}</div>
+        <div class="actions">
+          <button class="btn secondary" type="button">แก้ไข</button>
+        </div>
+      `;
+      el.querySelector('button').onclick = ()=> openDrawer({type:'prod', mode:'edit', data:p});
+      list.appendChild(el);
+    });
+  }
+
+  function renderTrashList(){
+    const q = ($('trashSearch').value || '').trim().toLowerCase();
+    const list = $('trashList');
+    list.innerHTML='';
+
+    const trash = products
+      .filter(p=> !!p.deleted_at)
+      .slice()
+      .sort((a,b)=> String(b.deleted_at||'').localeCompare(String(a.deleted_at||'')))
+      .filter(p=>{
+        if(!q) return true;
+        const hay = `${p.name||''} ${catNameById(p.category_id)||''}`.toLowerCase();
+        return hay.includes(q);
+      });
+
+    if(trash.length===0){
+      list.innerHTML = `<div class="rowItem"><div class="mini">ถังขยะว่าง</div></div>`;
+      return;
+    }
 
     trash.forEach(p=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML = `
-        <td>${p.name} <span class="tag old">เก่า</span></td>
-        <td>${catNameById(p.category_id)}</td>
-        <td class="muted">${String(p.deleted_at||'').replace('T',' ').replace('Z','')}</td>
-        <td class="actions">
-          <button class="secondary" data-act="restore">กู้คืน</button>
-        </td>
+      const el = document.createElement('div');
+      el.className = 'rowItem';
+      el.innerHTML = `
+        <div class="rowMain">
+          <div class="nameLine">
+            <b title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</b>
+            <span class="tag old">เก่า</span>
+          </div>
+          <div class="subLine">${escapeHtml(catNameById(p.category_id))} • ลบเมื่อ: ${escapeHtml(String(p.deleted_at||'').replace('T',' ').replace('Z',''))}</div>
+        </div>
+        <div class="mini">หมวด: ${escapeHtml(catNameById(p.category_id))}</div>
+        <div class="mini">${escapeHtml(String(p.deleted_at||'').replace('T',' ').replace('Z',''))}</div>
+        <div class="actions">
+          <button class="btn secondary" type="button">กู้คืน</button>
+        </div>
       `;
-      tr.querySelector('[data-act="restore"]').onclick = async ()=>{
-        await api('/api/products_restore','POST',{id:p.id});
-        await loadAll();
-      };
-      tb.appendChild(tr);
+      el.querySelector('button').onclick = ()=> openDrawer({type:'trash', mode:'edit', data:p});
+      list.appendChild(el);
     });
   }
 
   async function loadAll(){
     categories = await api('/api/categories');
     products = await api('/api/products');
-    renderCatSelect();
-    renderCatsTable();
-    renderProdsTable();
-    renderTrash();
+    renderProdFilterCat();
+    renderCatsList();
+    renderProdsList();
+    renderTrashList();
   }
 
-  $('btnAddCat').onclick = async ()=>{
-    const name = $('catName').value.trim();
-    const sort_order = parseInt($('catSort').value || '0', 10);
-    const is_active = ($('catActive').value === 'true');
-    if(!name) return alert('กรอกชื่อหมวดก่อน');
-    await api('/api/categories','POST',{name,sort_order,is_active});
-    $('catName').value='';
-    $('catSort').value='0';
-    $('catActive').value='true';
-    await loadAll();
+  // Search & filters
+  $('catSearch').addEventListener('input', renderCatsList);
+  $('catFilterActive').addEventListener('change', renderCatsList);
+
+  $('prodSearch').addEventListener('input', renderProdsList);
+  $('prodFilterCat').addEventListener('change', renderProdsList);
+  $('prodFilterActive').addEventListener('change', renderProdsList);
+
+  $('trashSearch').addEventListener('input', renderTrashList);
+
+  // Add buttons
+  $('btnOpenAddCat').onclick = ()=> openDrawer({type:'cat', mode:'add', data:{name:'', sort_order:0, is_active:true}});
+  $('btnOpenAddProd').onclick = ()=>{
+    if(!categories.length) return toast('ยังไม่มีหมวด กรุณาเพิ่มหมวดก่อน');
+    openDrawer({type:'prod', mode:'add', data:{category_id: categories[0].id, name:'', default_price:'', sort_order:0, is_active:true}});
   };
 
-  $('btnAddProd').onclick = async ()=>{
-    const category_id = $('prodCat').value;
-    const name = $('prodName').value.trim();
-    const default_price = $('prodPrice').value;
-    const sort_order = parseInt($('prodSort').value || '0', 10);
-    const is_active = ($('prodActive').value === 'true');
-    if(!category_id) return alert('เลือกหมวดก่อน');
-    if(!name) return alert('กรอกชื่อสินค้าก่อน');
-
-    await api('/api/products','POST',{category_id,name,default_price,sort_order,is_active});
-    $('prodName').value='';
-    $('prodPrice').value='';
-    $('prodSort').value='0';
-    $('prodActive').value='true';
-    await loadAll();
+  // ===================== Receipt Composer =====================
+  const Paper = {
+    sizesMM: {
+      A3: { w: 297, h: 420 },
+      A4: { w: 210, h: 297 },
+      A5: { w: 148, h: 210 }
+    },
+    getSetting(){
+      const size = $('rcPaperSize').value || 'A4';
+      const ori = $('rcPaperOri').value || 'portrait';
+      const base = this.sizesMM[size] || this.sizesMM.A4;
+      let w = base.w, h = base.h;
+      if(ori === 'landscape'){ const t=w; w=h; h=t; }
+      return { size, ori, mmW:w, mmH:h };
+    },
+    mmToIn(mm){ return mm / 25.4; },
   };
 
+  const RC = {
+    paperEl: null,
+    canvas: null,
+    ctx: null,
+
+    layers: [], // bottom->top
+    selectedId: null,
+
+    pointers: new Map(), // pointerId -> {x,y}
+    singleLast: null,
+    gesture: null,
+
+    mode: 'normal', // 'normal' | 'cutout'
+    cutPath: [],    // points in paper coords
+    cutActive: false,
+
+    init(){
+      this.paperEl = $('rcPaper');
+      this.canvas = $('rcCanvas');
+      this.ctx = this.canvas.getContext('2d');
+
+      this.applyPaperAspect();
+      this.resizeToPaper();
+
+      window.addEventListener('resize', ()=>{
+        this.resizeToPaper();
+        this.draw();
+      });
+
+      $('rcPaperSize').addEventListener('change', ()=>{
+        this.applyPaperAspect();
+        this.resizeToPaper();
+        this.draw();
+      });
+      $('rcPaperOri').addEventListener('change', ()=>{
+        this.applyPaperAspect();
+        this.resizeToPaper();
+        this.draw();
+      });
+
+      // Paper interactions
+      this.paperEl.addEventListener('pointerdown', (e)=>this.onPointerDown(e));
+      this.paperEl.addEventListener('pointermove', (e)=>this.onPointerMove(e));
+      this.paperEl.addEventListener('pointerup', (e)=>this.onPointerUp(e));
+      this.paperEl.addEventListener('pointercancel', (e)=>this.onPointerUp(e));
+
+      // UI actions
+      $('btnRcAddImage').onclick = ()=> $('rcFile').click();
+      $('rcFile').addEventListener('change', async (e)=>{
+        const files = Array.from(e.target.files || []);
+        if(!files.length) return;
+        for(const f of files){
+          await this.addImageFile(f);
+        }
+        e.target.value = '';
+        toast('เพิ่มรูปแล้ว');
+        this.draw();
+      });
+
+      $('btnRcAddText').onclick = ()=> {
+        this.addTextLayer('ลายเซ็น / หมายเหตุ');
+        this.draw();
+      };
+
+      $('rcOpacity').addEventListener('input', ()=>{
+        const l = this.getSelected();
+        if(!l) return;
+        l.opacity = Number($('rcOpacity').value) / 100;
+        $('rcOpacityTxt').textContent = `${$('rcOpacity').value}%`;
+        this.draw();
+      });
+
+      $('rcBringFront').onclick = ()=>{ this.bringFront(); this.draw(); };
+      $('rcSendBack').onclick = ()=>{ this.sendBack(); this.draw(); };
+      $('rcDelete').onclick = ()=>{ this.deleteSelected(); this.draw(); };
+      $('rcDuplicate').onclick = ()=>{ this.duplicateSelected(); this.draw(); };
+      $('rcCenter').onclick = ()=>{ const l=this.getSelected(); if(l){ l.x = this.paperEl.clientWidth/2; l.y = this.paperEl.clientHeight/2; } this.draw(); };
+      $('rcResetTransform').onclick = ()=>{ const l=this.getSelected(); if(l){ l.scale=1; l.rot=0; } this.syncControlsFromLayer(); this.draw(); };
+
+      // Text controls
+      $('rcTextValue').addEventListener('input', ()=>{
+        const l = this.getSelected();
+        if(!l || l.type!=='text') return;
+        l.text = $('rcTextValue').value;
+        this.draw();
+      });
+      $('rcFontSize').addEventListener('input', ()=>{
+        const l = this.getSelected();
+        if(!l || l.type!=='text') return;
+        l.fontSize = Math.max(8, Math.min(96, parseInt($('rcFontSize').value || '22', 10)));
+        this.draw();
+      });
+      $('rcAlign').addEventListener('change', ()=>{
+        const l = this.getSelected();
+        if(!l || l.type!=='text') return;
+        l.align = $('rcAlign').value;
+        this.draw();
+      });
+      $('rcBold').onclick = ()=>{
+        const l = this.getSelected();
+        if(!l || l.type!=='text') return;
+        l.bold = !l.bold;
+        this.draw();
+      };
+      $('rcColor').onclick = ()=>{
+        const l = this.getSelected();
+        if(!l || l.type!=='text') return;
+        l.color = (l.color === '#111827') ? '#1e40af' : '#111827';
+        this.draw();
+      };
+
+      // Cutout
+      $('rcCutout').onclick = ()=> this.enterCutoutMode();
+
+      // Save/Share
+      $('rcSave').onclick = async ()=>{ await this.exportAs('save'); };
+      $('rcShare').onclick = async ()=>{ await this.exportAs('share'); };
+
+      this.updateSelectedUI();
+    },
+
+    applyPaperAspect(){
+      const s = Paper.getSetting();
+      this.paperEl.style.aspectRatio = `${s.mmW} / ${s.mmH}`;
+    },
+
+    resizeToPaper(){
+      const rect = this.paperEl.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      this.canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      this.canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      this.canvas.style.width = rect.width + 'px';
+      this.canvas.style.height = rect.height + 'px';
+      this.ctx.setTransform(1,0,0,1,0,0);
+      this.ctx.scale(dpr, dpr);
+    },
+
+    // ---------- Layers ----------
+    newId(){ return 'L' + Math.random().toString(16).slice(2) + Date.now().toString(16); },
+
+    addTextLayer(text){
+      const w = this.paperEl.clientWidth;
+      const h = this.paperEl.clientHeight;
+      const id = this.newId();
+      this.layers.push({
+        id,
+        type:'text',
+        x: w/2,
+        y: h/2,
+        scale: 1,
+        rot: 0,
+        opacity: 1,
+        text: text ?? '',
+        fontSize: 22,
+        bold: false,
+        align: 'left',
+        color: '#111827'
+      });
+      this.select(id);
+      toast('เพิ่มข้อความแล้ว');
+    },
+
+    async addImageFile(file){
+      const img = await this.loadImage(file);
+      const w = this.paperEl.clientWidth;
+      const h = this.paperEl.clientHeight;
+
+      // fit to paper (contain) at start
+      const s = Math.min((w*0.6)/img.naturalWidth, (h*0.6)/img.naturalHeight);
+      const id = this.newId();
+      this.layers.push({
+        id,
+        type:'image',
+        x: w/2,
+        y: h/2,
+        scale: s,
+        rot: 0,
+        opacity: 1,
+        img,
+        imgW: img.naturalWidth,
+        imgH: img.naturalHeight
+      });
+      this.select(id);
+    },
+
+    loadImage(file){
+      return new Promise((resolve, reject)=>{
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.decoding = 'async';
+        img.onload = ()=>{
+          setTimeout(()=>URL.revokeObjectURL(url), 1500);
+          resolve(img);
+        };
+        img.onerror = reject;
+        img.src = url;
+      });
+    },
+
+    getSelected(){
+      return this.layers.find(l=>l.id===this.selectedId) || null;
+    },
+
+    select(id){
+      this.selectedId = id;
+      this.updateSelectedUI();
+      this.syncControlsFromLayer();
+    },
+
+    deleteSelected(){
+      if(!this.selectedId) return;
+      const idx = this.layers.findIndex(l=>l.id===this.selectedId);
+      if(idx>=0) this.layers.splice(idx,1);
+      this.selectedId = this.layers.length ? this.layers[this.layers.length-1].id : null;
+      this.updateSelectedUI();
+      this.syncControlsFromLayer();
+      toast('ลบแล้ว');
+    },
+
+    duplicateSelected(){
+      const l = this.getSelected();
+      if(!l) return;
+      const id = this.newId();
+      const copy = structuredClone ? structuredClone(l) : JSON.parse(JSON.stringify(l));
+      copy.id = id;
+      copy.x += 12;
+      copy.y += 12;
+
+      // reattach img object for image layers
+      if(l.type==='image'){
+        copy.img = l.img;
+        copy.imgW = l.imgW;
+        copy.imgH = l.imgH;
+      }
+      this.layers.push(copy);
+      this.select(id);
+      toast('ทำซ้ำแล้ว');
+    },
+
+    bringFront(){
+      const id = this.selectedId;
+      if(!id) return;
+      const idx = this.layers.findIndex(l=>l.id===id);
+      if(idx<0 || idx===this.layers.length-1) return;
+      const [it] = this.layers.splice(idx,1);
+      this.layers.push(it);
+      toast('ขึ้นหน้า');
+    },
+
+    sendBack(){
+      const id = this.selectedId;
+      if(!id) return;
+      const idx = this.layers.findIndex(l=>l.id===id);
+      if(idx<=0) return;
+      const [it] = this.layers.splice(idx,1);
+      this.layers.unshift(it);
+      toast('ลงหลัง');
+    },
+
+    // ---------- UI sync ----------
+    updateSelectedUI(){
+      const l = this.getSelected();
+      $('rcSelType').textContent = l ? (l.type==='image' ? 'รูป' : 'ข้อความ') : '-';
+      $('rcSelHint').textContent = l ? `แตะแล้วลากเพื่อจัดตำแหน่ง` : 'แตะบนกระดาษเพื่อเลือกเลเยอร์';
+      $('rcCommonControls').style.display = l ? '' : 'none';
+      $('rcTextControls').style.display = (l && l.type==='text') ? '' : 'none';
+    },
+
+    syncControlsFromLayer(){
+      const l = this.getSelected();
+      if(!l) return;
+      const pct = Math.round((l.opacity ?? 1) * 100);
+      $('rcOpacity').value = String(pct);
+      $('rcOpacityTxt').textContent = `${pct}%`;
+
+      if(l.type==='text'){
+        $('rcTextValue').value = l.text ?? '';
+        $('rcFontSize').value = String(l.fontSize ?? 22);
+        $('rcAlign').value = l.align ?? 'left';
+      }
+    },
+
+    // ---------- Pointer + hit test ----------
+    getPaperPoint(e){
+      const r = this.paperEl.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    },
+
+    onPointerDown(e){
+      this.paperEl.setPointerCapture(e.pointerId);
+      const p = this.getPaperPoint(e);
+      this.pointers.set(e.pointerId, p);
+
+      if(this.mode === 'cutout'){
+        // begin / continue drawing path
+        if(!this.cutActive){
+          this.cutActive = true;
+          this.cutPath = [p];
+        }else{
+          this.cutPath.push(p);
+        }
+        this.updateModePill();
+        this.draw();
+        return;
+      }
+
+      // normal mode: select layer on tap
+      if(this.pointers.size === 1){
+        const hit = this.hitTestTopmost(p);
+        if(hit){
+          this.select(hit.id);
+        }else{
+          this.select(null);
+          this.selectedId = null;
+          this.updateSelectedUI();
+        }
+        this.singleLast = p;
+        this.gesture = null;
+        this.draw();
+        return;
+      }
+
+      if(this.pointers.size === 2){
+        // start gesture on selected layer only
+        this.startGesture();
+      }
+    },
+
+    onPointerMove(e){
+      if(!this.pointers.has(e.pointerId)) return;
+      const p = this.getPaperPoint(e);
+      this.pointers.set(e.pointerId, p);
+
+      if(this.mode === 'cutout'){
+        if(this.cutActive){
+          this.cutPath.push(p);
+          this.draw();
+        }
+        return;
+      }
+
+      const l = this.getSelected();
+      if(!l) return;
+
+      if(this.pointers.size === 1 && this.singleLast){
+        const dx = p.x - this.singleLast.x;
+        const dy = p.y - this.singleLast.y;
+        l.x += dx;
+        l.y += dy;
+        this.singleLast = p;
+        this.draw();
+        return;
+      }
+
+      if(this.pointers.size === 2){
+        this.updateGesture();
+        this.syncControlsFromLayer();
+        this.draw();
+      }
+    },
+
+    onPointerUp(e){
+      this.pointers.delete(e.pointerId);
+      this.singleLast = null;
+      this.gesture = null;
+    },
+
+    startGesture(){
+      const l = this.getSelected();
+      if(!l) return;
+      const pts = Array.from(this.pointers.values());
+      if(pts.length !== 2) return;
+
+      const [p1, p2] = pts;
+      const center = { x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2 };
+      const dist = Math.hypot(p2.x-p1.x, p2.y-p1.y) || 1;
+      const angle = Math.atan2(p2.y-p1.y, p2.x-p1.x);
+
+      this.gesture = {
+        startCenter: center,
+        startDist: dist,
+        startAngle: angle,
+        startX: l.x,
+        startY: l.y,
+        startScale: l.scale,
+        startRot: l.rot
+      };
+    },
+
+    clamp(v,min,max){ return Math.max(min, Math.min(max, v)); },
+
+    updateGesture(){
+      const l = this.getSelected();
+      if(!l) return;
+
+      const pts = Array.from(this.pointers.values());
+      if(pts.length !== 2) return;
+      if(!this.gesture) this.startGesture();
+
+      const g = this.gesture;
+      const [p1, p2] = pts;
+      const center = { x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2 };
+      const dist = Math.hypot(p2.x-p1.x, p2.y-p1.y) || 1;
+      const angle = Math.atan2(p2.y-p1.y, p2.x-p1.x);
+
+      l.x = g.startX + (center.x - g.startCenter.x);
+      l.y = g.startY + (center.y - g.startCenter.y);
+
+      const scaleFactor = dist / g.startDist;
+      l.scale = this.clamp(g.startScale * scaleFactor, 0.05, 10);
+
+      let newRot = g.startRot + (angle - g.startAngle);
+      if(newRot > Math.PI) newRot -= 2*Math.PI;
+      if(newRot < -Math.PI) newRot += 2*Math.PI;
+      l.rot = newRot;
+    },
+
+    // hit test topmost
+    hitTestTopmost(p){
+      for(let i=this.layers.length-1; i>=0; i--){
+        const l = this.layers[i];
+        if(this.pointInLayer(p, l)) return l;
+      }
+      return null;
+    },
+
+    pointInLayer(p, l){
+      // inverse transform (paper point -> local)
+      const dx = p.x - l.x;
+      const dy = p.y - l.y;
+      const cos = Math.cos(-l.rot);
+      const sin = Math.sin(-l.rot);
+      const rx = (dx*cos - dy*sin) / (l.scale || 1);
+      const ry = (dx*sin + dy*cos) / (l.scale || 1);
+
+      if(l.type === 'image'){
+        const hw = (l.imgW || 0)/2;
+        const hh = (l.imgH || 0)/2;
+        return rx >= -hw && rx <= hw && ry >= -hh && ry <= hh;
+      }
+
+      if(l.type === 'text'){
+        const m = this.measureTextBox(l);
+        const hw = m.w/2;
+        const hh = m.h/2;
+        return rx >= -hw && rx <= hw && ry >= -hh && ry <= hh;
+      }
+
+      return false;
+    },
+
+    measureTextBox(l){
+      const ctx = this.ctx;
+      ctx.save();
+      ctx.font = `${l.bold ? '700':'400'} ${l.fontSize || 22}px system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif`;
+      const lines = String(l.text ?? '').split('\n');
+      let maxW = 10;
+      for(const line of lines){
+        maxW = Math.max(maxW, ctx.measureText(line || ' ').width);
+      }
+      const lineH = (l.fontSize || 22) * 1.25;
+      const h = Math.max(lineH, lines.length * lineH);
+      ctx.restore();
+      return { w: maxW, h };
+    },
+
+    // ---------- Draw ----------
+    draw(){
+      const ctx = this.ctx;
+      const w = this.paperEl.clientWidth;
+      const h = this.paperEl.clientHeight;
+
+      ctx.clearRect(0,0,w,h);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0,0,w,h);
+
+      // draw layers bottom->top
+      for(const l of this.layers){
+        ctx.save();
+        ctx.globalAlpha = l.opacity ?? 1;
+        ctx.translate(l.x, l.y);
+        ctx.rotate(l.rot || 0);
+        ctx.scale(l.scale || 1, l.scale || 1);
+
+        if(l.type === 'image' && l.img){
+          ctx.drawImage(l.img, -l.imgW/2, -l.imgH/2, l.imgW, l.imgH);
+        }
+
+        if(l.type === 'text'){
+          const fontSize = l.fontSize || 22;
+          ctx.font = `${l.bold ? '700':'400'} ${fontSize}px system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif`;
+          ctx.fillStyle = l.color || '#111827';
+          ctx.textBaseline = 'middle';
+
+          const lines = String(l.text ?? '').split('\n');
+          const lineH = fontSize * 1.25;
+          const box = this.measureTextBox(l);
+          // align
+          let align = l.align || 'left';
+          ctx.textAlign = align;
+
+          for(let i=0;i<lines.length;i++){
+            const y = (-box.h/2) + (i*lineH) + (lineH/2);
+            let x = 0;
+            if(align==='left') x = -box.w/2;
+            if(align==='center') x = 0;
+            if(align==='right') x = box.w/2;
+            ctx.fillText(lines[i], x, y);
+          }
+        }
+
+        // selection outline (in normal mode)
+        if(this.mode==='normal' && this.selectedId === l.id){
+          ctx.globalAlpha = 1;
+          ctx.lineWidth = 2 / (l.scale || 1);
+          ctx.setLineDash([6/(l.scale||1), 6/(l.scale||1)]);
+          ctx.strokeStyle = 'rgba(13,148,136,.9)';
+          if(l.type==='image'){
+            ctx.strokeRect(-l.imgW/2, -l.imgH/2, l.imgW, l.imgH);
+          }else if(l.type==='text'){
+            const m = this.measureTextBox(l);
+            ctx.strokeRect(-m.w/2, -m.h/2, m.w, m.h);
+          }
+        }
+
+        ctx.restore();
+      }
+
+      // cutout overlay
+      if(this.mode==='cutout'){
+        ctx.save();
+        ctx.globalAlpha = .95;
+        // darken
+        ctx.fillStyle = 'rgba(17,24,39,.10)';
+        ctx.fillRect(0,0,w,h);
+
+        // path
+        if(this.cutPath.length){
+          ctx.beginPath();
+          ctx.moveTo(this.cutPath[0].x, this.cutPath[0].y);
+          for(let i=1;i<this.cutPath.length;i++){
+            ctx.lineTo(this.cutPath[i].x, this.cutPath[i].y);
+          }
+          ctx.strokeStyle = 'rgba(211,47,47,.95)';
+          ctx.lineWidth = 3;
+          ctx.setLineDash([]);
+          ctx.stroke();
+
+          // show hint circle at start
+          const s = this.cutPath[0];
+          ctx.fillStyle = 'rgba(211,47,47,.95)';
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, 4, 0, Math.PI*2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+    },
+
+    // ---------- Cutout ----------
+    enterCutoutMode(){
+      const l = this.getSelected();
+      if(!l || l.type!=='image') return toast('เลือก “รูป” ก่อนค่อยไดคัท');
+      this.mode = 'cutout';
+      this.cutActive = false;
+      this.cutPath = [];
+      this.updateModePill(true);
+      this.updateCutoutButtons();
+      toast('โหมดไดคัท: วาดเส้นล้อม แล้วกด “เสร็จ”');
+    },
+
+    exitCutoutMode(){
+      this.mode = 'normal';
+      this.cutActive = false;
+      this.cutPath = [];
+      this.updateModePill(false);
+      this.updateCutoutButtons();
+      this.draw();
+    },
+
+    updateModePill(){
+      const pill = $('rcModePill');
+      if(this.mode==='cutout'){
+        pill.textContent = 'โหมดไดคัท: วาดเส้นล้อม แล้วกด “เสร็จ/ยกเลิก”';
+        pill.classList.add('danger');
+      }else{
+        pill.textContent = 'โหมดปกติ';
+        pill.classList.remove('danger');
+      }
+    },
+
+    updateCutoutButtons(){
+      // repurpose buttons when in cutout
+      const btn = $('rcCutout');
+      if(this.mode==='cutout'){
+        btn.textContent = '✅ เสร็จ (ตัดตามเส้น)';
+        btn.classList.remove('danger');
+        btn.classList.add('secondary');
+        btn.onclick = ()=>this.finishCutout();
+
+        // add cancel button quickly via confirm on delete? keep simple: long-press no. We'll add small confirm using toast + ESC.
+        // Use rcResetTransform as "ยกเลิก" in cutout
+        const r = $('rcResetTransform');
+        r.textContent = 'ยกเลิกไดคัท';
+        r.onclick = ()=>this.exitCutoutMode();
+      }else{
+        btn.textContent = '✂️ ไดคัท (วาดเส้นล้อม)';
+        btn.classList.remove('secondary');
+        btn.classList.add('danger');
+        btn.onclick = ()=>this.enterCutoutMode();
+
+        const r = $('rcResetTransform');
+        r.textContent = 'รีเซ็ต';
+        r.onclick = ()=>{ const l=this.getSelected(); if(l){ l.scale=1; l.rot=0; } this.syncControlsFromLayer(); this.draw(); };
+      }
+    },
+
+    async finishCutout(){
+      const l = this.getSelected();
+      if(!l || l.type!=='image') return this.exitCutoutMode();
+      if(this.cutPath.length < 10) return toast('วาดเส้นให้ครบก่อน (อย่างน้อยนิดนึง)');
+
+      // close path by connecting to start
+      const path = this.cutPath.slice();
+      path.push(path[0]);
+
+      // Convert paper path -> local image coordinates
+      const localPts = path.map(p=>this.paperPointToImageLocal(p, l));
+
+      // Create mask on image native size
+      const mask = document.createElement('canvas');
+      mask.width = l.imgW;
+      mask.height = l.imgH;
+      const mctx = mask.getContext('2d');
+
+      // draw polygon in image coords (image space origin top-left)
+      mctx.clearRect(0,0,mask.width,mask.height);
+      mctx.fillStyle = '#000';
+      mctx.beginPath();
+      const p0 = localPts[0];
+      mctx.moveTo(p0.x, p0.y);
+      for(let i=1;i<localPts.length;i++){
+        mctx.lineTo(localPts[i].x, localPts[i].y);
+      }
+      mctx.closePath();
+      mctx.fill();
+
+      // Apply mask to image => output canvas
+      const out = document.createElement('canvas');
+      out.width = l.imgW;
+      out.height = l.imgH;
+      const octx = out.getContext('2d');
+      octx.clearRect(0,0,out.width,out.height);
+
+      // draw original
+      octx.drawImage(l.img, 0, 0, l.imgW, l.imgH);
+
+      // keep only where mask exists
+      octx.globalCompositeOperation = 'destination-in';
+      octx.drawImage(mask, 0, 0);
+      octx.globalCompositeOperation = 'source-over';
+
+      // Optional: trim transparent edges? (ช่วยให้เลือก/ลากง่าย)
+      const trimmed = this.trimTransparent(out);
+      const img = new Image();
+      const url = trimmed.toDataURL('image/png');
+      await new Promise((resolve,reject)=>{
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = url;
+      });
+
+      // Replace image in layer (keep transform)
+      l.img = img;
+      l.imgW = img.naturalWidth;
+      l.imgH = img.naturalHeight;
+
+      // keep selection, exit cutout
+      this.exitCutoutMode();
+      toast('ไดคัทแล้ว');
+      this.draw();
+    },
+
+    paperPointToImageLocal(p, l){
+      // paper point -> layer local (unscale/unrotate, center origin) -> image pixel coords (top-left origin)
+      const dx = p.x - l.x;
+      const dy = p.y - l.y;
+      const cos = Math.cos(-l.rot);
+      const sin = Math.sin(-l.rot);
+      const rx = (dx*cos - dy*sin) / (l.scale || 1);
+      const ry = (dx*sin + dy*cos) / (l.scale || 1);
+
+      const ix = rx + (l.imgW/2);
+      const iy = ry + (l.imgH/2);
+      return { x: ix, y: iy };
+    },
+
+    trimTransparent(canvas){
+      const ctx = canvas.getContext('2d');
+      const {width:w, height:h} = canvas;
+      const img = ctx.getImageData(0,0,w,h).data;
+
+      let minX=w, minY=h, maxX=-1, maxY=-1;
+      for(let y=0;y<h;y++){
+        for(let x=0;x<w;x++){
+          const a = img[(y*w + x)*4 + 3];
+          if(a>0){
+            if(x<minX) minX=x;
+            if(y<minY) minY=y;
+            if(x>maxX) maxX=x;
+            if(y>maxY) maxY=y;
+          }
+        }
+      }
+      if(maxX<minX || maxY<minY) return canvas; // nothing
+
+      const tw = (maxX - minX + 1);
+      const th = (maxY - minY + 1);
+      const out = document.createElement('canvas');
+      out.width = tw;
+      out.height = th;
+      out.getContext('2d').drawImage(canvas, minX, minY, tw, th, 0, 0, tw, th);
+      return out;
+    },
+
+    // ---------- Export ----------
+    async exportAs(mode){
+      const dpi = Number($('rcDpi').value || '200');
+      const s = Paper.getSetting();
+
+      const pxW = Math.round(Paper.mmToIn(s.mmW) * dpi);
+      const pxH = Math.round(Paper.mmToIn(s.mmH) * dpi);
+
+      const out = document.createElement('canvas');
+      out.width = pxW;
+      out.height = pxH;
+      const octx = out.getContext('2d');
+
+      // white background (ใบเสร็จเน้นขาว)
+      octx.fillStyle = '#fff';
+      octx.fillRect(0,0,pxW,pxH);
+
+      // scale from paper CSS px -> export px
+      const pw = this.paperEl.clientWidth;
+      const ph = this.paperEl.clientHeight;
+      const rx = pxW / pw;
+      const ry = pxH / ph;
+
+      // draw all layers
+      for(const l of this.layers){
+        octx.save();
+        octx.globalAlpha = l.opacity ?? 1;
+
+        octx.translate(l.x * rx, l.y * ry);
+        octx.rotate(l.rot || 0);
+
+        // scale: use average to keep proportions
+        const r = (rx + ry) / 2;
+        octx.scale((l.scale || 1) * r, (l.scale || 1) * r);
+
+        if(l.type==='image' && l.img){
+          octx.drawImage(l.img, -l.imgW/2, -l.imgH/2, l.imgW, l.imgH);
+        }
+
+        if(l.type==='text'){
+          const fontSize = (l.fontSize || 22);
+          octx.font = `${l.bold ? '700':'400'} ${fontSize}px system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif`;
+          octx.fillStyle = l.color || '#111827';
+          octx.textBaseline = 'middle';
+
+          const lines = String(l.text ?? '').split('\n');
+          const lineH = fontSize * 1.25;
+
+          // measure with export ctx
+          const tmp = { ...l, fontSize };
+          const box = this.measureTextBoxExport(octx, tmp);
+
+          let align = l.align || 'left';
+          octx.textAlign = align;
+
+          for(let i=0;i<lines.length;i++){
+            const y = (-box.h/2) + (i*lineH) + (lineH/2);
+            let x = 0;
+            if(align==='left') x = -box.w/2;
+            if(align==='center') x = 0;
+            if(align==='right') x = box.w/2;
+            octx.fillText(lines[i], x, y);
+          }
+        }
+
+        octx.restore();
+      }
+
+      const blob = await new Promise((resolve)=> out.toBlob(resolve, 'image/png', 1.0));
+      if(!blob) return toast('สร้างไฟล์ไม่สำเร็จ');
+
+      const filename = `${s.size}_${s.ori}_${new Date().toISOString().slice(0,19).replaceAll(':','-')}.png`;
+      const file = new File([blob], filename, {type:'image/png'});
+
+      if(mode==='share'){
+        try{
+          if(navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share){
+            await navigator.share({ files:[file], title:'Receipt', text:'ใบเสร็จ' });
+            toast('แชร์แล้ว');
+            return;
+          }
+        }catch(e){}
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 1500);
+
+      toast(mode==='share' ? 'แชร์ไม่ได้ เลยดาวน์โหลดแทน' : 'ดาวน์โหลดแล้ว');
+    },
+
+    measureTextBoxExport(ctx, l){
+      ctx.save();
+      ctx.font = `${l.bold ? '700':'400'} ${l.fontSize || 22}px system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif`;
+      const lines = String(l.text ?? '').split('\n');
+      let maxW = 10;
+      for(const line of lines){
+        maxW = Math.max(maxW, ctx.measureText(line || ' ').width);
+      }
+      const lineH = (l.fontSize || 22) * 1.25;
+      const h = Math.max(lineH, lines.length * lineH);
+      ctx.restore();
+      return { w:maxW, h };
+    },
+  };
+
+  // init
+  RC.init();
+  RC.updateCutoutButtons();
+
+  // load initial
   loadAll().catch(err=>{
     console.error(err);
     alert('โหลดข้อมูลไม่สำเร็จ: ' + err.message);
