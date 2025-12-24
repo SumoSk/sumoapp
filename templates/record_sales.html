@@ -455,40 +455,43 @@
       color:#111827;
     }
 
-    @media print{
-  body *{
-    visibility:hidden !important;
-  }
+   @media print{
+  body{ padding:0 !important; background:#fff !important; }
 
-  #receiptOverlay,
-  #receiptOverlay *{
-    visibility:visible !important;
-  }
+  /* ซ่อนทุกอย่างก่อน */
+  body *{ visibility:hidden !important; }
 
+  /* เปิดเฉพาะใบเสร็จ */
+  #receiptOverlay, #receiptOverlay *{ visibility:visible !important; }
+
+  /* ทำ overlay ให้เป็น "หน้ากระดาษ" ไม่ใช่ popup */
   #receiptOverlay{
-    position: fixed;
-    inset: 0;
+    position: static !important;
+    inset: auto !important;
     background:#fff !important;
-
-    /* ✅ ชิดบน */
-    display: block;
-    padding-top: 20mm;   /* ระยะขอบบน ปรับได้ 15–25mm */
+    display:block !important;
+    padding:0 !important;
   }
 
+  /* กล่องใบเสร็จต้องไม่เป็นกล่องเลื่อน */
   .receipt-box{
+    width: 190mm !important;
+    max-height: none !important;
+    overflow: visible !important;
     box-shadow:none !important;
     border-radius:0 !important;
-
-    width: 190mm;        /* กว้างพอดี A4 */
-    margin: 0 auto;      /* จัดกลางแนวนอน */
+    margin: 0 auto !important;
+    padding: 12mm !important;      /* ขอบกระดาษ */
   }
 
-  /* ❌ ไม่พิมพ์ปุ่ม */
-  .receipt-actions,
-  .sig-actions{
-    display:none !important;
-  }
+  /* ไม่พิมพ์ปุ่ม */
+  .receipt-actions, .sig-actions{ display:none !important; }
+
+  /* กันตาราง/บล็อกสำคัญโดนตัดครึ่งกลางหน้า */
+  table, tr, td, th{ page-break-inside: avoid !important; }
+  .sig-wrap, .fineprint{ page-break-inside: avoid !important; }
 }
+
 
 
     /* ====== Signature Pad ====== */
@@ -569,10 +572,22 @@
 .capture-mode button {
   display: none !important;
 }
+
+/* ✅ ตอน capture ให้กล่องใบเสร็จ "ยืดเต็ม" ไม่เป็นกล่องเลื่อน */
+.capture-mode .receipt-box{
+  max-height: none !important;
+  overflow: visible !important;
+}
+.capture-mode #receiptOverlay{
+  overflow: visible !important;
+}
+
   </style>
 </head>
 
 <body>
+   <!-- ✅ floating menu -->
+{% include 'floating_menu.html' %}
   <div class="container">
     <h2>บันทึกยอดขายประจำวัน</h2>
 
@@ -2499,22 +2514,49 @@ async function saveReceiptImage(){
   const box = overlay?.querySelector('.receipt-box');
   if(!box) return alert('ไม่พบใบเสร็จสำหรับบันทึกภาพ');
 
+  // เก็บสไตล์เดิมไว้คืนค่า
+  const prev = {
+    ovOverflow: overlay.style.overflow,
+    boxMaxH: box.style.maxHeight,
+    boxOverflow: box.style.overflow,
+    boxHeight: box.style.height
+  };
+
   try{
-    // ✅ เข้าโหมด capture (ซ่อนปุ่ม)
     overlay.classList.add('capture-mode');
 
-    // รอให้ DOM update ก่อน capture
-    await new Promise(r => setTimeout(r, 50));
+    // ✅ ทำให้กล่องยืดเต็ม ไม่เลื่อน
+    overlay.style.overflow = 'visible';
+    box.style.maxHeight = 'none';
+    box.style.overflow = 'visible';
+    box.style.height = 'auto';
+
+    // รอให้ DOM/ฟอนต์นิ่งก่อน
+    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+    await new Promise(r => setTimeout(r, 80));
+
+    const fullW = box.scrollWidth;
+    const fullH = box.scrollHeight;
 
     const canvas = await html2canvas(box, {
       backgroundColor: '#ffffff',
       scale: Math.max(2, window.devicePixelRatio || 1),
-      useCORS: true
+      useCORS: true,
+
+      // ✅ บังคับให้จับตามขนาดจริงของ element
+      width: fullW,
+      height: fullH,
+      windowWidth: fullW,
+      windowHeight: fullH,
+
+      // ✅ กันปัญหาตัดเพราะตำแหน่ง scroll ของหน้า
+      scrollX: 0,
+      scrollY: 0
     });
 
     const dataUrl = canvas.toDataURL('image/png');
 
-    const opd = (document.getElementById('opd')?.value || '0000').trim();
+    const opd  = (document.getElementById('opd')?.value || '0000').trim();
     const date = (document.getElementById('date')?.value || '').trim();
     const fileName = `receipt_${opd}_${date || 'date'}.png`;
 
@@ -2529,15 +2571,19 @@ async function saveReceiptImage(){
     console.error(err);
     alert('บันทึกภาพไม่สำเร็จ');
   }finally{
-    // ✅ ออกจากโหมด capture
+    // คืนค่าสไตล์เดิม
     overlay.classList.remove('capture-mode');
+    overlay.style.overflow = prev.ovOverflow;
+    box.style.maxHeight = prev.boxMaxH;
+    box.style.overflow = prev.boxOverflow;
+    box.style.height = prev.boxHeight;
   }
 }
 
 
+
   </script>
 
-  <!-- ✅ floating menu -->
-  {% include 'floating_menu.html' %}
+
 </body>
 </html>
