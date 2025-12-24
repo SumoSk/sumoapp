@@ -1,4 +1,4 @@
-<!-- templates/appsettings.html  (FULL) -->
+<!-- templates/appsettings.html (FULL + UX ปรับใหม่ + เครื่องมือเพิ่มรูป/ข้อความ/ไดคัท/ยางลบ/Undo/Export/Share/เปิดรูป) -->
 <!doctype html>
 <html lang="th">
 <head>
@@ -240,6 +240,7 @@
       justify-content:flex-end;
     }
     .grid2{display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+    .grid3{display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;}
     .closeBtn{
       border:1px solid rgba(17,24,39,.12);
       background:#fff;
@@ -268,10 +269,10 @@
       text-align:center;
     }
 
-    /* ===== Receipt Composer (Paper) ===== */
+    /* ===== Receipt Composer ===== */
     .rcWrap{
       display:grid;
-      grid-template-columns: 1fr 360px;
+      grid-template-columns: 1fr 380px;
       gap:12px;
       align-items:start;
     }
@@ -282,6 +283,46 @@
       box-shadow: var(--shadow-soft);
       padding: 12px;
     }
+
+    .rcTopTools{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:8px;
+    }
+    .rcTopLeft{
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+    }
+    .rcTopRight{
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+    }
+
+    .modePill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      border:1px solid rgba(17,24,39,.12);
+      background:#fff;
+      white-space:nowrap;
+    }
+    .modePill.warn{
+      border-color: rgba(211,47,47,.25);
+      background: rgba(211,47,47,.08);
+      color:#8a1d1d;
+      font-weight:700;
+    }
+    .modePill.info{
+      border-color: rgba(30,64,175,.25);
+      background: rgba(30,64,175,.08);
+      color:#1e3a8a;
+      font-weight:700;
+    }
+
     .paperOuter{
       width:100%;
       display:flex;
@@ -289,7 +330,7 @@
       padding: 8px 0;
     }
     .paper{
-      width: min(600px, 90vw);
+      width: min(620px, 92vw);
       background: #fff;
       border-radius: 10px;
       border: 1px solid rgba(17,24,39,.14);
@@ -316,14 +357,15 @@
       position: sticky;
       top: 72px;
     }
+
     .sep{border:none;border-top:1px solid rgba(17,24,39,.08); margin: 10px 0;}
     .rangeRow{display:flex; gap:10px; align-items:center;}
     input[type="range"]{width:100%; padding:0; border:none; box-shadow:none;}
 
-    .miniBtnRow{display:flex; gap:8px; flex-wrap:wrap;}
-    .miniBtnRow .btn{flex:1}
     .btnRow{display:flex; gap:8px; flex-wrap:wrap;}
     .btnRow .btn{flex:1}
+    .miniRow{display:flex; gap:8px; flex-wrap:wrap;}
+    .miniRow .btn{flex:1}
 
     .noteBox{
       background: rgba(15,118,110,.06);
@@ -334,33 +376,24 @@
       line-height:1.4;
     }
 
-    .selectedInfo{
-      border:1px dashed rgba(15,118,110,.35);
-      background: rgba(15,118,110,.06);
+    .selCard{
+      border:1px solid rgba(17,24,39,.10);
+      background: #fff;
       border-radius: 12px;
       padding: 10px;
       line-height:1.4;
     }
-
-    .modePill{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:6px 10px;
-      border-radius:999px;
+    .selHead{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+    .kbd{
+      border:1px solid rgba(17,24,39,.14);
+      background: rgba(17,24,39,.04);
+      padding:2px 6px;
+      border-radius: 8px;
       font-size:12px;
-      border:1px solid rgba(17,24,39,.12);
-      background:#fff;
-      white-space:nowrap;
-    }
-    .modePill.danger{
-      border-color: rgba(211,47,47,.25);
-      background: rgba(211,47,47,.08);
-      color:#8a1d1d;
-      font-weight:700;
+      color: #111827;
     }
 
-    @media (max-width: 920px){
+    @media (max-width: 980px){
       .rcWrap{grid-template-columns: 1fr;}
       .rcSide{position:relative; top:auto;}
     }
@@ -456,12 +489,18 @@
       <div id="panelRC" style="display:none;">
         <div class="rcWrap">
           <div class="rcStage">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-              <div>
-                <h2 style="margin:0 0 6px;">Receipt Composer (ลายเซ็น/ตราประทับ/ข้อความ)</h2>
-                <div class="muted">นิ้วเดียวลาก = ย้าย | สองนิ้ว pinch = ย่อ/ขยาย | สองนิ้วหมุน = rotate | แตะเพื่อเลือกเลเยอร์</div>
+            <div class="rcTopTools">
+              <div class="rcTopLeft">
+                <span class="modePill" id="rcModePill">โหมดปกติ</span>
+                <span class="muted">แตะเลือกเลเยอร์ | ลากย้าย | 2 นิ้ว ย่อ/หมุน</span>
               </div>
-              <div id="rcModePill" class="modePill">โหมดปกติ</div>
+              <div class="rcTopRight">
+                <button class="btn ghost" id="rcTopAddImg" type="button">+ รูป</button>
+                <button class="btn ghost" id="rcTopAddText" type="button">+ ข้อความ</button>
+                <button class="btn ghost" id="rcTopUndo" type="button">↩︎ Undo</button>
+                <button class="btn secondary" id="rcTopSave" type="button">บันทึก</button>
+                <button class="btn" id="rcTopShare" type="button">แชร์</button>
+              </div>
             </div>
 
             <div class="paperOuter">
@@ -471,14 +510,14 @@
             </div>
 
             <div class="muted" style="line-height:1.4;">
-              เคล็ดลับ: ใส่ลายเซ็นเป็นรูป PNG จะง่ายสุด แต่ถ้าเป็นรูปพื้นหลังขาว ใช้ “ไดคัทวาดเส้นล้อม” ได้เลย
+              Tip: ลายเซ็นเป็นรูปพื้นขาว → ใช้ “ไดคัท” วาดเส้นล้อมให้เหลือแต่ลายเซ็น (พื้นหลังโปร่งใส)
             </div>
           </div>
 
           <div class="rcSide">
             <div class="grid2">
               <div class="field">
-                <label>ขนาดกระดาษ</label>
+                <label>ขนาด</label>
                 <select id="rcPaperSize">
                   <option value="A3">A3</option>
                   <option value="A4" selected>A4</option>
@@ -494,73 +533,109 @@
               </div>
             </div>
 
-            <div class="btnRow" style="margin-top:10px;">
-              <button class="btn" id="btnRcAddImage" type="button">+ เพิ่มรูป</button>
-              <button class="btn secondary" id="btnRcAddText" type="button">+ ข้อความ</button>
-            </div>
             <input id="rcFile" type="file" accept="image/*" multiple style="display:none;">
 
             <hr class="sep">
 
-            <div id="rcSelectedBox" class="selectedInfo">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div class="selCard">
+              <div class="selHead">
                 <b>เลเยอร์ที่เลือก</b>
                 <span class="muted" id="rcSelType">-</span>
               </div>
-              <div class="muted" id="rcSelHint" style="margin-top:6px;">แตะบนกระดาษเพื่อเลือกเลเยอร์</div>
+              <div class="muted" id="rcSelHint" style="margin-top:6px;">แตะบนกระดาษเพื่อเลือก</div>
 
-              <div id="rcTextControls" style="display:none; margin-top:10px;">
-                <div class="field">
-                  <label>ข้อความ</label>
-                  <textarea id="rcTextValue" placeholder="พิมพ์ข้อความ..."></textarea>
+              <!-- Actions (always) -->
+              <div id="rcCommonControls" style="display:none; margin-top:10px;">
+                <div class="miniRow">
+                  <button class="btn ghost" id="rcBringFront" type="button">ขึ้นหน้า</button>
+                  <button class="btn ghost" id="rcSendBack" type="button">ลงหลัง</button>
                 </div>
-                <div class="grid2">
-                  <div class="field">
-                    <label>ขนาด</label>
-                    <input id="rcFontSize" type="number" min="8" max="96" value="22">
-                  </div>
-                  <div class="field">
-                    <label>จัดแนว</label>
-                    <select id="rcAlign">
-                      <option value="left">ซ้าย</option>
-                      <option value="center">กลาง</option>
-                      <option value="right">ขวา</option>
-                    </select>
-                  </div>
+                <div class="miniRow" style="margin-top:8px;">
+                  <button class="btn ghost" id="rcDuplicate" type="button">ทำซ้ำ</button>
+                  <button class="btn danger" id="rcDelete" type="button">ลบ</button>
                 </div>
-                <div class="grid2">
-                  <button class="btn ghost" id="rcBold" type="button">หนา/ปกติ</button>
-                  <button class="btn ghost" id="rcColor" type="button">สีดำ/น้ำเงิน</button>
-                </div>
-              </div>
 
-              <div id="rcCommonControls" style="margin-top:10px; display:none;">
-                <div class="field">
-                  <label>ความทึบ (opacity)</label>
+                <div class="field" style="margin-top:10px;">
+                  <label>ความทึบ</label>
                   <div class="rangeRow">
                     <input id="rcOpacity" type="range" min="10" max="100" value="100">
                     <span class="muted" id="rcOpacityTxt">100%</span>
                   </div>
                 </div>
 
-                <div class="grid2">
-                  <button class="btn ghost" id="rcBringFront" type="button">ขึ้นหน้า</button>
-                  <button class="btn ghost" id="rcSendBack" type="button">ลงหลัง</button>
+                <div class="miniRow" style="margin-top:8px;">
+                  <button class="btn ghost" id="rcCenter" type="button">จัดกลาง</button>
+                  <button class="btn ghost" id="rcResetTransform" type="button">รีเซ็ต</button>
                 </div>
 
-                <div class="grid2">
-                  <button class="btn ghost" id="rcDuplicate" type="button">ทำซ้ำ</button>
-                  <button class="btn danger" id="rcDelete" type="button">ลบ</button>
+                <!-- Image tools -->
+                <div id="rcImageTools" style="display:none; margin-top:10px;">
+                  <div class="btnRow">
+                    <button class="btn danger" id="rcCutout" type="button">✂️ ไดคัท</button>
+                    <button class="btn ghost" id="rcEraser" type="button">🧽 ยางลบ</button>
+                  </div>
+
+                  <!-- Cutout controls -->
+                  <div id="rcCutoutControls" style="display:none; margin-top:10px;">
+                    <div class="btnRow">
+                      <button class="btn secondary" id="rcCutoutDone" type="button">✅ เสร็จ</button>
+                      <button class="btn ghost" id="rcCutoutCancel" type="button">ยกเลิก</button>
+                    </div>
+                    <div class="noteBox" style="margin-top:8px;">
+                      วาดเส้นล้อม “ส่วนที่ต้องการเก็บ” (ด้านนอกจะโปร่งใส)
+                    </div>
+                  </div>
+
+                  <!-- Eraser controls -->
+                  <div id="rcEraserControls" style="display:none; margin-top:10px;">
+                    <div class="field">
+                      <label>ขนาดยางลบ</label>
+                      <div class="rangeRow">
+                        <input id="rcBrush" type="range" min="4" max="120" value="26">
+                        <span class="muted" id="rcBrushTxt">26px</span>
+                      </div>
+                    </div>
+                    <div class="btnRow">
+                      <button class="btn secondary" id="rcEraserDone" type="button">✅ เสร็จ</button>
+                      <button class="btn ghost" id="rcEraserCancel" type="button">ยกเลิก</button>
+                    </div>
+                    <div class="noteBox" style="margin-top:8px;">
+                      โหมดยางลบ: วาดบน “รูปที่เลือก” เพื่อให้โปร่งใส<br>
+                      <span class="muted">Undo ย้อนได้</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div class="btnRow" style="margin-top:8px;">
-                  <button class="btn small ghost" id="rcCenter" type="button">จัดกลาง</button>
-                  <button class="btn small ghost" id="rcResetTransform" type="button">รีเซ็ต</button>
+                <!-- Text tools -->
+                <div id="rcTextTools" style="display:none; margin-top:10px;">
+                  <div class="field">
+                    <label>ข้อความ</label>
+                    <textarea id="rcTextValue" placeholder="พิมพ์ข้อความ..."></textarea>
+                  </div>
+                  <div class="grid3">
+                    <div class="field">
+                      <label>ขนาด</label>
+                      <input id="rcFontSize" type="number" min="8" max="96" value="22">
+                    </div>
+                    <div class="field">
+                      <label>จัดแนว</label>
+                      <select id="rcAlign">
+                        <option value="left">ซ้าย</option>
+                        <option value="center">กลาง</option>
+                        <option value="right">ขวา</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label>สไตล์</label>
+                      <button class="btn ghost" id="rcBold" type="button">หนา/ปกติ</button>
+                    </div>
+                  </div>
+                  <div class="miniRow" style="margin-top:8px;">
+                    <button class="btn ghost" id="rcColor" type="button">สีดำ/น้ำเงิน</button>
+                    <button class="btn ghost" id="rcTextPreset" type="button">พรีเซ็ต “ลงนามโดย”</button>
+                  </div>
                 </div>
 
-                <div class="btnRow" style="margin-top:8px;">
-                  <button class="btn danger" id="rcCutout" type="button">✂️ ไดคัท (วาดเส้นล้อม)</button>
-                </div>
               </div>
             </div>
 
@@ -579,10 +654,13 @@
               <button class="btn secondary" id="rcSave" type="button">บันทึกเป็นรูป</button>
               <button class="btn" id="rcShare" type="button">แชร์</button>
             </div>
+            <div class="btnRow" style="margin-top:8px;">
+              <button class="btn ghost" id="rcOpenImage" type="button">เปิดรูป</button>
+              <button class="btn ghost" id="rcClearAll" type="button">ล้างทั้งหมด</button>
+            </div>
 
             <div class="noteBox" style="margin-top:10px;">
-              โหมดไดคัท: วาดเส้นล้อม “ส่วนที่ต้องการเก็บ” แล้วกด “เสร็จ”<br>
-              (ด้านนอกเส้นจะโปร่งใส)
+              iPad: กด “แชร์” แล้วเลือก <b>Save Image / บันทึกรูปภาพ</b> เพื่อเข้า Photos ได้เร็วสุด
             </div>
           </div>
         </div>
@@ -1096,13 +1174,19 @@
     layers: [], // bottom->top
     selectedId: null,
 
-    pointers: new Map(), // pointerId -> {x,y}
+    pointers: new Map(),
     singleLast: null,
     gesture: null,
 
-    mode: 'normal', // 'normal' | 'cutout'
-    cutPath: [],    // points in paper coords
+    // modes
+    mode: 'normal', // normal | cutout | eraser
+    cutPath: [],
     cutActive: false,
+
+    eraser: { active:false, brush:26, lastPt:null },
+    undoStack: new Map(), // layerId -> [dataURL,...] limit 12
+
+    _lastExportBlobUrl: null,
 
     init(){
       this.paperEl = $('rcPaper');
@@ -1128,14 +1212,26 @@
         this.draw();
       });
 
-      // Paper interactions
+      // pointer events
       this.paperEl.addEventListener('pointerdown', (e)=>this.onPointerDown(e));
       this.paperEl.addEventListener('pointermove', (e)=>this.onPointerMove(e));
       this.paperEl.addEventListener('pointerup', (e)=>this.onPointerUp(e));
       this.paperEl.addEventListener('pointercancel', (e)=>this.onPointerUp(e));
 
-      // UI actions
-      $('btnRcAddImage').onclick = ()=> $('rcFile').click();
+      // top tools
+      $('rcTopAddImg').onclick = ()=> $('rcFile').click();
+      $('rcTopAddText').onclick = ()=> this.addTextLayer('ลงนามโดย');
+      $('rcTopUndo').onclick = ()=> this.undo();
+      $('rcTopSave').onclick = ()=> this.exportAs('save');
+      $('rcTopShare').onclick = ()=> this.exportAs('share');
+
+      // side tools
+      $('rcSave').onclick = ()=> this.exportAs('save');
+      $('rcShare').onclick = ()=> this.exportAs('share');
+      $('rcOpenImage').onclick = ()=> this.openLastExport();
+      $('rcClearAll').onclick = ()=> this.clearAll();
+
+      // file input
       $('rcFile').addEventListener('change', async (e)=>{
         const files = Array.from(e.target.files || []);
         if(!files.length) return;
@@ -1147,11 +1243,7 @@
         this.draw();
       });
 
-      $('btnRcAddText').onclick = ()=> {
-        this.addTextLayer('ลายเซ็น / หมายเหตุ');
-        this.draw();
-      };
-
+      // selection common
       $('rcOpacity').addEventListener('input', ()=>{
         const l = this.getSelected();
         if(!l) return;
@@ -1159,15 +1251,14 @@
         $('rcOpacityTxt').textContent = `${$('rcOpacity').value}%`;
         this.draw();
       });
-
       $('rcBringFront').onclick = ()=>{ this.bringFront(); this.draw(); };
       $('rcSendBack').onclick = ()=>{ this.sendBack(); this.draw(); };
-      $('rcDelete').onclick = ()=>{ this.deleteSelected(); this.draw(); };
       $('rcDuplicate').onclick = ()=>{ this.duplicateSelected(); this.draw(); };
-      $('rcCenter').onclick = ()=>{ const l=this.getSelected(); if(l){ l.x = this.paperEl.clientWidth/2; l.y = this.paperEl.clientHeight/2; } this.draw(); };
-      $('rcResetTransform').onclick = ()=>{ const l=this.getSelected(); if(l){ l.scale=1; l.rot=0; } this.syncControlsFromLayer(); this.draw(); };
+      $('rcDelete').onclick = ()=>{ this.deleteSelected(); this.draw(); };
+      $('rcCenter').onclick = ()=>{ const l=this.getSelected(); if(l){ l.x=this.paperEl.clientWidth/2; l.y=this.paperEl.clientHeight/2; } this.draw(); };
+      $('rcResetTransform').onclick = ()=>{ const l=this.getSelected(); if(l){ l.scale=1; l.rot=0; } this.draw(); };
 
-      // Text controls
+      // text tools
       $('rcTextValue').addEventListener('input', ()=>{
         const l = this.getSelected();
         if(!l || l.type!=='text') return;
@@ -1198,15 +1289,30 @@
         l.color = (l.color === '#111827') ? '#1e40af' : '#111827';
         this.draw();
       };
+      $('rcTextPreset').onclick = ()=>{
+        const l = this.getSelected();
+        if(!l || l.type!=='text') return;
+        const preset = `ลงนามโดย\n(Authorized Signature)`;
+        l.text = preset;
+        $('rcTextValue').value = preset;
+        this.draw();
+      };
 
-      // Cutout
+      // image tools
       $('rcCutout').onclick = ()=> this.enterCutoutMode();
+      $('rcCutoutDone').onclick = ()=> this.finishCutout();
+      $('rcCutoutCancel').onclick = ()=> this.exitModes();
 
-      // Save/Share
-      $('rcSave').onclick = async ()=>{ await this.exportAs('save'); };
-      $('rcShare').onclick = async ()=>{ await this.exportAs('share'); };
+      $('rcEraser').onclick = ()=> this.enterEraserMode();
+      $('rcBrush').addEventListener('input', ()=>{
+        this.eraser.brush = Number($('rcBrush').value);
+        $('rcBrushTxt').textContent = `${$('rcBrush').value}px`;
+      });
+      $('rcEraserDone').onclick = ()=> this.exitModes();
+      $('rcEraserCancel').onclick = ()=> this.undoAndExitEraser();
 
       this.updateSelectedUI();
+      this.updateModePill();
     },
 
     applyPaperAspect(){
@@ -1228,7 +1334,19 @@
     // ---------- Layers ----------
     newId(){ return 'L' + Math.random().toString(16).slice(2) + Date.now().toString(16); },
 
+    select(id){
+      this.selectedId = id;
+      this.updateSelectedUI();
+      this.syncControlsFromLayer();
+      this.draw();
+    },
+
+    getSelected(){
+      return this.layers.find(l=>l.id===this.selectedId) || null;
+    },
+
     addTextLayer(text){
+      this.exitModes();
       const w = this.paperEl.clientWidth;
       const h = this.paperEl.clientHeight;
       const id = this.newId();
@@ -1251,12 +1369,21 @@
     },
 
     async addImageFile(file){
+      this.exitModes();
       const img = await this.loadImage(file);
+
+      // make editable bitmap canvas
+      const bmp = document.createElement('canvas');
+      bmp.width = img.naturalWidth;
+      bmp.height = img.naturalHeight;
+      const bctx = bmp.getContext('2d');
+      bctx.clearRect(0,0,bmp.width,bmp.height);
+      bctx.drawImage(img, 0, 0);
+
       const w = this.paperEl.clientWidth;
       const h = this.paperEl.clientHeight;
+      const s = Math.min((w*0.6)/bmp.width, (h*0.6)/bmp.height);
 
-      // fit to paper (contain) at start
-      const s = Math.min((w*0.6)/img.naturalWidth, (h*0.6)/img.naturalHeight);
       const id = this.newId();
       this.layers.push({
         id,
@@ -1266,9 +1393,9 @@
         scale: s,
         rot: 0,
         opacity: 1,
-        img,
-        imgW: img.naturalWidth,
-        imgH: img.naturalHeight
+        bmp, // canvas
+        w: bmp.width,
+        h: bmp.height
       });
       this.select(id);
     },
@@ -1287,17 +1414,8 @@
       });
     },
 
-    getSelected(){
-      return this.layers.find(l=>l.id===this.selectedId) || null;
-    },
-
-    select(id){
-      this.selectedId = id;
-      this.updateSelectedUI();
-      this.syncControlsFromLayer();
-    },
-
     deleteSelected(){
+      this.exitModes();
       if(!this.selectedId) return;
       const idx = this.layers.findIndex(l=>l.id===this.selectedId);
       if(idx>=0) this.layers.splice(idx,1);
@@ -1308,19 +1426,20 @@
     },
 
     duplicateSelected(){
+      this.exitModes();
       const l = this.getSelected();
       if(!l) return;
       const id = this.newId();
-      const copy = structuredClone ? structuredClone(l) : JSON.parse(JSON.stringify(l));
+      const copy = JSON.parse(JSON.stringify(l));
       copy.id = id;
       copy.x += 12;
       copy.y += 12;
-
-      // reattach img object for image layers
       if(l.type==='image'){
-        copy.img = l.img;
-        copy.imgW = l.imgW;
-        copy.imgH = l.imgH;
+        // deep clone bitmap
+        const nb = document.createElement('canvas');
+        nb.width = l.w; nb.height = l.h;
+        nb.getContext('2d').drawImage(l.bmp, 0, 0);
+        copy.bmp = nb;
       }
       this.layers.push(copy);
       this.select(id);
@@ -1347,13 +1466,25 @@
       toast('ลงหลัง');
     },
 
+    clearAll(){
+      this.exitModes();
+      if(!confirm('ล้างทั้งหมดในกระดาษนี้ใช่ไหม?')) return;
+      this.layers = [];
+      this.selectedId = null;
+      this.updateSelectedUI();
+      this.draw();
+      toast('ล้างแล้ว');
+    },
+
     // ---------- UI sync ----------
     updateSelectedUI(){
       const l = this.getSelected();
-      $('rcSelType').textContent = l ? (l.type==='image' ? 'รูป' : 'ข้อความ') : '-';
-      $('rcSelHint').textContent = l ? `แตะแล้วลากเพื่อจัดตำแหน่ง` : 'แตะบนกระดาษเพื่อเลือกเลเยอร์';
       $('rcCommonControls').style.display = l ? '' : 'none';
-      $('rcTextControls').style.display = (l && l.type==='text') ? '' : 'none';
+      $('rcSelType').textContent = l ? (l.type==='image' ? 'รูป' : 'ข้อความ') : '-';
+      $('rcSelHint').textContent = l ? 'ลากเพื่อจัดตำแหน่ง | 2 นิ้วเพื่อย่อ/หมุน' : 'แตะบนกระดาษเพื่อเลือก';
+
+      $('rcTextTools').style.display = (l && l.type==='text') ? '' : 'none';
+      $('rcImageTools').style.display = (l && l.type==='image') ? '' : 'none';
     },
 
     syncControlsFromLayer(){
@@ -1370,6 +1501,34 @@
       }
     },
 
+    updateModePill(){
+      const pill = $('rcModePill');
+      pill.classList.remove('warn','info');
+      if(this.mode==='cutout'){
+        pill.textContent = 'โหมดไดคัท: วาดเส้นล้อม แล้วกด “เสร็จ”';
+        pill.classList.add('warn');
+      }else if(this.mode==='eraser'){
+        pill.textContent = 'โหมดยางลบ: วาดบนรูปที่เลือก (Undo ได้)';
+        pill.classList.add('info');
+      }else{
+        pill.textContent = 'โหมดปกติ';
+      }
+
+      // toggle sub-panels
+      $('rcCutoutControls').style.display = (this.mode==='cutout') ? '' : 'none';
+      $('rcEraserControls').style.display = (this.mode==='eraser') ? '' : 'none';
+    },
+
+    exitModes(){
+      this.mode = 'normal';
+      this.cutActive = false;
+      this.cutPath = [];
+      this.eraser.active = false;
+      this.eraser.lastPt = null;
+      this.updateModePill();
+      this.draw();
+    },
+
     // ---------- Pointer + hit test ----------
     getPaperPoint(e){
       const r = this.paperEl.getBoundingClientRect();
@@ -1381,37 +1540,44 @@
       const p = this.getPaperPoint(e);
       this.pointers.set(e.pointerId, p);
 
-      if(this.mode === 'cutout'){
-        // begin / continue drawing path
-        if(!this.cutActive){
-          this.cutActive = true;
-          this.cutPath = [p];
-        }else{
-          this.cutPath.push(p);
-        }
-        this.updateModePill();
+      // Cutout mode: only 1 finger drawing
+      if(this.mode==='cutout'){
+        if(this.pointers.size > 1) return;
+        this.cutActive = true;
+        this.cutPath = [p];
         this.draw();
         return;
       }
 
-      // normal mode: select layer on tap
+      // Eraser mode: only 1 finger drawing on selected image
+      if(this.mode==='eraser'){
+        if(this.pointers.size > 1) return;
+        const l = this.getSelected();
+        if(!l || l.type!=='image') return;
+        this.pushUndo(l); // snapshot before stroke
+        this.eraser.lastPt = p;
+        this.eraseAtPaperPoint(p);
+        this.draw();
+        return;
+      }
+
+      // Normal mode selection
       if(this.pointers.size === 1){
         const hit = this.hitTestTopmost(p);
         if(hit){
           this.select(hit.id);
         }else{
-          this.select(null);
           this.selectedId = null;
           this.updateSelectedUI();
+          this.draw();
         }
         this.singleLast = p;
         this.gesture = null;
-        this.draw();
         return;
       }
 
+      // start gesture with 2 pointers
       if(this.pointers.size === 2){
-        // start gesture on selected layer only
         this.startGesture();
       }
     },
@@ -1421,11 +1587,20 @@
       const p = this.getPaperPoint(e);
       this.pointers.set(e.pointerId, p);
 
-      if(this.mode === 'cutout'){
+      if(this.mode==='cutout'){
+        if(this.pointers.size > 1) return;
         if(this.cutActive){
           this.cutPath.push(p);
           this.draw();
         }
+        return;
+      }
+
+      if(this.mode==='eraser'){
+        if(this.pointers.size > 1) return;
+        this.eraser.lastPt = p;
+        this.eraseAtPaperPoint(p);
+        this.draw();
         return;
       }
 
@@ -1444,7 +1619,6 @@
 
       if(this.pointers.size === 2){
         this.updateGesture();
-        this.syncControlsFromLayer();
         this.draw();
       }
     },
@@ -1453,6 +1627,12 @@
       this.pointers.delete(e.pointerId);
       this.singleLast = null;
       this.gesture = null;
+      if(this.mode==='eraser'){
+        this.eraser.lastPt = null;
+      }
+      if(this.mode==='cutout'){
+        // keep path; user can continue drawing by touching again (still in mode)
+      }
     },
 
     startGesture(){
@@ -1482,7 +1662,6 @@
     updateGesture(){
       const l = this.getSelected();
       if(!l) return;
-
       const pts = Array.from(this.pointers.values());
       if(pts.length !== 2) return;
       if(!this.gesture) this.startGesture();
@@ -1497,7 +1676,7 @@
       l.y = g.startY + (center.y - g.startCenter.y);
 
       const scaleFactor = dist / g.startDist;
-      l.scale = this.clamp(g.startScale * scaleFactor, 0.05, 10);
+      l.scale = this.clamp(g.startScale * scaleFactor, 0.05, 12);
 
       let newRot = g.startRot + (angle - g.startAngle);
       if(newRot > Math.PI) newRot -= 2*Math.PI;
@@ -1505,7 +1684,6 @@
       l.rot = newRot;
     },
 
-    // hit test topmost
     hitTestTopmost(p){
       for(let i=this.layers.length-1; i>=0; i--){
         const l = this.layers[i];
@@ -1515,7 +1693,6 @@
     },
 
     pointInLayer(p, l){
-      // inverse transform (paper point -> local)
       const dx = p.x - l.x;
       const dy = p.y - l.y;
       const cos = Math.cos(-l.rot);
@@ -1524,18 +1701,16 @@
       const ry = (dx*sin + dy*cos) / (l.scale || 1);
 
       if(l.type === 'image'){
-        const hw = (l.imgW || 0)/2;
-        const hh = (l.imgH || 0)/2;
+        const hw = (l.w || 0)/2;
+        const hh = (l.h || 0)/2;
         return rx >= -hw && rx <= hw && ry >= -hh && ry <= hh;
       }
-
       if(l.type === 'text'){
         const m = this.measureTextBox(l);
         const hw = m.w/2;
         const hh = m.h/2;
         return rx >= -hw && rx <= hw && ry >= -hh && ry <= hh;
       }
-
       return false;
     },
 
@@ -1564,7 +1739,6 @@
       ctx.fillStyle = '#fff';
       ctx.fillRect(0,0,w,h);
 
-      // draw layers bottom->top
       for(const l of this.layers){
         ctx.save();
         ctx.globalAlpha = l.opacity ?? 1;
@@ -1572,10 +1746,9 @@
         ctx.rotate(l.rot || 0);
         ctx.scale(l.scale || 1, l.scale || 1);
 
-        if(l.type === 'image' && l.img){
-          ctx.drawImage(l.img, -l.imgW/2, -l.imgH/2, l.imgW, l.imgH);
+        if(l.type === 'image' && l.bmp){
+          ctx.drawImage(l.bmp, -l.w/2, -l.h/2, l.w, l.h);
         }
-
         if(l.type === 'text'){
           const fontSize = l.fontSize || 22;
           ctx.font = `${l.bold ? '700':'400'} ${fontSize}px system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif`;
@@ -1585,8 +1758,7 @@
           const lines = String(l.text ?? '').split('\n');
           const lineH = fontSize * 1.25;
           const box = this.measureTextBox(l);
-          // align
-          let align = l.align || 'left';
+          const align = l.align || 'left';
           ctx.textAlign = align;
 
           for(let i=0;i<lines.length;i++){
@@ -1599,14 +1771,14 @@
           }
         }
 
-        // selection outline (in normal mode)
+        // selection outline (only in normal mode)
         if(this.mode==='normal' && this.selectedId === l.id){
           ctx.globalAlpha = 1;
           ctx.lineWidth = 2 / (l.scale || 1);
           ctx.setLineDash([6/(l.scale||1), 6/(l.scale||1)]);
-          ctx.strokeStyle = 'rgba(13,148,136,.9)';
+          ctx.strokeStyle = 'rgba(13,148,136,.95)';
           if(l.type==='image'){
-            ctx.strokeRect(-l.imgW/2, -l.imgH/2, l.imgW, l.imgH);
+            ctx.strokeRect(-l.w/2, -l.h/2, l.w, l.h);
           }else if(l.type==='text'){
             const m = this.measureTextBox(l);
             ctx.strokeRect(-m.w/2, -m.h/2, m.w, m.h);
@@ -1616,15 +1788,12 @@
         ctx.restore();
       }
 
-      // cutout overlay
+      // overlays
       if(this.mode==='cutout'){
         ctx.save();
-        ctx.globalAlpha = .95;
-        // darken
-        ctx.fillStyle = 'rgba(17,24,39,.10)';
+        ctx.fillStyle = 'rgba(17,24,39,.06)';
         ctx.fillRect(0,0,w,h);
 
-        // path
         if(this.cutPath.length){
           ctx.beginPath();
           ctx.moveTo(this.cutPath[0].x, this.cutPath[0].y);
@@ -1635,17 +1804,64 @@
           ctx.lineWidth = 3;
           ctx.setLineDash([]);
           ctx.stroke();
-
-          // show hint circle at start
-          const s = this.cutPath[0];
-          ctx.fillStyle = 'rgba(211,47,47,.95)';
-          ctx.beginPath();
-          ctx.arc(s.x, s.y, 4, 0, Math.PI*2);
-          ctx.fill();
         }
-
         ctx.restore();
       }
+
+      if(this.mode==='eraser'){
+        // show brush cursor if single pointer exists
+        const p = Array.from(this.pointers.values())[0] || this.eraser.lastPt;
+        if(p){
+          ctx.save();
+          ctx.strokeStyle = 'rgba(30,64,175,.70)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, (this.eraser.brush||26)/2, 0, Math.PI*2);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    },
+
+    // ---------- Undo ----------
+    imageLayerToDataURL(layer){
+      const c = document.createElement('canvas');
+      c.width = layer.w;
+      c.height = layer.h;
+      c.getContext('2d').drawImage(layer.bmp, 0, 0);
+      return c.toDataURL('image/png');
+    },
+
+    pushUndo(layer){
+      if(!layer || layer.type!=='image') return;
+      const id = layer.id;
+      const arr = this.undoStack.get(id) || [];
+      arr.push(this.imageLayerToDataURL(layer));
+      while(arr.length > 12) arr.shift();
+      this.undoStack.set(id, arr);
+    },
+
+    async undo(){
+      const l = this.getSelected();
+      if(!l || l.type!=='image') return toast('เลือก “รูป” ก่อนค่อย Undo');
+      const arr = this.undoStack.get(l.id) || [];
+      if(!arr.length) return toast('ไม่มีอะไรให้ย้อนแล้ว');
+      const url = arr.pop();
+      this.undoStack.set(l.id, arr);
+
+      const img = new Image();
+      await new Promise((res, rej)=>{ img.onload=res; img.onerror=rej; img.src=url; });
+
+      const nb = document.createElement('canvas');
+      nb.width = img.naturalWidth;
+      nb.height = img.naturalHeight;
+      nb.getContext('2d').drawImage(img, 0, 0);
+
+      l.bmp = nb;
+      l.w = nb.width;
+      l.h = nb.height;
+      toast('ย้อนกลับแล้ว');
+      this.draw();
     },
 
     // ---------- Cutout ----------
@@ -1655,125 +1871,61 @@
       this.mode = 'cutout';
       this.cutActive = false;
       this.cutPath = [];
-      this.updateModePill(true);
-      this.updateCutoutButtons();
+      this.updateModePill();
       toast('โหมดไดคัท: วาดเส้นล้อม แล้วกด “เสร็จ”');
-    },
-
-    exitCutoutMode(){
-      this.mode = 'normal';
-      this.cutActive = false;
-      this.cutPath = [];
-      this.updateModePill(false);
-      this.updateCutoutButtons();
       this.draw();
-    },
-
-    updateModePill(){
-      const pill = $('rcModePill');
-      if(this.mode==='cutout'){
-        pill.textContent = 'โหมดไดคัท: วาดเส้นล้อม แล้วกด “เสร็จ/ยกเลิก”';
-        pill.classList.add('danger');
-      }else{
-        pill.textContent = 'โหมดปกติ';
-        pill.classList.remove('danger');
-      }
-    },
-
-    updateCutoutButtons(){
-      // repurpose buttons when in cutout
-      const btn = $('rcCutout');
-      if(this.mode==='cutout'){
-        btn.textContent = '✅ เสร็จ (ตัดตามเส้น)';
-        btn.classList.remove('danger');
-        btn.classList.add('secondary');
-        btn.onclick = ()=>this.finishCutout();
-
-        // add cancel button quickly via confirm on delete? keep simple: long-press no. We'll add small confirm using toast + ESC.
-        // Use rcResetTransform as "ยกเลิก" in cutout
-        const r = $('rcResetTransform');
-        r.textContent = 'ยกเลิกไดคัท';
-        r.onclick = ()=>this.exitCutoutMode();
-      }else{
-        btn.textContent = '✂️ ไดคัท (วาดเส้นล้อม)';
-        btn.classList.remove('secondary');
-        btn.classList.add('danger');
-        btn.onclick = ()=>this.enterCutoutMode();
-
-        const r = $('rcResetTransform');
-        r.textContent = 'รีเซ็ต';
-        r.onclick = ()=>{ const l=this.getSelected(); if(l){ l.scale=1; l.rot=0; } this.syncControlsFromLayer(); this.draw(); };
-      }
     },
 
     async finishCutout(){
       const l = this.getSelected();
-      if(!l || l.type!=='image') return this.exitCutoutMode();
-      if(this.cutPath.length < 10) return toast('วาดเส้นให้ครบก่อน (อย่างน้อยนิดนึง)');
+      if(!l || l.type!=='image') return this.exitModes();
+      if(this.cutPath.length < 10) return toast('วาดเส้นให้ครบก่อน');
 
-      // close path by connecting to start
+      this.pushUndo(l);
+
+      // close path
       const path = this.cutPath.slice();
       path.push(path[0]);
 
-      // Convert paper path -> local image coordinates
-      const localPts = path.map(p=>this.paperPointToImageLocal(p, l));
+      // convert paper points -> image pixel points
+      const pts = path.map(p=>this.paperPointToImagePixel(p, l));
 
-      // Create mask on image native size
+      // build mask
       const mask = document.createElement('canvas');
-      mask.width = l.imgW;
-      mask.height = l.imgH;
+      mask.width = l.w;
+      mask.height = l.h;
       const mctx = mask.getContext('2d');
-
-      // draw polygon in image coords (image space origin top-left)
       mctx.clearRect(0,0,mask.width,mask.height);
       mctx.fillStyle = '#000';
       mctx.beginPath();
-      const p0 = localPts[0];
-      mctx.moveTo(p0.x, p0.y);
-      for(let i=1;i<localPts.length;i++){
-        mctx.lineTo(localPts[i].x, localPts[i].y);
-      }
+      mctx.moveTo(pts[0].x, pts[0].y);
+      for(let i=1;i<pts.length;i++) mctx.lineTo(pts[i].x, pts[i].y);
       mctx.closePath();
       mctx.fill();
 
-      // Apply mask to image => output canvas
+      // apply mask to bmp
       const out = document.createElement('canvas');
-      out.width = l.imgW;
-      out.height = l.imgH;
+      out.width = l.w;
+      out.height = l.h;
       const octx = out.getContext('2d');
       octx.clearRect(0,0,out.width,out.height);
-
-      // draw original
-      octx.drawImage(l.img, 0, 0, l.imgW, l.imgH);
-
-      // keep only where mask exists
+      octx.drawImage(l.bmp, 0, 0);
       octx.globalCompositeOperation = 'destination-in';
       octx.drawImage(mask, 0, 0);
       octx.globalCompositeOperation = 'source-over';
 
-      // Optional: trim transparent edges? (ช่วยให้เลือก/ลากง่าย)
       const trimmed = this.trimTransparent(out);
-      const img = new Image();
-      const url = trimmed.toDataURL('image/png');
-      await new Promise((resolve,reject)=>{
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = url;
-      });
+      l.bmp = trimmed;
+      l.w = trimmed.width;
+      l.h = trimmed.height;
 
-      // Replace image in layer (keep transform)
-      l.img = img;
-      l.imgW = img.naturalWidth;
-      l.imgH = img.naturalHeight;
-
-      // keep selection, exit cutout
-      this.exitCutoutMode();
+      this.exitModes();
       toast('ไดคัทแล้ว');
       this.draw();
     },
 
-    paperPointToImageLocal(p, l){
-      // paper point -> layer local (unscale/unrotate, center origin) -> image pixel coords (top-left origin)
+    paperPointToImagePixel(p, l){
+      // paper -> layer local -> image pixel (top-left origin)
       const dx = p.x - l.x;
       const dy = p.y - l.y;
       const cos = Math.cos(-l.rot);
@@ -1781,20 +1933,20 @@
       const rx = (dx*cos - dy*sin) / (l.scale || 1);
       const ry = (dx*sin + dy*cos) / (l.scale || 1);
 
-      const ix = rx + (l.imgW/2);
-      const iy = ry + (l.imgH/2);
+      const ix = rx + (l.w/2);
+      const iy = ry + (l.h/2);
       return { x: ix, y: iy };
     },
 
     trimTransparent(canvas){
       const ctx = canvas.getContext('2d');
       const {width:w, height:h} = canvas;
-      const img = ctx.getImageData(0,0,w,h).data;
+      const data = ctx.getImageData(0,0,w,h).data;
 
       let minX=w, minY=h, maxX=-1, maxY=-1;
       for(let y=0;y<h;y++){
         for(let x=0;x<w;x++){
-          const a = img[(y*w + x)*4 + 3];
+          const a = data[(y*w + x)*4 + 3];
           if(a>0){
             if(x<minX) minX=x;
             if(y<minY) minY=y;
@@ -1803,10 +1955,10 @@
           }
         }
       }
-      if(maxX<minX || maxY<minY) return canvas; // nothing
+      if(maxX<minX || maxY<minY) return canvas;
 
-      const tw = (maxX - minX + 1);
-      const th = (maxY - minY + 1);
+      const tw = maxX - minX + 1;
+      const th = maxY - minY + 1;
       const out = document.createElement('canvas');
       out.width = tw;
       out.height = th;
@@ -1814,8 +1966,46 @@
       return out;
     },
 
-    // ---------- Export ----------
-    async exportAs(mode){
+    // ---------- Eraser ----------
+    enterEraserMode(){
+      const l = this.getSelected();
+      if(!l || l.type!=='image') return toast('เลือก “รูป” ก่อนใช้ยางลบ');
+      this.mode = 'eraser';
+      this.eraser.active = true;
+      this.eraser.brush = Number($('rcBrush').value || '26');
+      this.eraser.lastPt = null;
+      this.updateModePill();
+      toast('โหมดยางลบ: วาดบนรูปที่เลือก (Undo ได้)');
+      this.draw();
+    },
+
+    undoAndExitEraser(){
+      if(this.mode==='eraser'){
+        this.undo().finally(()=> this.exitModes());
+        return;
+      }
+      this.exitModes();
+    },
+
+    eraseAtPaperPoint(p){
+      const l = this.getSelected();
+      if(!l || l.type!=='image') return;
+
+      // convert to image pixel coordinate
+      const ip = this.paperPointToImagePixel(p, l);
+
+      // erase with destination-out
+      const bctx = l.bmp.getContext('2d');
+      bctx.save();
+      bctx.globalCompositeOperation = 'destination-out';
+      bctx.beginPath();
+      bctx.arc(ip.x, ip.y, (this.eraser.brush||26)/2, 0, Math.PI*2);
+      bctx.fill();
+      bctx.restore();
+    },
+
+    // ---------- Export / Share / Open ----------
+    async exportBlob(){
       const dpi = Number($('rcDpi').value || '200');
       const s = Paper.getSetting();
 
@@ -1827,32 +2017,25 @@
       out.height = pxH;
       const octx = out.getContext('2d');
 
-      // white background (ใบเสร็จเน้นขาว)
       octx.fillStyle = '#fff';
       octx.fillRect(0,0,pxW,pxH);
 
-      // scale from paper CSS px -> export px
       const pw = this.paperEl.clientWidth;
       const ph = this.paperEl.clientHeight;
       const rx = pxW / pw;
       const ry = pxH / ph;
+      const r = (rx + ry) / 2;
 
-      // draw all layers
       for(const l of this.layers){
         octx.save();
         octx.globalAlpha = l.opacity ?? 1;
-
         octx.translate(l.x * rx, l.y * ry);
         octx.rotate(l.rot || 0);
-
-        // scale: use average to keep proportions
-        const r = (rx + ry) / 2;
         octx.scale((l.scale || 1) * r, (l.scale || 1) * r);
 
-        if(l.type==='image' && l.img){
-          octx.drawImage(l.img, -l.imgW/2, -l.imgH/2, l.imgW, l.imgH);
+        if(l.type==='image' && l.bmp){
+          octx.drawImage(l.bmp, -l.w/2, -l.h/2, l.w, l.h);
         }
-
         if(l.type==='text'){
           const fontSize = (l.fontSize || 22);
           octx.font = `${l.bold ? '700':'400'} ${fontSize}px system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif`;
@@ -1862,74 +2045,89 @@
           const lines = String(l.text ?? '').split('\n');
           const lineH = fontSize * 1.25;
 
-          // measure with export ctx
-          const tmp = { ...l, fontSize };
-          const box = this.measureTextBoxExport(octx, tmp);
-
-          let align = l.align || 'left';
+          // measure
+          let maxW = 10;
+          for(const line of lines){
+            maxW = Math.max(maxW, octx.measureText(line || ' ').width);
+          }
+          const boxH = Math.max(lineH, lines.length * lineH);
+          const align = l.align || 'left';
           octx.textAlign = align;
 
           for(let i=0;i<lines.length;i++){
-            const y = (-box.h/2) + (i*lineH) + (lineH/2);
+            const y = (-boxH/2) + (i*lineH) + (lineH/2);
             let x = 0;
-            if(align==='left') x = -box.w/2;
+            if(align==='left') x = -maxW/2;
             if(align==='center') x = 0;
-            if(align==='right') x = box.w/2;
+            if(align==='right') x = maxW/2;
             octx.fillText(lines[i], x, y);
           }
         }
-
         octx.restore();
       }
 
       const blob = await new Promise((resolve)=> out.toBlob(resolve, 'image/png', 1.0));
-      if(!blob) return toast('สร้างไฟล์ไม่สำเร็จ');
+      if(!blob) throw new Error('สร้างไฟล์ไม่สำเร็จ');
 
       const filename = `${s.size}_${s.ori}_${new Date().toISOString().slice(0,19).replaceAll(':','-')}.png`;
-      const file = new File([blob], filename, {type:'image/png'});
-
-      if(mode==='share'){
-        try{
-          if(navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share){
-            await navigator.share({ files:[file], title:'Receipt', text:'ใบเสร็จ' });
-            toast('แชร์แล้ว');
-            return;
-          }
-        }catch(e){}
-      }
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url), 1500);
-
-      toast(mode==='share' ? 'แชร์ไม่ได้ เลยดาวน์โหลดแทน' : 'ดาวน์โหลดแล้ว');
+      return { blob, filename };
     },
 
-    measureTextBoxExport(ctx, l){
-      ctx.save();
-      ctx.font = `${l.bold ? '700':'400'} ${l.fontSize || 22}px system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif`;
-      const lines = String(l.text ?? '').split('\n');
-      let maxW = 10;
-      for(const line of lines){
-        maxW = Math.max(maxW, ctx.measureText(line || ' ').width);
+    async exportAs(mode){
+      try{
+        const { blob, filename } = await this.exportBlob();
+        const file = new File([blob], filename, {type:'image/png'});
+
+        // save last url for "open image"
+        if(this._lastExportBlobUrl) URL.revokeObjectURL(this._lastExportBlobUrl);
+        this._lastExportBlobUrl = URL.createObjectURL(blob);
+
+        if(mode==='share'){
+          try{
+            if(navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share){
+              await navigator.share({ files:[file], title:'Receipt', text:'ใบเสร็จ' });
+              toast('แชร์แล้ว (เลือก Save Image ได้)');
+              return;
+            }
+          }catch(e){}
+        }
+
+        // fallback download
+        const a = document.createElement('a');
+        a.href = this._lastExportBlobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        toast(mode==='share' ? 'แชร์ไม่ได้ เลยดาวน์โหลดแทน' : 'ดาวน์โหลดแล้ว');
+      }catch(err){
+        console.error(err);
+        toast('บันทึกไม่สำเร็จ: ' + (err.message || err));
       }
-      const lineH = (l.fontSize || 22) * 1.25;
-      const h = Math.max(lineH, lines.length * lineH);
-      ctx.restore();
-      return { w:maxW, h };
     },
+
+    openLastExport(){
+      if(!this._lastExportBlobUrl) return toast('ยังไม่มีไฟล์บันทึกล่าสุด');
+      window.open(this._lastExportBlobUrl, '_blank');
+      toast('เปิดรูปแล้ว (กด Share/Save Image ได้)');
+    },
+
+    // ---------- Export shortcuts ----------
+    // side/top uses same exportAs()
+
   };
 
-  // init
-  RC.init();
-  RC.updateCutoutButtons();
+  // top bar shortcuts
+  $('rcTopAddImg').onclick = ()=> $('rcFile').click();
+  $('rcTopAddText').onclick = ()=> RC.addTextLayer('ลงนามโดย');
+  $('rcTopUndo').onclick = ()=> RC.undo();
+  $('rcTopSave').onclick = ()=> RC.exportAs('save');
+  $('rcTopShare').onclick = ()=> RC.exportAs('share');
 
-  // load initial
+  // init RC
+  RC.init();
+
+  // init data
   loadAll().catch(err=>{
     console.error(err);
     alert('โหลดข้อมูลไม่สำเร็จ: ' + err.message);
