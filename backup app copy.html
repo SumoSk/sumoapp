@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import os
+import re
 import json
 import time
+import hashlib
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict, deque
 from math import isfinite
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 from flask import (
     Flask,
@@ -104,6 +106,303 @@ def _clean_dash(v):
 
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def _ensure_items(val: Any) -> Any:
+    """
+    JSON Handling Correction:
+    - ถ้าเป็น list/dict อยู่แล้ว ใช้เลย (jsonb array/object)
+    - ถ้าเป็น string (เผื่อข้อมูลเก่าหลงเหลือ) ค่อย json.loads
+    - อื่น ๆ ให้ fallback เป็น []
+    """
+    if isinstance(val, (list, dict)):
+        return val
+    if isinstance(val, str):
+        s = val.strip()
+        if not s:
+            return []
+        try:
+            return json.loads(s)
+        except Exception:
+            return []
+    return []
+
+
+def _ensure_item_list(val: Any) -> List[Any]:
+    """
+    ทำให้ item ที่อ่านจาก DB "เป็น list เสมอ"
+    รองรับ:
+    - list (jsonb array) -> ใช้เลย
+    - dict (jsonb object) -> wrap เป็น [dict]
+    - string (ข้อมูลเก่า) -> json.loads แล้ว normalize เป็น list
+    - อื่น ๆ -> []
+    """
+    raw = _ensure_items(val)
+    if isinstance(raw, list):
+        return raw
+    if isinstance(raw, dict):
+        return [raw]
+    if isinstance(raw, str):
+        s = raw.strip()
+        return [s] if s else []
+    return []
+
+
+# =======================
+# ✅ NEW: item coercion helpers (ทำให้ API ส่ง list[str] เสมอ)
+# =======================
+def _to_int(v: Any, default: int = 1) -> int:
+    try:
+        if v is None or v == "":
+            return default
+        return int(float(v))
+    except Exception:
+        return default
+
+
+def _item_obj_to_text(x: Any) -> str:
+    """
+    แปลง item ให้เป็น 'สตริง' เสมอ เพื่อให้ JS เดิมที่ใช้ .match() ไม่พัง
+    รองรับ:
+      - string เดิม
+      - dict เช่น {name, qty, price}
+      - อื่น ๆ -> str(...)
+    """
+    if x is None:
+        return ""
+    if isinstance(x, str):
+        return x.strip()
+
+    if isinstance(x, dict):
+        name = (x.get("name") or x.get("product") or x.get("title") or "").strip()
+        category = (x.get("category") or x.get("group") or "").strip()
+        qty = _to_int(x.get("qty") or x.get("quantity") or x.get("count"), default=1)
+
+        price = x.get("price") or x.get("unit_price") or x.get("default_price")
+
+        # ทำรูปแบบให้ใกล้ของเดิม: หมวด (ชื่อ)
+        if category and name:
+            base = f"{category} ({name})"
+        else:
+            base = name or category or ""
+
+        if base and price is not None and str(price) != "":
+            p = _to_int(price, default=0)
+            return f"{base} - {qty} ชิ้น x {p}"
+        if base:
+            return f"{base} - {qty} ชิ้น"
+        return ""
+
+    try:
+        return str(x)
+    except Exception:
+        return ""
+
+
+def _coerce_items_to_text_list(val: Any) -> List[str]:
+    """
+    รับ items ที่เป็น list/dict/string แล้วคืน list[str] เสมอ
+    """
+    raw = _ensure_items(val)
+
+    if isinstance(raw, list):
+        out: List[str] = []
+        for it in raw:
+            s = _item_obj_to_text(it)
+            if s:
+                out.append(s)
+        return out
+
+    if isinstance(raw, dict):
+        s = _item_obj_to_text(raw)
+        return [s] if s else []
+
+    if isinstance(raw, str):
+        s = raw.strip()
+        return [s] if s else []
+
+    return []
+
+
+def _parse_year_from_date(date_s: str) -> Optional[int]:
+    """
+    รับ 'YYYY-MM-DD' หรือค่าอื่น ๆ แล้วพยายามได้ปีเป็น int
+    """
+    if not date_s:
+        return None
+    s = safe_date_str(date_s)
+    if len(s) >= 4 and s[:4].isdigit():
+        try:
+            return int(s[:4])
+        except Exception:
+            return None
+    return None
+
+
+def _pad4(n: int) -> str:
+    return str(int(n)).zfill(4)
+
+
+def make_idempotency_key(
+    date: Any,
+    opd: Any,
+    amount: Any,
+    payment_method: Any,
+    items: Any,
+) -> str:
+    """
+    Task 3.1: Helper Function - Idempotency Hash
+    """
+    opd_4 = normalize_opd(opd)
+    date_s = safe_date_str(date)
+
+    # amount normalize (stable)
+    try:
+        amt = float(amount)
+    except Exception:
+        amt = 0.0
+
+    pm = (payment_method or "")
+    items_norm = _ensure_items(items)
+
+    # ทำ canonical สำหรับ items
+    # ถ้าเป็น list ของ dict -> sort ด้วย json string canonical เพื่อกันสลับลำดับคีย์
+    canonical_items = items_norm
+    try:
+        if isinstance(items_norm, list):
+            canonical_items = sorted(
+                items_norm,
+                key=lambda x: json.dumps(x, ensure_ascii=False, sort_keys=True)
+                if isinstance(x, (dict, list))
+                else str(x),
+            )
+    except Exception:
+        canonical_items = items_norm
+
+    payload = {
+        "date": date_s,
+        "opd": opd_4,
+        "amount": round(amt, 2),
+        "payment_method": str(pm),
+        "items": canonical_items,
+    }
+    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _client_ip() -> str:
+    return request.headers.get("X-Forwarded-For", request.remote_addr or "-")
+
+
+def _validate_issue_payload(data: Dict[str, Any]) -> Tuple[bool, str]:
+    opd = normalize_opd(data.get("opd"))
+    if not opd or len(opd) != 4:
+        return False, "invalid_opd"
+
+    date_s = safe_date_str(data.get("date"))
+    if not date_s:
+        return False, "missing_date"
+    y = _parse_year_from_date(date_s)
+    if not y or y < 2000 or y > 2100:
+        return False, "invalid_date"
+
+    amt = data.get("amount")
+    try:
+        amt_f = float(amt)
+    except Exception:
+        return False, "invalid_amount"
+    if amt_f <= 0:
+        return False, "amount_must_be_positive"
+
+    items = _ensure_items(data.get("items"))
+    if not isinstance(items, list) or len(items) == 0:
+        return False, "items_required"
+
+    return True, ""
+
+
+def _get_sales_created_at(row: Dict[str, Any]) -> str:
+    """
+    created_at อาจมี/ไม่มีใน schema; ถ้าไม่มีให้ใช้ empty string (จะไปก่อน/หลังตาม sort)
+    """
+    v = row.get("created_at") or ""
+    return str(v)
+
+
+def _ensure_counter_row(year: int) -> None:
+    """
+    ทำให้ receipt_counters_orig มี row ของ year นี้ (ถ้าไม่มี)
+    - พยายาม insert; ถ้าชนก็ปล่อยผ่าน
+    """
+    try:
+        existing = (
+            supabase.table("receipt_counters_orig")
+            .select("year,next_seq")
+            .eq("year", year)
+            .maybe_single()
+            .execute()
+        )
+        if existing.data:
+            return
+    except Exception:
+        # maybe_single อาจไม่รองรับในบางเวอร์ชัน; fallback
+        try:
+            ex2 = (
+                supabase.table("receipt_counters_orig")
+                .select("year,next_seq")
+                .eq("year", year)
+                .execute()
+            )
+            if ex2.data:
+                return
+        except Exception:
+            pass
+
+    try:
+        supabase.table("receipt_counters_orig").insert({"year": year, "next_seq": 1}).execute()
+    except Exception:
+        # ชน unique ก็โอเค
+        return
+
+
+def _next_orig_seq_atomic(year: int, max_retries: int = 10) -> int:
+    """
+    พยายามทำ atomic-ish increment ด้วย optimistic concurrency:
+    1) select next_seq
+    2) update where year=Y and next_seq=curr set next_seq=curr+1
+       - ถ้า update ไม่คืน data -> แปลว่ามีคนชิงไปแล้ว retry
+    """
+    _ensure_counter_row(year)
+
+    last_err: Optional[Exception] = None
+    for _ in range(max_retries):
+        try:
+            res = (
+                supabase.table("receipt_counters_orig")
+                .select("next_seq")
+                .eq("year", year)
+                .single()
+                .execute()
+            )
+            curr = int(res.data.get("next_seq") or 1)
+
+            upd = (
+                supabase.table("receipt_counters_orig")
+                .update({"next_seq": curr + 1})
+                .eq("year", year)
+                .eq("next_seq", curr)
+                .execute()
+            )
+            if upd.data:
+                return curr
+        except Exception as e:
+            last_err = e
+            # short backoff to reduce collisions
+            time.sleep(0.03)
+
+    if last_err:
+        raise last_err
+    raise RuntimeError("failed_to_increment_counter")
 
 
 # =============================================================
@@ -297,7 +596,6 @@ def api_customers():
         sum_res = supabase.table("v_customer_pitch_summary").select("*").execute()
         summary_map: Dict[str, Dict[str, Any]] = {}
         for r in sum_res.data or []:
-            # ✅ FIX: วงเล็บให้ถูก
             summary_map[str(r.get("opd") or "")] = {
                 "pitch_summary": r.get("pitch_summary") or "",
                 "pitch_count": r.get("pitch_count") or 0,
@@ -376,6 +674,208 @@ def delete_customer_and_sales():
 
 
 # =============================================================
+# ✅ NEW API — Receipt System (Original & Display Mode)
+# =============================================================
+@app.route("/api/sales_issue_receipt", methods=["POST"])
+@login_required
+def sales_issue_receipt():
+    """
+    Task 3.2: API - Issue Receipt (สำคัญที่สุด)
+    - ออกเลข RC-YYYY-XXXX แบบ immutable
+    - มี idempotency_key ป้องกันออกซ้ำ
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        if not isinstance(data, dict):
+            return jsonify({"success": False, "error": "invalid_payload"}), 400
+
+        ok, err = _validate_issue_payload(data)
+        if not ok:
+            return jsonify({"success": False, "error": err}), 400
+
+        date_s = safe_date_str(data.get("date"))
+        year = _parse_year_from_date(date_s)  # validated above
+        assert year is not None
+
+        opd_4 = normalize_opd(data.get("opd"))
+
+        # amount sanitize
+        amount = float(data.get("amount"))
+
+        # ✅ items -> list[str] เสมอ (JS dashboard ใช้ .match กับ string)
+        items = _coerce_items_to_text_list(data.get("items"))
+
+        payment_method = data.get("payment_method")
+        # compat: ถ้า front ส่ง payment มา
+        if payment_method is None:
+            payment_method = data.get("payment")
+
+        idempotency_key = make_idempotency_key(
+            date=date_s,
+            opd=opd_4,
+            amount=amount,
+            payment_method=payment_method,
+            items=items,
+        )
+
+        # 1) Check duplicate where same idempotency_key and already issued (orig_no not null)
+        dup = (
+            supabase.table("sales_records")
+            .select("*")
+            .eq("idempotency_key", idempotency_key)
+            .not_.is_("orig_no", "null")
+            .order("orig_issued_at", desc=True)
+            .limit(1)
+            .execute()
+        ).data
+        if dup:
+            row = dup[0]
+            return jsonify(
+                {
+                    "success": True,
+                    "id": row.get("id"),
+                    "orig_no": row.get("orig_no"),
+                    "disp_no": row.get("disp_no"),
+                    "receipt_status": row.get("receipt_status"),
+                    "idempotency_key": row.get("idempotency_key"),
+                    "duplicate": True,
+                }
+            ), 200
+
+        # 2) New: get next seq and insert
+        seq = _next_orig_seq_atomic(year)
+        orig_no = f"RC-{year}-{_pad4(seq)}"
+
+        insert_payload = {
+            "date": date_s,
+            "opd": opd_4,
+            "name": data.get("name", "") or "",
+            "phone": data.get("phone", "") or "",
+            "amount": amount,
+            # compat columns used elsewhere
+            "payment": payment_method,
+            "note": data.get("note", "") or "",
+            # ✅ store jsonb list[str] โดยไม่ dumps
+            "item": items,
+            # receipt system fields
+            "orig_year": year,
+            "orig_seq": seq,
+            "orig_no": orig_no,
+            "orig_issued_at": _utc_now_iso(),
+            "receipt_status": (data.get("receipt_status") or "issued"),
+            "idempotency_key": idempotency_key,
+        }
+
+        ins = supabase.table("sales_records").insert(insert_payload).execute()
+        row = (ins.data or [{}])[0]
+
+        return jsonify(
+            {
+                "success": True,
+                "id": row.get("id"),
+                "orig_no": orig_no,
+                "disp_no": row.get("disp_no"),
+                "receipt_status": row.get("receipt_status") or "issued",
+                "idempotency_key": idempotency_key,
+            }
+        ), 200
+
+    except Exception as e:
+        app.logger.error(f"/api/sales_issue_receipt error: {e}")
+        return jsonify({"success": False, "error": "server_error", "detail": str(e)}), 500
+
+
+@app.route("/api/rebuild_display_receipts", methods=["POST"])
+@login_required
+def rebuild_display_receipts():
+    """
+    Task 3.3: API - Rebuild Display Numbers (Red Button)
+    Input: { "year": 2025 }
+    - เลือกเฉพาะ receipt_status='issued'
+    - sort: date ASC, created_at ASC, id ASC
+    - assign RB-YYYY-XXXX ใหม่
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        if not isinstance(data, dict):
+            return jsonify({"success": False, "error": "invalid_payload"}), 400
+
+        year = data.get("year")
+        try:
+            year_i = int(year)
+        except Exception:
+            return jsonify({"success": False, "error": "invalid_year"}), 400
+        if year_i < 2000 or year_i > 2100:
+            return jsonify({"success": False, "error": "invalid_year"}), 400
+
+        # ดึง records ปีนั้น (ใช้ date range เป็นหลัก กันข้อมูล orig_year ว่าง)
+        start_date = f"{year_i}-01-01"
+        end_date = f"{year_i}-12-31"
+
+        q = (
+            supabase.table("sales_records")
+            .select("id,date,created_at,disp_version,receipt_status")
+            .gte("date", start_date)
+            .lte("date", end_date)
+            .eq("receipt_status", "issued")
+            .order("date", desc=False)
+        )
+
+        # created_at / id อาจจะต้อง order เพิ่ม (postgrest รองรับ multi order ด้วย .order ซ้ำ)
+        q = q.order("created_at", desc=False)
+        q = q.order("id", desc=False)
+
+        all_rows: List[Dict[str, Any]] = []
+        start = 0
+        limit = 1000
+        while True:
+            resp = q.range(start, start + limit - 1).execute()
+            batch = resp.data or []
+            all_rows.extend(batch)
+            if len(batch) < limit:
+                break
+            start += limit
+
+        # กันกรณี created_at ไม่มี (บาง schema) -> sort ใน python อีกรอบให้แน่น
+        def sort_key(r: Dict[str, Any]):
+            return (safe_date_str(r.get("date")), _get_sales_created_at(r), str(r.get("id")))
+
+        all_rows.sort(key=sort_key)
+
+        # loop update
+        updated = 0
+        seq = 1
+        for r in all_rows:
+            rid = r.get("id")
+            if not rid:
+                continue
+
+            disp_no = f"RB-{year_i}-{_pad4(seq)}"
+            old_v = r.get("disp_version")
+            try:
+                old_v_i = int(old_v) if old_v is not None else 0
+            except Exception:
+                old_v_i = 0
+
+            patch = {
+                "disp_year": year_i,
+                "disp_seq": seq,
+                "disp_no": disp_no,
+                "disp_version": old_v_i + 1,
+            }
+
+            supabase.table("sales_records").update(patch).eq("id", rid).execute()
+            updated += 1
+            seq += 1
+
+        return jsonify({"success": True, "count": updated}), 200
+
+    except Exception as e:
+        app.logger.error(f"/api/rebuild_display_receipts error: {e}")
+        return jsonify({"success": False, "error": "server_error", "detail": str(e)}), 500
+
+
+# =============================================================
 # API — Sales
 # =============================================================
 @app.route("/api/sales")
@@ -408,12 +908,18 @@ def api_sales():
                 break
             start += limit
 
+        # ✅ normalize: item ต้องเป็น list เสมอ (รองรับทั้ง jsonb array และ string เก่า)
+        # ✅ คืน items เป็น list[str] เสมอ + normalize opd
         for r in all_data:
-            if "item" in r:
-                try:
-                    r["items"] = json.loads(r["item"])
-                except Exception:
-                    r["items"] = []
+            r["opd"] = normalize_opd(r.get("opd"))
+
+            raw_item = r.get("item")
+            if raw_item is None and r.get("items") is not None:
+                raw_item = r.get("items")
+
+            normalized_item_list = _ensure_item_list(raw_item)
+            r["item"] = normalized_item_list  # ✅ ให้มั่นใจว่า item เป็น list แน่นอน
+            r["items"] = _coerce_items_to_text_list(normalized_item_list)  # ✅ JS เดิมยังใช้ได้
 
         return jsonify(all_data)
     except Exception as e:
@@ -438,7 +944,7 @@ def save_sales():
             date = safe_date_str(rec.get("date"))
             opd_4 = normalize_opd(rec.get("opd"))
 
-            # ✅ FIX: sanitize amount ให้เป็น float หรือ None (กัน "" ชน numeric)
+            # ✅ sanitize amount ให้เป็น float หรือ None (กัน "" ชน numeric)
             amt = rec.get("amount")
             if amt in ("", None):
                 amt = None
@@ -458,24 +964,31 @@ def save_sales():
                 }
                 supabase.table("customers").upsert(customer_data, on_conflict=["opd"]).execute()
 
-            items = rec.get("items") or []
+            # ✅ items: เก็บเป็น list[str] เสมอ และเขียนลง jsonb โดยไม่ dumps
+            items_in = rec.get("items")
+            if items_in is None:
+                items_in = rec.get("item")
+            items = _coerce_items_to_text_list(items_in)
+
             rec_db = {
                 "date": date,
                 "opd": opd_4,
                 "name": rec.get("name", ""),
                 "phone": rec.get("phone", ""),
-                "amount": amt,  # ✅ ใช้ค่าที่ sanitize แล้ว
+                "amount": amt,
                 "payment": rec.get("payment"),
                 "note": rec.get("note", ""),
-                "item": json.dumps(items, ensure_ascii=False),
+                "item": items,  # ✅ jsonb list[str] (ห้าม dumps)
             }
 
             rec_id = rec.get("id")
             if rec_id:
+                # ✅ อัปเดตเฉพาะ field ยอดขายพื้นฐาน
                 supabase.table("sales_records").update(rec_db).eq("id", rec_id).execute()
                 updated_count += 1
                 continue
 
+            # ✅ dup check (jsonb eq ต้อง match แบบเดียวกัน)
             dup_q = (
                 supabase.table("sales_records")
                 .select("id")
@@ -510,6 +1023,26 @@ def delete_sales_record():
         record_id = payload.get("id")
         if not record_id:
             return jsonify({"error": "Missing ID"}), 400
+
+        # ✅ BUGFIX: ถ้า record มี orig_no แล้ว (ออกใบเสร็จจริง) แนะนำไม่ให้ลบแบบเงียบ ๆ
+        rec = (
+            supabase.table("sales_records")
+            .select("id,orig_no")
+            .eq("id", record_id)
+            .single()
+            .execute()
+        ).data
+        if rec and rec.get("orig_no"):
+            return (
+                jsonify(
+                    {
+                        "error": "cannot_delete_issued_receipt",
+                        "message": "รายการนี้ออกใบเสร็จ (RC) แล้ว ไม่อนุญาตให้ลบ",
+                    }
+                ),
+                400,
+            )
+
         supabase.table("sales_records").delete().eq("id", record_id).execute()
         return jsonify({"message": "ลบสำเร็จ"})
     except Exception as e:
@@ -523,6 +1056,7 @@ def cleanup_duplicates():
         response = supabase.table("sales_records").select("*").execute()
         all_data = response.data or []
         seen: Dict[Any, List[Dict[str, Any]]] = defaultdict(list)
+
         for row in all_data:
             key = (
                 row.get("opd"),
@@ -531,13 +1065,24 @@ def cleanup_duplicates():
                 row.get("payment"),
                 row.get("item"),
                 row.get("note"),
+                # ✅ ถ้าออกใบเสร็จแล้วให้ถือว่าไม่ใช่ dup ของรายการที่ยังไม่ออก
+                row.get("orig_no") or "",
             )
             seen[key].append(row)
 
         deleted = 0
         for rows in seen.values():
             if len(rows) > 1:
-                ids_to_delete = [r["id"] for r in rows[1:] if "id" in r]
+                # ✅ ไม่ลบอันที่มี orig_no ถ้ามี
+                keep = None
+                for r in rows:
+                    if r.get("orig_no"):
+                        keep = r
+                        break
+                if keep is None:
+                    keep = rows[0]
+
+                ids_to_delete = [r["id"] for r in rows if r.get("id") and r.get("id") != keep.get("id")]
                 if ids_to_delete:
                     supabase.table("sales_records").delete().in_("id", ids_to_delete).execute()
                     deleted += len(ids_to_delete)
@@ -586,19 +1131,20 @@ def api_products_map():
         )
         prods = (prods_q.execute().data or [])
 
-        # group
         id_to_name = {c["id"]: c["name"] for c in cats}
         out: Dict[str, List[Dict[str, Any]]] = {c["name"]: [] for c in cats}
         for p in prods:
             cn = id_to_name.get(p.get("category_id"))
             if not cn:
                 continue
-            out.setdefault(cn, []).append({
-                "id": p.get("id"),
-                "name": p.get("name"),
-                "default_price": p.get("default_price"),
-                "sort_order": p.get("sort_order", 0),
-            })
+            out.setdefault(cn, []).append(
+                {
+                    "id": p.get("id"),
+                    "name": p.get("name"),
+                    "default_price": p.get("default_price"),
+                    "sort_order": p.get("sort_order", 0),
+                }
+            )
 
         return jsonify({"map": out, "categories": cats})
     except Exception as e:
@@ -728,7 +1274,6 @@ def api_products():
                         return jsonify({"error": "invalid_default_price"}), 400
 
             if "deleted_at" in data:
-                # allow UI to restore by sending deleted_at=null
                 patch["deleted_at"] = data.get("deleted_at")
 
             if not patch:
@@ -741,10 +1286,12 @@ def api_products():
             pid = data.get("id")
             if not pid:
                 return jsonify({"error": "missing_id"}), 400
-            supabase.table("products").update({
-                "deleted_at": _utc_now_iso(),
-                "is_active": False,
-            }).eq("id", pid).execute()
+            supabase.table("products").update(
+                {
+                    "deleted_at": _utc_now_iso(),
+                    "is_active": False,
+                }
+            ).eq("id", pid).execute()
             return jsonify({"message": "trashed"})
 
     except Exception as e:
@@ -759,10 +1306,12 @@ def api_products_restore():
     if not pid:
         return jsonify({"error": "missing_id"}), 400
     try:
-        supabase.table("products").update({
-            "deleted_at": None,
-            "is_active": True,
-        }).eq("id", pid).execute()
+        supabase.table("products").update(
+            {
+                "deleted_at": None,
+                "is_active": True,
+            }
+        ).eq("id", pid).execute()
         return jsonify({"message": "restored"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -891,14 +1440,16 @@ def pitches_by_date():
         if kw:
             tmp = []
             for r in rows:
-                s = " ".join([
-                    str(r.get("opd") or ""),
-                    str(r.get("content") or ""),
-                    str(r.get("outcome") or ""),
-                    str(r.get("channel") or ""),
-                    str(r.get("author") or ""),
-                    str(r.get("promotion") or ""),
-                ]).lower()
+                s = " ".join(
+                    [
+                        str(r.get("opd") or ""),
+                        str(r.get("content") or ""),
+                        str(r.get("outcome") or ""),
+                        str(r.get("channel") or ""),
+                        str(r.get("author") or ""),
+                        str(r.get("promotion") or ""),
+                    ]
+                ).lower()
                 if kw in s:
                     tmp.append(r)
             rows = tmp
@@ -1002,10 +1553,13 @@ def api_reccord_sale():
             if not batch:
                 break
             for r in batch:
-                try:
-                    r["items"] = json.loads(r.get("item") or "[]")
-                except Exception:
-                    r["items"] = []
+                raw_item = r.get("item")
+                if raw_item is None and r.get("items") is not None:
+                    raw_item = r.get("items")
+
+                normalized_item_list = _ensure_item_list(raw_item)
+                r["item"] = normalized_item_list  # ✅ item เป็น list แน่นอน
+                r["items"] = _coerce_items_to_text_list(normalized_item_list)  # ✅ dashboard เดิมยังใช้ได้
                 r["opd"] = normalize_opd(r.get("opd"))
                 r["date"] = safe_date_str(r.get("date"))
             out.extend(batch)
@@ -1190,6 +1744,608 @@ def api_tax_summary():
         return jsonify({"year": year, "months": months, "summary": tax})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+
+
+# =============================================================
+# ✅ NEW: Simple "Ledger" APIs (AR / Voucher / Work)
+# =============================================================
+
+def _safe_float(v: Any, default: float = 0.0) -> float:
+    try:
+        if v in ("", None):
+            return default
+        return float(v)
+    except Exception:
+        return default
+
+def _safe_int(v: Any, default: int = 0) -> int:
+    try:
+        if v in ("", None):
+            return default
+        return int(float(v))
+    except Exception:
+        return default
+
+def _page_all(q, page_size: int = 1000) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    start = 0
+    while True:
+        resp = q.range(start, start + page_size - 1).execute()
+        batch = resp.data or []
+        out.extend(batch)
+        if len(batch) < page_size:
+            break
+        start += page_size
+    return out
+
+def _get_customer_map() -> Dict[str, Dict[str, Any]]:
+    # map opd -> {name, phone}
+    cust = (supabase.table("customers").select("opd,name,phone").execute().data) or []
+    m: Dict[str, Dict[str, Any]] = {}
+    for c in cust:
+        opd = normalize_opd(c.get("opd"))
+        m[opd] = {"name": c.get("name") or "", "phone": c.get("phone") or ""}
+    return m
+
+def _match_kw(opd: str, name: str, phone: str, kw: str) -> bool:
+    if not kw:
+        return True
+    s = f"{opd} {name} {phone}".lower()
+    return kw.lower() in s
+
+# -----------------------------
+# A) ค้างเรา (AR)
+# -----------------------------
+@app.route("/api/ar_summary")
+@login_required
+def api_ar_summary():
+    """
+    return:
+    [
+      { opd, name, phone, balance, last_tx_date, last_pay_date }
+    ]
+    query: q (search), opd (optional exact)
+    """
+    try:
+        kw = (request.args.get("q") or "").strip()
+        opd_q = normalize_opd(request.args.get("opd")) if request.args.get("opd") else ""
+
+        cust_map = _get_customer_map()
+
+        q = supabase.table("ar_transactions").select("*").order("tx_date", desc=False).order("created_at", desc=False)
+        if opd_q:
+            q = q.eq("opd", opd_q)
+
+        rows = _page_all(q)
+
+        agg: Dict[str, Dict[str, Any]] = {}
+        for r in rows:
+            opd = normalize_opd(r.get("opd"))
+            amt = _safe_float(r.get("amount"), 0.0)
+            t = (r.get("tx_type") or "").strip()
+
+            # กติกา:
+            # add = เพิ่มค้าง (บวก)
+            # pay = รับชำระ (ลบ)
+            # adjust = ปรับยอด (ใช้เครื่องหมาย amount ตามที่ส่งมา: + เพิ่ม / - ลด)
+            delta = 0.0
+            if t == "add":
+                delta = abs(amt)
+            elif t == "pay":
+                delta = -abs(amt)
+            elif t == "adjust":
+                delta = amt
+            else:
+                continue
+
+            if opd not in agg:
+                agg[opd] = {
+                    "opd": opd,
+                    "balance": 0.0,
+                    "last_tx_date": "",
+                    "last_pay_date": "",
+                }
+
+            agg[opd]["balance"] = round(agg[opd]["balance"] + delta, 2)
+
+            d = safe_date_str(r.get("tx_date"))
+            if d and (agg[opd]["last_tx_date"] == "" or d >= agg[opd]["last_tx_date"]):
+                agg[opd]["last_tx_date"] = d
+
+            if t == "pay":
+                if d and (agg[opd]["last_pay_date"] == "" or d >= agg[opd]["last_pay_date"]):
+                    agg[opd]["last_pay_date"] = d
+
+        out: List[Dict[str, Any]] = []
+        for opd, a in agg.items():
+            info = cust_map.get(opd, {"name": "", "phone": ""})
+            if not _match_kw(opd, info["name"], info["phone"], kw):
+                continue
+            out.append(
+                {
+                    "opd": opd,
+                    "name": info["name"],
+                    "phone": info["phone"],
+                    "balance": a["balance"],
+                    "last_tx_date": a["last_tx_date"],
+                    "last_pay_date": a["last_pay_date"],
+                }
+            )
+
+        # เรียงคนที่ค้างเยอะขึ้นก่อน, แล้วตาม last_tx_date
+        out.sort(key=lambda x: (-(x.get("balance") or 0.0), x.get("last_tx_date") or ""), reverse=False)
+        return jsonify(out)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ar_history")
+@login_required
+def api_ar_history():
+    """
+    query: opd=0001
+    return: {opd, name, phone, balance_now, rows:[...]}
+    """
+    try:
+        opd = normalize_opd(request.args.get("opd"))
+        if not opd:
+            return jsonify({"error": "missing_opd"}), 400
+
+        cust_map = _get_customer_map()
+        info = cust_map.get(opd, {"name": "", "phone": ""})
+
+        q = (
+            supabase.table("ar_transactions")
+            .select("*")
+            .eq("opd", opd)
+            .order("tx_date", desc=False)
+            .order("created_at", desc=False)
+        )
+        rows = _page_all(q)
+
+        # คำนวณยอดคงเหลือแบบไล่บรรทัด เพื่อโชว์ใน history ได้
+        bal = 0.0
+        out_rows: List[Dict[str, Any]] = []
+        for r in rows:
+            amt = _safe_float(r.get("amount"), 0.0)
+            t = (r.get("tx_type") or "").strip()
+
+            if t == "add":
+                delta = abs(amt)
+                label = "เพิ่มค้าง"
+            elif t == "pay":
+                delta = -abs(amt)
+                label = "รับชำระ"
+            elif t == "adjust":
+                delta = amt
+                label = "ปรับยอด"
+            else:
+                continue
+
+            bal = round(bal + delta, 2)
+            out_rows.append(
+                {
+                    "id": r.get("id"),
+                    "tx_date": safe_date_str(r.get("tx_date")),
+                    "type": t,
+                    "type_label": label,
+                    "delta": round(delta, 2),
+                    "balance_after": bal,
+                    "note": r.get("note") or "",
+                    "created_at": r.get("created_at"),
+                }
+            )
+
+        return jsonify(
+            {
+                "opd": opd,
+                "name": info["name"],
+                "phone": info["phone"],
+                "balance_now": bal,
+                "rows": out_rows,
+            }
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ar_tx", methods=["POST"])
+@login_required
+def api_ar_tx():
+    """
+    body:
+    { opd, tx_date:'YYYY-MM-DD', tx_type:'add|pay|adjust', amount, note }
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        opd = normalize_opd(data.get("opd"))
+        tx_date = safe_date_str(data.get("tx_date") or data.get("date"))
+        tx_type = (data.get("tx_type") or "").strip()
+        amount = _safe_float(data.get("amount"), None)
+        note = (data.get("note") or "").strip()
+
+        if not opd:
+            return jsonify({"error": "missing_opd"}), 400
+        if not tx_date:
+            return jsonify({"error": "missing_tx_date"}), 400
+        if tx_type not in {"add", "pay", "adjust"}:
+            return jsonify({"error": "invalid_tx_type"}), 400
+        if amount is None:
+            return jsonify({"error": "missing_amount"}), 400
+        if amount == 0:
+            return jsonify({"error": "amount_cannot_be_zero"}), 400
+
+        payload = {
+            "opd": opd,
+            "tx_date": tx_date,
+            "tx_type": tx_type,
+            "amount": float(amount),
+            "note": note or None,
+        }
+
+        ins = supabase.table("ar_transactions").insert(payload).execute()
+        row = (ins.data or [{}])[0]
+        return jsonify({"success": True, "id": row.get("id")}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# -----------------------------
+# B) วอยเชอร์/เงินจ่ายล่วงหน้า (Voucher / Prepaid)
+# -----------------------------
+@app.route("/api/voucher_summary")
+@login_required
+def api_voucher_summary():
+    """
+    balance = เงินคงเหลือจากวอยเชอร์/มัดจำ
+    topup = บวก, use = ลบ, adjust = ตามเครื่องหมาย
+    """
+    try:
+        kw = (request.args.get("q") or "").strip()
+        opd_q = normalize_opd(request.args.get("opd")) if request.args.get("opd") else ""
+
+        cust_map = _get_customer_map()
+
+        q = supabase.table("voucher_transactions").select("*").order("tx_date", desc=False).order("created_at", desc=False)
+        if opd_q:
+            q = q.eq("opd", opd_q)
+
+        rows = _page_all(q)
+
+        agg: Dict[str, Dict[str, Any]] = {}
+        for r in rows:
+            opd = normalize_opd(r.get("opd"))
+            amt = _safe_float(r.get("amount"), 0.0)
+            t = (r.get("tx_type") or "").strip()
+
+            if t == "topup":
+                delta = abs(amt)
+            elif t == "use":
+                delta = -abs(amt)
+            elif t == "adjust":
+                delta = amt
+            else:
+                continue
+
+            if opd not in agg:
+                agg[opd] = {"opd": opd, "balance": 0.0, "last_tx_date": ""}
+            agg[opd]["balance"] = round(agg[opd]["balance"] + delta, 2)
+
+            d = safe_date_str(r.get("tx_date"))
+            if d and (agg[opd]["last_tx_date"] == "" or d >= agg[opd]["last_tx_date"]):
+                agg[opd]["last_tx_date"] = d
+
+        out: List[Dict[str, Any]] = []
+        for opd, a in agg.items():
+            info = cust_map.get(opd, {"name": "", "phone": ""})
+            if not _match_kw(opd, info["name"], info["phone"], kw):
+                continue
+            out.append(
+                {
+                    "opd": opd,
+                    "name": info["name"],
+                    "phone": info["phone"],
+                    "balance": a["balance"],
+                    "last_tx_date": a["last_tx_date"],
+                }
+            )
+
+        out.sort(key=lambda x: (-(x.get("balance") or 0.0), x.get("last_tx_date") or ""), reverse=False)
+        return jsonify(out)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/voucher_history")
+@login_required
+def api_voucher_history():
+    try:
+        opd = normalize_opd(request.args.get("opd"))
+        if not opd:
+            return jsonify({"error": "missing_opd"}), 400
+
+        cust_map = _get_customer_map()
+        info = cust_map.get(opd, {"name": "", "phone": ""})
+
+        q = (
+            supabase.table("voucher_transactions")
+            .select("*")
+            .eq("opd", opd)
+            .order("tx_date", desc=False)
+            .order("created_at", desc=False)
+        )
+        rows = _page_all(q)
+
+        bal = 0.0
+        out_rows: List[Dict[str, Any]] = []
+        for r in rows:
+            amt = _safe_float(r.get("amount"), 0.0)
+            t = (r.get("tx_type") or "").strip()
+
+            if t == "topup":
+                delta = abs(amt)
+                label = "เติมวอยเชอร์/จ่ายล่วงหน้า"
+            elif t == "use":
+                delta = -abs(amt)
+                label = "ใช้วอยเชอร์/หักเครดิต"
+            elif t == "adjust":
+                delta = amt
+                label = "ปรับยอด"
+            else:
+                continue
+
+            bal = round(bal + delta, 2)
+            out_rows.append(
+                {
+                    "id": r.get("id"),
+                    "tx_date": safe_date_str(r.get("tx_date")),
+                    "type": t,
+                    "type_label": label,
+                    "delta": round(delta, 2),
+                    "balance_after": bal,
+                    "note": r.get("note") or "",
+                    "created_at": r.get("created_at"),
+                }
+            )
+
+        return jsonify({"opd": opd, "name": info["name"], "phone": info["phone"], "balance_now": bal, "rows": out_rows})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/voucher_tx", methods=["POST"])
+@login_required
+def api_voucher_tx():
+    """
+    body:
+    { opd, tx_date:'YYYY-MM-DD', tx_type:'topup|use|adjust', amount, note }
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        opd = normalize_opd(data.get("opd"))
+        tx_date = safe_date_str(data.get("tx_date") or data.get("date"))
+        tx_type = (data.get("tx_type") or "").strip()
+        amount = _safe_float(data.get("amount"), None)
+        note = (data.get("note") or "").strip()
+
+        if not opd:
+            return jsonify({"error": "missing_opd"}), 400
+        if not tx_date:
+            return jsonify({"error": "missing_tx_date"}), 400
+        if tx_type not in {"topup", "use", "adjust"}:
+            return jsonify({"error": "invalid_tx_type"}), 400
+        if amount is None:
+            return jsonify({"error": "missing_amount"}), 400
+        if amount == 0:
+            return jsonify({"error": "amount_cannot_be_zero"}), 400
+
+        payload = {"opd": opd, "tx_date": tx_date, "tx_type": tx_type, "amount": float(amount), "note": note or None}
+        ins = supabase.table("voucher_transactions").insert(payload).execute()
+        row = (ins.data or [{}])[0]
+        return jsonify({"success": True, "id": row.get("id")}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# -----------------------------
+# C) ค้างทำสินค้า/งาน (Work)
+# -----------------------------
+@app.route("/api/work_summary")
+@login_required
+def api_work_summary():
+    """
+    สรุปงานค้าง "ต่อคน" และ "ต่อรายการงาน" (item)
+    return:
+    [
+      {opd, name, phone, total_qty_pending, last_tx_date, items:[{item, qty_pending}]}
+    ]
+    query: q, opd
+    """
+    try:
+        kw = (request.args.get("q") or "").strip()
+        opd_q = normalize_opd(request.args.get("opd")) if request.args.get("opd") else ""
+
+        cust_map = _get_customer_map()
+
+        q = supabase.table("work_transactions").select("*").order("tx_date", desc=False).order("created_at", desc=False)
+        if opd_q:
+            q = q.eq("opd", opd_q)
+
+        rows = _page_all(q)
+
+        # per opd, per item
+        agg: Dict[str, Dict[str, Any]] = {}
+        for r in rows:
+            opd = normalize_opd(r.get("opd"))
+            item = (r.get("item") or "").strip()
+            qty = _safe_int(r.get("qty"), 0)
+            t = (r.get("tx_type") or "").strip()
+
+            if not item:
+                continue
+
+            if t == "add":
+                delta = abs(qty)
+            elif t == "done":
+                delta = -abs(qty)
+            elif t == "adjust":
+                delta = qty
+            else:
+                continue
+
+            if opd not in agg:
+                agg[opd] = {"opd": opd, "items": {}, "last_tx_date": ""}
+
+            agg[opd]["items"].setdefault(item, 0)
+            agg[opd]["items"][item] += int(delta)
+
+            d = safe_date_str(r.get("tx_date"))
+            if d and (agg[opd]["last_tx_date"] == "" or d >= agg[opd]["last_tx_date"]):
+                agg[opd]["last_tx_date"] = d
+
+        out: List[Dict[str, Any]] = []
+        for opd, a in agg.items():
+            info = cust_map.get(opd, {"name": "", "phone": ""})
+            if not _match_kw(opd, info["name"], info["phone"], kw):
+                continue
+
+            items_pending = []
+            total = 0
+            for item, qtty in a["items"].items():
+                if qtty != 0:
+                    items_pending.append({"item": item, "qty_pending": int(qtty)})
+                    total += int(qtty)
+
+            # โชว์เฉพาะคนที่ยังมีค้างจริง
+            if total == 0:
+                continue
+
+            # เรียง item ที่ค้างเยอะก่อน
+            items_pending.sort(key=lambda x: x["qty_pending"], reverse=True)
+
+            out.append(
+                {
+                    "opd": opd,
+                    "name": info["name"],
+                    "phone": info["phone"],
+                    "total_qty_pending": total,
+                    "last_tx_date": a["last_tx_date"],
+                    "items": items_pending,
+                }
+            )
+
+        out.sort(key=lambda x: (-(x.get("total_qty_pending") or 0), x.get("last_tx_date") or ""), reverse=False)
+        return jsonify(out)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/work_history")
+@login_required
+def api_work_history():
+    """
+    query: opd
+    return: {opd, name, phone, items_now:[...], rows:[...]}
+    """
+    try:
+        opd = normalize_opd(request.args.get("opd"))
+        if not opd:
+            return jsonify({"error": "missing_opd"}), 400
+
+        cust_map = _get_customer_map()
+        info = cust_map.get(opd, {"name": "", "phone": ""})
+
+        q = (
+            supabase.table("work_transactions")
+            .select("*")
+            .eq("opd", opd)
+            .order("tx_date", desc=False)
+            .order("created_at", desc=False)
+        )
+        rows = _page_all(q)
+
+        items_now: Dict[str, int] = {}
+        out_rows: List[Dict[str, Any]] = []
+
+        for r in rows:
+            item = (r.get("item") or "").strip()
+            qty = _safe_int(r.get("qty"), 0)
+            t = (r.get("tx_type") or "").strip()
+
+            if not item:
+                continue
+
+            if t == "add":
+                delta = abs(qty); label = "เพิ่มค้างทำ"
+            elif t == "done":
+                delta = -abs(qty); label = "ทำแล้ว/ส่งแล้ว"
+            elif t == "adjust":
+                delta = qty; label = "ปรับยอด"
+            else:
+                continue
+
+            items_now.setdefault(item, 0)
+            items_now[item] += int(delta)
+
+            out_rows.append(
+                {
+                    "id": r.get("id"),
+                    "tx_date": safe_date_str(r.get("tx_date")),
+                    "type": t,
+                    "type_label": label,
+                    "item": item,
+                    "delta_qty": int(delta),
+                    "note": r.get("note") or "",
+                    "created_at": r.get("created_at"),
+                }
+            )
+
+        items_list = [{"item": k, "qty_pending": v} for k, v in items_now.items() if v != 0]
+        items_list.sort(key=lambda x: x["qty_pending"], reverse=True)
+
+        return jsonify({"opd": opd, "name": info["name"], "phone": info["phone"], "items_now": items_list, "rows": out_rows})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/work_tx", methods=["POST"])
+@login_required
+def api_work_tx():
+    """
+    body:
+    { opd, tx_date:'YYYY-MM-DD', tx_type:'add|done|adjust', item, qty, note }
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        opd = normalize_opd(data.get("opd"))
+        tx_date = safe_date_str(data.get("tx_date") or data.get("date"))
+        tx_type = (data.get("tx_type") or "").strip()
+        item = (data.get("item") or "").strip()
+        qty = _safe_int(data.get("qty"), None)
+        note = (data.get("note") or "").strip()
+
+        if not opd:
+            return jsonify({"error": "missing_opd"}), 400
+        if not tx_date:
+            return jsonify({"error": "missing_tx_date"}), 400
+        if tx_type not in {"add", "done", "adjust"}:
+            return jsonify({"error": "invalid_tx_type"}), 400
+        if not item:
+            return jsonify({"error": "missing_item"}), 400
+        if qty is None or qty == 0:
+            return jsonify({"error": "qty_required"}), 400
+
+        payload = {"opd": opd, "tx_date": tx_date, "tx_type": tx_type, "item": item, "qty": int(qty), "note": note or None}
+        ins = supabase.table("work_transactions").insert(payload).execute()
+        row = (ins.data or [{}])[0]
+        return jsonify({"success": True, "id": row.get("id")}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
 
 
 # =============================================================

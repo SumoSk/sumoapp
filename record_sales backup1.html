@@ -446,7 +446,7 @@
       text-align:right;
       margin-top:10px;
       font-weight:900;
-      font-size:15px;
+      font-size:12px;
     }
     .fineprint{
       margin-top:14px;
@@ -590,6 +590,526 @@
   font-size:10px !important;  /* ปรับ 9-11 ได้ */
   padding:4px 6px !important; /* ถ้าอยากให้แถวเตี้ยลง */
 }
+
+/* ทำให้กล่องในแท็บ 4 ไม่กว้างเกิน และอยู่กึ่งกลาง */
+#tab-settings .edit-panel{
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+/* ลดความกว้าง label ใน field-row ของแท็บ 4 ให้นุ่มขึ้น */
+#tab-settings .field-row{
+  grid-template-columns: 120px 1fr;
+}
+
+/* มือถือ: ให้เรียงเป็นคอลัมน์เดียว */
+@media (max-width:700px){
+  #tab-settings .field-row{
+    grid-template-columns: 1fr;
+  }
+}
+
+#tab-settings .btn-danger{
+  width: auto;
+  min-width: 260px;
+}
+
+@media print{
+  #receipt_patient_info{
+    border: 1px solid #111 !important;
+    border-radius: 0 !important;
+    resize: none !important;
+  }
+}
+
+
+
+/* ===== Receipt: patient info textarea (no box, seamless) ===== */
+#receiptOverlay #receipt_patient_info{
+  border: none !important;          /* ❌ ไม่มีกรอบ */
+  border-radius: 0 !important;
+  outline: none !important;
+  background: transparent !important; /* สีเดียวกับพื้น */
+  box-shadow: none !important;
+
+  padding: 0 !important;            /* ไม่ดันขอบ */
+  margin-top: 4px;
+
+  font-size: 8px !important;        /* ตามที่ตกลง */
+  line-height: 1.3 !important;
+  resize: none !important;
+
+  height: auto !important;
+  min-height: 32px;
+}
+
+/* กัน focus แล้วเด้งกรอบ */
+#receiptOverlay #receipt_patient_info:focus{
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* เวลา print ให้เนียนเหมือนตัวหนังสือปกติ */
+@media print{
+  #receiptOverlay #receipt_patient_info{
+    border: none !important;
+    background: transparent !important;
+  }
+}
+
+
+
+
+/* ===== Signature name input (no border, printable) ===== */
+.sig-under-input{
+  width: 100%;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+
+  text-align: center;
+  font-size: 8px;
+  font-weight: 700;
+  color: #111;
+
+  padding: 2px 0;
+}
+
+/* กัน focus แล้วขึ้นกรอบ */
+.sig-under-input:focus{
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* print: ให้เหมือนข้อความธรรมดา */
+@media print{
+  .sig-under-input{
+    border: none !important;
+    background: transparent !important;
+  }
+}
+
+
+/* =========================
+   TAB 3: CUSTOMER STATUS (3 SECTIONS)  ✅ font 10px + ปุ่มเล็กลง
+   ========================= */
+
+/* ตั้งฐานฟอนต์ของ Tab 3 ให้เล็กลง (10px) */
+#tab3, .tab3, .tab-3, [data-tab="3"]{
+  font-size:10px;
+}
+
+/* กันพลาด: บังคับองค์ประกอบหลักใน Tab 3 */
+.status-header,
+.status-header * ,
+.kpi-grid, .kpi-grid * ,
+.seg-actions, .seg-actions * ,
+.small-table, .small-table * ,
+.ent-card, .ent-card * ,
+.modal3-box, .modal3-box * ,
+.ar-top, .ar-top * ,
+.ar-cards, .ar-cards * ,
+.ar-section, .ar-section * ,
+.ar-table, .ar-table * ,
+.ar-modal, .ar-modal * {
+  font-size:10px;
+}
+
+/* header */
+.status-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.status-header .who{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+
+/* badges (เล็กลง) */
+.status-badges{display:flex;gap:5px;flex-wrap:wrap}
+.badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 8px;border-radius:999px;
+  border:1px solid var(--line);
+  background:#fff;font-size:10px;font-weight:900;
+  line-height:1.2;
+}
+.badge.ar{border-color:#fecaca;background:#fff7f7;color:#991b1b}
+.badge.credit{border-color:#bae6fd;background:#f0f9ff;color:#075985}
+.badge.todo{border-color:#bbf7d0;background:#f0fdf4;color:#166534}
+
+/* KPI cards (ตัวเลขยังเด่น แต่เล็กลง) */
+.kpi-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap:8px;
+  margin-top:8px;
+}
+@media (max-width:900px){
+  .kpi-grid{ grid-template-columns: 1fr; }
+}
+.kpi{
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:10px;
+  background:linear-gradient(180deg,#fff 0%, #fbfbfb 100%);
+}
+.kpi .t{font-weight:1000;color:#0b7660;display:flex;align-items:center;gap:6px;font-size:10px}
+.kpi .v{margin-top:5px;font-size:16px;font-weight:1000}
+.kpi .sub{margin-top:3px;color:var(--muted);font-size:10px}
+
+/* action buttons */
+.seg-actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-top:8px;
+}
+.seg-actions .btn{min-width:140px}
+
+/* tables */
+.small-table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:8px;
+  background:#fff;
+}
+.small-table th,.small-table td{
+  border:1px solid var(--line);
+  padding:6px;
+  font-size:10px;
+}
+.small-table thead tr{background:#f8fafc}
+.right{text-align:right}
+.center{text-align:center}
+
+/* entitlement cards */
+.ent-card{
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:10px;
+  background:#fff;
+  margin-top:8px;
+}
+.ent-top{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.ent-name{font-weight:1000;font-size:10px}
+.ent-meta{color:var(--muted);font-size:10px}
+.ent-bar{
+  margin-top:8px;
+  height:8px;
+  border-radius:999px;
+  background:#eef2f7;
+  overflow:hidden;
+}
+.ent-bar > div{
+  height:100%;
+  background:rgba(13,148,136,.35);
+  width:0%;
+}
+.ent-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ent-actions .btn{min-width:130px}
+
+/* Modal for Tab3 */
+.modal3-overlay{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.45);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:2600;
+  padding:12px;
+}
+.modal3-box{
+  width:760px;
+  max-width:100%;
+  max-height:92vh;
+  overflow:auto;
+  background:#fff;
+  border-radius:14px;
+  box-shadow: var(--shadow);
+  padding:14px;
+}
+.modal3-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+  padding-bottom:8px;
+  border-bottom:1px solid var(--line);
+}
+.modal3-title{font-weight:1000;color:#0b7660;font-size:12px;margin:0}
+.modal3-close{
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:8px;
+  padding:6px 8px;
+  cursor:pointer;
+  font-weight:900;
+  font-size:10px;
+  line-height:1.2;
+}
+
+/* =========================
+   TAB 3: สถานะลูกค้า  ✅ font 10px + ปุ่ม/ชิปเล็กลง
+   ========================= */
+.ar-top{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  margin-top:8px;
+}
+.ar-search{
+  display:flex;
+  gap:6px;
+  align-items:center;
+  flex:1;
+  min-width:220px;
+}
+
+/* chip เล็กลง */
+.ar-filters{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.ar-chip{
+  border:1px solid #a7e1da;
+  background:#fff;
+  color:#0b7660;
+  border-radius:999px;
+  padding:6px 10px;
+  font-weight:900;
+  font-size:10px;
+  cursor:pointer;
+  line-height:1.2;
+}
+.ar-chip.active{
+  background: var(--teal-600);
+  border-color: var(--teal-600);
+  color:#fff;
+}
+
+/* summary cards */
+.ar-cards{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap:8px;
+  margin-top:10px;
+}
+@media (max-width:900px){
+  .ar-cards{ grid-template-columns:1fr; }
+}
+.ar-card{
+  border:1px solid var(--line);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfbfb 100%);
+  border-radius:14px;
+  padding:10px;
+}
+.ar-card-title{
+  font-weight:1000;
+  color:#0b7660;
+  font-size:10px;
+}
+.ar-card-main{
+  margin-top:5px;
+  font-size:14px;
+  font-weight:1100;
+  color:#111827;
+}
+.ar-card-sub{
+  margin-top:3px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:700;
+}
+
+.ar-section{
+  margin-top:12px;
+  border-top:1px dashed #dbe7e5;
+  padding-top:10px;
+}
+.ar-section-head{
+  display:flex;
+  gap:8px;
+  align-items:flex-start;
+  justify-content:space-between;
+  flex-wrap:wrap;
+}
+.ar-section-title{
+  font-weight:1100;
+  color:#0b7660;
+  font-size:11px;
+}
+.ar-table-wrap{
+  margin-top:8px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  overflow:auto;
+  background:#fff;
+}
+.ar-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:10px;
+}
+.ar-table th, .ar-table td{
+  border:1px solid var(--line);
+  padding:6px;
+  vertical-align:top;
+  font-size:10px;
+}
+.ar-table thead tr{ background:#f8fafc; }
+.ar-empty{ padding:8px; font-size:10px; }
+
+.money-red{ color:#b91c1c; font-weight:1000; }
+.money-green{ color:#0b7660; font-weight:1000; }
+
+/* Modal */
+.ar-overlay{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.55);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:2600;
+  padding:12px;
+}
+.ar-modal{
+  width: 860px;
+  max-width: 100%;
+  max-height: 92vh;
+  overflow:auto;
+  background:#fff;
+  border-radius:14px;
+  box-shadow: var(--shadow);
+  padding:14px;
+}
+.ar-modal-head{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  border-bottom:1px solid var(--line);
+  padding-bottom:8px;
+}
+.ar-modal-title{
+  font-weight:1100;
+  color:#0b7660;
+  font-size:12px;
+}
+.ar-modal-sub{
+  margin-top:3px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:700;
+}
+.ar-x{
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:8px;
+  padding:6px 8px;
+  cursor:pointer;
+  font-weight:1000;
+  font-size:10px;
+  line-height:1.2;
+}
+.ar-modal-actions{
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid var(--line);
+}
+
+/* ✅ ทำให้ input/select/textarea + ปุ่มใน Tab3 เล็กลงด้วย (สำคัญมาก) */
+#tab3 input, #tab3 select, #tab3 textarea,
+.tab3 input, .tab3 select, .tab3 textarea,
+.tab-3 input, .tab-3 select, .tab-3 textarea,
+[data-tab="3"] input, [data-tab="3"] select, [data-tab="3"] textarea{
+  font-size:10px;
+  padding:6px 8px;
+  border-radius:10px;
+}
+
+/* ปุ่มทุกแบบใน Tab3 */
+#tab3 .btn, #tab3 button,
+.tab3 .btn, .tab3 button,
+.tab-3 .btn, .tab-3 button,
+[data-tab="3"] .btn, [data-tab="3"] button{
+  font-size:10px;
+  padding:6px 10px;
+  border-radius:10px;
+  min-height:28px;
+}
+
+/* ถ้ามีปุ่มแบบ icon-only ให้เล็กลงนิด */
+#tab3 .btn.icon, .tab3 .btn.icon, .tab-3 .btn.icon, [data-tab="3"] .btn.icon{
+  padding:6px;
+  min-width:28px;
+}
+
+
+/* =========================
+   TAB 3: Font 12px + compact UI
+   วางท้ายไฟล์ CSS เพื่อทับของเดิม
+   ========================= */
+#tab-ar, #tab-ar *{
+  font-size:12px;
+  line-height:1.35;
+}
+
+/* หัวข้อ / ซับ */
+#tab-ar .section-title{ font-size:13px; font-weight:1100; }
+#tab-ar .section-sub,
+#tab-ar .muted{ font-size:11px; }
+
+/* pill/badge */
+#tab-ar .pill,
+#tab-ar .badge{
+  font-size:11px;
+  padding:5px 10px;
+  border-radius:999px;
+}
+
+/* ปุ่ม */
+#tab-ar .btn{
+  font-size:12px;
+  padding:7px 10px;
+  border-radius:10px;
+}
+
+/* input/select */
+#tab-ar input,
+#tab-ar select{
+  font-size:12px;
+  padding:8px 10px;
+  border-radius:10px;
+}
+
+/* ตาราง (ในแท็บ 3) */
+#tab-ar table th,
+#tab-ar table td{
+  font-size:12px;
+  padding:7px;
+}
+
   </style>
 </head>
 
@@ -609,6 +1129,8 @@
               onclick="switchTab('tab-opd', this)">2) แก้ไข/ตรวจสอบ OPD</button>
       <button type="button" class="tab-btn" role="tab" aria-selected="false"
               onclick="switchTab('tab-ar', this)">3) ลูกค้าค้างชำระ</button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false"
+        onclick="switchTab('tab-settings', this)">4) ตั้งค่าเลขใบเสร็จ</button>
     </div>
 
     <!-- =========================
@@ -762,65 +1284,328 @@
       </div>
     </div>
 
-    <!-- =========================
-         TAB 3: ACCOUNTS RECEIVABLE (MOCKUP)
-         ========================= -->
-    <div id="tab-ar" class="tab-content" role="tabpanel" aria-label="ลูกค้าค้างชำระ">
-      <div class="edit-panel" style="margin-top:0;">
-        <div class="section-title">📌 ลูกค้าค้างชำระ (Mockup)</div>
-        <p class="section-sub">ส่วนนี้ทำหน้าจอไว้ก่อน ยังไม่เชื่อมระบบหลังบ้าน</p>
 
-        <div class="center-actions" style="justify-content:flex-start;">
-          <button type="button" class="btn btn-outline" onclick="alert('กำลังทำระบบ: เพิ่มรายการค้างชำระ')">➕ เพิ่มรายการค้างชำระ</button>
-          <button type="button" class="btn btn-ghost" onclick="alert('กำลังทำระบบ: ตัวกรอง/ค้นหา')">🔎 ค้นหา/กรอง</button>
+<!-- =========================
+     TAB 3: CUSTOMER BALANCES (DEBT / CREDIT / PENDING)  ✅ ปรับสวย + ลด inline style
+     ========================= -->
+<div id="tab-ar" class="tab-content tab3" role="tabpanel" aria-label="ลูกค้าค้าง/เครดิต/ค้างทำ">
+
+  <div class="ar-wrap">
+    <div class="ar-hero">
+      <div class="ar-hero-top">
+        <div>
+          <div class="ar-hero-title">📌 สรุปค้าง/เครดิต/ค้างทำ</div>
+          <div class="ar-hero-sub">
+            ค้นหาด้วยชื่อ/เบอร์/OPD ได้เลย แล้วกดทำรายการ ระบบจะอัปเดตยอดและเก็บประวัติ
+          </div>
+        </div>
+        <div class="ar-hero-chips">
+          <span class="pill pill-debt" id="arStatDebt">ลูกค้าค้างเรา: 0 คน • 0 บาท</span>
+          <span class="pill pill-credit" id="arStatCredit">เราค้างลูกค้า: 0 คน • 0 บาท</span>
+          <span class="pill pill-pending" id="arStatPending">ค้างทำ: 0 รายการ</span>
+        </div>
+      </div>
+
+      <!-- Search row -->
+      <div class="ar-search-row">
+        <div class="field grow">
+          <label class="muted">ค้นหา</label>
+          <input id="arSearch" type="text" placeholder="พิมพ์ชื่อ / เบอร์ / OPD แล้วกด Enter หรือกดค้นหา">
         </div>
 
-        <table style="margin-top:12px;">
-          <thead>
-            <tr>
-              <th style="width:70px;">OPD</th>
-              <th>ชื่อ</th>
-              <th style="width:120px;">ยอดทั้งหมด</th>
-              <th style="width:120px;">ชำระแล้ว</th>
-              <th style="width:120px;">คงค้าง</th>
-              <th style="width:90px;">สถานะ</th>
-              <th style="width:140px;">จัดการ</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>0007</td>
-              <td>ตัวอย่าง ลูกค้า A</td>
-              <td style="text-align:right;">5,000</td>
-              <td style="text-align:right;">2,000</td>
-              <td style="text-align:right;font-weight:900;color:#b91c1c;">3,000</td>
-              <td style="text-align:center;">ค้าง</td>
-              <td style="text-align:center;">
-                <button class="btn btn-outline" onclick="alert('กำลังทำระบบ: ดูรายละเอียด')">ดู</button>
-                <button class="btn btn-primary" onclick="alert('กำลังทำระบบ: ทำเครื่องหมายชำระครบ')">ชำระครบ</button>
-              </td>
-            </tr>
-            <tr>
-              <td>0012</td>
-              <td>ตัวอย่าง ลูกค้า B</td>
-              <td style="text-align:right;">3,500</td>
-              <td style="text-align:right;">0</td>
-              <td style="text-align:right;font-weight:900;color:#b91c1c;">3,500</td>
-              <td style="text-align:center;">ค้าง</td>
-              <td style="text-align:center;">
-                <button class="btn btn-outline" onclick="alert('กำลังทำระบบ: ดูรายละเอียด')">ดู</button>
-                <button class="btn btn-primary" onclick="alert('กำลังทำระบบ: ทำเครื่องหมายชำระครบ')">ชำระครบ</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="muted" style="margin-top:10px;">
-          ✅ เมื่อพร้อมเชื่อมระบบจริง: จะเพิ่ม API + ตารางฐานข้อมูล “ลูกค้าค้างชำระ/มัดจำ/เครดิต”
+        <div class="ar-search-actions">
+          <button type="button" class="btn btn-outline" onclick="AR.applySearch()">🔎 ค้นหา</button>
+          <button type="button" class="btn btn-ghost" onclick="AR.clearSearch()">ล้าง</button>
         </div>
       </div>
     </div>
+
+    <!-- ========= SECTION A: debt ========= -->
+    <section class="ar-section-card">
+      <div class="ar-sec-head">
+        <div>
+          <div class="ar-sec-title">🧾 ลูกค้าค้างเรา (หนี้)</div>
+          <div class="ar-sec-sub">เห็นทันทีว่า “ค้างกี่คน กี่บาท” และใครจ่ายล่าสุดเมื่อไหร่</div>
+        </div>
+
+        <div class="ar-sec-actions">
+          <button type="button" class="btn btn-outline"
+            onclick="AR.openTxModal({section:'debt', mode:'add'})">
+            ➕ เพิ่มหนี้
+          </button>
+        </div>
+      </div>
+
+      <div class="ar-table-box">
+        <table class="ar-table nice-table">
+          <thead>
+            <tr>
+              <th class="col-opd">OPD</th>
+              <th>ชื่อ</th>
+              <th class="col-phone">เบอร์</th>
+              <th class="col-money right">คงค้าง (บาท)</th>
+              <th class="col-date center">ล่าสุด</th>
+              <th class="col-actions center">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="arDebtBody"></tbody>
+        </table>
+      </div>
+
+      <div class="muted ar-empty" id="arDebtEmpty" style="display:none;">
+        ไม่มีข้อมูล (ลองเพิ่มหนี้ หรือค้นหาใหม่)
+      </div>
+    </section>
+
+    <!-- ========= SECTION B: credit ========= -->
+    <section class="ar-section-card">
+      <div class="ar-sec-head">
+        <div>
+          <div class="ar-sec-title">💳 เราค้างลูกค้า (เงินจ่ายไว้ก่อน / ว้อยเชอร์ / มัดจำ)</div>
+          <div class="ar-sec-sub">ลูกค้าจ่ายไว้ก่อนเท่าไหร่ เหลือเท่าไหร่ ใช้ไปล่าสุดเมื่อไหร่</div>
+        </div>
+
+        <div class="ar-sec-actions">
+          <button type="button" class="btn btn-outline"
+            onclick="AR.openTxModal({section:'credit', mode:'topup'})">
+            ➕ เติมเงิน/ว้อยเชอร์
+          </button>
+        </div>
+      </div>
+
+      <div class="ar-table-box">
+        <table class="ar-table nice-table">
+          <thead>
+            <tr>
+              <th class="col-opd">OPD</th>
+              <th>ชื่อ</th>
+              <th class="col-phone">เบอร์</th>
+              <th class="col-money right">คงเหลือ (บาท)</th>
+              <th class="col-date center">ล่าสุด</th>
+              <th class="col-actions center">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="arCreditBody"></tbody>
+        </table>
+      </div>
+
+      <div class="muted ar-empty" id="arCreditEmpty" style="display:none;">
+        ไม่มีข้อมูล (ลองเติมเงิน/ว้อยเชอร์ หรือค้นหาใหม่)
+      </div>
+    </section>
+
+    <!-- ========= SECTION C: pending ========= -->
+    <section class="ar-section-card">
+      <div class="ar-sec-head">
+        <div>
+          <div class="ar-sec-title">🧴 เราค้างทำให้ลูกค้า (คงเหลือเป็น ครั้ง/ชิ้น)</div>
+          <div class="ar-sec-sub">เห็นเลยว่าใครค้างทำอะไร กี่ครั้ง/กี่ชิ้น และทำแล้วตัดออกได้ทันที</div>
+        </div>
+
+        <div class="ar-sec-actions">
+          <button type="button" class="btn btn-outline"
+            onclick="AR.openTxModal({section:'pending', mode:'add'})">
+            ➕ เพิ่มสิทธิ์/แพกเกจ
+          </button>
+        </div>
+      </div>
+
+      <div class="ar-table-box">
+        <table class="ar-table nice-table">
+          <thead>
+            <tr>
+              <th class="col-opd">OPD</th>
+              <th>ชื่อ</th>
+              <th class="col-phone">เบอร์</th>
+              <th>รายการ</th>
+              <th class="col-unit center">หน่วย</th>
+              <th class="col-qty center">คงเหลือ</th>
+              <th class="col-date center">ล่าสุด</th>
+              <th class="col-actions center">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="arPendingBody"></tbody>
+        </table>
+      </div>
+
+      <div class="muted ar-empty" id="arPendingEmpty" style="display:none;">
+        ไม่มีข้อมูล (ลองเพิ่มสิทธิ์/แพกเกจ หรือค้นหาใหม่)
+      </div>
+    </section>
+
   </div>
+</div>
+
+<!-- =========================
+     MODAL: ทำรายการ + ประวัติ (TAB 3)  ✅ สวย + 10px friendly
+     ========================= -->
+<div id="arTxOverlay" class="modal-overlay arTx" aria-hidden="true">
+  <div class="modal-box arTx-box" role="dialog" aria-modal="true" aria-label="ทำรายการค้าง/เครดิต/ค้างทำ">
+
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="arTxTitle">ทำรายการ</div>
+        <div class="modal-sub" id="arTxSub">อัปเดตยอดและเก็บประวัติ</div>
+      </div>
+      <button class="modal-close" onclick="AR.closeTxModal()">✕</button>
+    </div>
+
+    <!-- header customer -->
+    <div class="mini-grid arTx-kpi">
+      <div class="field">
+        <b>ลูกค้า</b>
+        <div class="v" id="arTxName">-</div>
+        <div class="muted">
+          OPD: <span id="arTxOPD">-</span> • เบอร์: <span id="arTxPhone">-</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <b>ยอดปัจจุบัน</b>
+        <div class="v arTx-balance" id="arTxBalance">0</div>
+        <div class="muted" id="arTxBalanceHint">—</div>
+      </div>
+    </div>
+
+    <!-- form -->
+    <div class="edit-panel arTx-panel">
+      <div class="section-title">✍️ กรอกข้อมูลรายการ</div>
+
+      <div class="field-row">
+        <label>ค้นหาลูกค้า</label>
+        <div class="row nowrap">
+          <input id="arTxFind" class="grow" placeholder="พิมพ์ชื่อ/เบอร์/OPD แล้วกดเลือก">
+          <button class="btn btn-outline" type="button" onclick="AR.pickFirstMatch()">เลือก</button>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <label>วันที่</label>
+        <input id="arTxDate" type="date">
+      </div>
+
+      <div class="field-row" id="arTxAmountRow">
+        <label>จำนวนเงิน (บาท)</label>
+        <input id="arTxAmount" type="number" step="1" min="0" placeholder="เช่น 10000">
+      </div>
+
+      <div class="field-row" id="arTxPayRow">
+        <label>วิธี</label>
+        <select id="arTxPayMethod">
+          <option value="โอน">โอน</option>
+          <option value="สด">สด</option>
+        </select>
+      </div>
+
+      <div class="field-row" id="arTxItemRow" style="display:none;">
+  <label>รายการ</label>
+  <input id="arTxItem" type="text" list="arTxItemList"
+    placeholder="พิมพ์เพื่อค้นหา แล้วเลือกจากรายการ">
+  <datalist id="arTxItemList"></datalist>
+</div>
+
+
+      <div class="field-row" id="arTxUnitRow" style="display:none;">
+        <label>หน่วย</label>
+        <select id="arTxUnit">
+          <option value="ครั้ง">ครั้ง</option>
+          <option value="ชิ้น">ชิ้น</option>
+        </select>
+      </div>
+
+      <div class="field-row" id="arTxQtyRow" style="display:none;">
+        <label>จำนวน</label>
+        <input id="arTxQty" type="number" step="1" min="1" value="1">
+      </div>
+
+      <div class="field-row">
+        <label>หมายเหตุ</label>
+        <input id="arTxNote" type="text" placeholder="เลขอ้างอิง/เหตุผล/รายละเอียดเพิ่มเติม (ไม่บังคับ)">
+      </div>
+
+      <div class="center-actions arTx-actions">
+        <button type="button" class="btn btn-primary" onclick="AR.submitTx()">บันทึก</button>
+        <button type="button" class="btn btn-ghost" onclick="AR.closeTxModal()">ปิด</button>
+      </div>
+    </div>
+
+    <!-- history -->
+    <div class="edit-panel arTx-panel">
+      <div class="section-title">🕘 ประวัติ (ล่าสุดก่อน)</div>
+      <div class="muted" id="arTxHistEmpty" style="display:none;">ยังไม่มีประวัติ</div>
+
+      <div class="ar-table-box">
+        <table id="arTxHistTable" class="ar-table nice-table">
+          <thead>
+            <tr>
+              <th class="col-date center">วันที่</th>
+              <th class="col-type center">ประเภท</th>
+              <th>รายละเอียด</th>
+              <th class="col-money right">จำนวน</th>
+            </tr>
+          </thead>
+          <tbody id="arTxHistBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+
+
+
+<!-- =========================
+     TAB 4: SETTINGS (REBUILD DISPLAY RECEIPTS)
+     ========================= -->
+<div id="tab-settings" class="tab-content" role="tabpanel" aria-label="ตั้งค่าเลขใบเสร็จ">
+  <div class="edit-panel" style="margin-top:0;">
+    <div class="section-title">🧩 ตั้งค่าเลขใบเสร็จ (Display Number)</div>
+    <p class="section-sub">
+      ปุ่มแดงจะ “จัดเรียงเลขใบเสร็จใหม่” เฉพาะรายการที่สถานะ issued ในปีที่เลือก (RB-YYYY-XXXX)
+    </p>
+
+    <div class="field-row">
+      <label for="rebuildYear">เลือกปี</label>
+      <select id="rebuildYear"></select>
+    </div>
+
+    <div class="center-actions" style="justify-content:flex-start;">
+      <button type="button" class="btn btn-danger" onclick="rebuildDisplayReceipts()">
+        จัดเรียงเลขใบเสร็จใหม่ (Rebuild Display)
+      </button>
+    </div>
+
+    <div class="muted" style="margin-top:10px;">
+      หมายเหตุ: เลข RC (Original) ไม่ถูกกระทบ และห้ามเปลี่ยนโดยเด็ดขาด
+    </div>
+    <div class="edit-panel" style="margin-top:14px;">
+    <div class="section-title">🧾 ดูใบเสร็จ</div>
+<p class="section-sub">ค้นหาจาก วัน/เดือน/ปี/OPD แล้วกด “ดูใบเสร็จ” เพื่อเปิดใบเสร็จแบบเต็ม</p>
+
+    <div class="field-row">
+      <label for="slipOPD">OPD</label>
+      <input type="text" id="slipOPD" placeholder="เช่น 0007" inputmode="numeric" maxlength="4" oninput="digitsOnly(this)">
+    </div>
+
+    <div class="field-row">
+      <label>วัน / เดือน / ปี</label>
+      <div class="row nowrap">
+        <select id="slipDay" class="grow"></select>
+        <select id="slipMonth" class="grow"></select>
+        <select id="slipYear" class="grow"></select>
+       <button type="button" class="btn btn-outline" onclick="searchReceipts()">ค้นหา</button>
+
+      </div>
+    </div>
+
+    <div id="slipResult" style="margin-top:12px;"></div>
+  </div>
+  </div>
+</div>
+  
+
 
   <!-- =========================
        POPUP: ชำระเงิน (สรุปเคสนี้ + QR)  ✅ ไม่บันทึก/ไม่ยิง API
@@ -843,7 +1628,8 @@
 
           <div class="bill-head">
   <div class="bill-field">
-    <div class="k">ชื่อลูกค้า</div>
+    <div class="k">ชื่อผู้รับการรักษา</div>
+
     <div class="v" id="pc_name">-</div>
   </div>
 
@@ -915,14 +1701,14 @@
         </div>
 
         <div class="field" style="grid-column:1/-1;">
-          <b>ข้อมูลลูกค้า (ชื่อ–ที่อยู่)</b>
-          <textarea
-            id="pay_note_input"
-            rows="3"
-            placeholder="ชื่อ–นามสกุลลูกค้า
-ที่อยู่ลูกค้า"
-            style="width:100%;margin-top:6px;border:1px solid #d1d5db;border-radius:10px;padding:8px;font-size:14px;resize:vertical;"
-          ></textarea>
+          <b>ข้อมูลผู้รับการรักษา (ชื่อ–ที่อยู่)</b>
+<textarea
+  id="pay_note_input"
+  rows="3"
+  placeholder="ชื่อ–นามสกุลผู้รับการรักษา
+ที่อยู่ผู้รับการรักษา"
+  style="width:100%;margin-top:6px;border:1px solid #d1d5db;border-radius:10px;padding:8px;font-size:14px;resize:vertical;"
+></textarea>
         </div>
       </div>
 
@@ -931,7 +1717,8 @@
         <div class="row" style="flex-wrap:wrap;gap:10px;">
           <div class="grow">
             <label class="muted">1) ผู้มีอำนาจออกหลักฐาน</label>
-            <input id="sig_authorized" type="text" placeholder="เช่น พญ.ปิยะฎา จินดาหลวง">
+            <input id="sig_authorized" type="text" value="พญ.ปิยะฎา จินดาหลวง" readonly>
+
           </div>
           <div class="grow">
             <label class="muted">2) ผู้ใช้บริการ</label>
@@ -965,7 +1752,9 @@
           186/4 ม.5 ต.เวียงยอง อ.เมือง จังหวัดลำพูน 51000<br>
           โทรศัพท์ 0614296596
         </div>
-      </div>
+        <div style="margin-top:10px; font-size:8px; font-weight:900; color:#111827;"> เลขที่ใบเสร็จ: <span id="receiptNo">-</span>   &nbsp;&nbsp;|&nbsp;&nbsp;   วันที่ออกใบเสร็จ: <span id="receiptIssueDate">-</span></div>
+ </div> 
+      
 
       <div id="receiptContent"></div>
 
@@ -987,7 +1776,7 @@
             <div class="sig-actions">
               <button type="button" class="sig-btn" onclick="clearSig('authorized')">ล้าง</button>
             </div>
-            <div class="sig-under" id="sigUnder_authorized"></div>
+            <input  class="sig-under-input"  id="sigUnder_authorized"  type="text"  value="พญ.ปิยะฎา จินดาหลวง"  readonly>
           </div>
 
           <div class="sig-card">
@@ -996,7 +1785,7 @@
             <div class="sig-actions">
               <button type="button" class="sig-btn" onclick="clearSig('customer')">ล้าง</button>
             </div>
-            <div class="sig-under" id="sigUnder_customer"></div>
+            <input  class="sig-under-input"  id="sigUnder_customer"  type="text"  placeholder="พิมพ์ชื่อ">
           </div>
 
           <div class="sig-card">
@@ -1005,7 +1794,7 @@
             <div class="sig-actions">
               <button type="button" class="sig-btn" onclick="clearSig('receiver')">ล้าง</button>
             </div>
-            <div class="sig-under" id="sigUnder_receiver"></div>
+            <input   class="sig-under-input"  id="sigUnder_receiver"  type="text"  placeholder="พิมพ์ชื่อ">
           </div>
         </div>
       </div>
@@ -1018,7 +1807,7 @@
   <button class="btn btn-primary" onclick="window.print()">พิมพ์ใบเสร็จ</button>
 </div>
   </div>
-
+</div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -1195,6 +1984,45 @@
       recalcAmount();
       refreshActionButtonsState();
     });
+
+    initRebuildYearDropdown();
+function initRebuildYearDropdown(){
+  const sel = document.getElementById('rebuildYear');
+  if(!sel) return;
+
+  const y = new Date().getFullYear();
+  const years = [];
+  for(let i=y-3; i<=y+1; i++) years.push(i);
+
+  sel.innerHTML = years.map(v=>`<option value="${v}">${v}</option>`).join('');
+  sel.value = String(y);
+}
+
+
+async function rebuildDisplayReceipts(){
+  const sel = document.getElementById('rebuildYear');
+  const year = Number(sel?.value || 0);
+  if(!year) return alert('กรุณาเลือกปี');
+
+  if(!confirm(`ยืนยันการจัดเลขใหม่สำหรับปี ${year}?`)) return;
+
+  try{
+    const res = await fetch('/api/rebuild_display_receipts', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ year })
+    });
+    const data = await res.json().catch(()=> ({}));
+    if(!res.ok || data.success !== true){
+      throw new Error(data.error || 'จัดเลขใหม่ไม่สำเร็จ');
+    }
+    alert(`✅ จัดเรียงเลขใหม่สำเร็จ: ${data.count || 0} รายการ`);
+  }catch(e){
+    console.error(e);
+    alert(`❌ ${e.message || 'เกิดข้อผิดพลาด'}`);
+  }
+}
+
 
     // =========================
     // ---------- UI helpers ----------
@@ -1816,7 +2644,7 @@ document.getElementById('pc_opd').textContent = opdVal;
       const a = document.getElementById('sig_authorized');
       const c = document.getElementById('sig_customer');
       const r = document.getElementById('sig_receiver');
-      if(a && !a.value) a.value = 'พญ.ปิยะฎา จินดาหลวง';
+      if(a){  a.value = 'พญ.ปิยะฎา จินดาหลวง';  a.readOnly = true;}
       if(c && !c.value) c.value = name;
       if(r && !r.value) r.value = '';
 
@@ -1832,18 +2660,18 @@ document.getElementById('pc_opd').textContent = opdVal;
     }
 
     function applySigNamesToReceipt(){
-      const a = (document.getElementById('sig_authorized')?.value || '').trim();
-      const c = (document.getElementById('sig_customer')?.value || '').trim();
-      const r = (document.getElementById('sig_receiver')?.value || '').trim();
+  const a = (document.getElementById('sig_authorized')?.value || '').trim();
+  const c = (document.getElementById('sig_customer')?.value || '').trim();
+  const r = (document.getElementById('sig_receiver')?.value || '').trim();
 
-      const ua = document.getElementById('sigUnder_authorized');
-      const uc = document.getElementById('sigUnder_customer');
-      const ur = document.getElementById('sigUnder_receiver');
+  const ua = document.getElementById('sigUnder_authorized');
+  const uc = document.getElementById('sigUnder_customer');
+  const ur = document.getElementById('sigUnder_receiver');
 
-      if(ua) ua.textContent = a ? `(${a})` : '';
-      if(uc) uc.textContent = c ? `(${c})` : '';
-      if(ur) ur.textContent = r ? `(${r})` : '';
-    }
+  if(ua) ua.value = a;
+  if(uc) uc.value = c;
+  if(ur) ur.value = r;
+}
 
     // =========================
     // ✅ ใบเสร็จแบบเต็ม: ใช้ “กระจายยอดแบบผสมราคา” เหมือน popup ชำระเงิน
@@ -1875,58 +2703,156 @@ document.getElementById('pc_opd').textContent = opdVal;
       return { tbody, sum: dist.total, warn: dist.warn };
     }
 
-    function openReceiptFromPay(){
-      const total = Math.floor(Number(document.getElementById('amount').value || 0));
-      const customerInfo = (document.getElementById('pay_note_input')?.value || '').trim();
 
-      const { rows } = collectItemsForReceiptAndSave();
-      if(!rows.length) return alert('กรุณาเลือกรายการอย่างน้อย 1 รายการ');
+async function issueReceiptFromForm(){
+  const opd = (document.getElementById('opd').value||'').trim();
+  const date = (document.getElementById('date').value||'').slice(0,10);
+  const amount = Math.floor(Number(document.getElementById('amount').value||0));
+  const payment_method = getPayment();
 
-      const { tbody, sum } = buildReceiptRowsMixed(total, rows);
+  const name  = (document.getElementById('name')?.value || '').trim();
+  const phone = (document.getElementById('phone')?.value || '').trim();
+  const note  = (document.getElementById('note')?.value || '').trim();
 
-      document.getElementById('receiptContent').innerHTML = `
-        <table class="receipt-table">
-          <thead>
-            <tr>
-              <th colspan="7" style="text-align:center; font-weight:900;">
-                ค่าตรวจรักษาและหัตถการทางการแพทย์
-              </th>
-            </tr>
-            <tr>
-              <th style="width:60px;">ลำดับ</th>
-              <th>รายการ</th>
-              <th style="width:70px;">จำนวน</th>
-              <th style="width:130px;">ราคาต่อรายการ (บาท)</th>
-              <th style="width:120px;">รวมบรรทัด (บาท)</th>
-              <th style="width:130px;">วันที่เริ่มบริการ</th>
-              <th style="width:130px;">วันที่สิ้นสุดบริการ</th>
-            </tr>
-          </thead>
-          <tbody>${tbody}</tbody>
-        </table>
+  // ข้อมูลผู้รับการรักษา (ที่พิมพ์ใน popup ชั้น 1)
+  const patient_info = (document.getElementById('pay_note_input')?.value || '').trim();
 
-        <div class="receipt-total">
-          รวมเป็นเงินทั้งสิ้น ${sum.toLocaleString()} บาท
-        </div>
+  // ชื่อใต้ลายเซ็น (เอาไว้เก็บ แม้ใบเสร็จจะไม่ได้โชว์เป็น field ใน DB ก็ยังส่งได้)
+  const sig_authorized = (document.getElementById('sig_authorized')?.value || '').trim();
+  const sig_customer   = (document.getElementById('sig_customer')?.value || '').trim();
+  const sig_receiver   = (document.getElementById('sig_receiver')?.value || '').trim();
 
-        <div class="receipt-section" style="margin-top:14px; font-size:12px; line-height:1.7;">
-          <b>ข้อมูลลูกค้า (ชื่อ–ที่อยู่):</b><br>
-          ${customerInfo ? nl2brSafe(customerInfo) : '-'}
-        </div>
-      `;
+  if(!isValidOPD(opd)) throw new Error('กรุณากรอก OPD 4 หลักให้ครบ');
+  if(!date) throw new Error('กรุณาเลือกวันที่');
+  if(!Number.isFinite(amount) || amount<=0) throw new Error('กรุณากรอกยอดขายรวมให้ถูกต้อง');
 
-      closePayPopup();
+  const items = collectItemsFromForm(); // [{label, qty, price}]
+  if(!items.length) throw new Error('กรุณาเลือกรายการอย่างน้อย 1 รายการ');
 
-      const ov = document.getElementById('receiptOverlay');
-      ov.style.display = 'flex';
-      ov.setAttribute('aria-hidden','false');
+  // ✅ ส่งให้ครบ แม้บางค่าจะไม่อยู่บนใบเสร็จ
+  const payload = {
+    date, opd, amount, payment_method, items,
+    name, phone, note,
+    patient_info,
+    sig: { authorized: sig_authorized, customer: sig_customer, receiver: sig_receiver }
+  };
 
-      applySigNamesToReceipt();
+  const res = await fetch('/api/sales_issue_receipt', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
 
-      requestAnimationFrame(() => {
-        initAllSigPads();
-      });
-    }
+  const data = await res.json().catch(()=> ({}));
+  if(!res.ok || !data || data.success !== true){
+    throw new Error(data.error || 'ออกเลขใบเสร็จไม่สำเร็จ');
+  }
+  return data;
+}
+
+async function fetchWithTimeout(url, options={}, ms=12000){
+  const ctrl = new AbortController();
+  const t = setTimeout(()=> ctrl.abort(), ms);
+  try{
+    return await fetch(url, {...options, signal: ctrl.signal});
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+
+
+
+
+    async function openReceiptFromPay(){
+  const btn = document.querySelector('#payOverlay .btn.btn-primary');
+  if(btn) btn.disabled = true;
+
+  try{
+    const issued = await issueReceiptFromForm();
+    const dispNo = (issued.disp_no || '').trim();
+    const origNo = (issued.orig_no || '').trim();
+    const showNo = (dispNo)
+      ? dispNo
+      : (origNo ? origNo.replace(/^RC-/, 'RB-') : '-');
+
+    const receiptNoEl = document.getElementById('receiptNo');
+    if(receiptNoEl) receiptNoEl.textContent = showNo;
+
+    // ===== A) วันที่ออกใบเสร็จ (จากวันที่ในฟอร์ม) =====
+const issueDateISO = (document.getElementById('date')?.value || '').slice(0,10);
+const issueDateText = issueDateISO ? formatDate(issueDateISO) : '-';
+
+const issueEl = document.getElementById('receiptIssueDate');
+if(issueEl) issueEl.textContent = issueDateText;
+
+    const total = Math.floor(Number(document.getElementById('amount').value || 0));
+
+    // ✅ รายการจากฟอร์ม
+    const { rows } = collectItemsForReceiptAndSave();
+    if(!rows.length) throw new Error('กรุณาเลือกรายการอย่างน้อย 1 รายการ');
+
+    // ✅ สร้างตารางกลับมา
+    const { tbody, sum } = buildReceiptRowsMixed(total, rows);
+
+    // ✅ ข้อมูลผู้รับการรักษา (เอาค่าจาก popup มาเป็นค่าเริ่มต้น แต่บนใบเสร็จแก้ได้)
+    const patientInfo = (document.getElementById('pay_note_input')?.value || '').trim();
+
+    document.getElementById('receiptContent').innerHTML = `
+      <table class="receipt-table">
+        <thead>
+          <tr>
+            <th colspan="7" style="text-align:center; font-weight:900;">
+              ค่าตรวจรักษาและหัตถการทางการแพทย์
+            </th>
+          </tr>
+          <tr>
+            <th style="width:60px;">ลำดับ</th>
+            <th>รายการ</th>
+            <th style="width:70px;">จำนวน</th>
+            <th style="width:130px;">ราคาต่อรายการ (บาท)</th>
+            <th style="width:120px;">รวมบรรทัด (บาท)</th>
+            <th style="width:130px;">วันที่เริ่มบริการ</th>
+            <th style="width:130px;">วันที่สิ้นสุดบริการ</th>
+          </tr>
+        </thead>
+        <tbody>${tbody}</tbody>
+      </table>
+
+      <div class="receipt-total">
+        รวมเป็นเงินทั้งสิ้น ${sum.toLocaleString()} บาท
+      </div>
+
+      <div class="receipt-section">
+        <b>ข้อมูลผู้รับการรักษา (ชื่อ–ที่อยู่):</b><br>
+        <textarea id="receipt_patient_info" rows="2"
+          placeholder="ชื่อ–นามสกุลผู้รับการรักษา&#10;ที่อยู่ผู้รับการรักษา"
+        >${safe(patientInfo)}</textarea>
+      </div>
+    `;
+
+    closePayPopup();
+const ov = document.getElementById('receiptOverlay');
+ov.style.display = 'flex';
+ov.setAttribute('aria-hidden','false');
+
+// ✅ ตั้งวันที่หลัง overlay แสดงแล้ว (ชัวร์)
+requestAnimationFrame(() => {
+  setReceiptIssueDateFromISO(document.getElementById('date')?.value || '');
+});
+
+    applySigNamesToReceipt();
+    requestAnimationFrame(() => initAllSigPads());
+
+  }catch(err){
+    console.error(err);
+    alert(err.message || 'ออกใบเสร็จไม่สำเร็จ');
+  }finally{
+    if(btn) btn.disabled = false;
+  }
+}
+
+
 
     function closeReceipt(){
       const ov = document.getElementById('receiptOverlay');
@@ -2547,6 +3473,60 @@ async function saveReceiptImage(){
     const fullW = box.scrollWidth;
     const fullH = box.scrollHeight;
 
+
+// ✅ ทำ input/textarea ให้กลายเป็นตัวหนังสือชั่วคราว (html2canvas ชอบ)
+const replaced = [];
+const makeSpanFromInput = (inp) => {
+  const span = document.createElement('span');
+  span.textContent = inp.value || inp.getAttribute('value') || '';
+  // ทำให้หน้าตาคล้าย input เดิม
+  const cs = getComputedStyle(inp);
+  span.style.display = 'block';
+  span.style.width = cs.width;
+  span.style.textAlign = cs.textAlign;
+  span.style.fontSize = cs.fontSize;
+  span.style.fontWeight = cs.fontWeight;
+  span.style.color = cs.color;
+  span.style.padding = cs.padding;
+  span.style.margin = cs.margin;
+  span.style.lineHeight = cs.lineHeight;
+  span.style.whiteSpace = 'pre-wrap';
+  return span;
+};
+
+// 1) แทนชื่อใต้ลายเซ็น (input.sig-under-input) ด้วย span
+box.querySelectorAll('input.sig-under-input').forEach(inp => {
+  const span = makeSpanFromInput(inp);
+  inp.style.display = 'none';
+  inp.insertAdjacentElement('afterend', span);
+  replaced.push({ type:'input', inp, span });
+});
+
+// 2) แทน textarea ข้อมูลผู้รับการรักษา ด้วย div (เพื่อให้จับขึ้นรูปแน่ ๆ)
+const ta = box.querySelector('#receipt_patient_info');
+let taDiv = null;
+if (ta) {
+  taDiv = document.createElement('div');
+  taDiv.textContent = ta.value || '';
+  const cs = getComputedStyle(ta);
+  taDiv.style.whiteSpace = 'pre-wrap';
+  taDiv.style.fontSize = cs.fontSize;
+  taDiv.style.fontWeight = cs.fontWeight;
+  taDiv.style.color = cs.color;
+  taDiv.style.lineHeight = cs.lineHeight;
+  taDiv.style.marginTop = cs.marginTop;
+  taDiv.style.padding = cs.padding;
+  taDiv.style.minHeight = cs.minHeight || '32px';
+  taDiv.style.border = 'none';
+  taDiv.style.background = 'transparent';
+
+  ta.style.display = 'none';
+  ta.insertAdjacentElement('afterend', taDiv);
+}
+
+
+
+
     const canvas = await html2canvas(box, {
       backgroundColor: '#ffffff',
       scale: Math.max(2, window.devicePixelRatio || 1),
@@ -2589,6 +3569,1860 @@ async function saveReceiptImage(){
   }
 }
 
+// =========================
+// TAB4: Slip Viewer (filter วัน/เดือน/ปี/OPD)
+// ใช้ /api/sales (ดึงทั้งหมด) แล้วกรองฝั่งหน้าเว็บ
+// =========================
+document.addEventListener('DOMContentLoaded', () => {
+  initSlipFilters();
+});
+
+function initSlipFilters(){
+  const dSel = document.getElementById('slipDay');
+  const mSel = document.getElementById('slipMonth');
+  const ySel = document.getElementById('slipYear');
+  if(!dSel || !mSel || !ySel) return;
+
+  // วัน
+  let dOpt = `<option value="">วัน (ทั้งหมด)</option>`;
+  for(let d=1; d<=31; d++){
+    dOpt += `<option value="${String(d).padStart(2,'0')}">${d}</option>`;
+  }
+  dSel.innerHTML = dOpt;
+
+  // เดือน
+  let mOpt = `<option value="">เดือน (ทั้งหมด)</option>`;
+  for(let m=1; m<=12; m++){
+    const mm = String(m).padStart(2,'0');
+    mOpt += `<option value="${mm}">${m}</option>`;
+  }
+  mSel.innerHTML = mOpt;
+
+  // ปี (ใช้แนวเดียวกับ rebuildYear)
+  const y = new Date().getFullYear();
+  let yOpt = `<option value="">ปี (ทั้งหมด)</option>`;
+  for(let i=y-3; i<=y+1; i++){
+    yOpt += `<option value="${i}">${i}</option>`;
+  }
+  ySel.innerHTML = yOpt;
+  ySel.value = String(y);
+}
+
+async function searchReceipts(){
+  const result = document.getElementById('slipResult');
+  if(!result) return;
+
+  const opdRaw = (document.getElementById('slipOPD')?.value || '').trim();
+  const day  = (document.getElementById('slipDay')?.value || '').trim();
+  const month= (document.getElementById('slipMonth')?.value || '').trim();
+  const year = (document.getElementById('slipYear')?.value || '').trim();
+
+  if(opdRaw && !/^\d{4}$/.test(opdRaw)){
+    alert('กรุณากรอก OPD ให้ครบ 4 หลัก (เช่น 0007)');
+    return;
+  }
+
+  result.innerHTML = `<div class="muted">กำลังค้นหา…</div>`;
+
+  try{
+    const rows = await ensureAllSales();
+
+    const filtered = (rows || []).filter(r => {
+      const d = String((r.date||'')).slice(0,10);
+      const [yy, mm, dd] = d.split('-');
+
+      if(opdRaw && String(r.opd||'').trim().padStart(4,'0') !== opdRaw) return false;
+      if(year && yy !== year) return false;
+      if(month && mm !== month) return false;
+      if(day && dd !== day) return false;
+      return true;
+    })
+    .sort((a,b)=> new Date((b.date||'').slice(0,10)) - new Date((a.date||'').slice(0,10)));
+
+    if(filtered.length === 0){
+      result.innerHTML = `<div class="muted">ไม่พบรายการตามเงื่อนไข</div>`;
+      return;
+    }
+
+    result.innerHTML = filtered.map(r=>{
+      const date = formatDate(String(r.date||'').slice(0,10));
+      const opd  = String(r.opd||'').trim().padStart(4,'0');
+      const name = r.name || '-';
+      const amount = Number(r.amount||0);
+      const amtStr = Number.isFinite(amount) ? amount.toLocaleString() : '0';
+
+      const dispNo = (r.disp_no || r.display_no || '').trim();
+      const origNo = (r.orig_no || '').trim();
+      const shownNo = dispNo || origNo || '-';
+
+      return `
+        <div class="card">
+          <div class="left">
+            <div><strong>${safe(name)}</strong> <span class="muted">OPD: ${safe(opd)}</span></div>
+            <div class="muted">📅 ${safe(date)} • 💰 ${safe(amtStr)} บาท • 🧾 ${safe(shownNo)}</div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn-primary" onclick="openReceiptFromRecord('${r.id}')">ดูใบเสร็จ</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  }catch(err){
+    console.error(err);
+    result.innerHTML = `<div class="muted">ค้นหาไม่สำเร็จ</div>`;
+    alert(err.message || 'ค้นหาไม่สำเร็จ');
+  }
+}
+
+
+function findAnySaleById(id){
+  return (allSales || []).find(x => String(x.id) === String(id)) || null;
+}
+
+function parseItemsStringToRows(items){
+  // items ที่บันทึกเดิมเป็น array of string: "label - qty ชิ้น x price บาท"
+  const out = [];
+  (Array.isArray(items) ? items : []).forEach(line=>{
+    const m = String(line).match(/^(.*?) ?(?:\((.*?)\))? - (\d+(?:\.\d+)?) ชิ้น x (\d+(?:\.\d+)?) บาท/);
+    if(m){
+      const main = (m[1]||'').trim();
+      const sub  = (m[2]||'').trim();
+      const qty  = Math.max(1, Math.floor(Number(m[3]||1)));
+      const price= Math.max(0, Math.floor(Number(m[4]||0)));
+      const label = sub ? `${main} (${sub})` : main;
+      out.push({ label, qty, price });
+    }else{
+      // ถ้า format ไม่ตรง ก็ยัดเป็นรายการ 1 ชิ้น ราคา 0
+      const label = String(line||'').trim();
+      if(label) out.push({ label, qty:1, price:0 });
+    }
+  });
+  return out;
+}
+
+function buildReceiptRowsMixedFromDate(total, rows, dateISO){
+  const dateStr = formatDate(String(dateISO||'').slice(0,10));
+  const dist = distributeMixedAmount(total, rows);
+
+  let tbody = '';
+  dist.lines.forEach((r, idx)=>{
+    const qty = Math.max(1, Math.floor(Number(r.qty||1) || 1));
+    const unit = Number.isFinite(r.unit) ? r.unit : (qty ? Math.floor(r.lineTotal / qty) : Math.floor(r.lineTotal));
+
+    tbody += `
+      <tr>
+        <td style="text-align:center;">${idx+1}</td>
+        <td>${safe(r.label)}</td>
+        <td style="text-align:center;">${qty}</td>
+        <td style="text-align:right;">${unit.toLocaleString()}</td>
+        <td style="text-align:right;">${Math.floor(r.lineTotal).toLocaleString()}</td>
+        <td style="text-align:center;">${safe(dateStr)}</td>
+        <td style="text-align:center;">${safe(dateStr)}</td>
+      </tr>
+    `;
+  });
+
+  return { tbody, sum: dist.total, warn: dist.warn };
+}
+
+function openReceiptFromRecord(id){
+  const rec = findAnySaleById(id);
+  if(!rec) return alert('ไม่พบรายการนี้');
+
+  const total = Math.floor(Number(rec.amount||0));
+  const rows = parseItemsStringToRows(rec.items || []);
+  if(!rows.length) return alert('รายการนี้ไม่มีรายละเอียด items');
+
+  const dispNo = (rec.disp_no || rec.display_no || '').trim();
+  const origNo = (rec.orig_no || '').trim();
+  const showNo = dispNo ? dispNo : (origNo ? origNo.replace(/^RC-/, 'RB-') : '-');
+
+  const receiptNoEl = document.getElementById('receiptNo');
+  if(receiptNoEl) receiptNoEl.textContent = showNo;
+// ===== B) วันที่ออกใบเสร็จ (จากวันที่ใน record) =====
+const issueDateISO = (rec.date || '').slice(0,10);
+const issueDateText = issueDateISO ? formatDate(issueDateISO) : '-';
+
+const issueEl = document.getElementById('receiptIssueDate');
+if(issueEl) issueEl.textContent = issueDateText;
+  // ✅ ตารางตามวันที่ของ record
+  const { tbody, sum } = buildReceiptRowsMixedFromDate(total, rows, rec.date);
+
+  document.getElementById('receiptContent').innerHTML = `
+    <table class="receipt-table">
+      <thead>
+        <tr>
+          <th colspan="7" style="text-align:center; font-weight:900;">
+            ค่าตรวจรักษาและหัตถการทางการแพทย์
+          </th>
+        </tr>
+        <tr>
+          <th style="width:60px;">ลำดับ</th>
+          <th>รายการ</th>
+          <th style="width:70px;">จำนวน</th>
+          <th style="width:130px;">ราคาต่อรายการ (บาท)</th>
+          <th style="width:120px;">รวมบรรทัด (บาท)</th>
+          <th style="width:130px;">วันที่เริ่มบริการ</th>
+          <th style="width:130px;">วันที่สิ้นสุดบริการ</th>
+        </tr>
+      </thead>
+      <tbody>${tbody}</tbody>
+    </table>
+
+    <div class="receipt-total">
+      รวมเป็นเงินทั้งสิ้น ${sum.toLocaleString()} บาท
+    </div>
+
+    <div class="receipt-section">
+      <b>ข้อมูลผู้รับการรักษา (ชื่อ–ที่อยู่):</b><br>
+      <textarea id="receipt_patient_info" rows="2"
+        placeholder="ชื่อ–นามสกุลผู้รับการรักษา&#10;ที่อยู่ผู้รับการรักษา"
+      ></textarea>
+    </div>
+  `;
+
+  const ov = document.getElementById('receiptOverlay');
+  ov.style.display = 'flex';
+  ov.setAttribute('aria-hidden','false');
+// วันที่ออกใบเสร็จ = วันที่ของ record
+setReceiptIssueDateFromISO(rec.date || '');
+  applySigNamesToReceipt();
+  requestAnimationFrame(() => initAllSigPads());
+}
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const ipt = document.getElementById('slipOPD');
+  if(ipt){
+    ipt.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){ e.preventDefault(); searchReceipts(); }
+    });
+  }
+});
+
+function setReceiptIssueDateFromISO(dateISO){
+  const el = document.getElementById('receiptIssueDate');
+  if(!el) return;
+
+  if(!dateISO){
+    el.textContent = '-';
+    return;
+  }
+
+  el.textContent = formatDate(dateISO.slice(0,10));
+}
+
+
+
+// =========================
+// TAB 3: Customer Status (State)  ✅ (ปรับให้ชื่อ/เบอร์ขึ้น + พร้อมต่อ API ได้ภายหลัง)
+// =========================
+let csState = {
+  opd: '',
+  name: '',
+  phone: '',
+  ar: [],      // {dt, type, amount, method, note}
+  credit: [],  // {dt, type, amount, note}
+  ent: []      // {id, name, unit, purchased, used, purchased_at, note}
+};
+
+let csModalMode = '';
+
+function nowLocalInputValue(){
+  const d = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function money(n){
+  const x = Math.floor(Number(n||0) || 0);
+  return `${x.toLocaleString()} บาท`;
+}
+
+function setBadges(){
+  const wrap = document.getElementById('cs_badges');
+  if(!wrap) return;
+  wrap.innerHTML = '';
+
+  const arBal = calcAR();
+  const crBal = calcCredit();
+  const entCount = (csState.ent || []).filter(e => (e.purchased - e.used) > 0).length;
+
+  if(arBal > 0){
+    const b = document.createElement('span');
+    b.className = 'badge ar';
+    b.textContent = `ค้างชำระ ${money(arBal)}`;
+    wrap.appendChild(b);
+  }
+  if(crBal > 0){
+    const b = document.createElement('span');
+    b.className = 'badge credit';
+    b.textContent = `เครดิต ${money(crBal)}`;
+    wrap.appendChild(b);
+  }
+  if(entCount > 0){
+    const b = document.createElement('span');
+    b.className = 'badge todo';
+    b.textContent = `ค้างทำ ${entCount} รายการ`;
+    wrap.appendChild(b);
+  }
+  if(arBal<=0 && crBal<=0 && entCount<=0 && csState.opd){
+    const b = document.createElement('span');
+    b.className = 'badge';
+    b.textContent = 'ไม่มีค้าง';
+    wrap.appendChild(b);
+  }
+}
+
+function calcAR(){
+  // CHARGE +, PAYMENT -, REFUND/ADJUST -
+  return (csState.ar||[]).reduce((bal, r)=>{
+    const amt = Math.floor(Number(r.amount||0) || 0);
+    if(r.type === 'CHARGE') return bal + amt;
+    if(r.type === 'PAYMENT') return bal - amt;
+    if(r.type === 'REFUND' || r.type === 'ADJUST') return bal - amt;
+    return bal;
+  }, 0);
+}
+function calcCredit(){
+  // TOPUP +, APPLY -, REFUND -
+  return (csState.credit||[]).reduce((bal, r)=>{
+    const amt = Math.floor(Number(r.amount||0) || 0);
+    if(r.type === 'TOPUP') return bal + amt;
+    if(r.type === 'APPLY') return bal - amt;
+    if(r.type === 'REFUND') return bal - amt;
+    if(r.type === 'ADJUST') return bal + amt; // ปรับเพิ่ม/ลดได้ (คุมจาก note)
+    return bal;
+  }, 0);
+}
+
+function renderCS(){
+  document.getElementById('cs_name').textContent = csState.opd ? (csState.name || '(ยังไม่มีชื่อ)') : 'ยังไม่ได้เลือก OPD';
+  document.getElementById('cs_opd_show').textContent = csState.opd || '-';
+  document.getElementById('cs_phone').textContent = csState.phone || '-';
+
+  document.getElementById('cs_ar_balance').textContent = csState.opd ? money(calcAR()) : '-';
+  document.getElementById('cs_credit_balance').textContent = csState.opd ? money(calcCredit()) : '-';
+  const entCount = (csState.ent||[]).filter(e => (e.purchased - e.used) > 0).length;
+  document.getElementById('cs_ent_count').textContent = csState.opd ? `${entCount} รายการ` : '-';
+
+  renderARTable();
+  renderCRTable();
+  renderEntitlements();
+
+  setBadges();
+}
+
+function renderARTable(){
+  const tbl = document.getElementById('cs_ar_table');
+  const body = document.getElementById('cs_ar_body');
+  const empty = document.getElementById('cs_ar_empty');
+  const rows = csState.ar || [];
+
+  if(!csState.opd || rows.length===0){
+    tbl.style.display='none';
+    empty.style.display='block';
+    empty.textContent = csState.opd ? 'ยังไม่มีข้อมูล' : 'กรุณาค้นหา OPD ก่อน';
+    return;
+  }
+
+  let bal = 0;
+  const sorted = [...rows].sort((a,b)=> new Date(a.dt) - new Date(b.dt));
+
+  body.innerHTML = '';
+  sorted.forEach(r=>{
+    const amt = Math.floor(Number(r.amount||0)||0);
+    if(r.type === 'CHARGE') bal += amt;
+    else if(r.type === 'PAYMENT') bal -= amt;
+    else if(r.type === 'REFUND' || r.type === 'ADJUST') bal -= amt;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${safe(new Date(r.dt).toLocaleString())}</td>
+      <td class="center">${safe(r.type)}</td>
+      <td class="right">${amt.toLocaleString()}</td>
+      <td>${safe(r.method||'-')}</td>
+      <td>${safe(r.note||'')}</td>
+      <td class="right" style="font-weight:900;">${bal.toLocaleString()}</td>
+    `;
+    body.appendChild(tr);
+  });
+
+  tbl.style.display='table';
+  empty.style.display='none';
+}
+
+function renderCRTable(){
+  const tbl = document.getElementById('cs_cr_table');
+  const body = document.getElementById('cs_cr_body');
+  const empty = document.getElementById('cs_cr_empty');
+  const rows = csState.credit || [];
+
+  if(!csState.opd || rows.length===0){
+    tbl.style.display='none';
+    empty.style.display='block';
+    empty.textContent = csState.opd ? 'ยังไม่มีข้อมูล' : 'กรุณาค้นหา OPD ก่อน';
+    return;
+  }
+
+  let bal = 0;
+  const sorted = [...rows].sort((a,b)=> new Date(a.dt) - new Date(b.dt));
+
+  body.innerHTML = '';
+  sorted.forEach(r=>{
+    const amt = Math.floor(Number(r.amount||0)||0);
+    if(r.type === 'TOPUP') bal += amt;
+    else if(r.type === 'APPLY') bal -= amt;
+    else if(r.type === 'REFUND') bal -= amt;
+    else if(r.type === 'ADJUST') bal += amt;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${safe(new Date(r.dt).toLocaleString())}</td>
+      <td class="center">${safe(r.type)}</td>
+      <td class="right">${amt.toLocaleString()}</td>
+      <td>${safe(r.note||'')}</td>
+      <td class="right" style="font-weight:900;">${bal.toLocaleString()}</td>
+    `;
+    body.appendChild(tr);
+  });
+
+  tbl.style.display='table';
+  empty.style.display='none';
+}
+
+function renderEntitlements(){
+  const list = document.getElementById('cs_ent_list');
+  const empty = document.getElementById('cs_ent_empty');
+  const ents = csState.ent || [];
+
+  list.innerHTML = '';
+
+  if(!csState.opd){
+    empty.style.display='block';
+    empty.textContent = 'กรุณาค้นหา OPD ก่อน';
+    return;
+  }
+  if(ents.length===0){
+    empty.style.display='block';
+    empty.textContent = 'ยังไม่มีสิทธิ์คงเหลือ';
+    return;
+  }
+
+  empty.style.display='none';
+
+  ents.forEach(e=>{
+    const purchased = Math.floor(Number(e.purchased||0)||0);
+    const used = Math.floor(Number(e.used||0)||0);
+    const remain = Math.max(0, purchased - used);
+    const pct = purchased>0 ? Math.min(100, Math.round((used/purchased)*100)) : 0;
+
+    const card = document.createElement('div');
+    card.className = 'ent-card';
+    card.innerHTML = `
+      <div class="ent-top">
+        <div>
+          <div class="ent-name">${safe(e.name || '-')}</div>
+          <div class="ent-meta">ซื้อเมื่อ: ${safe(e.purchased_at ? new Date(e.purchased_at).toLocaleDateString() : '-')} • หน่วย: ${safe(e.unit||'-')}</div>
+        </div>
+        <div style="font-weight:1000;color:#0b7660;">
+          เหลือ ${remain.toLocaleString()} / ${purchased.toLocaleString()} ${safe(e.unit||'')}
+        </div>
+      </div>
+
+      <div class="ent-bar"><div style="width:${pct}%"></div></div>
+
+      <div class="ent-actions">
+        <button type="button" class="btn btn-primary" onclick="openUseEntitlement('${safe(e.id)}')">ตัดใช้</button>
+        <button type="button" class="btn btn-outline" onclick="alert('ยังไม่มีประวัติ')">ดูประวัติ</button>
+      </div>
+      ${e.note ? `<div class="muted" style="margin-top:8px;">📝 ${safe(e.note)}</div>` : ``}
+    `;
+    list.appendChild(card);
+  });
+}
+
+// ✅ แก้สำคัญ: โหลดชื่อ/เบอร์ให้ขึ้น “เสมอ” แม้ customerMap ยังไม่พร้อม
+function loadCustomerStatus(){
+  const opd = (document.getElementById('cs_opd')?.value || '').trim();
+  if(!/^\d{4}$/.test(opd)) return alert('กรุณากรอก OPD ให้ครบ 4 หลัก');
+
+  // ใช้ customerMap ก่อน ถ้าไม่มีให้พยายามดึงจาก state ของ AR (ถ้ามี)
+  const c0 = customerMap?.[opd] || null;
+
+  let name = (c0?.name || '').trim();
+  let phone= (c0?.phone|| '').trim();
+
+  // fallback: ถ้ามีข้อมูลจาก AR state (debt/credit/pending) ให้ดึงมาใช้แทน
+  try{
+    if((!name || !phone) && typeof AR !== 'undefined' && AR && typeof AR.getCustomerFallback === 'function'){
+      const f = AR.getCustomerFallback(opd) || {};
+      name = name || (f.name || '').trim();
+      phone= phone|| (f.phone|| '').trim();
+    }
+  }catch(e){}
+
+  csState.opd = opd;
+  csState.name = name;
+  csState.phone = phone;
+
+  // ✅ ยังไม่ดึง history ของ csState จาก backend ในก้อนนี้ (ถ้าต้องการ เดี๋ยวผมต่อ /api/*_history ให้)
+  renderCS();
+}
+
+function clearCustomerStatus(){
+  csState = { opd:'', name:'', phone:'', ar:[], credit:[], ent:[] };
+  const ipt = document.getElementById('cs_opd');
+  if(ipt) ipt.value = '';
+  renderCS();
+}
+
+// ---- Modal controls ----
+function openCSModal(mode){
+  if(!csState.opd) return alert('กรุณาค้นหา OPD ก่อน');
+  csModalMode = mode;
+
+  const title = document.getElementById('csModalTitle');
+  const sub = document.getElementById('csModalSub');
+
+  // reset fields
+  document.getElementById('cs_m_date').value = nowLocalInputValue();
+  document.getElementById('cs_m_amount').value = '';
+  document.getElementById('cs_m_method').value = '';
+  document.getElementById('cs_m_note').value = '';
+  document.getElementById('cs_m_unit').value = 'ครั้ง';
+  document.getElementById('cs_m_qty').value = 1;
+  document.getElementById('cs_m_product').value = '';
+
+  // show/hide rows
+  const show = (id, yes)=>{ const el=document.getElementById(id); if(el) el.style.display = yes?'grid':'none'; };
+  show('cs_m_method_row', false);
+  show('cs_m_unit_row', false);
+  show('cs_m_qty_row', false);
+  show('cs_m_product_row', false);
+  document.getElementById('cs_m_amount_row').style.display = 'grid';
+
+  if(mode==='ar_charge'){
+    title.textContent = '➕ เพิ่มหนี้ (ลูกค้าค้างเรา)';
+    sub.textContent = 'บันทึกเป็น CHARGE';
+  }
+  if(mode==='ar_pay'){
+    title.textContent = '💸 รับชำระ (ลดหนี้ลูกค้า)';
+    sub.textContent = 'บันทึกเป็น PAYMENT';
+    show('cs_m_method_row', true);
+  }
+  if(mode==='ar_adjust'){
+    title.textContent = '🧾 ลดหนี้/คืนเงิน';
+    sub.textContent = 'บันทึกเป็น REFUND/ADJUST';
+  }
+
+  if(mode==='cr_topup'){
+    title.textContent = '➕ รับมัดจำ/เติมเครดิต';
+    sub.textContent = 'บันทึกเป็น TOPUP';
+    show('cs_m_method_row', true);
+  }
+  if(mode==='cr_apply'){
+    title.textContent = '🧾 ใช้เครดิต';
+    sub.textContent = 'บันทึกเป็น APPLY (หักเครดิต)';
+  }
+  if(mode==='cr_refund'){
+    title.textContent = '↩️ คืนเครดิต';
+    sub.textContent = 'บันทึกเป็น REFUND (หักเครดิต)';
+  }
+
+  if(mode==='en_add'){
+    title.textContent = '➕ เพิ่มสิทธิ์ (ค้างทำ)';
+    sub.textContent = 'เช่น คอร์ส 10 ครั้ง หรือสินค้า 2 ชิ้น';
+    document.getElementById('cs_m_amount_row').style.display = 'none';
+    show('cs_m_product_row', true);
+    show('cs_m_unit_row', true);
+    show('cs_m_qty_row', true);
+  }
+
+  const ov = document.getElementById('csModal');
+  ov.style.display='flex';
+  ov.setAttribute('aria-hidden','false');
+}
+
+function closeCSModal(){
+  const ov = document.getElementById('csModal');
+  ov.style.display='none';
+  ov.setAttribute('aria-hidden','true');
+}
+
+function openUseEntitlement(entId){
+  const ent = (csState.ent||[]).find(x=> String(x.id)===String(entId));
+  if(!ent) return alert('ไม่พบสิทธิ์นี้');
+
+  csModalMode = `en_use:${entId}`;
+
+  document.getElementById('csModalTitle').textContent = `✅ ตัดใช้: ${ent.name}`;
+  document.getElementById('csModalSub').textContent = `หน่วย: ${ent.unit} • เหลือ ${Math.max(0, ent.purchased-ent.used)} / ${ent.purchased}`;
+
+  document.getElementById('cs_m_date').value = nowLocalInputValue();
+  document.getElementById('cs_m_note').value = '';
+
+  document.getElementById('cs_m_amount_row').style.display = 'none';
+  document.getElementById('cs_m_method_row').style.display = 'none';
+
+  document.getElementById('cs_m_product_row').style.display = 'none';
+  document.getElementById('cs_m_unit_row').style.display = 'none';
+  document.getElementById('cs_m_qty_row').style.display = 'grid';
+  document.getElementById('cs_m_qty').value = 1;
+
+  const ov = document.getElementById('csModal');
+  ov.style.display='flex';
+  ov.setAttribute('aria-hidden','false');
+}
+
+function saveCSModal(){
+  const dt = document.getElementById('cs_m_date').value;
+  const note = (document.getElementById('cs_m_note').value||'').trim();
+
+  const iso = dt ? new Date(dt).toISOString() : new Date().toISOString();
+
+  if(String(csModalMode||'').startsWith('en_use:')){
+    const entId = csModalMode.split(':')[1];
+    const ent = (csState.ent||[]).find(x=> String(x.id)===String(entId));
+    if(!ent) return alert('ไม่พบสิทธิ์นี้');
+
+    const usedQty = Math.max(1, Math.floor(Number(document.getElementById('cs_m_qty').value||1) || 1));
+    const remain = Math.max(0, ent.purchased - ent.used);
+    if(usedQty > remain) return alert(`ตัดใช้เกินคงเหลือ (เหลือ ${remain})`);
+
+    ent.used += usedQty;
+    closeCSModal();
+    renderCS();
+    return;
+  }
+
+  if(csModalMode === 'en_add'){
+    const name = (document.getElementById('cs_m_product').value||'').trim();
+    const unit = document.getElementById('cs_m_unit').value || 'ครั้ง';
+    const qty = Math.max(1, Math.floor(Number(document.getElementById('cs_m_qty').value||1) || 1));
+    if(!name) return alert('กรุณากรอกชื่อสินค้า/หัตถการ');
+
+    csState.ent.push({
+      id: 'ent_' + Math.random().toString(16).slice(2),
+      name,
+      unit,
+      purchased: qty,
+      used: 0,
+      purchased_at: iso,
+      note
+    });
+
+    closeCSModal();
+    renderCS();
+    return;
+  }
+
+  const amt = Math.floor(Number(document.getElementById('cs_m_amount').value||0) || 0);
+  if(!Number.isFinite(amt) || amt<=0) return alert('กรุณากรอกจำนวนเงินให้ถูกต้อง');
+
+  const method = (document.getElementById('cs_m_method').value||'').trim();
+
+  if(csModalMode === 'ar_charge'){
+    csState.ar.push({dt: iso, type:'CHARGE', amount: amt, method:'', note});
+  }
+  if(csModalMode === 'ar_pay'){
+    csState.ar.push({dt: iso, type:'PAYMENT', amount: amt, method: method || getPayment(), note});
+  }
+  if(csModalMode === 'ar_adjust'){
+    csState.ar.push({dt: iso, type:'ADJUST', amount: amt, method:'', note});
+  }
+
+  if(csModalMode === 'cr_topup'){
+    csState.credit.push({dt: iso, type:'TOPUP', amount: amt, note: note || `รับเงิน (${method||getPayment()})`});
+  }
+  if(csModalMode === 'cr_apply'){
+    csState.credit.push({dt: iso, type:'APPLY', amount: amt, note});
+  }
+  if(csModalMode === 'cr_refund'){
+    csState.credit.push({dt: iso, type:'REFUND', amount: amt, note});
+  }
+
+  closeCSModal();
+  renderCS();
+}
+
+// ESC close cs modal
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape'){
+    const ov = document.getElementById('csModal');
+    if(ov && ov.style.display==='flex') closeCSModal();
+  }
+});
+
+// initial render (empty)
+document.addEventListener('DOMContentLoaded', ()=> {
+  try{ renderCS(); }catch(e){}
+});
+
+
+
+// =========================
+// TAB 3: Data + UI  (Legacy local modal)  ✅ ปล่อยไว้ได้ แต่ตอนนี้ AR ตัวล่างใช้ Supabase แล้ว
+// =========================
+let arFilter = 'all';
+
+// storage (เริ่มว่างจริง)
+let arDebt = [];     // [{opd,name,phone,amount,last_paid_at,note}]
+let arCredit = [];   // [{opd,name,phone,balance,last_topup_at,credit_type,note}]
+let arPending = [];  // [{opd,name,phone,item,unit,qty,updated_at,note}]
+
+function arInitTab3(){
+  const d = new Date();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  const today = `${d.getFullYear()}-${mm}-${dd}`;
+  const dateEl = document.getElementById('ar_date');
+  if(dateEl) dateEl.value = today;
+
+  arBuildCustomerDatalist();
+
+  const s = document.getElementById('arSearch');
+  if(s){
+    s.addEventListener('input', ()=> arRenderAll());
+  }
+
+  const pick = document.getElementById('arCustomerPick');
+  if(pick){
+    pick.addEventListener('change', ()=> arApplyPickedCustomer());
+    pick.addEventListener('input', ()=> {});
+  }
+
+  arRenderAll();
+}
+
+function arBuildCustomerDatalist(){
+  const dl = document.getElementById('arCustomerList');
+  if(!dl) return;
+
+  const entries = Object.entries(customerMap || {});
+  const opts = entries.map(([opd, c])=>{
+    const name = (c?.name || '').trim();
+    const phone= (c?.phone|| '').trim();
+    const label = `${opd} | ${name}${phone?` | ${phone}`:''}`.trim();
+    return `<option value="${safe(label)}"></option>`;
+  }).join('');
+
+  dl.innerHTML = opts;
+}
+
+function arApplyPickedCustomer(){
+  const v = (document.getElementById('arCustomerPick')?.value || '').trim();
+  if(!v) return;
+
+  const parts = v.split('|').map(x=>x.trim()).filter(Boolean);
+  let opd = '';
+  let name = '';
+  let phone = '';
+  if(parts.length >= 1 && /^\d{4}$/.test(parts[0])) opd = parts[0];
+  if(parts.length >= 2) name = parts[1];
+  if(parts.length >= 3) phone = parts[2];
+
+  if(opd && customerMap[opd]){
+    const c = customerMap[opd];
+    name = name || (c.name||'');
+    phone = phone || (c.phone||'');
+  }
+
+  const opdEl = document.getElementById('ar_opd');
+  const nameEl= document.getElementById('ar_name');
+  const phEl  = document.getElementById('ar_phone');
+  if(opdEl) opdEl.value = opd || '';
+  if(nameEl) nameEl.value = name || '';
+  if(phEl) phEl.value = phone || '';
+}
+
+function arClearPicked(){
+  const pick = document.getElementById('arCustomerPick');
+  if(pick) pick.value = '';
+  const opdEl = document.getElementById('ar_opd');
+  const nameEl= document.getElementById('ar_name');
+  const phEl  = document.getElementById('ar_phone');
+  if(opdEl) opdEl.value = '';
+  if(nameEl) nameEl.value = '';
+  if(phEl) phEl.value = '';
+}
+
+function arSetFilter(type, btn){
+  arFilter = type;
+  document.querySelectorAll('.ar-chip').forEach(x=>x.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  arRenderAll();
+}
+
+function arClearSearch(){
+  const s = document.getElementById('arSearch');
+  if(s) s.value = '';
+  arRenderAll();
+}
+
+function arMatchSearch(obj, q){
+  const needle = String(q||'').trim().toLowerCase();
+  if(!needle) return true;
+  const hay = [
+    obj.opd || '',
+    obj.name || '',
+    obj.phone || '',
+    obj.item || ''
+  ].join(' ').toLowerCase();
+  return hay.includes(needle);
+}
+
+function arFmtDate(iso){
+  if(!iso) return '-';
+  return formatDate(String(iso).slice(0,10));
+}
+function arMoney(n){
+  const x = Math.max(0, Math.floor(Number(n||0) || 0));
+  return x.toLocaleString();
+}
+
+function arComputeSummary(){
+  const debtTotal = arDebt.reduce((s,x)=> s + (Number(x.amount)||0), 0);
+  const debtPeople = new Set(arDebt.map(x=>x.opd||'')).size;
+  const debtLast = arDebt
+    .map(x=>x.last_paid_at || '')
+    .filter(Boolean)
+    .sort((a,b)=> new Date(b) - new Date(a))[0] || '';
+
+  const creditTotal = arCredit.reduce((s,x)=> s + (Number(x.balance)||0), 0);
+  const creditPeople = new Set(arCredit.map(x=>x.opd||'')).size;
+  const creditLast = arCredit
+    .map(x=>x.last_topup_at || '')
+    .filter(Boolean)
+    .sort((a,b)=> new Date(b) - new Date(a))[0] || '';
+
+  const pendingQty = arPending.reduce((s,x)=> s + (Number(x.qty)||0), 0);
+  const pendingPeople = new Set(arPending.map(x=>x.opd||'')).size;
+  const pendingLast = arPending
+    .map(x=>x.updated_at || '')
+    .filter(Boolean)
+    .sort((a,b)=> new Date(b) - new Date(a))[0] || '';
+
+  return {
+    debtTotal, debtPeople, debtLast,
+    creditTotal, creditPeople, creditLast,
+    pendingQty, pendingPeople, pendingLast
+  };
+}
+
+function arRenderAll(){
+  const q = (document.getElementById('arSearch')?.value || '').trim();
+
+  const sum = arComputeSummary();
+  document.getElementById('sumDebtMoney').textContent = `${arMoney(sum.debtTotal)} บาท`;
+  document.getElementById('sumDebtPeople').textContent = `${sum.debtPeople} คน`;
+  document.getElementById('sumDebtLast').textContent = sum.debtLast ? arFmtDate(sum.debtLast) : '-';
+
+  document.getElementById('sumCreditMoney').textContent = `${arMoney(sum.creditTotal)} บาท`;
+  document.getElementById('sumCreditPeople').textContent = `${sum.creditPeople} คน`;
+  document.getElementById('sumCreditLast').textContent = sum.creditLast ? arFmtDate(sum.creditLast) : '-';
+
+  document.getElementById('sumPendingQty').textContent = `${arMoney(sum.pendingQty)} ครั้ง/ชิ้น`;
+  document.getElementById('sumPendingPeople').textContent = `${sum.pendingPeople} คน`;
+  document.getElementById('sumPendingLast').textContent = sum.pendingLast ? arFmtDate(sum.pendingLast) : '-';
+
+  const showDebt = (arFilter === 'all' || arFilter === 'debt');
+  const showCredit = (arFilter === 'all' || arFilter === 'credit');
+  const showPending = (arFilter === 'all' || arFilter === 'pending');
+
+  document.getElementById('secDebt').style.display = showDebt ? 'block' : 'none';
+  document.getElementById('secCredit').style.display = showCredit ? 'block' : 'none';
+  document.getElementById('secPending').style.display = showPending ? 'block' : 'none';
+
+  const debtRows = arDebt.filter(x=> arMatchSearch(x, q)).sort((a,b)=> (Number(b.amount)||0) - (Number(a.amount)||0));
+  const creditRows = arCredit.filter(x=> arMatchSearch(x, q)).sort((a,b)=> (Number(b.balance)||0) - (Number(a.balance)||0));
+  const pendingRows = arPending.filter(x=> arMatchSearch(x, q)).sort((a,b)=> new Date((b.updated_at||'1970-01-01')) - new Date((a.updated_at||'1970-01-01')));
+
+  const tbDebt = document.getElementById('tbDebt');
+  tbDebt.innerHTML = debtRows.map(r=>`
+    <tr>
+      <td>${safe(r.opd||'-')}</td>
+      <td><strong>${safe(r.name||'-')}</strong></td>
+      <td>${safe(r.phone||'-')}</td>
+      <td class="money-red" style="text-align:right;">${arMoney(r.amount)} บาท</td>
+      <td style="text-align:center;">${arFmtDate(r.last_paid_at)}</td>
+      <td>${safe(r.note||'')}</td>
+    </tr>
+  `).join('');
+  document.getElementById('emptyDebt').style.display = debtRows.length ? 'none' : 'block';
+
+  const tbCredit = document.getElementById('tbCredit');
+  tbCredit.innerHTML = creditRows.map(r=>`
+    <tr>
+      <td>${safe(r.opd||'-')}</td>
+      <td><strong>${safe(r.name||'-')}</strong></td>
+      <td>${safe(r.phone||'-')}</td>
+      <td class="money-green" style="text-align:right;">${arMoney(r.balance)} บาท</td>
+      <td style="text-align:center;">${arFmtDate(r.last_topup_at)}</td>
+      <td style="text-align:center;">${safe(r.credit_type||'-')}</td>
+      <td>${safe(r.note||'')}</td>
+    </tr>
+  `).join('');
+  document.getElementById('emptyCredit').style.display = creditRows.length ? 'none' : 'block';
+
+  const tbPending = document.getElementById('tbPending');
+  tbPending.innerHTML = pendingRows.map(r=>`
+    <tr>
+      <td>${safe(r.opd||'-')}</td>
+      <td><strong>${safe(r.name||'-')}</strong></td>
+      <td>${safe(r.phone||'-')}</td>
+      <td>${safe(r.item||'-')}</td>
+      <td style="text-align:right;font-weight:1000;color:#0b7660;">${arMoney(r.qty)} ${safe(r.unit||'ครั้ง/ชิ้น')}</td>
+      <td style="text-align:center;">${arFmtDate(r.updated_at)}</td>
+      <td>${safe(r.note||'')}</td>
+    </tr>
+  `).join('');
+  document.getElementById('emptyPending').style.display = pendingRows.length ? 'none' : 'block';
+}
+
+// =========================
+// TAB 3: Modal add (legacy local)  ✅ ยังใช้ได้ แต่ไม่เขียนลง Supabase
+// =========================
+let arModalMode = 'debt'; // debt | credit | pending
+
+function openArModal(mode){
+  arModalMode = mode;
+
+  const ov = document.getElementById('arOverlay');
+  ov.style.display = 'flex';
+  ov.setAttribute('aria-hidden','false');
+
+  const d = new Date();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  const today = `${d.getFullYear()}-${mm}-${dd}`;
+  const dateEl = document.getElementById('ar_date');
+  if(dateEl && !dateEl.value) dateEl.value = today;
+
+  arClearPicked();
+  document.getElementById('ar_note').value = '';
+
+  const dyn = document.getElementById('arDynamicFields');
+  dyn.innerHTML = '';
+
+  const title = document.getElementById('arModalTitle');
+  const sub = document.getElementById('arModalSub');
+
+  if(mode === 'debt'){
+    title.textContent = 'เพิ่มรายการค้างเงิน';
+    sub.textContent = 'กรอกยอดค้าง และวันที่ล่าสุดจ่าย (ถ้าไม่มีให้เลือกวันเริ่มค้างแทนก็ได้)';
+    dyn.innerHTML = `
+      <div class="mini-grid">
+        <div class="field">
+          <b>ค้างเงิน (บาท)</b>
+          <input id="ar_amount" type="number" min="0" step="1" placeholder="เช่น 1500">
+        </div>
+        <div class="field">
+          <b>ล่าสุดจ่าย (วันที่)</b>
+          <input id="ar_last" type="date">
+          <div class="muted">ถ้ายังไม่เคยจ่ายเลย ใส่เป็นวันเริ่มค้างได้</div>
+        </div>
+      </div>
+    `;
+    document.getElementById('ar_last').value = (document.getElementById('ar_date')?.value || today);
+  }
+
+  if(mode === 'credit'){
+    title.textContent = 'เพิ่มเงินจ่ายไว้ก่อน';
+    sub.textContent = 'ใช้กรณีว้อยเชอร์/มัดจำ/เติมเงิน (ไม่มีหมดอายุ)';
+    dyn.innerHTML = `
+      <div class="mini-grid">
+        <div class="field">
+          <b>เงินคงเหลือ (บาท)</b>
+          <input id="ar_balance" type="number" min="0" step="1" placeholder="เช่น 3000">
+        </div>
+        <div class="field">
+          <b>ประเภท</b>
+          <select id="ar_credit_type">
+            <option value="มัดจำ">มัดจำ</option>
+            <option value="ว้อยเชอร์">ว้อยเชอร์</option>
+            <option value="เติมเงิน">เติมเงิน</option>
+          </select>
+        </div>
+        <div class="field">
+          <b>ล่าสุดเติม (วันที่)</b>
+          <input id="ar_last_topup" type="date">
+        </div>
+      </div>
+    `;
+    document.getElementById('ar_last_topup').value = (document.getElementById('ar_date')?.value || today);
+  }
+
+  if(mode === 'pending'){
+    title.textContent = 'เพิ่มรายการค้างทำ';
+    sub.textContent = 'บันทึกสิทธิ์/หัตถการ/สินค้าที่ซื้อไว้ แต่ยังไม่ได้ทำ (หน่วยเป็น “ครั้ง” หรือ “ชิ้น”)';
+    dyn.innerHTML = `
+      <div class="mini-grid">
+        <div class="field" style="grid-column:1/-1;">
+          <b>รายการค้างทำ</b>
+          <input id="ar_item" type="text" placeholder="เช่น เลเซอร์รักแร้ / ทรีตเมนต์ / โบท็อกซ์ 50u">
+        </div>
+        <div class="field">
+          <b>หน่วย</b>
+          <select id="ar_unit">
+            <option value="ครั้ง">ครั้ง</option>
+            <option value="ชิ้น">ชิ้น</option>
+          </select>
+        </div>
+        <div class="field">
+          <b>ค้างอยู่ (จำนวน)</b>
+          <input id="ar_qty" type="number" min="1" step="1" value="1">
+        </div>
+        <div class="field">
+          <b>อัปเดตล่าสุด (วันที่)</b>
+          <input id="ar_updated" type="date">
+        </div>
+      </div>
+    `;
+    document.getElementById('ar_updated').value = (document.getElementById('ar_date')?.value || today);
+  }
+}
+
+function closeArModal(){
+  const ov = document.getElementById('arOverlay');
+  ov.style.display = 'none';
+  ov.setAttribute('aria-hidden','true');
+}
+
+function saveArModal(){
+  const opd = (document.getElementById('ar_opd')?.value || '').trim();
+  const name = (document.getElementById('ar_name')?.value || '').trim();
+  const phone = (document.getElementById('ar_phone')?.value || '').trim();
+  const dateBase = (document.getElementById('ar_date')?.value || '').slice(0,10);
+  const note = (document.getElementById('ar_note')?.value || '').trim();
+
+  if(!/^\d{4}$/.test(opd)) return alert('กรุณากรอก OPD ให้ครบ 4 หลัก');
+  if(!name) return alert('กรุณากรอกชื่อ');
+
+  if(arModalMode === 'debt'){
+    const amount = Math.floor(Number(document.getElementById('ar_amount')?.value || 0));
+    const last = (document.getElementById('ar_last')?.value || dateBase || '').slice(0,10);
+    if(!(amount > 0)) return alert('กรุณากรอกยอดค้างเงิน (> 0)');
+
+    arDebt = arDebt.filter(x=> String(x.opd) !== String(opd));
+    arDebt.push({ opd, name, phone, amount, last_paid_at: last || dateBase, note });
+
+    closeArModal();
+    arRenderAll();
+    return;
+  }
+
+  if(arModalMode === 'credit'){
+    const balance = Math.floor(Number(document.getElementById('ar_balance')?.value || 0));
+    const credit_type = (document.getElementById('ar_credit_type')?.value || 'มัดจำ').trim();
+    const last = (document.getElementById('ar_last_topup')?.value || dateBase || '').slice(0,10);
+    if(!(balance > 0)) return alert('กรุณากรอกเงินคงเหลือ (> 0)');
+
+    arCredit = arCredit.filter(x=> String(x.opd) !== String(opd));
+    arCredit.push({ opd, name, phone, balance, last_topup_at: last || dateBase, credit_type, note });
+
+    closeArModal();
+    arRenderAll();
+    return;
+  }
+
+  if(arModalMode === 'pending'){
+    const item = (document.getElementById('ar_item')?.value || '').trim();
+    const unit = (document.getElementById('ar_unit')?.value || 'ครั้ง').trim();
+    const qty = Math.floor(Number(document.getElementById('ar_qty')?.value || 0));
+    const updated = (document.getElementById('ar_updated')?.value || dateBase || '').slice(0,10);
+
+    if(!item) return alert('กรุณากรอกรายการค้างทำ');
+    if(!(qty > 0)) return alert('กรุณากรอกจำนวนค้าง (> 0)');
+
+    arPending.push({ opd, name, phone, item, unit, qty, updated_at: updated || dateBase, note });
+
+    closeArModal();
+    arRenderAll();
+    return;
+  }
+}
+
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape'){
+    if(document.getElementById('arOverlay')?.style.display === 'flex') closeArModal();
+  }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  arInitTab3();
+});
+
+
+// =========================
+// TAB 3 Controller (DEBT / CREDIT / PENDING) - ✅ Supabase Connected + ✅ ชื่อ/เบอร์ขึ้นจาก API แน่นอน
+// =========================
+const AR = (() => {
+
+  // ---------- HTTP helpers ----------
+  async function apiGet(url){
+    const res = await fetch(url, { credentials: 'include' });
+    const data = await res.json().catch(()=> ({}));
+    if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
+  }
+
+  async function apiPost(url, body){
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body || {})
+    });
+    const data = await res.json().catch(()=> ({}));
+    if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
+  }
+
+  // ---------- data ----------
+  function getCustomerList(){
+    const out = [];
+    Object.entries(customerMap || {}).forEach(([opd, v])=>{
+      out.push({ opd, name: v?.name || '', phone: v?.phone || '' });
+    });
+    return out;
+  }
+
+  const state = {
+    q: '',
+    debt: new Map(),    // opd -> { balance, last_at, name, phone }
+    credit: new Map(),  // opd -> { balance, last_at, name, phone }
+    pending: new Map(), // key(opd|item|unit) -> {opd,name,phone,item,unit,qty,last_at}
+    hist: new Map(),    // local cache for modal table
+    modal: { section:null, mode:null, target:null }
+  };
+
+  // ---------- utils ----------
+  const todayISO = () => {
+    const d = new Date();
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    return `${d.getFullYear()}-${mm}-${dd}`;
+  };
+  const fmtDate = (iso) => formatDate(String(iso||'').slice(0,10));
+  const money = (n) => (Math.floor(Number(n||0))).toLocaleString();
+
+  function norm(s){ return String(s||'').trim().toLowerCase(); }
+  function digits(s){ return String(s||'').replace(/\D/g,''); }
+
+  function findMatches(q){
+    const qq = norm(q);
+    const dd = digits(q);
+    const list = getCustomerList();
+    return list.filter(c=>{
+      const op = norm(c.opd);
+      const nm = norm(c.name);
+      const ph = digits(c.phone);
+      if(!qq && !dd) return true;
+      return (qq && (nm.includes(qq) || op.includes(qq))) || (dd && ph.includes(dd)) || (qq && digits(qq) && ph.includes(digits(qq)));
+    });
+  }
+
+  // ✅ ให้มี fallback จาก state (API) ก่อน แล้วค่อย customerMap
+  function ensureCustomerFromOPD(opd){
+    const fromMap = (getCustomerList().find(x=>x.opd===opd) || {opd, name:'', phone:''});
+    const d = state.debt.get(opd) || {};
+    const c = state.credit.get(opd) || {};
+    return {
+      opd,
+      name: (fromMap.name || d.name || c.name || ''),
+      phone:(fromMap.phone|| d.phone|| c.phone|| '')
+    };
+  }
+
+  // ✅ สำหรับ csState เรียก fallback
+  function getCustomerFallback(opd){
+    const d = state.debt.get(opd) || {};
+    const c = state.credit.get(opd) || {};
+    // pending อาจจะมีชื่อ/เบอร์ด้วย
+    let pName = '', pPhone = '';
+    state.pending.forEach(v=>{
+      if(v && v.opd === opd){
+        pName = pName || (v.name||'');
+        pPhone= pPhone|| (v.phone||'');
+      }
+    });
+    return {
+      name: d.name || c.name || pName || '',
+      phone: d.phone || c.phone || pPhone || ''
+    };
+  }
+
+  function histKeyDebt(opd){ return `debt:${opd}`; }
+  function histKeyCredit(opd){ return `credit:${opd}`; }
+  function pendingKey(opd,item,unit){ return `${opd}|${item}|${unit}`; }
+  function histKeyPending(opd,item,unit){ return `pending:${pendingKey(opd,item,unit)}`; }
+
+  function pushHist(key, tx){
+    if(!state.hist.has(key)) state.hist.set(key, []);
+    state.hist.get(key).unshift(tx);
+  }
+
+  function typeLabel(section, mode){
+    const map = {
+      debt:   { add:'เพิ่มหนี้', pay:'รับชำระ', adjust:'ปรับยอด' },
+      credit: { topup:'เติมเงิน/ว้อยเชอร์', spend:'ใช้เงิน', adjust:'ปรับยอด' },
+      pending:{ add:'เพิ่มสิทธิ์/แพกเกจ', use:'ทำแล้ว (ตัดออก)', adjust:'ปรับยอด' }
+    };
+    return (map[section] && map[section][mode]) ? map[section][mode] : 'ทำรายการ';
+  }
+
+  // ---------- render ----------
+  function applySearch(){
+    state.q = (document.getElementById('arSearch')?.value || '').trim();
+    renderAll();
+  }
+  function clearSearch(){
+    const el = document.getElementById('arSearch');
+    if(el) el.value = '';
+    state.q = '';
+    renderAll();
+  }
+
+  function renderStats(){
+    let debtPeople = 0, debtSum = 0;
+    state.debt.forEach(v=>{
+      const b = Number(v.balance||0);
+      if(b>0){ debtPeople++; debtSum += b; }
+    });
+    document.getElementById('arStatDebt').textContent = `ลูกค้าค้างเรา: ${debtPeople} คน • ${money(debtSum)} บาท`;
+
+    let creditPeople = 0, creditSum = 0;
+    state.credit.forEach(v=>{
+      const b = Number(v.balance||0);
+      if(b>0){ creditPeople++; creditSum += b; }
+    });
+    document.getElementById('arStatCredit').textContent = `เราค้างลูกค้า: ${creditPeople} คน • ${money(creditSum)} บาท`;
+
+    let pendingLines = 0;
+    state.pending.forEach(v=>{
+      const q = Number(v.qty||0);
+      if(q>0) pendingLines++;
+    });
+    document.getElementById('arStatPending').textContent = `ค้างทำ: ${pendingLines} รายการ`;
+  }
+
+  function passesSearchCustomer(c, extraText){
+    const q = norm(state.q);
+    const d = digits(state.q);
+    if(!q && !d) return true;
+
+    // เพิ่มการ match จากชื่อ/เบอร์ใน state ด้วย
+    const extra = norm(extraText || '');
+    const p = digits(extraText || '');
+
+    return norm(c.opd).includes(q)
+      || norm(c.name).includes(q)
+      || digits(c.phone).includes(d)
+      || (q && extra.includes(q))
+      || (d && p.includes(d));
+  }
+
+  function renderDebt(){
+    const body = document.getElementById('arDebtBody');
+    const empty = document.getElementById('arDebtEmpty');
+    if(!body) return;
+
+    const rows = [];
+    state.debt.forEach((v, opd)=>{
+      const c = ensureCustomerFromOPD(opd);
+      const extra = `${v.name||''} ${v.phone||''}`;
+      if(!passesSearchCustomer(c, extra)) return;
+
+      const bal = Number(v.balance||0);
+      if(bal<=0) return;
+
+      rows.push({
+        opd,
+        name: (c.name || v.name || '-') ,
+        phone:(c.phone|| v.phone|| '-') ,
+        balance: bal,
+        last_at: v.last_at || null
+      });
+    });
+
+    rows.sort((a,b)=> (b.balance - a.balance));
+
+    body.innerHTML = rows.map(r=>{
+      const last = r.last_at ? fmtDate(r.last_at) : '-';
+      return `
+        <tr>
+          <td style="text-align:center;">${safe(r.opd)}</td>
+          <td><strong>${safe(r.name)}</strong></td>
+          <td style="text-align:center;">${safe(r.phone)}</td>
+          <td style="text-align:right;font-weight:1000;color:#b91c1c;">${money(r.balance)}</td>
+          <td style="text-align:center;">${safe(last)}</td>
+          <td style="text-align:center;">
+            <button class="btn btn-outline" onclick="AR.openTxModal({section:'debt', mode:'pay', opd:'${safe(r.opd)}'})">รับชำระ</button>
+            <button class="btn btn-outline" onclick="AR.openTxModal({section:'debt', mode:'add', opd:'${safe(r.opd)}'})">เพิ่มหนี้</button>
+            <button class="btn btn-primary" onclick="AR.openHistoryOnly({section:'debt', opd:'${safe(r.opd)}'})">ดูประวัติ</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    empty.style.display = rows.length ? 'none' : 'block';
+  }
+
+  function renderCredit(){
+    const body = document.getElementById('arCreditBody');
+    const empty = document.getElementById('arCreditEmpty');
+    if(!body) return;
+
+    const rows = [];
+    state.credit.forEach((v, opd)=>{
+      const c = ensureCustomerFromOPD(opd);
+      const extra = `${v.name||''} ${v.phone||''}`;
+      if(!passesSearchCustomer(c, extra)) return;
+
+      const bal = Number(v.balance||0);
+      if(bal<=0) return;
+
+      rows.push({
+        opd,
+        name: (c.name || v.name || '-') ,
+        phone:(c.phone|| v.phone|| '-') ,
+        balance: bal,
+        last_at: v.last_at || null
+      });
+    });
+
+    rows.sort((a,b)=> (b.balance - a.balance));
+
+    body.innerHTML = rows.map(r=>{
+      const last = r.last_at ? fmtDate(r.last_at) : '-';
+      return `
+        <tr>
+          <td style="text-align:center;">${safe(r.opd)}</td>
+          <td><strong>${safe(r.name)}</strong></td>
+          <td style="text-align:center;">${safe(r.phone)}</td>
+          <td style="text-align:right;font-weight:1000;color:#0b7660;">${money(r.balance)}</td>
+          <td style="text-align:center;">${safe(last)}</td>
+          <td style="text-align:center;">
+            <button class="btn btn-outline" onclick="AR.openTxModal({section:'credit', mode:'topup', opd:'${safe(r.opd)}'})">เติมเงิน</button>
+            <button class="btn btn-outline" onclick="AR.openTxModal({section:'credit', mode:'spend', opd:'${safe(r.opd)}'})">ใช้เงิน</button>
+            <button class="btn btn-primary" onclick="AR.openHistoryOnly({section:'credit', opd:'${safe(r.opd)}'})">ดูประวัติ</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    empty.style.display = rows.length ? 'none' : 'block';
+  }
+
+  function renderPending(){
+    const body = document.getElementById('arPendingBody');
+    const empty = document.getElementById('arPendingEmpty');
+    if(!body) return;
+
+    const rows = [];
+    state.pending.forEach((v, key)=>{
+      const c = ensureCustomerFromOPD(v.opd);
+      const extra = `${v.name||''} ${v.phone||''}`;
+      if(!passesSearchCustomer(c, extra)) return;
+
+      const qty = Number(v.qty||0);
+      if(qty<=0) return;
+
+      rows.push({
+        key,
+        opd: v.opd,
+        name: (c.name || v.name || '-') ,
+        phone:(c.phone|| v.phone|| '-') ,
+        item: v.item,
+        unit: v.unit,
+        qty,
+        last_at: v.last_at || null
+      });
+    });
+
+    rows.sort((a,b)=> (norm(a.name).localeCompare(norm(b.name))));
+
+    body.innerHTML = rows.map(r=>{
+      const last = r.last_at ? fmtDate(r.last_at) : '-';
+      return `
+        <tr>
+          <td style="text-align:center;">${safe(r.opd)}</td>
+          <td><strong>${safe(r.name)}</strong></td>
+          <td style="text-align:center;">${safe(r.phone)}</td>
+          <td>${safe(r.item)}</td>
+          <td style="text-align:center;">${safe(r.unit)}</td>
+          <td style="text-align:center;font-weight:1000;color:#0b7660;">${Math.floor(r.qty)}</td>
+          <td style="text-align:center;">${safe(last)}</td>
+          <td style="text-align:center;">
+            <button class="btn btn-outline" onclick="AR.openTxModal({section:'pending', mode:'use', pending_key:'${safe(r.key)}'})">ทำแล้ว</button>
+            <button class="btn btn-outline" onclick="AR.openTxModal({section:'pending', mode:'add', opd:'${safe(r.opd)}', item:'${safe(r.item)}', unit:'${safe(r.unit)}'})">เพิ่ม</button>
+            <button class="btn btn-primary" onclick="AR.openHistoryOnly({section:'pending', pending_key:'${safe(r.key)}'})">ดูประวัติ</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    empty.style.display = rows.length ? 'none' : 'block';
+  }
+
+  function renderAll(){
+    renderStats();
+    renderDebt();
+    renderCredit();
+    renderPending();
+  }
+
+  // ---------- server sync ----------
+  async function refreshFromServer(){
+    const [arSum, vcSum, workSum] = await Promise.all([
+      apiGet('/api/ar_summary'),
+      apiGet('/api/voucher_summary'),
+      apiGet('/api/work_summary')
+    ]);
+
+    // debt ✅ เก็บ name/phone ด้วย
+    state.debt.clear();
+    (arSum || []).forEach(r=>{
+      const opd = String(r.opd||'').trim();
+      if(!opd) return;
+      state.debt.set(opd, {
+        balance: Number(r.balance||0),
+        last_at: r.last_tx_date || r.last_pay_date || '',
+        name: r.name || '',
+        phone: r.phone || ''
+      });
+    });
+
+    // credit ✅ เก็บ name/phone ด้วย
+    state.credit.clear();
+    (vcSum || []).forEach(r=>{
+      const opd = String(r.opd||'').trim();
+      if(!opd) return;
+      state.credit.set(opd, {
+        balance: Number(r.balance||0),
+        last_at: r.last_tx_date || '',
+        name: r.name || '',
+        phone: r.phone || ''
+      });
+    });
+
+    // pending (work_summary ต่อคน + items[])
+    state.pending.clear();
+    (workSum || []).forEach(row=>{
+      const opd = String(row.opd||'').trim();
+      if(!opd) return;
+
+      const c = ensureCustomerFromOPD(opd);
+      const last = row.last_tx_date || '';
+
+      (row.items || []).forEach(it=>{
+        const item = String(it.item||'').trim();
+        const qty  = Number(it.qty_pending||0);
+
+        // หมายเหตุ: backend ยังไม่แยก unit
+        const unit = 'ครั้ง';
+
+        if(!item) return;
+        const key = pendingKey(opd, item, unit);
+
+        state.pending.set(key, {
+          opd,
+          name: (c.name || row.name || ''),
+          phone:(c.phone|| row.phone|| ''),
+          item,
+          unit,
+          qty,
+          last_at: last
+        });
+      });
+    });
+
+    renderAll();
+  }
+
+  // ---------- modal ----------
+  function openTxModal(ctx){
+    state.modal = { section: ctx.section, mode: ctx.mode, target: null };
+
+    const dateEl = document.getElementById('arTxDate');
+    if(dateEl) dateEl.value = todayISO();
+
+    const findEl = document.getElementById('arTxFind');
+    const amtEl = document.getElementById('arTxAmount');
+    const noteEl= document.getElementById('arTxNote');
+    const itemEl= document.getElementById('arTxItem');
+    const qtyEl = document.getElementById('arTxQty');
+
+    if(findEl) findEl.value = '';
+    if(amtEl) amtEl.value = '';
+    if(noteEl) noteEl.value = '';
+    if(itemEl) itemEl.value = '';
+    if(qtyEl) qtyEl.value = 1;
+
+    const isPending = ctx.section === 'pending';
+    document.getElementById('arTxAmountRow').style.display = isPending ? 'none' : '';
+    document.getElementById('arTxPayRow').style.display =
+      (ctx.section==='debt' && ctx.mode==='pay') ? '' : (ctx.section==='credit' ? '' : 'none');
+
+    document.getElementById('arTxItemRow').style.display = isPending ? '' : 'none';
+    document.getElementById('arTxUnitRow').style.display = isPending ? '' : 'none';
+    document.getElementById('arTxQtyRow').style.display  = isPending ? '' : 'none';
+
+    document.getElementById('arTxTitle').textContent = `${typeLabel(ctx.section, ctx.mode)}`;
+    document.getElementById('arTxSub').textContent   = 'อัปเดตยอดและเก็บประวัติ';
+
+    if(ctx.pending_key){
+      const v = state.pending.get(ctx.pending_key);
+      if(v){
+        const c = ensureCustomerFromOPD(v.opd);
+        state.modal.target = { type:'pending', key: ctx.pending_key, opd: v.opd, item: v.item, unit: v.unit, customer: c };
+        setModalCustomer(c);
+        if(itemEl) itemEl.value = v.item;
+        const unitEl = document.getElementById('arTxUnit');
+        if(unitEl) unitEl.value = v.unit;
+        renderModalHistory();
+      }
+    } else if(ctx.opd){
+      const c = ensureCustomerFromOPD(ctx.opd);
+      state.modal.target = { type:'customer', opd: ctx.opd, customer: c };
+      setModalCustomer(c);
+
+      if(isPending){
+        if(ctx.item) itemEl.value = ctx.item;
+        const unitEl = document.getElementById('arTxUnit');
+        if(unitEl && ctx.unit) unitEl.value = ctx.unit;
+      }
+
+      renderModalHistory();
+    } else {
+      setModalCustomer(null);
+      renderModalHistory();
+    }
+
+    const ov = document.getElementById('arTxOverlay');
+    ov.style.display = 'flex';
+    ov.setAttribute('aria-hidden','false');
+    setTimeout(()=> (findEl ? findEl.focus() : null), 0);
+  }
+
+  function closeTxModal(){
+    const ov = document.getElementById('arTxOverlay');
+    ov.style.display = 'none';
+    ov.setAttribute('aria-hidden','true');
+    state.modal = { section:null, mode:null, target:null };
+  }
+
+  function setModalCustomer(c){
+    const nameEl = document.getElementById('arTxName');
+    const opdEl  = document.getElementById('arTxOPD');
+    const phEl   = document.getElementById('arTxPhone');
+
+    if(!c){
+      nameEl.textContent = '-';
+      opdEl.textContent = '-';
+      phEl.textContent = '-';
+      document.getElementById('arTxBalance').textContent = '0';
+      document.getElementById('arTxBalanceHint').textContent = '—';
+      return;
+    }
+
+    // ✅ ทำให้ชื่อ/เบอร์ขึ้นจาก state ด้วย
+    const vDebt = state.debt.get(c.opd) || {};
+    const vCred = state.credit.get(c.opd) || {};
+    const showName = c.name || vDebt.name || vCred.name || '-';
+    const showPhone= c.phone|| vDebt.phone|| vCred.phone|| '-';
+
+    nameEl.textContent = showName;
+    opdEl.textContent  = c.opd || '-';
+    phEl.textContent   = showPhone;
+
+    const sec = state.modal.section;
+    if(sec === 'debt'){
+      const cur = state.debt.get(c.opd)?.balance || 0;
+      document.getElementById('arTxBalance').textContent = `${money(cur)} บาท`;
+      document.getElementById('arTxBalanceHint').textContent = 'ค้างอยู่ (ลูกค้าต้องจ่ายเรา)';
+    } else if(sec === 'credit'){
+      const cur = state.credit.get(c.opd)?.balance || 0;
+      document.getElementById('arTxBalance').textContent = `${money(cur)} บาท`;
+      document.getElementById('arTxBalanceHint').textContent = 'เงินที่ลูกค้าจ่ายไว้ก่อน (เราเป็นหนี้ลูกค้า)';
+    } else {
+      document.getElementById('arTxBalance').textContent = 'ดูเป็น “คงเหลือ” รายการด้านล่าง';
+      document.getElementById('arTxBalanceHint').textContent = 'ค้างทำเป็น ครั้ง/ชิ้น';
+    }
+  }
+
+  function openHistoryOnly(ctx){
+    if(ctx.section==='pending'){
+      openTxModal({section:'pending', mode:'use', pending_key: ctx.pending_key});
+    } else {
+      openTxModal({section:ctx.section, mode:(ctx.section==='debt'?'pay':'spend'), opd: ctx.opd});
+    }
+    setTimeout(()=>{
+      const hist = document.getElementById('arTxHistTable');
+      if(hist) hist.scrollIntoView({behavior:'smooth', block:'start'});
+    }, 60);
+  }
+
+  function pickFirstMatch(){
+    const q = (document.getElementById('arTxFind')?.value || '').trim();
+    const m = findMatches(q)[0];
+    if(!m) return alert('ไม่พบลูกค้าตามที่พิมพ์');
+    state.modal.target = { type:'customer', opd: m.opd, customer: m };
+    setModalCustomer(m);
+    renderModalHistory();
+  }
+
+  function renderModalHistory(){
+    const empty = document.getElementById('arTxHistEmpty');
+    const tbody = document.getElementById('arTxHistBody');
+    const table = document.getElementById('arTxHistTable');
+    if(!tbody || !table || !empty) return;
+
+    let key = null;
+
+    if(state.modal.section === 'pending'){
+      let pk = null;
+      if(state.modal.target?.type==='pending') pk = state.modal.target.key;
+      if(state.modal.target?.type==='customer'){
+        const item = (document.getElementById('arTxItem')?.value || '').trim();
+        const unit = (document.getElementById('arTxUnit')?.value || 'ครั้ง').trim();
+        if(item) pk = pendingKey(state.modal.target.opd, item, unit);
+      }
+      if(pk){
+        const parts = pk.split('|');
+        key = histKeyPending(parts[0], parts[1], parts[2]);
+      }
+    } else if(state.modal.section === 'debt'){
+      const opd = state.modal.target?.opd || state.modal.target?.customer?.opd;
+      if(opd) key = histKeyDebt(opd);
+    } else if(state.modal.section === 'credit'){
+      const opd = state.modal.target?.opd || state.modal.target?.customer?.opd;
+      if(opd) key = histKeyCredit(opd);
+    }
+
+    const list = key ? (state.hist.get(key) || []) : [];
+    if(list.length === 0){
+      empty.style.display = 'block';
+      table.style.display = 'none';
+      tbody.innerHTML = '';
+      return;
+    }
+
+    empty.style.display = 'none';
+    table.style.display = 'table';
+
+    tbody.innerHTML = list.slice(0, 30).map(tx=>{
+      const amt = tx.display_amount || tx.amount_text || '';
+      return `
+        <tr>
+          <td style="text-align:center;">${safe(fmtDate(tx.date))}</td>
+          <td style="text-align:center;font-weight:900;color:#0b7660;">${safe(tx.type)}</td>
+          <td>${safe(tx.detail || '-')}</td>
+          <td style="text-align:right;font-weight:900;">${safe(amt)}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // ---------- submitTx: ยิงเข้า Supabase ผ่าน backend ----------
+  async function submitTx(){
+    const sec  = state.modal.section;
+    const mode = state.modal.mode;
+
+    if(!state.modal.target || !state.modal.target.customer){
+      return alert('กรุณาเลือกลูกค้าก่อน (พิมพ์ค้นหาแล้วกด “เลือก”)');
+    }
+
+    const c = state.modal.target.customer;
+    const opd = c.opd;
+
+    const date = (document.getElementById('arTxDate')?.value || '').slice(0,10);
+    if(!date) return alert('กรุณาเลือกวันที่');
+
+    const note = (document.getElementById('arTxNote')?.value || '').trim();
+    const payMethod = (document.getElementById('arTxPayMethod')?.value || 'โอน').trim();
+
+    const txBase = { date, type: typeLabel(sec, mode), detail: '', display_amount: '' };
+
+    try{
+      // --- DEBT -> /api/ar_tx ---
+      if(sec === 'debt'){
+        const amt = Math.floor(Number(document.getElementById('arTxAmount')?.value || 0));
+        if(!amt || amt<=0) return alert('กรุณากรอกจำนวนเงิน (>0)');
+
+        if(mode === 'add'){
+          await apiPost('/api/ar_tx', { opd, tx_date: date, tx_type: 'add', amount: amt, note });
+          txBase.detail = note ? note : 'เพิ่มหนี้';
+          txBase.display_amount = `+${money(amt)} บาท`;
+          pushHist(histKeyDebt(opd), txBase);
+        }
+
+        if(mode === 'pay'){
+          const note2 = `รับชำระ (${payMethod})${note ? ' • ' + note : ''}`;
+          await apiPost('/api/ar_tx', { opd, tx_date: date, tx_type: 'pay', amount: amt, note: note2 });
+          txBase.detail = note2;
+          txBase.display_amount = `-${money(amt)} บาท`;
+          pushHist(histKeyDebt(opd), txBase);
+        }
+      }
+
+      // --- CREDIT -> /api/voucher_tx ---
+      if(sec === 'credit'){
+        const amt = Math.floor(Number(document.getElementById('arTxAmount')?.value || 0));
+        if(!amt || amt<=0) return alert('กรุณากรอกจำนวนเงิน (>0)');
+
+        if(mode === 'topup'){
+          const note2 = note ? note : `เติมเงิน (${payMethod})`;
+          await apiPost('/api/voucher_tx', { opd, tx_date: date, tx_type: 'topup', amount: amt, note: note2 });
+          txBase.detail = note2;
+          txBase.display_amount = `+${money(amt)} บาท`;
+          pushHist(histKeyCredit(opd), txBase);
+        }
+
+        if(mode === 'spend'){
+          await apiPost('/api/voucher_tx', { opd, tx_date: date, tx_type: 'use', amount: amt, note });
+          txBase.detail = `ใช้เงิน${note ? ' • ' + note : ''}`;
+          txBase.display_amount = `-${money(amt)} บาท`;
+          pushHist(histKeyCredit(opd), txBase);
+        }
+      }
+
+      // --- PENDING -> /api/work_tx ---
+      if(sec === 'pending'){
+        const item = (document.getElementById('arTxItem')?.value || '').trim();
+        const unit = (document.getElementById('arTxUnit')?.value || 'ครั้ง').trim();
+        const qty  = Math.max(1, Math.floor(Number(document.getElementById('arTxQty')?.value || 1)));
+
+        if(!item) return alert('กรุณากรอกชื่อรายการค้างทำ');
+
+        if(mode === 'add'){
+          await apiPost('/api/work_tx', { opd, tx_date: date, tx_type: 'add', item, qty, note });
+          txBase.detail = note ? note : 'เพิ่มสิทธิ์/แพกเกจ';
+          txBase.display_amount = `+${qty} ${unit}`;
+          pushHist(histKeyPending(opd, item, unit), txBase);
+        }
+
+        if(mode === 'use'){
+          await apiPost('/api/work_tx', { opd, tx_date: date, tx_type: 'done', item, qty, note });
+          txBase.detail = note ? note : 'ทำแล้ว';
+          txBase.display_amount = `-${qty} ${unit}`;
+          pushHist(histKeyPending(opd, item, unit), txBase);
+        }
+      }
+
+      await refreshFromServer();
+
+      setModalCustomer(c);
+      renderModalHistory();
+
+      const amtEl = document.getElementById('arTxAmount');
+      const noteEl= document.getElementById('arTxNote');
+      if(amtEl) amtEl.value = '';
+      if(noteEl) noteEl.value = '';
+
+      alert('✅ บันทึกเข้า Supabase แล้ว');
+    }catch(err){
+      console.error(err);
+      alert('❌ บันทึกไม่สำเร็จ: ' + (err?.message || err));
+    }
+  }
+
+  // ---------- bindings ----------
+  function bind(){
+    const s = document.getElementById('arSearch');
+    if(s){
+      s.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter'){ e.preventDefault(); applySearch(); }
+      });
+    }
+    const f = document.getElementById('arTxFind');
+    if(f){
+      f.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter'){ e.preventDefault(); pickFirstMatch(); }
+      });
+    }
+    const itemEl = document.getElementById('arTxItem');
+    const unitEl = document.getElementById('arTxUnit');
+    if(itemEl) itemEl.addEventListener('input', ()=> renderModalHistory());
+    if(unitEl) unitEl.addEventListener('change', ()=> renderModalHistory());
+  }
+
+  // ---------- init ----------
+  async function init(){
+    bind();
+    try{
+      await refreshFromServer();
+    }catch(e){
+      console.error(e);
+      renderAll();
+    }
+  }
+
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape'){
+      const ov = document.getElementById('arTxOverlay');
+      if(ov && ov.style.display === 'flex') closeTxModal();
+    }
+  });
+
+  return {
+    init,
+    applySearch,
+    clearSearch,
+    openTxModal,
+    closeTxModal,
+    submitTx,
+    pickFirstMatch,
+    openHistoryOnly,
+    refreshFromServer,
+    getCustomerFallback // ✅ ให้ csState เรียกได้
+  };
+})();
+
+document.addEventListener('DOMContentLoaded', () => {
+  try{ AR.init(); }catch(e){ console.error(e); }
+});
+
+// ทำเป็นลิสรายการย่อยทั้งหมด (flatten) เพื่อใช้กับ datalist ใน modal
+function flattenCatalogNames(){
+  const out = [];
+  const seen = new Set();
+
+  Object.entries(subOptionsMap || {}).forEach(([cat, arr])=>{
+    (arr || []).forEach(o=>{
+      const name = String((typeof o === 'string') ? o : (o?.name || '')).trim();
+      if(!name) return;
+
+      // จะให้โชว์หมวดด้วยก็ได้ (สวยเวลา search)
+      const label = `${name} (${cat})`;
+
+      if(seen.has(label)) return;
+      seen.add(label);
+      out.push({ label, name, cat, raw:o });
+    });
+  });
+
+  return out;
+}
+
+function fillArTxItemDatalist(){
+  const dl = document.getElementById('arTxItemList');
+  if(!dl) return;
+
+  const items = flattenCatalogNames();
+  dl.innerHTML = items.map(x => `<option value="${safe(x.name)}"></option>`).join('');
+}
+document.addEventListener('DOMContentLoaded', async () => {
+  try{
+    await loadCatalog();        // โหลดจาก /api/products_map
+    fillArTxItemDatalist();     // เติม datalist ให้ช่อง “รายการ” ใน modal
+  }catch(e){
+    console.error(e);
+  }
+});
 
 
   </script>
