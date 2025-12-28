@@ -1044,7 +1044,6 @@ def api_sales():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route("/api/save_sales", methods=["POST"])
 @login_required
 def save_sales():
@@ -1063,6 +1062,7 @@ def save_sales():
             date = safe_date_str(rec.get("date"))
             opd_4 = normalize_opd(rec.get("opd"))
 
+            # --- จัดการ Amount ---
             amt = rec.get("amount")
             if amt in ("", None):
                 amt = None
@@ -1072,16 +1072,27 @@ def save_sales():
                 except Exception:
                     amt = None
 
+            # --- 1. แก้ไขจุดเสี่ยง Upsert ลูกค้า ---
+            # ส่งเฉพาะค่าที่มีจริง ๆ เพื่อป้องกัน Error 500 จากการส่ง string ว่างไปเข้าช่องตัวเลข
             if opd_4 and rec.get("name"):
                 customer_data = {
                     "opd": opd_4,
                     "name": rec.get("name", ""),
                     "phone": rec.get("phone", ""),
-                    "birthMonth": rec.get("birthMonth", ""),
-                    "profile": rec.get("profile", ""),
                 }
-                supabase.table("customers").upsert(customer_data, on_conflict=["opd"]).execute()
+                # เพิ่มเฉพาะถ้ามีข้อมูลส่งมา (ไม่ส่งค่าว่างไปทับของเดิม)
+                if rec.get("birthMonth"):
+                    customer_data["birthMonth"] = rec.get("birthMonth")
+                if rec.get("profile"):
+                    customer_data["profile"] = rec.get("profile")
+                
+                try:
+                    supabase.table("customers").upsert(customer_data, on_conflict=["opd"]).execute()
+                except Exception as e:
+                    # ถ้าอัปเดตลูกค้าไม่ผ่าน (เช่น Data Type ผิด) ให้ข้ามไปบันทึกยอดขายเลย ไม่ต้อง Crash
+                    print(f"Warning: Customer upsert failed for {opd_4}: {e}")
 
+            # --- เตรียมรายการสินค้า ---
             items_in = rec.get("items")
             if items_in is None:
                 items_in = rec.get("item")
@@ -1099,34 +1110,45 @@ def save_sales():
             }
 
             rec_id = rec.get("id")
+            
+            # --- กรณีแก้ไข (Update) ---
             if rec_id:
                 supabase.table("sales_records").update(rec_db).eq("id", rec_id).execute()
                 updated_count += 1
                 continue
 
+            # --- 2. แก้ไขจุดเสี่ยงเช็คซ้ำ (Duplicate Check) ---
+            # เอา .eq("item", ...) ออก เพราะการเทียบ JSON Array มักทำ Error 500
+            # ใช้แค่ OPD, Date, Amount, Payment, Note ก็เพียงพอแล้ว
             dup_q = (
                 supabase.table("sales_records")
                 .select("id")
                 .eq("opd", rec_db["opd"])
                 .eq("date", rec_db["date"])
-                .eq("item", rec_db["item"])
             )
             if rec_db.get("amount") is not None:
                 dup_q = dup_q.eq("amount", rec_db["amount"])
             if rec_db.get("payment") is not None:
                 dup_q = dup_q.eq("payment", rec_db["payment"])
+            
+            # เช็ค Note ด้วย (ถ้ามี)
             if rec_db.get("note"):
                 dup_q = dup_q.eq("note", rec_db["note"])
 
             dup = dup_q.execute().data
             if dup:
+                # ถ้าเจอซ้ำ ข้ามเลย (ไม่ Error)
                 continue
 
+            # บันทึกยอดขาย
             supabase.table("sales_records").insert(rec_db).execute()
             inserted_count += 1
 
         return jsonify({"message": "บันทึกสำเร็จ", "inserted": inserted_count, "updated": updated_count})
+    
     except Exception as e:
+        # พิมพ์ Error ลง Console เพื่อให้เห็นชัดเจนตอน Debug
+        print(f"SAVE SALES ERROR: {e}") 
         return jsonify({"error": str(e)}), 500
 
 
