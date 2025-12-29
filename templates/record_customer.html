@@ -172,6 +172,8 @@
       .col-6,.col-4,.col-3{ grid-column: span 12; }
     }
   </style>
+
+  <script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>
 </head>
 
 <body>
@@ -244,6 +246,15 @@
           <div class="modal-title" id="formModalTitle">➕ เพิ่มลูกค้าใหม่</div>
           <div class="modal-sub" id="formModalSub">บันทึกเข้าฐาน (ตาราง customers ผ่าน Flask API)</div>
         </div>
+        <div style="margin-bottom:15px; padding:10px; background:#f0f9ff; border-radius:8px; border:1px dashed #0ea5e9; display:flex; align-items:center; gap:10px;">
+  <span style="font-size:20px;">🪪</span>
+  <div style="flex:1;">
+    <div style="font-weight:bold; color:#0369a1;">สแกนบัตรประชาชน</div>
+    <div style="font-size:10px; color:#64748b;">อัปโหลดรูปเพื่อกรอกข้อมูลอัตโนมัติ</div>
+  </div>
+  <input type="file" id="idCardInput" accept="image/*" style="display:none" onchange="processIDCard(this)">
+  <button class="btn btn-primary" onclick="$('#idCardInput').click()">📸 เลือกรูป / ถ่ายรูป</button>
+</div>
         <button class="btn btn-ghost btn-icon" onclick="closeModal('addModal')">✕</button>
       </div>
 
@@ -998,6 +1009,119 @@
 
     // Init
     loadData();
+
+    // =========================
+  // 🪪 OCR Function (Tesseract.js)
+  // =========================
+  async function processIDCard(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // แสดงสถานะว่ากำลังทำงาน
+    showToast('กำลังอ่านข้อมูลจากบัตร รอสักครู่นะ...', 'warn');
+    const btnText = input.nextElementSibling.innerText;
+    input.nextElementSibling.innerText = '⏳ กำลังสแกน...';
+    input.nextElementSibling.disabled = true;
+
+    try {
+      // เริ่มกระบวนการ OCR (ใช้ภาษาไทย + อังกฤษ)
+      const { data: { text } } = await Tesseract.recognize(
+        file,
+        'tha+eng', 
+        { logger: m => console.log(m) }
+      );
+
+      console.log("Raw OCR Text:", text); // ดู log เผื่อเอาไปจูน Regex
+
+      // --- ส่วนของการแกะข้อความ (Regex Parsing) ---
+      
+      // 1. เลขบัตรประชาชน (หาเลข 13 หลัก)
+      // พยายามหาเลขกลุ่ม 1-4-5-2-1 หลัก หรือเลขติดกัน 13 ตัว
+      const idMatch = text.match(/(\d\s?-?){12}\d/);
+      if (idMatch) {
+        let cleanID = idMatch[0].replace(/[^0-9]/g, '');
+        if (cleanID.length === 13) {
+          // จัด format x-xxxx-xxxxx-xx-x
+          cleanID = `${cleanID[0]}-${cleanID.slice(1,5)}-${cleanID.slice(5,10)}-${cleanID.slice(10,12)}-${cleanID[12]}`;
+          $('#f_national_id').value = cleanID;
+        }
+      }
+
+      // 2. ชื่อ-นามสกุล (ภาษาไทย)
+      // หาคำว่า "ชื่อ" หรือ "Name" แล้วเอาบรรทัดนั้น หรือบรรทัดถัดไป
+      const lines = text.split('\n');
+      let foundName = false;
+      
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        
+        // ถ้าเจอบรรทัดที่มีคำว่า "ชื่อ" และ "สกุล" ในบรรทัดเดียวกัน (แบบบัตรใหม่)
+        if (line.includes('ชื่อ') && line.includes('สกุล')) {
+           // พยายามตัดคำขยะออกเหลือแต่ชื่อไทย
+           let cleanName = line.replace(/ชื่อ|ตัว|สกุล|Last|name|Name/g, '').trim();
+           // ลบตัวอักษรภาษาอังกฤษออก (เผื่อติดมา)
+           cleanName = cleanName.replace(/[A-Za-z]/g, '').trim();
+           $('#f_full_name').value = cleanName;
+           // แยกชื่อเล่น (เดาจากชื่อหน้า)
+           $('#f_name').value = "คุณ" + cleanName.split(' ')[0];
+           foundName = true;
+           break;
+        }
+        
+        // กรณีบัตรเก่า หรือ OCR แยกบรรทัด (หาคำว่า ชื่อ นำหน้า)
+        if (!foundName && line.startsWith('ชื่อ')) {
+           let cleanName = line.replace('ชื่อ', '').trim();
+           // อาจจะต้องดูบรรทัดถัดไปว่าเป็นนามสกุลไหม (อันนี้ต้องจูนตามผลลัพธ์จริง)
+           $('#f_full_name').value = cleanName;
+           $('#f_name').value = "คุณ" + cleanName.split(' ')[0];
+           foundName = true;
+        }
+      }
+
+      // 3. วันเกิด (dd/mm/yyyy)
+      // หาคำว่า "เกิด" หรือ "Birth"
+      const birthMatch = text.match(/\d{1,2}\s+(ม.ค.|ก.พ.|มี.ค.|เม.ย.|พ.ค.|มิ.ย.|ก.ค.|ส.ค.|ก.ย.|ต.ค.|พ.ย.|ธ.ค.)\s+\d{4}/);
+      if (birthMatch) {
+        // แปลงเดือนไทยเป็นเลข
+        const thMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+        const parts = birthMatch[0].split(/\s+/); // [25, พ.ค., 2530]
+        const d = parts[0].padStart(2, '0');
+        const mIndex = thMonths.indexOf(parts[1]);
+        const y = parts[2];
+        
+        if (mIndex > -1) {
+           const m = String(mIndex + 1).padStart(2, '0');
+           $('#f_birth_th').value = `${d}/${m}/${y}`;
+           $('#f_birthMonth').value = m;
+        }
+      }
+
+      // 4. ที่อยู่
+      // หาบรรทัดที่มีคำว่า "ที่อยู่" หรือเริ่มด้วยเลขที่บ้าน
+      let address = "";
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].includes('ที่อยู่')) {
+          // เอาบรรทัดนี้และบรรทัดถัดไปมารวมกัน
+          let addrLine = lines[i].replace('ที่อยู่', '').trim();
+          if(lines[i+1]) addrLine += " " + lines[i+1];
+          // ลบคำว่า Address ออก
+          addrLine = addrLine.replace(/Address|Date|of|Birth/gi, '').trim();
+          $('#f_address').value = addrLine;
+          break;
+        }
+      }
+
+      showToast('อ่านข้อมูลเรียบร้อย ตรวจสอบความถูกต้องอีกครั้งนะ');
+
+    } catch (err) {
+      console.error(err);
+      showToast('อ่านบัตรไม่สำเร็จ ลองถ่ายรูปใหม่ให้ชัดขึ้นนะ', 'error');
+    } finally {
+      input.value = ''; // เคลียร์ไฟล์
+      input.nextElementSibling.innerText = btnText;
+      input.nextElementSibling.disabled = false;
+    }
+  }
   </script>
 </body>
 </html>
