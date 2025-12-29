@@ -3,786 +3,1125 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>บันทึกข้อมูลลูกค้า</title>
+  <title>ทะเบียนลูกค้า (Profile)</title>
+
   <style>
     :root{
-      --bg:#f7faf9; --card:#ffffff; --muted:#6b7280; --text:#0f172a;
-      --primary:#0ea5a4; --primary-600:#0c8e8d; --ring:#9fe8e7;
-      --line:#e5e7eb; --danger:#ef4444; --warn:#f59e0b; --success:#22c55e;
-      --radius:14px;
+      --bg:#f8fafc; --card:#ffffff; --text:#0f172a;
+      --primary:#0f766e; --primary-600:#0d9488; --ring:#ccfbf1;
+      --line:#e2e8f0; --danger:#ef4444; --warn:#f59e0b; --success:#22c55e;
+      --radius:12px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; font-family: "Prompt","Segoe UI",system-ui,-apple-system,sans-serif;
+      font-family:'Prompt', sans-serif;
       color:var(--text); background:var(--bg);
-      font-size: 11px; /* ขนาดเล็ก */
+      font-size: 12px; margin:0;
     }
 
-    .container{ max-width:1100px; margin: 18px auto 140px auto; padding: 0 12px; }
+    .container{ max-width:1200px; margin: 20px auto 120px; padding: 0 16px; }
+
     header.appbar{
-      position:sticky; top:0; z-index:50; backdrop-filter: blur(8px);
-      background: color-mix(in oklab, var(--bg) 70%, white 30%); border-bottom:1px solid var(--line);
+      position:sticky; top:0; z-index:50;
+      background: rgba(255,255,255,0.9); backdrop-filter: blur(8px);
+      border-bottom:1px solid var(--line);
     }
-    .appbar-inner{
-      max-width:1100px; margin:0 auto; padding: 8px 12px; display:flex; align-items:center; gap:8px;
-    }
-    .title{ font-weight:700; font-size: clamp(14px, 2vw, 17px); display:flex; align-items:center; gap:6px; }
+    .appbar-inner{ max-width:1200px; margin:0 auto; padding: 12px 16px; display:flex; align-items:center; gap:10px; }
+    .title{ font-weight:700; font-size: 18px; color: var(--primary); display:flex; align-items:center; gap:8px; }
     .grow{flex:1}
+
     .btn{
-      appearance:none; border:none; border-radius:10px; padding:6px 9px; cursor:pointer; font-weight:600;
-      display:inline-flex; align-items:center; gap:6px; transition: transform .08s ease, box-shadow .2s ease, background .2s ease;
-      font-size:11px;
+      appearance:none; border:none; border-radius:8px; padding:8px 14px; cursor:pointer; font-weight:600;
+      display:inline-flex; align-items:center; gap:6px; transition: all .2s; font-family:inherit; font-size:12px;
     }
     .btn:active{ transform: translateY(1px); }
-    .btn-primary{ background:var(--primary); color:white; box-shadow: 0 6px 18px rgba(14,165,164,.15);}
+    .btn-primary{ background:var(--primary); color:white; box-shadow: 0 2px 6px rgba(15, 118, 110, 0.2); }
     .btn-primary:hover{ background:var(--primary-600); }
-    .btn-ghost{ background:transparent; color:var(--text); }
-    .btn-danger{ background:var(--danger); color:#fff; }
-    .btn-icon{ padding:6px; border-radius:8px; }
-    .btn-icon svg{ width:16px; height:16px; }
+    .btn-ghost{ background:transparent; color:var(--text); border:1px solid transparent; }
+    .btn-ghost:hover{ background:#f1f5f9; }
+    .btn-danger{ background:#fee2e2; color:#b91c1c; }
+    .btn-danger:hover{ background:#fecaca; }
+    .btn-icon{ padding:6px; }
 
     .card{
       background:var(--card); border:1px solid var(--line); border-radius: var(--radius);
-      box-shadow: 0 8px 22px rgba(2,8,23,.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     }
 
     .toolbar{
-      display:grid; grid-template-columns: 1fr auto; gap:8px; padding: 8px; align-items:center;
-      border-bottom:1px solid var(--line);
+      display:flex; flex-wrap:wrap; gap:10px; padding: 12px; align-items:center;
+      border-bottom:1px solid var(--line); background: #f8fafc; border-radius: var(--radius) var(--radius) 0 0;
     }
-    .left-tools{ display:grid; grid-template-columns: 1fr 140px; gap:8px; align-items:center; }
-    .search{ position:relative; }
+    .search{ position:relative; flex:1; min-width: 240px; }
     .search input{
-      width:100%; padding:8px 30px 8px 30px; border:1px solid var(--line); border-radius: 10px;
-      outline:none; background:#fff; font-size:11px;
+      width:100%; padding:9px 34px 9px 36px; border:1px solid var(--line); border-radius: 8px;
+      outline:none; background:#fff; font-size:13px; transition: border-color .2s;
     }
     .search input:focus{ border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring); }
-    .search .icon{ position:absolute; left:9px; top:50%; transform:translateY(-50%); opacity:.6; font-size:14px; }
-    .search .clear{ position:absolute; right:6px; top:50%; transform:translateY(-50%); opacity:.6; cursor:pointer; font-size:14px; }
-    .month-filter{ border:1px solid var(--line); border-radius:10px; padding:7px 9px; background:#fff; font-size:11px; }
-    .right-tools{ display:flex; gap:6px; align-items:center; justify-content:flex-end; flex-wrap:wrap; }
-    .chip{ display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:999px; font-size:11px; background:#ecfeff; color:#155e75; border:1px solid #cffafe; }
+    .search .icon{ position:absolute; left:10px; top:50%; transform:translateY(-50%); opacity:.5; font-size:16px; }
+    .search .clear{ position:absolute; right:10px; top:50%; transform:translateY(-50%); opacity:.5; cursor:pointer; font-size:14px; }
 
-    .table-wrap{ overflow:auto; }
-    table{ width:100%; border-collapse:separate; border-spacing:0; min-width:940px; font-size: 11px; }
+    .month-filter{ border:1px solid var(--line); border-radius:8px; padding:8px; background:#fff; font-size:12px; cursor:pointer; }
+    .chip{ display:inline-flex; align-items:center; padding:4px 10px; border-radius:99px; font-size:11px; background:#e0f2f1; color:#0f766e; font-weight:800; }
+    .chip.vip{ background:#fef3c7; color:#92400e; }
+    .chip.mini{ padding:2px 8px; font-weight:800; }
+    .muted{ color:#64748b; font-weight:700; font-size:11px; }
+
+    .table-wrap{ overflow-x:auto; }
+    table{ width:100%; border-collapse:collapse; font-size: 12px; min-width: 1120px; }
     thead th{
-      position:sticky; top:0; z-index:1; background:#f0fdfa; color:#0f766e;
-      font-weight:700; font-size:11px; text-align:left; padding:7px 8px; border-bottom:1px solid var(--line);
-      cursor: pointer; white-space: nowrap;
+      position:sticky; top:0; z-index:1; background:#f1f5f9; color:#475569;
+      font-weight:800; text-align:left; padding:10px 12px; border-bottom:1px solid var(--line);
+      white-space: nowrap; cursor:pointer; user-select:none;
     }
-    thead th .sort{ font-size:10px; opacity:.7; margin-left:4px; }
+    thead th:hover{ background:#e2e8f0; }
     tbody td{
-      background:#fff; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top;
+      padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top; color: #334155;
     }
-    tbody tr:hover td{ background:#fafafa; }
-    td .cell{ display:flex; align-items:flex-start; gap:8px; }
-    td .cell input, td .cell textarea{
-      width:100%; border:none; border-bottom:1px dashed transparent; padding:3px 0;
-      background:transparent; font-size:11px; color:var(--text);
+    tbody tr:hover td{ background:#f8fafc; }
+
+    td .cell{ display:flex; align-items:center; width:100%; gap:8px; }
+    td input, td textarea{
+      width:100%; border:1px solid transparent; background:transparent;
+      padding:4px; font-family:inherit; font-size:inherit; color:inherit; resize:none; border-radius:6px;
     }
-    td .cell textarea{ resize:vertical; line-height:1.35; }
-    td .cell input[readonly], td .cell textarea[readonly]{ opacity:.95; }
-    td .cell input.editing, td .cell textarea.editing{ background:#fff; border-bottom-color:#cbd5e1; outline:none; }
-    .actions{ display:flex; gap:6px; flex-wrap:nowrap; }
-    .sel-col{ width:34px; text-align:center; }
-    .col-profile{ min-width: 340px; } /* โปรไฟล์กว้างขึ้น */
-
-    /* ปุ่มไอคอนในเซลล์ */
-    .icon-only-btn{
-      border:1px solid var(--line); background:#fff; border-radius:8px; padding:6px;
-      width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+    td input:focus, td textarea:focus{ outline:none; }
+    tr.editing td input, tr.editing td textarea{
+      background:#fff; border-color: #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
-    .icon-only-btn:hover{ background:#f8fafc; }
 
-    .empty{ text-align:center; padding:26px 12px; color:#6b7280; }
-    .skeleton{ height:10px; width:100%; background:linear-gradient(90deg, #f1f5f9, #e2e8f0, #f1f5f9); background-size:200% 100%; animation: shimmer 1.2s infinite linear; border-radius:6px; }
-    @keyframes shimmer{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-    .row-skeleton td{ padding:7px; }
+    th.sel-col, td.sel-col{ width: 40px; text-align:center; padding-left:4px; padding-right:4px;}
+    th[data-key="opd"], td[data-col="opd"]{ width: 90px; font-weight:900; color: var(--primary); }
+    td[data-col="opd"]{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    th[data-key="full_name"], td[data-col="full_name"]{ width: 220px; font-weight:800; }
+    th[data-key="phone"], td[data-col="phone"]{ width: 140px; }
+    th[data-key="vip"], td[data-col="vip"]{ width: 95px; text-align:center; }
+    th[data-key="birthMonth"], td[data-col="birthMonth"]{ width: 90px; text-align:center; }
+    th[data-key="birth_th_ddmmyyyy"], td[data-col="birth_th_ddmmyyyy"]{ width: 140px; }
+    th[data-key="facebook_name"], td[data-col="facebook_name"]{ width: 160px; }
+    th[data-key="profile"], td[data-col="profile"]{ width: auto; min-width: 260px; }
+    td[data-col="profile"] textarea { min-height: 2.8em; line-height: 1.4; color: #475569; }
+    th[data-key="note"], td[data-col="note"]{ width: 180px; }
 
-    /* Modal พรีวิวข้อความสั้น ๆ (หมายเหตุ) */
-    .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:60; }
-    .modal.open{ display:flex; }
-    .modal .backdrop{ position:absolute; inset:0; background: rgba(15,23,42,.45); backdrop-filter: blur(2px); }
-    .modal .dialog{ position:relative; width:min(520px, 92vw); background:#fff; border-radius:16px; border:1px solid var(--line); box-shadow: 0 20px 60px rgba(2,8,23,.35); overflow:hidden; font-size: 11px; }
-    .dialog header{ padding:10px 12px; border-bottom:1px solid var(--line); font-weight:700; display:flex; align-items:center; justify-content:space-between; }
-    .dialog .body{ padding:12px; }
-    .dialog .viewer{ white-space:pre-wrap; line-height:1.5; color:#0f172a; }
-    .dialog footer{ padding:10px 12px; border-top:1px solid var(--line); display:flex; gap:8px; justify-content:flex-end; }
+    th:last-child, td:last-child{ width: 165px; text-align:center; }
+    .actions{ display:flex; justify-content:center; gap:4px; opacity:0.6; transition:opacity .2s; }
+    tr:hover .actions{ opacity:1; }
 
-    .toast-wrap{ position:fixed; right:12px; bottom:12px; display:grid; gap:8px; z-index:80; }
-    .toast{ background:#fff; border:1px solid var(--line); border-left:5px solid var(--success); padding:7px 9px; border-radius:12px; min-width:210px; box-shadow:0 12px 30px rgba(2,8,23,.15); display:flex; align-items:flex-start; gap:8px; font-size:11px; }
-    .toast.warn{ border-left-color:var(--warn); }
+    .skeleton{ height:12px; background:#e2e8f0; border-radius:4px; animation: pulse 1.5s infinite; }
+    @keyframes pulse{ 0%{opacity:.6} 50%{opacity:.3} 100%{opacity:.6} }
+
+    .toast-wrap{ position:fixed; right:20px; bottom:20px; z-index:100; display:flex; flex-direction:column; gap:10px; }
+    .toast{
+      background:#fff; border-left:4px solid var(--success); padding:12px 16px; border-radius:8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1); font-weight:800; display:flex; align-items:center; gap:10px;
+      transform:translateY(20px); opacity:0; transition:all .3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .toast.show{ transform:translateY(0); opacity:1; }
     .toast.error{ border-left-color:var(--danger); }
+    .toast.warn{ border-left-color:var(--warn); }
 
-    /* Floating Toggle/Menu (คงเดิม) */
-    .floating-toggle{ position: fixed; bottom: env(safe-area-inset-bottom, 18px); left: 16px; width: 58px; height: 58px; border-radius: 14px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:#ffffff; border:1px solid var(--line); box-shadow:0 12px 30px rgba(2,8,23,.12); z-index:70; }
-    .floating-toggle img{ width:36px; height:36px; }
-    .floating-menu{ position:fixed; bottom:92px; left:16px; background:#fff; border:1px solid var(--line); border-radius:16px; padding:10px; display:none; flex-direction:column; align-items:center; gap:8px; box-shadow: 0 16px 40px rgba(2,8,23,.18); z-index:70; max-height: 60vh; overflow:auto; }
-    .floating-menu a img{ width:52px; height:52px; }
+    .modal{ position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; }
+    .modal.open{ display:flex; }
+    .modal-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,0.4); backdrop-filter:blur(2px); }
+    .modal-box{
+      position:relative; width:92%; max-width:720px; background:#fff; border-radius:16px;
+      box-shadow:0 20px 50px rgba(0,0,0,0.2); padding:18px; animation: popIn .2s ease;
+    }
+    @keyframes popIn{ from{transform:scale(0.95); opacity:0} to{transform:scale(1); opacity:1} }
+    .modal-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:12px; }
+    .modal-title{ font-size:16px; font-weight:900; color:var(--primary); display:flex; align-items:center; gap:8px; }
+    .modal-sub{ font-size:11px; color:#64748b; font-weight:800; }
 
-    /* Scroll to Top */
-    .scroll-top{ position:fixed; right:16px; bottom:16px; z-index:65; width:38px; height:38px; border-radius:10px; border:1px solid var(--line); background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 10px 24px rgba(2,8,23,.12); opacity:0; pointer-events:none; transition:.2s; }
-    .scroll-top.show{ opacity:1; pointer-events:auto; }
-    .scroll-top span{ font-size:16px; }
-    
+    .grid{ display:grid; gap:10px; grid-template-columns: repeat(12, 1fr); }
+    .col-12{ grid-column: span 12; }
+    .col-6{ grid-column: span 6; }
+    .col-4{ grid-column: span 4; }
+    .col-3{ grid-column: span 3; }
+
+    .field-group label{ display:block; margin-bottom:4px; font-weight:900; font-size:11px; color:#64748b; }
+    .field-group input, .field-group textarea, .field-group select{
+      width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:10px; font-family:inherit; font-size:13px;
+      outline:none;
+    }
+    .field-group input:focus, .field-group textarea:focus, .field-group select:focus{
+      border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring);
+    }
+    .field-group textarea{ resize:vertical; min-height:90px; }
+
+    .modal-footer{ display:flex; justify-content:space-between; gap:8px; margin-top:14px; align-items:center; }
+
+    /* Scroll Top */
+    #scrollTop{
+      position:fixed; right:20px; bottom:20px; width:40px; height:40px; border-radius:50%;
+      background:var(--primary); color:white; border:none; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; font-size:20px;
+      box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3); opacity:0; pointer-events:none; transition:all .3s;
+      z-index: 900;
+    }
+    #scrollTop.visible{ opacity:1; bottom:90px; pointer-events:auto; }
+
     @media (max-width: 768px){
-      .toolbar{ grid-template-columns: 1fr; }
-      .left-tools{ grid-template-columns: 1fr; }
+      .container{ margin-top:10px; padding:0 10px; }
+      .toolbar{ gap:8px; padding:8px; }
+      .search{ min-width:100%; order:2; }
+      .btn{ padding:6px 10px; font-size:11px; }
+      th[data-key="note"], td[data-col="note"]{ display:none; }
+      th[data-key="facebook_name"], td[data-col="facebook_name"]{ display:none; }
+      th[data-key="birth_th_ddmmyyyy"], td[data-col="birth_th_ddmmyyyy"]{ display:none; }
+      .col-6,.col-4,.col-3{ grid-column: span 12; }
     }
   </style>
-</head>
-<body>
 
-  <!-- Header -->
+  <script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>
+</head>
+
+<body>
   <header class="appbar">
     <div class="appbar-inner">
-      <div class="title">📇 บันทึกข้อมูลลูกค้า</div>
+      <div class="title">📖 ทะเบียนลูกค้า</div>
       <div class="grow"></div>
+      <button id="refreshBtn" class="btn btn-ghost">⟳ รีเฟรช</button>
       <button id="openAddModalBtn" class="btn btn-primary">➕ เพิ่มลูกค้า</button>
-      <button id="refreshBtn" class="btn btn-ghost" title="รีเฟรชข้อมูล">⟳ รีเฟรช</button>
     </div>
   </header>
 
-  <!-- Main -->
   <div class="container">
     <div class="card">
-      <!-- Toolbar -->
       <div class="toolbar">
-        <div class="left-tools">
-          <div class="search">
-            <span class="icon">🔎</span>
-            <input id="searchInput" type="text" placeholder="ค้นหา: ชื่อ / เบอร์ / OPD / โปรไฟล์ / หมายเหตุ / เดือนเกิด">
-            <span id="clearSearch" class="clear" title="ล้างคำค้น">✖</span>
-          </div>
-          <select id="monthFilter" class="month-filter" title="กรองตามเดือนเกิด">
-            <option value="">เดือนเกิด: ทั้งหมด</option>
-            <option>01</option><option>02</option><option>03</option><option>04</option>
-            <option>05</option><option>06</option><option>07</option><option>08</option>
-            <option>09</option><option>10</option><option>11</option><option>12</option>
-          </select>
+        <div class="search">
+          <span class="icon">🔎</span>
+          <input id="searchInput" type="text" placeholder="ค้นหา: OPD, ชื่อ, เบอร์, บัตร, FB, ที่อยู่, โปรไฟล์, หมายเหตุ...">
+          <span id="clearSearch" class="clear" style="display:none;">✖</span>
         </div>
-        <div class="right-tools">
-          <div class="chip" id="totalChip">ลูกค้าทั้งหมด: 0</div>
-          <button id="bulkDeleteBtn" class="btn btn-icon" title="ลบที่เลือก">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          </button>
-          <button id="exportBtn" class="btn btn-icon" title="ส่งออก CSV">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a 2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
+
+        <select id="monthFilter" class="month-filter">
+          <option value="">📅 เดือนเกิด: ทั้งหมด</option>
+          <option value="01">มกราคม</option><option value="02">กุมภาพันธ์</option><option value="03">มีนาคม</option>
+          <option value="04">เมษายน</option><option value="05">พฤษภาคม</option><option value="06">มิถุนายน</option>
+          <option value="07">กรกฎาคม</option><option value="08">สิงหาคม</option><option value="09">กันยายน</option>
+          <option value="10">ตุลาคม</option><option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
+        </select>
+
+        <div class="grow"></div>
+        <div class="chip" id="totalChip">0 คน</div>
+        <button id="bulkDeleteBtn" class="btn btn-ghost btn-icon" style="color:var(--danger);" title="ลบที่เลือก">🗑️</button>
+        <button id="exportBtn" class="btn btn-ghost btn-icon" title="ส่งออก CSV">📥</button>
       </div>
 
-      <!-- Table -->
       <div class="table-wrap">
         <table id="customerTable">
           <thead>
             <tr>
-              <th class="sel-col"><input type="checkbox" id="selectAll" title="เลือกทั้งหมด"></th>
-              <th data-key="opd">OPD <span class="sort">↕</span></th>
-              <th data-key="name">ชื่อ <span class="sort">↕</span></th>
-              <th data-key="phone">เบอร์โทร <span class="sort">↕</span></th>
-              <th data-key="birthMonth">เดือนเกิด <span class="sort">↕</span></th>
-              <th data-key="profile" class="col-profile">โปรไฟล์ <span class="sort">↕</span></th>
-              <th data-key="note">หมายเหตุ <span class="sort">↕</span></th>
-              <th style="width:120px">จัดการ</th>
+              <th class="sel-col"><input type="checkbox" id="selectAll"></th>
+              <th data-key="opd">OPD ↕</th>
+              <th data-key="full_name">ชื่อ-สกุล ↕</th>
+              <th data-key="phone">โทร ↕</th>
+              <th data-key="vip">VIP ↕</th>
+              <th data-key="birthMonth">เดือน ↕</th>
+              <th data-key="birth_th_ddmmyyyy">วันเกิด(ไทย) ↕</th>
+              <th data-key="facebook_name">Facebook ↕</th>
+              <th data-key="profile">📝 โปรไฟล์ ↕</th>
+              <th data-key="note">หมายเหตุ ↕</th>
+              <th>จัดการ</th>
             </tr>
           </thead>
           <tbody id="tbody">
-            <!-- Skeleton -->
-            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
-            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
-            <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+            <tr><td colspan="11"><div style="padding:20px">
+              <div class="skeleton" style="margin-bottom:10px"></div>
+              <div class="skeleton" style="width:80%"></div>
+            </div></td></tr>
           </tbody>
         </table>
       </div>
-      <!-- ไม่มี pagination: แสดงทั้งหมดต่อกัน -->
     </div>
   </div>
 
-  <!-- Toast -->
-  <div class="toast-wrap" id="toastWrap"></div>
-
-  <!-- View Modal (ดูหมายเหตุ) -->
-  <div id="peekModal" class="modal" aria-hidden="true">
-    <div class="backdrop" data-close="modal"></div>
-    <div class="dialog">
-      <header>
-        <span id="peekTitle">ดูข้อมูล</span>
-        <button class="btn btn-icon btn-ghost" data-close="modal" title="ปิด">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M6 18L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </button>
-      </header>
-      <div class="body">
-        <div id="peekContent" class="viewer"></div>
-      </div>
-      <footer>
-        <button id="copyPeekBtn" class="btn btn-ghost">คัดลอก</button>
-        <button class="btn btn-primary" data-close="modal">ปิด</button>
-      </footer>
-    </div>
-  </div>
-
-  <!-- Add Modal -->
-  <div id="addModal" class="modal" aria-hidden="true">
-    <div class="backdrop" data-close="modal"></div>
-    <div class="dialog">
-      <header>
-        <span id="modalTitle">➕ เพิ่มลูกค้าใหม่</span>
-        <button class="btn btn-icon btn-ghost" data-close="modal" title="ปิด">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M6 18L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </button>
-      </header>
-      <div class="body">
-        <div class="field"><label>เลข OPD (4 หลัก)</label><input id="f_opd" type="text" placeholder="เช่น 0123" inputmode="numeric" maxlength="4"></div>
-        <div class="field"><label>ชื่อ</label><input id="f_name" type="text" placeholder="ชื่อ-สกุล"></div>
-        <div class="field"><label>เบอร์โทร</label><input id="f_phone" type="text" placeholder="0xx-xxx-xxxx"></div>
-        <div class="field"><label>เดือนเกิด</label><input id="f_birthMonth" type="text" placeholder="01..12 (สองหลัก)"></div>
-        <div class="field">
-          <label>โปรไฟล์ (บันทึกว่าเขาเป็นใคร / ข้อมูลสำคัญ)</label>
-          <textarea id="f_profile" placeholder="เช่น อาชีพ ความสนใจ ประวัติการติดต่อ ฯลฯ"></textarea>
+  <!-- ✅ Add/Edit Modal: ใช้ฟอร์มเดียวกัน -->
+  <div id="addModal" class="modal">
+    <div class="modal-backdrop" onclick="closeModal('addModal')"></div>
+    <div class="modal-box">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="formModalTitle">➕ เพิ่มลูกค้าใหม่</div>
+          <div class="modal-sub" id="formModalSub">บันทึกเข้าฐาน (ตาราง customers ผ่าน Flask API)</div>
         </div>
-        <div class="field"><label>หมายเหตุ</label><input id="f_note" type="text" placeholder="รายละเอียดเพิ่มเติม"></div>
+        <div style="margin-bottom:15px; padding:10px; background:#f0f9ff; border-radius:8px; border:1px dashed #0ea5e9; display:flex; align-items:center; gap:10px;">
+  <span style="font-size:20px;">🪪</span>
+  <div style="flex:1;">
+    <div style="font-weight:bold; color:#0369a1;">สแกนบัตรประชาชน</div>
+    <div style="font-size:10px; color:#64748b;">อัปโหลดรูปเพื่อกรอกข้อมูลอัตโนมัติ</div>
+  </div>
+  <input type="file" id="idCardInput" accept="image/*" style="display:none" onchange="processIDCard(this)">
+  <button class="btn btn-primary" onclick="$('#idCardInput').click()">📸 เลือกรูป / ถ่ายรูป</button>
+</div>
+        <button class="btn btn-ghost btn-icon" onclick="closeModal('addModal')">✕</button>
       </div>
-      <footer>
-        <button class="btn btn-ghost" data-close="modal">ยกเลิก</button>
-        <button id="saveCustomerBtn" class="btn btn-primary">บันทึก</button>
-      </footer>
+
+      <!-- ✅ state: add | edit -->
+      <input type="hidden" id="formMode" value="add">
+
+      <div class="grid">
+        <div class="field-group col-3">
+          <label>OPD (4 หลัก) *</label>
+          <input id="f_opd" type="text" maxlength="4" placeholder="เช่น 0123" style="font-family:monospace; letter-spacing:1px;">
+        </div>
+        <div class="field-group col-3">
+          <label>เดือนเกิด (01-12)</label>
+          <input id="f_birthMonth" type="text" maxlength="2" placeholder="01-12">
+        </div>
+        <div class="field-group col-6">
+          <label>วันเกิดไทย (dd/mm/yyyy)</label>
+          <input id="f_birth_th" type="text" placeholder="เช่น 05/09/2530">
+        </div>
+
+        <div class="field-group col-6">
+          <label>ชื่อ (สั้น)</label>
+          <input id="f_name" type="text" placeholder="เช่น คุณแอน">
+        </div>
+        <div class="field-group col-6">
+          <label>ชื่อ-สกุล (เต็ม)</label>
+          <input id="f_full_name" type="text" placeholder="ชื่อ-นามสกุล">
+        </div>
+
+        <div class="field-group col-6">
+          <label>โทรศัพท์</label>
+          <input id="f_phone" type="tel" placeholder="0xx-xxx-xxxx">
+        </div>
+        <div class="field-group col-6">
+          <label>Facebook</label>
+          <input id="f_facebook_name" type="text" placeholder="ชื่อที่ใช้ใน FB">
+        </div>
+
+        <div class="field-group col-6">
+          <label>เลขบัตรประชาชน</label>
+          <input id="f_national_id" type="text" placeholder="x-xxxx-xxxxx-xx-x">
+        </div>
+        <div class="field-group col-6">
+          <label>VIP</label>
+          <select id="f_vip">
+            <option value="">ไม่ระบุ</option>
+            <option value="VIP">VIP</option>
+            <option value="VVIP">VVIP</option>
+            <option value="Gold">Gold</option>
+            <option value="Silver">Silver</option>
+          </select>
+        </div>
+
+        <div class="field-group col-12">
+          <label>ที่อยู่</label>
+          <input id="f_address" type="text" placeholder="บ้านเลขที่/ถนน/ตำบล/อำเภอ/จังหวัด">
+        </div>
+
+        <div class="field-group col-12">
+          <label>โปรไฟล์ (สิ่งที่ควรรู้)</label>
+          <textarea id="f_profile" placeholder="เช่น ชอบนวดหน้า, แพ้ยา..., เป็นเพื่อนกับ..., ทำงานที่..."></textarea>
+        </div>
+
+        <div class="field-group col-12">
+          <label>หมายเหตุ</label>
+          <input id="f_note" type="text" placeholder="ข้อมูลอื่นๆ">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <div class="muted" id="formHint">✨ กรอกข้อมูลแล้วกดบันทึก</div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-ghost" onclick="closeModal('addModal')">ยกเลิก</button>
+          <button id="saveCustomerBtn" class="btn btn-primary">บันทึก</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Floating toggle & menu (คงเดิม) -->
-  <div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
-    <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu">
-  </div>
-  <div id="floatingMenu" class="floating-menu" aria-hidden="true">
-  <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}" alt="Dashboard"></a>
-  <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}" alt="Sale summary"></a>
-  <a href="{{ url_for('crm') }}"><img src="{{ url_for('static', filename='icon/icon_crm.png') }}" alt="CRM"></a>
-  <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}" alt="Record sales"></a>
-  <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}" alt="Customer list"></a>
-  <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}" alt="Record customer"></a>
-  <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}" alt="Old customers"></a>
-  <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}" alt="Inventory"></a>
-  <a href="{{ url_for('staff') }}"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}" alt="Staff"></a>
-  <a href="{{ url_for('appointments') }}"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}" alt="Appointments"></a>
-</div>
+  <!-- Detail Modal (ยังเก็บไว้ได้ แต่จะเปลี่ยนให้ปุ่มแก้ไขไปใช้ฟอร์มเดียวกัน) -->
+  <div id="detailModal" class="modal">
+    <div class="modal-backdrop" onclick="closeModal('detailModal')"></div>
+    <div class="modal-box">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">👤 รายละเอียดลูกค้า <span class="chip mini" id="d_opd_chip">OPD 0000</span></div>
+          <div class="modal-sub">แก้ไขข้อมูลทั้งหมดได้ที่นี่ แล้วกดบันทึก</div>
+        </div>
+        <button class="btn btn-ghost btn-icon" onclick="closeModal('detailModal')">✕</button>
+      </div>
 
-  <!-- Scroll to Top -->
-  <button id="scrollTop" class="scroll-top" title="กลับขึ้นบน"><span>↑</span></button>
+      <div class="grid">
+        <div class="field-group col-3">
+          <label>OPD</label>
+          <input id="d_opd" type="text" readonly style="font-family:monospace; letter-spacing:1px; background:#f8fafc;">
+        </div>
+        <div class="field-group col-3">
+          <label>เดือนเกิด</label>
+          <input id="d_birthMonth" type="text" maxlength="2" placeholder="01-12">
+        </div>
+        <div class="field-group col-6">
+          <label>วันเกิดไทย</label>
+          <input id="d_birth_th" type="text" placeholder="dd/mm/yyyy">
+        </div>
+
+        <div class="field-group col-6">
+          <label>ชื่อ (สั้น)</label>
+          <input id="d_name" type="text">
+        </div>
+        <div class="field-group col-6">
+          <label>ชื่อ-สกุล (เต็ม)</label>
+          <input id="d_full_name" type="text">
+        </div>
+
+        <div class="field-group col-6">
+          <label>โทรศัพท์</label>
+          <input id="d_phone" type="text">
+        </div>
+        <div class="field-group col-6">
+          <label>Facebook</label>
+          <input id="d_facebook_name" type="text">
+        </div>
+
+        <div class="field-group col-6">
+          <label>เลขบัตรประชาชน</label>
+          <input id="d_national_id" type="text">
+        </div>
+        <div class="field-group col-6">
+          <label>VIP</label>
+          <select id="d_vip">
+            <option value="">ไม่ระบุ</option>
+            <option value="VIP">VIP</option>
+            <option value="VVIP">VVIP</option>
+            <option value="Gold">Gold</option>
+            <option value="Silver">Silver</option>
+          </select>
+        </div>
+
+        <div class="field-group col-12">
+          <label>ที่อยู่</label>
+          <input id="d_address" type="text">
+        </div>
+
+        <div class="field-group col-12">
+          <label>โปรไฟล์</label>
+          <textarea id="d_profile"></textarea>
+        </div>
+
+        <div class="field-group col-12">
+          <label>หมายเหตุ</label>
+          <input id="d_note" type="text">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <div class="muted" id="d_hint">🧾 กดบันทึกเพื่ออัปเดตฐานข้อมูล</div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-danger" id="detailDeleteBtn">🗑️ ลบ</button>
+          <button class="btn btn-ghost" onclick="closeModal('detailModal')">ปิด</button>
+          <button class="btn btn-primary" id="detailSaveBtn">💾 บันทึก</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastWrap" class="toast-wrap"></div>
+
+  <!-- ✅ floating menu -->
+  {% include 'floating_menu.html' %}
+
+  <button id="scrollTop">↑</button>
 
   <script>
-    // ===== Utils =====
-    const $ = (q, p=document)=>p.querySelector(q);
-    const $$ = (q, p=document)=>Array.from(p.querySelectorAll(q));
-    const toastWrap = $('#toastWrap');
-    const showToast = (msg, type='ok')=>{
+    // =========================
+    // Utilities
+    // =========================
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s, root=document) => Array.from(root.querySelectorAll(s));
+    const pad4 = (s) => String(s ?? '').trim().padStart(4,'0');
+    const pad2 = (s) => String(s ?? '').trim().padStart(2,'0');
+    const esc = (s) => (s ?? '').toString()
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+    const showToast = (msg, type='ok') => {
       const el = document.createElement('div');
-      el.className = 'toast' + (type==='warn' ? ' warn' : type==='error' ? ' error' : '');
-      el.innerHTML = `<div>💡</div><div>${msg}</div>`;
-      toastWrap.appendChild(el);
-      setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(6px)'; }, 2200);
-      setTimeout(()=>{ el.remove(); }, 2800);
-    };
-    const pad4 = s => String(s||'').trim().padStart(4,'0');
-    const debounce = (fn,ms=250)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms);} };
-    const saveSortPref = (key,asc)=>localStorage.setItem('cust_sort', JSON.stringify({key,asc}));
-    const loadSortPref = ()=>{ try{return JSON.parse(localStorage.getItem('cust_sort'))||{key:'opd',asc:true}}catch{return {key:'opd',asc:true}} };
-    const toCSV = (rows)=> {
-      const header = ['OPD','ชื่อ','เบอร์โทร','เดือนเกิด','โปรไฟล์','หมายเหตุ'];
-      const escape = v => `"${String(v??'').replaceAll('"','""')}"`;
-      const lines = [header.map(escape).join(',')];
-      for(const r of rows) lines.push([r.opd,r.name,r.phone,r.birthMonth,r.profile,r.note].map(escape).join(','));
-      return lines.join('\n');
-    };
-    const download = (filename, text)=>{
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8;'}));
-      a.download = filename; a.click(); URL.revokeObjectURL(a.href);
-    };
-    const normalizeMonth = m => {
-      const s = String(m||'').trim();
-      if(/^\d{1,2}$/.test(s)) return s.padStart(2,'0');
-      const map = {'ม.ค.':'01','มกราคม':'01','ก.พ.':'02','กุมภาพันธ์':'02','มี.ค.':'03','มีนาคม':'03','เม.ย.':'04','เมษายน':'04','พ.ค.':'05','พฤษภาคม':'05','มิ.ย.':'06','มิถุนายน':'06','ก.ค.':'07','กรกฎาคม':'07','ส.ค.':'08','สิงหาคม':'08','ก.ย.':'09','กันยายน':'09','ต.ค.':'10','ตุลาคม':'10','พ.ย.':'11','พฤศจิกายน':'11','ธ.ค.':'12','ธันวาคม':'12'};
-      return map[s] || s;
-    };
-    const formatPhone = raw => {
-      const d = String(raw||'').replace(/\D/g,'');
-      if(d.length===10) return d.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-      if(d.length===9) return d.replace(/(\d{2})(\d{3})(\d{4})/, '$1-$2-$3');
-      return raw||'';
+      el.className = `toast ${type==='error'?'error':type==='warn'?'warn':''} show`;
+      el.innerHTML = type==='error' ? `❌ ${msg}` : type==='warn' ? `⚠️ ${msg}` : `✅ ${msg}`;
+      $('#toastWrap').appendChild(el);
+      setTimeout(() => { el.classList.remove('show'); setTimeout(()=>el.remove(), 300); }, 3000);
     };
 
-    // ===== State =====
-    let rawRecords = [];
-    let viewRecords = [];
-    let sortState = loadSortPref();
+    function openModal(id){ $('#'+id).classList.add('open'); }
+    function closeModal(id){ $('#'+id).classList.remove('open'); }
+
+    // =========================
+    // State
+    // =========================
+    let rawData = [];
+    let viewData = [];
     let selected = new Set();
+    let sortConfig = { key: 'opd', asc: true };
 
-    // ===== Elements =====
+    // Elements
     const tbody = $('#tbody');
-    const totalChip = $('#totalChip');
     const searchInput = $('#searchInput');
-    const clearSearch = $('#clearSearch');
     const monthFilter = $('#monthFilter');
-    const selectAll = $('#selectAll');
-    const openAddModalBtn = $('#openAddModalBtn');
-    const refreshBtn = $('#refreshBtn');
-    const addModal = $('#addModal');
-    const saveCustomerBtn = $('#saveCustomerBtn');
-    const bulkDeleteBtn = $('#bulkDeleteBtn');
-    const exportBtn = $('#exportBtn');
-    const scrollTopBtn = $('#scrollTop');
-    const peekModal = $('#peekModal');
-    const peekTitle = $('#peekTitle');
-    const peekContent = $('#peekContent');
-    const copyPeekBtn = $('#copyPeekBtn');
 
-    // ===== Load =====
-    function skeletonOn(){
-      tbody.innerHTML = `
-        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
-        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
-        <tr class="row-skeleton"><td></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
-      `;
+    // =========================
+    // API helpers
+    // =========================
+    async function apiGetCustomers(){
+      const r = await fetch('/api/customers', { credentials: 'same-origin' });
+      if (!r.ok) throw new Error('fetch_customers_failed');
+      const data = await r.json();
+      if (!Array.isArray(data)) return [];
+      return data;
     }
 
-    function loadData(){
-      skeletonOn();
-      fetch('/api/customers')
-        .then(r=>r.json())
-        .then(data=>{
-          const map = new Map();
-          for (const r of data||[]){
-            const opd = pad4(r.opd);
-            if(!opd) continue;
-            if(!map.has(opd)){
-              map.set(opd, {
-                opd,
-                name: r.name||'',
-                phone: formatPhone(r.phone||''),
-                birthMonth: normalizeMonth(r.birthMonth||''),
-                profile: r.profile||'',
-                note: r.note||'',
-              });
-            }
-          }
-          rawRecords = Array.from(map.values());
-          applyPipeline();
-          showToast('โหลดข้อมูลลูกค้าเรียบร้อย');
-        })
-        .catch(err=>{
-          console.error(err);
-          tbody.innerHTML = `<tr><td colspan="8"><div class="empty">⚠️ ไม่สามารถโหลดข้อมูลจากเซิร์ฟเวอร์</div></td></tr>`;
-          showToast('ไม่สามารถโหลดข้อมูลจากเซิร์ฟเวอร์','error');
-        });
-    }
-
-    function applyPipeline(){
-      const kw = searchInput.value.toLowerCase().trim();
-      const m = monthFilter.value;
-      viewRecords = rawRecords.filter(r=>{
-        const byMonth = !m || normalizeMonth(r.birthMonth)===m;
-        if(!kw) return byMonth;
-        const match = (
-          r.name.toLowerCase().includes(kw) ||
-          r.phone.toLowerCase().includes(kw) ||
-          r.opd.toLowerCase().includes(kw) ||
-          String(r.note).toLowerCase().includes(kw) ||
-          String(r.birthMonth).toLowerCase().includes(kw) ||
-          String(r.profile).toLowerCase().includes(kw)
-        );
-        return byMonth && match;
-      });
-
-      const {key, asc} = sortState;
-      viewRecords.sort((a,b)=>{
-        let av = String(a[key]??'').toLowerCase();
-        let bv = String(b[key]??'').toLowerCase();
-        const an = parseFloat(av), bn = parseFloat(bv);
-        if(!isNaN(an) && !isNaN(bn)) return asc ? an - bn : bn - an;
-        return asc ? av.localeCompare(bv) : bv.localeCompare(av);
-      });
-
-      renderTable(viewRecords);
-      totalChip.textContent = `ลูกค้าทั้งหมด: ${rawRecords.length}`;
-      selectAll.checked = viewRecords.length>0 && viewRecords.every(r=>selected.has(r.opd));
-    }
-
-    // ==== cell templates ====
-    function cellStaticCopy(text){
-      return `<td><div class="cell"><input value="${text}" readonly title="คลิกเพื่อคัดลอก OPD"></div></td>`;
-    }
-
-    // โทรศัพท์: แสดงเป็นไอคอน, input จริงซ่อนไว้ (ไว้ใช้ตอนแก้ไข)
-    function cellPhone(phone){
-      const safe = phone||'';
-      const tel = safe.replace(/\D/g,'');
-      return `
-        <td>
-          <div class="cell">
-            <button class="icon-only-btn" data-phone="${tel}" title="โทรออก">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.34 1.78.65 2.63a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.45-1.18a2 2 0 0 1 2.11-.45c.85.31 1.73.53 2.63.65A2 2 0 0 1 22 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
-            <input value="${safe}" data-key="phone" readonly style="display:none" title="${safe}">
-          </div>
-        </td>
-      `;
-    }
-
-    // โปรไฟล์ (multiline)
-    function cellProfile(value){
-      const safeVal = value==null ? '' : value;
-      const title = String(safeVal).replaceAll('"','&quot;');
-      return `<td class="col-profile"><div class="cell"><textarea rows="2" data-key="profile" readonly title="${title}">${safeVal}</textarea></div></td>`;
-    }
-
-    // หมายเหตุ: แสดงเป็นไอคอนตา + textarea ซ่อนไว้ (edit เท่านั้น)
-    function cellNote(value){
-      const safeVal = value==null ? '' : value;
-      const title = String(safeVal).replaceAll('"','&quot;');
-      return `
-        <td>
-          <div class="cell">
-            <button class="icon-only-btn" data-note-view title="ดูหมายเหตุ">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z" stroke="currentColor" stroke-width="2"/>
-                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-              </svg>
-            </button>
-            <textarea rows="2" data-key="note" readonly style="display:none" title="${title}">${safeVal}</textarea>
-          </div>
-        </td>
-      `;
-    }
-
-    function renderTable(rows){
-      if(rows.length===0){
-        tbody.innerHTML = `<tr><td colspan="8"><div class="empty">ไม่พบข้อมูลที่ตรงกับคำค้นหา</div></td></tr>`;
-        return;
-      }
-      tbody.innerHTML = '';
-      for(const r of rows){
-        const tr = document.createElement('tr');
-        tr.dataset.opd = r.opd;
-
-        tr.innerHTML = `
-          <td class="sel-col"><input type="checkbox" data-select-row value="${r.opd}" ${selected.has(r.opd)?'checked':''}></td>
-          ${cellStaticCopy(r.opd)}
-          <td><div class="cell"><input value="${r.name||''}" data-key="name" readonly title="${r.name||''}"></div></td>
-          ${cellPhone(r.phone)}
-          <td><div class="cell"><input value="${r.birthMonth||''}" data-key="birthMonth" readonly title="${r.birthMonth||''}"></div></td>
-          ${cellProfile(r.profile)}
-          ${cellNote(r.note)}
-          <td>
-            <div class="actions">
-              <button class="btn btn-icon" data-action="edit" title="แก้ไข">
-                <svg viewBox="0 0 24 24" fill="none"><path d="M4 20h4l10-10a2.828 2.828 0 1 0-4-4L4 16v4z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </button>
-              <button class="btn btn-icon btn-primary" data-action="save" title="บันทึก" style="display:none">
-                <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v16H4zM8 4v8h8V4" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-              </button>
-              <button class="btn btn-icon btn-ghost" data-action="cancel" title="ยกเลิก" style="display:none">
-                <svg viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-              </button>
-              <button class="btn btn-icon btn-danger" data-action="del" title="ลบ">
-                <svg viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-              </button>
-            </div>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      }
-    }
-
-    // ===== Event Delegation =====
-    tbody.addEventListener('click', (e)=>{
-      const btn = e.target.closest('button[data-action]');
-      const row = e.target.closest('tr');
-
-      // ----- คลิกไอคอนโทรศัพท์: แสดงเบอร์อย่างเดียว (ไม่โทรออก)
-const phoneBtn = e.target.closest('[data-phone]');
-if (phoneBtn) {
-  const tr = phoneBtn.closest('tr');
-  const telRaw = phoneBtn.getAttribute('data-phone') || '';
-  const display = tr.querySelector('input[data-key="phone"]')?.value || telRaw;
-  openPeek('เบอร์โทร', display);   // ใช้ modal เดิมสำหรับดู/คัดลอก
-  return; // กันไม่ให้ไหลไป action อื่น
-}
-
-      // ----- ดูหมายเหตุ (ไอคอนตา)
-      const noteBtn = e.target.closest('[data-note-view]');
-      if(noteBtn){
-        const tr = noteBtn.closest('tr');
-        const ta = tr.querySelector('textarea[data-key="note"]');
-        openPeek('หมายเหตุ', ta ? ta.value : '');
-        return;
-      }
-
-      if(!btn || !row) return;
-      const action = btn.getAttribute('data-action');
-      const opd = row.dataset.opd;
-
-      if(action==='edit'){
-        setRowEditable(row, true);
-      }else if(action==='cancel'){
-        restoreSnapshot(row);
-        setRowEditable(row, false);
-      }else if(action==='save'){
-        const changes = diffSnapshot(row);
-        if(Object.keys(changes).length===0){ setRowEditable(row,false); return; }
-        Promise.all(Object.entries(changes).map(([field,value])=> updateField(opd, field, value)))
-          .then(results=>{
-            if(results.every(Boolean)){
-              const rec = rawRecords.find(x=>x.opd===opd);
-              if(rec) Object.assign(rec, changes);
-              showToast(`บันทึกข้อมูล OPD ${opd} แล้ว ✅`);
-              setRowEditable(row, false, true);
-            }else{
-              showToast('บันทึกรายการบางส่วนไม่สำเร็จ','error');
-            }
-          })
-          .catch(()=> showToast('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้','error'));
-      }else if(action==='del'){
-        if(!confirm(`ลบ OPD ${opd} ?`)) return;
-        fetch('/api/delete_customer', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({opd:String(opd)})
-        })
-        .then(r=>r.json())
-        .then(d=>{
-          if(d.message){
-            rawRecords = rawRecords.filter(x=>x.opd!==opd);
-            selected.delete(opd);
-            applyPipeline();
-            showToast(`ลบข้อมูล OPD ${opd} แล้ว`,'warn');
-          }else{
-            showToast(`ลบไม่สำเร็จ: ${d.error||'ไม่ทราบสาเหตุ'}`,'error');
-          }
-        })
-        .catch(()=> showToast('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์','error'));
-      }
-    });
-
-    // select row
-    tbody.addEventListener('change', (e)=>{
-      const chk = e.target.closest('input[data-select-row]');
-      if(!chk) return;
-      const opd = chk.value;
-      if(chk.checked) selected.add(opd); else selected.delete(opd);
-      selectAll.checked = viewRecords.length>0 && viewRecords.every(r=>selected.has(r.opd));
-    });
-
-    // ----- Helpers for edit state & snapshot -----
-    function setRowEditable(row, editable, clearSnap=false){
-      const inputs = $$('input[data-key], textarea[data-key]', row);
-      const phoneBtn = row.querySelector('[data-phone]');
-      const phoneInput = row.querySelector('input[data-key="phone"]');
-      const noteBtn = row.querySelector('[data-note-view]');
-      const noteTA = row.querySelector('textarea[data-key="note"]');
-
-      if(editable){
-        row.dataset.snapshot = JSON.stringify(takeSnapshot(row));
-      }else if(clearSnap){
-        delete row.dataset.snapshot;
-      }
-
-      inputs.forEach(inp=>{
-        inp.readOnly = !editable;
-        inp.classList.toggle('editing', editable);
-      });
-
-      // สลับแสดงผลเฉพาะคอลัมน์พิเศษ
-      if(phoneBtn && phoneInput){
-        phoneBtn.style.display = editable ? 'none' : '';
-        phoneInput.style.display = editable ? '' : 'none';
-      }
-      if(noteBtn && noteTA){
-        noteBtn.style.display = editable ? 'none' : '';
-        noteTA.style.display = editable ? '' : 'none';
-      }
-
-      row.querySelector('[data-action="edit"]').style.display = editable ? 'none' : '';
-      row.querySelector('[data-action="save"]').style.display = editable ? '' : 'none';
-      row.querySelector('[data-action="cancel"]').style.display = editable ? '' : 'none';
-    }
-    function takeSnapshot(row){
-      const obj = {};
-      $$('input[data-key], textarea[data-key]', row).forEach(inp=> obj[inp.dataset.key] = inp.value);
-      return obj;
-    }
-    function restoreSnapshot(row){
-      const snap = row.dataset.snapshot ? JSON.parse(row.dataset.snapshot) : null;
-      if(!snap) return;
-      $$('input[data-key], textarea[data-key]', row).forEach(inp=>{
-        const k = inp.dataset.key;
-        if(k in snap) inp.value = snap[k];
-      });
-    }
-    function diffSnapshot(row){
-      const snap = row.dataset.snapshot ? JSON.parse(row.dataset.snapshot) : null;
-      const diff = {};
-      $$('input[data-key], textarea[data-key]', row).forEach(inp=>{
-        const k = inp.dataset.key, v = inp.value;
-        if(!snap || snap[k] !== v) diff[k] = v;
-      });
-      return diff;
-    }
-
-    function updateField(opd, field, value){
-      return fetch('/api/update_customer', {
+    async function apiAddCustomerFull(payload){
+      const r = await fetch('/api/add_customer_full', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({opd:String(opd), field, value})
-      })
-      .then(r=>r.json())
-      .then(d=>{
-        if(d.message) return true;
-        showToast(`บันทึกไม่สำเร็จ (${field}): ${d.error||'ไม่ทราบสาเหตุ'}`, 'error');
-        return false;
-      })
-      .catch(()=>{ showToast('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้','error'); return false; });
+        credentials:'same-origin',
+        body: JSON.stringify(payload)
+      });
+      const j = await r.json().catch(()=> ({}));
+      if (!r.ok) throw new Error(j.error || 'add_failed');
+      return j;
     }
 
-    // ===== Sorting (thead) =====
-    (function initSortHeaders(){
-      $$('#customerTable thead th[data-key]').forEach(th=>{
-        const key = th.getAttribute('data-key');
-        const sortSpan = th.querySelector('.sort');
-        th.addEventListener('click', ()=>{
-          if(sortState.key===key){ sortState.asc = !sortState.asc; } else { sortState.key=key; sortState.asc=true; }
-          $$('#customerTable thead th .sort').forEach(s=>s.textContent='↕');
-          sortSpan.textContent = sortState.asc ? '🔼' : '🔽';
-          saveSortPref(sortState.key, sortState.asc);
-          applyPipeline();
-        });
+    async function apiUpdateCustomerPatch(opd, patch){
+      const r = await fetch('/api/update_customer_patch', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        credentials:'same-origin',
+        body: JSON.stringify({ opd, patch })
       });
-    })();
+      const j = await r.json().catch(()=> ({}));
+      if (!r.ok) throw new Error(j.error || 'update_failed');
+      return j;
+    }
 
-    // ===== Search/Filter/SelectAll =====
-    searchInput.addEventListener('input', debounce(applyPipeline, 200));
-    clearSearch.addEventListener('click', ()=>{ searchInput.value=''; applyPipeline(); });
-    monthFilter.addEventListener('change', applyPipeline);
-    selectAll.onchange = ()=>{
-      if(selectAll.checked){ viewRecords.forEach(r=> selected.add(r.opd)); }
-      else{ viewRecords.forEach(r=> selected.delete(r.opd)); }
-      applyPipeline();
+    async function apiDeleteCustomerAndSales(opd){
+      const r = await fetch('/api/delete_customer_and_sales', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        credentials:'same-origin',
+        body: JSON.stringify({ opd })
+      });
+      const j = await r.json().catch(()=> ({}));
+      if (!r.ok) throw new Error(j.error || 'delete_failed');
+      return j;
+    }
+
+    // =========================
+    // ✅ Add/Edit Form helpers (ใช้ฟอร์มเดียวกัน)
+    // =========================
+    function clearForm(){
+      $$('#addModal input, #addModal textarea, #addModal select').forEach(i => {
+        if (i.id === 'formMode') return;
+        i.value = '';
+      });
+    }
+
+    function setFormMode(mode){
+      $('#formMode').value = mode;
+
+      if (mode === 'add'){
+        $('#formModalTitle').textContent = '➕ เพิ่มลูกค้าใหม่';
+        $('#formModalSub').textContent = 'บันทึกเข้าฐาน (ตาราง customers ผ่าน Flask API)';
+        $('#formHint').textContent = '✨ กรอกข้อมูลแล้วกดบันทึก';
+        $('#f_opd').readOnly = false;
+        $('#f_opd').style.background = '#fff';
+      } else {
+        $('#formModalTitle').textContent = '✏️ แก้ไขข้อมูลลูกค้า';
+        $('#formModalSub').textContent = 'แก้ไขข้อมูลแล้วกดบันทึกเพื่ออัปเดตฐานข้อมูล';
+        $('#formHint').textContent = '🧾 แก้ไขแล้วกดบันทึกเพื่ออัปเดตฐานข้อมูล';
+        $('#f_opd').readOnly = true;              // ✅ ล็อก OPD ในโหมดแก้ไข
+        $('#f_opd').style.background = '#f8fafc';
+      }
+    }
+
+    function openAddForm(){
+      clearForm();
+      setFormMode('add');
+      openModal('addModal');
+      setTimeout(() => $('#f_opd').focus(), 50);
+    }
+
+    function openEditForm(opd){
+      const r = rawData.find(x => x.opd === opd);
+      if (!r) return;
+
+      clearForm();
+      setFormMode('edit');
+
+      // เติมค่าลงฟอร์ม
+      $('#f_opd').value = r.opd || '';
+      $('#f_birthMonth').value = r.birthMonth || '';
+      $('#f_birth_th').value = r.birth_th_ddmmyyyy || '';
+
+      $('#f_name').value = r.name || '';
+      $('#f_full_name').value = r.full_name || '';
+
+      $('#f_phone').value = r.phone || '';
+      $('#f_facebook_name').value = r.facebook_name || '';
+
+      $('#f_national_id').value = r.national_id || '';
+      $('#f_vip').value = r.vip || '';
+
+      $('#f_address').value = r.address || '';
+      $('#f_profile').value = r.profile || '';
+      $('#f_note').value = r.note || '';
+
+      openModal('addModal');
+      setTimeout(() => $('#f_full_name').focus(), 50);
+    }
+
+    // =========================
+    // Load + Render
+    // =========================
+    async function loadData() {
+      tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:40px; color:#94a3b8;">
+        กำลังโหลดข้อมูล...
+      </td></tr>`;
+
+      try{
+        const data = await apiGetCustomers();
+
+        rawData = data.map(r => ({
+          id: r.id ?? null,
+          opd: pad4(r.opd ?? ''),
+          name: r.name ?? '',
+          full_name: r.full_name ?? '',
+          phone: r.phone ?? '',
+          national_id: r.national_id ?? '',
+          address: r.address ?? '',
+          facebook_name: r.facebook_name ?? '',
+          birthMonth: pad2(r.birthMonth ?? ''),
+          birth_th_ddmmyyyy: r.birth_th_ddmmyyyy ?? '',
+          vip: r.vip ?? '',
+          profile: r.profile ?? '',
+          note: r.note ?? ''
+        })).filter(r => r.opd && r.opd !== '0000');
+
+        $('#totalChip').textContent = `${rawData.length} คน`;
+        render();
+        showToast('อัปเดตข้อมูลล่าสุดแล้ว');
+
+      }catch(err){
+        console.error("load error:", err);
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:crimson; padding:20px;">
+          โหลดข้อมูลไม่สำเร็จ
+        </td></tr>`;
+        showToast('โหลดข้อมูลไม่สำเร็จ', 'error');
+      }
+    }
+
+    function render() {
+      const q = searchInput.value.toLowerCase().trim();
+      const m = monthFilter.value;
+
+      viewData = rawData.filter(r => {
+        const matchMonth = !m || (r.birthMonth === m);
+        if (!q) return matchMonth;
+
+        const text = `${r.opd} ${r.name} ${r.full_name} ${r.phone} ${r.national_id} ${r.address} ${r.facebook_name} ${r.birthMonth} ${r.birth_th_ddmmyyyy} ${r.vip} ${r.profile} ${r.note}`.toLowerCase();
+        return matchMonth && text.includes(q);
+      });
+
+      const { key, asc } = sortConfig;
+      viewData.sort((a, b) => {
+        let valA = a[key] ?? '';
+        let valB = b[key] ?? '';
+        if (key === 'opd') {
+          valA = parseInt(valA) || 0;
+          valB = parseInt(valB) || 0;
+        }
+        if (valA < valB) return asc ? -1 : 1;
+        if (valA > valB) return asc ? 1 : -1;
+        return 0;
+      });
+
+      if (viewData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:30px; color:#cbd5e1;">ไม่พบข้อมูล</td></tr>`;
+        $('#clearSearch').style.display = q ? 'block' : 'none';
+        return;
+      }
+
+      tbody.innerHTML = viewData.map(r => {
+        const vipChip = r.vip ? `<span class="chip mini vip">${esc(r.vip)}</span>` : `<span class="muted">-</span>`;
+        const displayName = r.full_name || r.name || '-';
+
+        return `
+        <tr data-opd="${esc(r.opd)}">
+          <td class="sel-col">
+            <input type="checkbox" value="${esc(r.opd)}" ${selected.has(r.opd)?'checked':''} onchange="toggleSelect('${esc(r.opd)}')">
+          </td>
+
+          <td data-col="opd">${esc(r.opd)}</td>
+
+          <td data-col="full_name">
+            <div class="cell">
+              <input data-key="full_name" value="${esc(displayName)}" readonly ondblclick="editRow(this)">
+            </div>
+          </td>
+
+          <td data-col="phone">
+            <div class="cell"><input data-key="phone" value="${esc(r.phone)}" readonly ondblclick="editRow(this)"></div>
+          </td>
+
+          <td data-col="vip" style="text-align:center">
+            <div class="cell" style="justify-content:center;">
+              <input data-key="vip" value="${esc(r.vip)}" readonly style="text-align:center; max-width:86px;" ondblclick="editRow(this)">
+              <span>${vipChip}</span>
+            </div>
+          </td>
+
+          <td data-col="birthMonth">
+            <div class="cell"><input data-key="birthMonth" value="${esc(r.birthMonth)}" readonly style="text-align:center" ondblclick="editRow(this)"></div>
+          </td>
+
+          <td data-col="birth_th_ddmmyyyy">
+            <div class="cell"><input data-key="birth_th_ddmmyyyy" value="${esc(r.birth_th_ddmmyyyy)}" readonly ondblclick="editRow(this)"></div>
+          </td>
+
+          <td data-col="facebook_name">
+            <div class="cell"><input data-key="facebook_name" value="${esc(r.facebook_name)}" readonly ondblclick="editRow(this)"></div>
+          </td>
+
+          <td data-col="profile">
+            <div class="cell"><textarea data-key="profile" readonly ondblclick="editRow(this)">${esc(r.profile)}</textarea></div>
+          </td>
+
+          <td data-col="note">
+            <div class="cell"><input data-key="note" value="${esc(r.note)}" readonly ondblclick="editRow(this)"></div>
+          </td>
+
+          <td>
+            <div class="actions">
+              <!-- 🔍 ดูรายละเอียด: เปลี่ยนให้เปิดฟอร์มเดียวกันแบบ Edit -->
+              <button class="btn-icon btn-ghost" onclick="openEditForm('${esc(r.opd)}')" title="ดูรายละเอียด/แก้ไข">🔍</button>
+
+              <!-- ✏️ แก้ไข: เปิดฟอร์มเดียวกันแบบ Edit -->
+              <button class="btn-icon btn-ghost" onclick="openEditForm('${esc(r.opd)}')" title="แก้ไข (ฟอร์ม)">✏️</button>
+
+              <!-- (ตัวเดิมสำหรับ inline edit ยังเก็บไว้ ถ้าอยากใช้) -->
+              <button class="btn-icon btn-ghost save-btn" onclick="saveRow(this)" style="display:none; color:var(--primary);" title="บันทึก">💾</button>
+              <button class="btn-icon btn-ghost cancel-btn" onclick="cancelRow(this)" style="display:none; color:var(--warn);" title="ยกเลิก">❌</button>
+
+              <button class="btn-icon btn-ghost" onclick="deleteRow('${esc(r.opd)}')" title="ลบ" style="color:var(--danger);">🗑️</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+
+      $('#clearSearch').style.display = q ? 'block' : 'none';
+    }
+
+    // =========================
+    // Selection / Sorting
+    // =========================
+    window.toggleSelect = (opd) => {
+      if (selected.has(opd)) selected.delete(opd);
+      else selected.add(opd);
     };
 
-    // ===== Bulk Delete & Export =====
-    bulkDeleteBtn.onclick = ()=>{
-      if(selected.size===0){ showToast('ยังไม่ได้เลือกรายการ','warn'); return; }
-      if(!confirm(`ลบ ${selected.size} รายการที่เลือก?`)) return;
-      const ops = Array.from(selected);
-      Promise.all(ops.map(opd => fetch('/api/delete_customer', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({opd:String(opd)})
-      }).then(r=>r.json())))
-      .then(results=>{
-        const ok = results.filter(d=>d.message).length;
-        rawRecords = rawRecords.filter(r=>!selected.has(r.opd));
+    $('#selectAll').onchange = (e) => {
+      if (e.target.checked) viewData.forEach(r => selected.add(r.opd));
+      else selected.clear();
+      render();
+    };
+
+    $$('th[data-key]').forEach(th => {
+      th.addEventListener('click', () => {
+        const k = th.dataset.key;
+        if (sortConfig.key === k) sortConfig.asc = !sortConfig.asc;
+        else sortConfig = { key: k, asc: true };
+        render();
+      });
+    });
+
+    // =========================
+    // Inline Edit (ยังคงไว้ เผื่ออยากใช้แก้แบบเร็วในตาราง)
+    // =========================
+    window.editRow = (el) => {
+      const tr = el.closest('tr');
+      tr.classList.add('editing');
+      $$('input, textarea', tr).forEach(i => i.readOnly = false);
+
+      const actions = tr.querySelector('.actions');
+      actions.querySelectorAll('button').forEach(btn => btn.style.display = 'none');
+      actions.querySelector('.save-btn').style.display = 'inline-block';
+      actions.querySelector('.cancel-btn').style.display = 'inline-block';
+
+      const backup = {};
+      $$('[data-key]', tr).forEach(inp => backup[inp.dataset.key] = inp.value);
+      tr.dataset.backup = JSON.stringify(backup);
+    };
+
+    window.cancelRow = (el) => {
+      const tr = el.closest('tr');
+      const backup = JSON.parse(tr.dataset.backup || '{}');
+      $$('[data-key]', tr).forEach(inp => {
+        const k = inp.dataset.key;
+        if (backup[k] !== undefined) inp.value = backup[k];
+      });
+
+      tr.classList.remove('editing');
+      $$('input, textarea', tr).forEach(i => i.readOnly = true);
+
+      const actions = tr.querySelector('.actions');
+      actions.querySelectorAll('button').forEach(btn => btn.style.display = 'inline-block');
+      actions.querySelector('.save-btn').style.display = 'none';
+      actions.querySelector('.cancel-btn').style.display = 'none';
+      render();
+    };
+
+    window.saveRow = async (el) => {
+      const tr = el.closest('tr');
+      const opd = tr.dataset.opd;
+
+      const patch = {};
+      $$('[data-key]', tr).forEach(inp => {
+        patch[inp.dataset.key] = (inp.value ?? '').trim();
+      });
+
+      // normalize
+      if (patch.birthMonth !== undefined) patch.birthMonth = pad2(patch.birthMonth);
+
+      // ปิดโหมด edit ทันที (UX)
+      tr.classList.remove('editing');
+      $$('input, textarea', tr).forEach(i => i.readOnly = true);
+
+      const actions = tr.querySelector('.actions');
+      actions.querySelectorAll('button').forEach(btn => btn.style.display = 'inline-block');
+      actions.querySelector('.save-btn').style.display = 'none';
+      actions.querySelector('.cancel-btn').style.display = 'none';
+
+      // empty string -> null
+      Object.keys(patch).forEach(k => { if (patch[k] === '') patch[k] = null; });
+
+      try{
+        await apiUpdateCustomerPatch(opd, patch);
+        showToast('บันทึกข้อมูลเรียบร้อย');
+        await loadData();
+      }catch(err){
+        console.error(err);
+        showToast('บันทึกไม่สำเร็จ', 'error');
+        await loadData();
+      }
+    };
+
+    // =========================
+    // Delete
+    // =========================
+    window.deleteRow = async (opd, fromDetail=false) => {
+      const msg = fromDetail
+        ? `ยืนยันลบ OPD ${opd} จากฐานข้อมูล? (ถาวร)`
+        : `ยืนยันลบข้อมูลลูกค้า OPD ${opd}? (ถาวร)`;
+      if (!confirm(msg)) return;
+
+      try{
+        await apiDeleteCustomerAndSales(opd);
+        selected.delete(opd);
+        showToast('ลบลูกค้าแล้ว', 'warn');
+        closeModal('detailModal');
+        await loadData();
+      }catch(err){
+        console.error(err);
+        showToast('ลบไม่สำเร็จ', 'error');
+      }
+    };
+
+    // Bulk Delete
+    $('#bulkDeleteBtn').onclick = async () => {
+      if (selected.size === 0) return showToast('ยังไม่ได้เลือกรายการ', 'warn');
+      if (!confirm(`ลบ ${selected.size} รายการที่เลือก? (ถาวร)`)) return;
+
+      try{
+        const list = Array.from(selected);
+        for (const opd of list){
+          await apiDeleteCustomerAndSales(opd);
+        }
         selected.clear();
-        applyPipeline();
-        showToast(`ลบสำเร็จ ${ok} รายการ`,'warn');
-      })
-      .catch(()=> showToast('ลบแบบกลุ่มไม่สำเร็จ','error'));
+        showToast('ลบรายการที่เลือกแล้ว', 'warn');
+        await loadData();
+      }catch(err){
+        console.error(err);
+        showToast('ลบแบบกลุ่มไม่สำเร็จ', 'error');
+        await loadData();
+      }
     };
-    exportBtn.onclick = ()=>{
-      const csv = toCSV(viewRecords);
-      download(`customers_${new Date().toISOString().slice(0,10)}.csv`, csv);
+
+    // =========================
+    // ✅ Add/Edit Customer Save (แก้ไขใหม่)
+    // =========================
+    $('#openAddModalBtn').onclick = openAddForm;
+
+    $('#saveCustomerBtn').onclick = async () => {
+      // 1. ตรวจสอบ OPD ก่อน
+      const opd = pad4($('#f_opd').value.trim());
+      if (!opd || opd.length !== 4) return alert('กรุณากรอกเลข OPD 4 หลักให้ถูกต้อง');
+
+      // 2. ดึงค่าโหมด (add หรือ edit)
+      const mode = $('#formMode').value; // add | edit
+
+      // 3. เตรียมข้อมูลจากฟอร์ม
+      const rawPayload = {
+        opd: opd,
+        birthMonth: pad2($('#f_birthMonth').value.trim()),
+        birth_th_ddmmyyyy: $('#f_birth_th').value.trim(),
+        name: $('#f_name').value.trim(),
+        full_name: $('#f_full_name').value.trim(),
+        phone: $('#f_phone').value.trim(),
+        facebook_name: $('#f_facebook_name').value.trim(),
+        national_id: $('#f_national_id').value.trim(),
+        vip: $('#f_vip').value,
+        address: $('#f_address').value.trim(),
+        profile: $('#f_profile').value.trim(),
+        note: $('#f_note').value.trim()
+      };
+
+      // แปลง empty string เป็น null
+      Object.keys(rawPayload).forEach(k => { 
+        if (rawPayload[k] === '') rawPayload[k] = null; 
+      });
+
+      // Validate เดือนเกิด (ถ้ามี)
+      if (rawPayload.birthMonth && !/^(0[1-9]|1[0-2])$/.test(rawPayload.birthMonth)) {
+         return alert('เดือนเกิดต้องเป็น 01-12');
+      }
+
+      // Validate วันเกิดไทย (ถ้ามี)
+      if (rawPayload.birth_th_ddmmyyyy && !/^\d{2}\/\d{2}\/\d{4}$/.test(rawPayload.birth_th_ddmmyyyy)) {
+        return alert('วันเกิดไทยต้องเป็นรูปแบบ dd/mm/yyyy (เช่น 05/09/2530)');
+      }
+
+      try {
+        if (mode === 'add') {
+          // --- โหมดเพิ่มลูกค้าใหม่ ---
+          await apiAddCustomerFull(rawPayload);
+          showToast('เพิ่มลูกค้าสำเร็จ');
+        } else {
+          // --- โหมดแก้ไขลูกค้า ---
+          const patch = { ...rawPayload };
+          delete patch.opd; // ห้ามแก้ OPD
+          
+          await apiUpdateCustomerPatch(opd, patch);
+          showToast('บันทึกการแก้ไขสำเร็จ');
+        }
+
+        // ปิด Modal และโหลดข้อมูลใหม่
+        closeModal('addModal');
+        await loadData();
+
+      } catch (err) {
+        console.error(err);
+        alert(mode === 'add' 
+          ? 'เพิ่มไม่สำเร็จ (ตรวจสอบ OPD ซ้ำ หรือ Server Error)' 
+          : 'บันทึกไม่สำเร็จ (Server Error)');
+      }
+    };
+
+    // =========================
+    // Detail Modal (ยังใช้งานได้เหมือนเดิม)
+    // =========================
+    window.openDetail = (opd) => {
+      const r = rawData.find(x => x.opd === opd);
+      if (!r) return;
+
+      $('#d_opd').value = r.opd;
+      $('#d_opd_chip').textContent = `OPD ${r.opd}`;
+
+      $('#d_birthMonth').value = r.birthMonth || '';
+      $('#d_birth_th').value = r.birth_th_ddmmyyyy || '';
+      $('#d_name').value = r.name || '';
+      $('#d_full_name').value = r.full_name || '';
+      $('#d_phone').value = r.phone || '';
+      $('#d_facebook_name').value = r.facebook_name || '';
+      $('#d_national_id').value = r.national_id || '';
+      $('#d_vip').value = r.vip || '';
+      $('#d_address').value = r.address || '';
+      $('#d_profile').value = r.profile || '';
+      $('#d_note').value = r.note || '';
+
+      $('#detailSaveBtn').onclick = async () => {
+        const patch = {
+          birthMonth: pad2($('#d_birthMonth').value.trim()),
+          birth_th_ddmmyyyy: $('#d_birth_th').value.trim(),
+          name: $('#d_name').value.trim(),
+          full_name: $('#d_full_name').value.trim(),
+          phone: $('#d_phone').value.trim(),
+          facebook_name: $('#d_facebook_name').value.trim(),
+          national_id: $('#d_national_id').value.trim(),
+          vip: $('#d_vip').value,
+          address: $('#d_address').value.trim(),
+          profile: $('#d_profile').value.trim(),
+          note: $('#d_note').value.trim()
+        };
+        Object.keys(patch).forEach(k => { if (patch[k] === '') patch[k] = null; });
+
+        try{
+          await apiUpdateCustomerPatch(opd, patch);
+          showToast('บันทึกจากหน้ารายละเอียดแล้ว');
+          closeModal('detailModal');
+          await loadData();
+        }catch(err){
+          console.error(err);
+          showToast('บันทึกไม่สำเร็จ', 'error');
+        }
+      };
+
+      $('#detailDeleteBtn').onclick = () => deleteRow(opd, true);
+      openModal('detailModal');
+    };
+
+    // =========================
+    // Search / Filter / Refresh
+    // =========================
+    searchInput.addEventListener('input', () => render());
+    $('#clearSearch').onclick = () => { searchInput.value = ''; render(); };
+    monthFilter.addEventListener('change', () => render());
+    $('#refreshBtn').onclick = loadData;
+
+    // Export CSV
+    $('#exportBtn').onclick = () => {
+      const rows = (viewData.length ? viewData : rawData);
+      const headers = ['opd','name','full_name','phone','national_id','address','facebook_name','birthMonth','birth_th_ddmmyyyy','vip','profile','note'];
+
+      const csv = [
+        headers.join(','),
+        ...rows.map(r => headers.map(h => `"${String(r[h] ?? '').replace(/"/g,'""')}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `customers_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
       showToast('ส่งออก CSV แล้ว');
     };
 
-    // ===== Modal Add =====
-    const f_opd = $('#f_opd'), f_name = $('#f_name'), f_phone = $('#f_phone'), f_birth = $('#f_birthMonth'), f_profile = $('#f_profile'), f_note = $('#f_note');
-    const addModalTitle = $('#modalTitle');
-    function openModal(){
-      f_opd.value=''; f_name.value=''; f_phone.value=''; f_birth.value=''; f_profile.value=''; f_note.value='';
-      addModalTitle.textContent = '➕ เพิ่มลูกค้าใหม่';
-      addModal.classList.add('open'); addModal.setAttribute('aria-hidden','false');
-      setTimeout(()=> f_opd.focus(), 50);
-    }
-    function closeModal(){
-      addModal.classList.remove('open'); addModal.setAttribute('aria-hidden','true');
-    }
-    openAddModalBtn.onclick = openModal;
-    addModal.addEventListener('click', (e)=>{ if(e.target.dataset.close==='modal') closeModal(); });
-    $('[data-close="modal"]').onclick = closeModal;
-
-    f_phone.addEventListener('blur', ()=>{ f_phone.value = formatPhone(f_phone.value); });
-
-    saveCustomerBtn.onclick = ()=>{
-      const opd = pad4(f_opd.value);
-      const payload = {
-        opd,
-        name: f_name.value.trim(),
-        phone: formatPhone(f_phone.value.trim()),
-        birthMonth: normalizeMonth(f_birth.value.trim()),
-        profile: f_profile.value.trim(),
-        note: f_note.value.trim(),
-      };
-      if(!opd || opd==='0000'){ showToast('กรุณากรอกเลข OPD 4 หลัก','warn'); f_opd.focus(); return; }
-      if(rawRecords.some(x=>x.opd===opd)){ showToast('มี OPD นี้อยู่แล้วในระบบ','warn'); return; }
-
-      fetch('/api/add_customer', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(payload)
-      })
-      .then(r=>r.json())
-      .then(d=>{
-        if(d && d.message){
-          rawRecords.push(payload);
-          applyPipeline();
-          closeModal();
-          showToast('เพิ่มลูกค้าสำเร็จ ✅');
-        }else{
-          showToast(`เพิ่มไม่สำเร็จ: ${d?.error || 'ไม่ทราบสาเหตุ'}`, 'error');
-        }
-      })
-      .catch(()=> showToast('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์','error'));
+    // Scroll Top
+    window.onscroll = () => {
+      if (window.scrollY > 300) $('#scrollTop').classList.add('visible');
+      else $('#scrollTop').classList.remove('visible');
     };
+    $('#scrollTop').onclick = () => window.scrollTo({top:0, behavior:'smooth'});
 
-    // ===== Peek modal =====
-    function openPeek(title, content){
-      peekTitle.textContent = title || 'ดูข้อมูล';
-      peekContent.textContent = content || '';
-      peekModal.classList.add('open'); peekModal.setAttribute('aria-hidden','false');
-    }
-    function closePeek(){
-      peekModal.classList.remove('open'); peekModal.setAttribute('aria-hidden','true');
-    }
-    copyPeekBtn.onclick = ()=>{
-      navigator.clipboard.writeText(peekContent.textContent||'');
-      showToast('คัดลอกแล้ว');
-    };
-    peekModal.addEventListener('click', (e)=>{ if(e.target.dataset.close==='modal') closePeek(); });
-    peekModal.querySelector('[data-close="modal"]').onclick = closePeek;
-
-    // ===== Refresh & Scroll Top & Floating menu =====
-    refreshBtn.onclick = ()=>{ loadData(); };
-
-    function toggleFloatingMenu(){
-      const menu = document.getElementById('floatingMenu');
-      menu.style.display = (menu.style.display==='flex' ? 'none' : 'flex');
-    }
-    window.toggleFloatingMenu = toggleFloatingMenu;
-    document.addEventListener('click', function(e){
-      const toggle = document.getElementById('floatingToggle');
-      const menu = document.getElementById('floatingMenu');
-      if(toggle && menu && !toggle.contains(e.target) && !menu.contains(e.target)) menu.style.display='none';
-    });
-
-    window.addEventListener('scroll', ()=>{
-      if(window.scrollY > 200) scrollTopBtn.classList.add('show'); else scrollTopBtn.classList.remove('show');
-    });
-    scrollTopBtn.addEventListener('click', ()=> window.scrollTo({top:0, behavior:'smooth'}));
-
-    // ===== Init =====
+    // Init
     loadData();
+
+    // =========================
+  // 🪪 OCR Function (Tesseract.js)
+  // =========================
+  async function processIDCard(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // แสดงสถานะว่ากำลังทำงาน
+    showToast('กำลังอ่านข้อมูลจากบัตร รอสักครู่นะ...', 'warn');
+    const btnText = input.nextElementSibling.innerText;
+    input.nextElementSibling.innerText = '⏳ กำลังสแกน...';
+    input.nextElementSibling.disabled = true;
+
+    try {
+      // เริ่มกระบวนการ OCR (ใช้ภาษาไทย + อังกฤษ)
+      const { data: { text } } = await Tesseract.recognize(
+        file,
+        'tha+eng', 
+        { logger: m => console.log(m) }
+      );
+
+      console.log("Raw OCR Text:", text); // ดู log เผื่อเอาไปจูน Regex
+
+      // --- ส่วนของการแกะข้อความ (Regex Parsing) ---
+      
+      // 1. เลขบัตรประชาชน (หาเลข 13 หลัก)
+      // พยายามหาเลขกลุ่ม 1-4-5-2-1 หลัก หรือเลขติดกัน 13 ตัว
+      const idMatch = text.match(/(\d\s?-?){12}\d/);
+      if (idMatch) {
+        let cleanID = idMatch[0].replace(/[^0-9]/g, '');
+        if (cleanID.length === 13) {
+          // จัด format x-xxxx-xxxxx-xx-x
+          cleanID = `${cleanID[0]}-${cleanID.slice(1,5)}-${cleanID.slice(5,10)}-${cleanID.slice(10,12)}-${cleanID[12]}`;
+          $('#f_national_id').value = cleanID;
+        }
+      }
+
+      // 2. ชื่อ-นามสกุล (ภาษาไทย)
+      // หาคำว่า "ชื่อ" หรือ "Name" แล้วเอาบรรทัดนั้น หรือบรรทัดถัดไป
+      const lines = text.split('\n');
+      let foundName = false;
+      
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        
+        // ถ้าเจอบรรทัดที่มีคำว่า "ชื่อ" และ "สกุล" ในบรรทัดเดียวกัน (แบบบัตรใหม่)
+        if (line.includes('ชื่อ') && line.includes('สกุล')) {
+           // พยายามตัดคำขยะออกเหลือแต่ชื่อไทย
+           let cleanName = line.replace(/ชื่อ|ตัว|สกุล|Last|name|Name/g, '').trim();
+           // ลบตัวอักษรภาษาอังกฤษออก (เผื่อติดมา)
+           cleanName = cleanName.replace(/[A-Za-z]/g, '').trim();
+           $('#f_full_name').value = cleanName;
+           // แยกชื่อเล่น (เดาจากชื่อหน้า)
+           $('#f_name').value = "คุณ" + cleanName.split(' ')[0];
+           foundName = true;
+           break;
+        }
+        
+        // กรณีบัตรเก่า หรือ OCR แยกบรรทัด (หาคำว่า ชื่อ นำหน้า)
+        if (!foundName && line.startsWith('ชื่อ')) {
+           let cleanName = line.replace('ชื่อ', '').trim();
+           // อาจจะต้องดูบรรทัดถัดไปว่าเป็นนามสกุลไหม (อันนี้ต้องจูนตามผลลัพธ์จริง)
+           $('#f_full_name').value = cleanName;
+           $('#f_name').value = "คุณ" + cleanName.split(' ')[0];
+           foundName = true;
+        }
+      }
+
+      // 3. วันเกิด (dd/mm/yyyy)
+      // หาคำว่า "เกิด" หรือ "Birth"
+      const birthMatch = text.match(/\d{1,2}\s+(ม.ค.|ก.พ.|มี.ค.|เม.ย.|พ.ค.|มิ.ย.|ก.ค.|ส.ค.|ก.ย.|ต.ค.|พ.ย.|ธ.ค.)\s+\d{4}/);
+      if (birthMatch) {
+        // แปลงเดือนไทยเป็นเลข
+        const thMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+        const parts = birthMatch[0].split(/\s+/); // [25, พ.ค., 2530]
+        const d = parts[0].padStart(2, '0');
+        const mIndex = thMonths.indexOf(parts[1]);
+        const y = parts[2];
+        
+        if (mIndex > -1) {
+           const m = String(mIndex + 1).padStart(2, '0');
+           $('#f_birth_th').value = `${d}/${m}/${y}`;
+           $('#f_birthMonth').value = m;
+        }
+      }
+
+      // 4. ที่อยู่
+      // หาบรรทัดที่มีคำว่า "ที่อยู่" หรือเริ่มด้วยเลขที่บ้าน
+      let address = "";
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].includes('ที่อยู่')) {
+          // เอาบรรทัดนี้และบรรทัดถัดไปมารวมกัน
+          let addrLine = lines[i].replace('ที่อยู่', '').trim();
+          if(lines[i+1]) addrLine += " " + lines[i+1];
+          // ลบคำว่า Address ออก
+          addrLine = addrLine.replace(/Address|Date|of|Birth/gi, '').trim();
+          $('#f_address').value = addrLine;
+          break;
+        }
+      }
+
+      showToast('อ่านข้อมูลเรียบร้อย ตรวจสอบความถูกต้องอีกครั้งนะ');
+
+    } catch (err) {
+      console.error(err);
+      showToast('อ่านบัตรไม่สำเร็จ ลองถ่ายรูปใหม่ให้ชัดขึ้นนะ', 'error');
+    } finally {
+      input.value = ''; // เคลียร์ไฟล์
+      input.nextElementSibling.innerText = btnText;
+      input.nextElementSibling.disabled = false;
+    }
+  }
   </script>
 </body>
 </html>

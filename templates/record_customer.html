@@ -10,128 +10,145 @@
       --bg:#f8fafc; --card:#ffffff; --text:#0f172a;
       --primary:#0f766e; --primary-600:#0d9488; --ring:#ccfbf1;
       --line:#e2e8f0; --danger:#ef4444; --warn:#f59e0b; --success:#22c55e;
-      --radius:12px;
+      --radius:14px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      font-family:'Prompt', sans-serif;
+      font-family:'Prompt', system-ui, -apple-system, Segoe UI, sans-serif;
       color:var(--text); background:var(--bg);
       font-size: 12px; margin:0;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
     }
 
-    .container{ max-width:1200px; margin: 20px auto 120px; padding: 0 16px; }
+    .container{ max-width:1200px; margin: 16px auto 120px; padding: 0 12px; }
 
     header.appbar{
       position:sticky; top:0; z-index:50;
-      background: rgba(255,255,255,0.9); backdrop-filter: blur(8px);
+      background: rgba(255,255,255,0.92); backdrop-filter: blur(10px);
       border-bottom:1px solid var(--line);
     }
-    .appbar-inner{ max-width:1200px; margin:0 auto; padding: 12px 16px; display:flex; align-items:center; gap:10px; }
-    .title{ font-weight:700; font-size: 18px; color: var(--primary); display:flex; align-items:center; gap:8px; }
+    .appbar-inner{
+      max-width:1200px; margin:0 auto; padding: 12px 12px;
+      display:flex; align-items:center; gap:10px;
+    }
+    .title{ font-weight:900; font-size: 18px; color: var(--primary); display:flex; align-items:center; gap:8px; }
     .grow{flex:1}
 
     .btn{
-      appearance:none; border:none; border-radius:8px; padding:8px 14px; cursor:pointer; font-weight:600;
-      display:inline-flex; align-items:center; gap:6px; transition: all .2s; font-family:inherit; font-size:12px;
+      appearance:none; border:none; border-radius:10px; padding:9px 14px; cursor:pointer; font-weight:800;
+      display:inline-flex; align-items:center; gap:6px; transition: all .15s;
+      font-family:inherit; font-size:12px;
+      touch-action: manipulation;
     }
     .btn:active{ transform: translateY(1px); }
-    .btn-primary{ background:var(--primary); color:white; box-shadow: 0 2px 6px rgba(15, 118, 110, 0.2); }
+    .btn-primary{ background:var(--primary); color:white; box-shadow: 0 6px 18px rgba(15, 118, 110, 0.18); }
     .btn-primary:hover{ background:var(--primary-600); }
     .btn-ghost{ background:transparent; color:var(--text); border:1px solid transparent; }
     .btn-ghost:hover{ background:#f1f5f9; }
     .btn-danger{ background:#fee2e2; color:#b91c1c; }
     .btn-danger:hover{ background:#fecaca; }
-    .btn-icon{ padding:6px; }
+    .btn-icon{ padding:8px; border-radius:10px; }
 
     .card{
       background:var(--card); border:1px solid var(--line); border-radius: var(--radius);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      box-shadow: 0 10px 26px rgba(0,0,0,0.05);
+      overflow:hidden;
     }
 
     .toolbar{
       display:flex; flex-wrap:wrap; gap:10px; padding: 12px; align-items:center;
-      border-bottom:1px solid var(--line); background: #f8fafc; border-radius: var(--radius) var(--radius) 0 0;
+      border-bottom:1px solid var(--line); background: #f8fafc;
     }
     .search{ position:relative; flex:1; min-width: 240px; }
     .search input{
-      width:100%; padding:9px 34px 9px 36px; border:1px solid var(--line); border-radius: 8px;
+      width:100%; padding:10px 34px 10px 36px; border:1px solid var(--line); border-radius: 12px;
       outline:none; background:#fff; font-size:13px; transition: border-color .2s;
     }
     .search input:focus{ border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring); }
-    .search .icon{ position:absolute; left:10px; top:50%; transform:translateY(-50%); opacity:.5; font-size:16px; }
-    .search .clear{ position:absolute; right:10px; top:50%; transform:translateY(-50%); opacity:.5; cursor:pointer; font-size:14px; }
+    .search .icon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:.55; font-size:16px; }
+    .search .clear{ position:absolute; right:12px; top:50%; transform:translateY(-50%); opacity:.55; cursor:pointer; font-size:14px; }
 
-    .month-filter{ border:1px solid var(--line); border-radius:8px; padding:8px; background:#fff; font-size:12px; cursor:pointer; }
-    .chip{ display:inline-flex; align-items:center; padding:4px 10px; border-radius:99px; font-size:11px; background:#e0f2f1; color:#0f766e; font-weight:800; }
+    .month-filter{
+      border:1px solid var(--line); border-radius:12px; padding:9px 10px; background:#fff;
+      font-size:12px; cursor:pointer;
+    }
+    .chip{ display:inline-flex; align-items:center; padding:5px 10px; border-radius:99px; font-size:11px; background:#e0f2f1; color:#0f766e; font-weight:900; }
     .chip.vip{ background:#fef3c7; color:#92400e; }
-    .chip.mini{ padding:2px 8px; font-weight:800; }
-    .muted{ color:#64748b; font-weight:700; font-size:11px; }
+    .chip.mini{ padding:3px 8px; font-weight:900; }
+    .muted{ color:#64748b; font-weight:800; font-size:11px; }
 
-    .table-wrap{ overflow-x:auto; }
-    table{ width:100%; border-collapse:collapse; font-size: 12px; min-width: 1120px; }
+    .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling: touch; }
+    table{ width:100%; border-collapse:collapse; font-size: 12px; min-width: 980px; }
     thead th{
       position:sticky; top:0; z-index:1; background:#f1f5f9; color:#475569;
-      font-weight:800; text-align:left; padding:10px 12px; border-bottom:1px solid var(--line);
+      font-weight:900; text-align:left; padding:10px 12px; border-bottom:1px solid var(--line);
       white-space: nowrap; cursor:pointer; user-select:none;
     }
     thead th:hover{ background:#e2e8f0; }
     tbody td{
-      padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top; color: #334155;
+      padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top; color: #334155;
     }
     tbody tr:hover td{ background:#f8fafc; }
 
     td .cell{ display:flex; align-items:center; width:100%; gap:8px; }
     td input, td textarea{
       width:100%; border:1px solid transparent; background:transparent;
-      padding:4px; font-family:inherit; font-size:inherit; color:inherit; resize:none; border-radius:6px;
+      padding:4px; font-family:inherit; font-size:inherit; color:inherit; resize:none; border-radius:8px;
     }
     td input:focus, td textarea:focus{ outline:none; }
     tr.editing td input, tr.editing td textarea{
       background:#fff; border-color: #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
-    th.sel-col, td.sel-col{ width: 40px; text-align:center; padding-left:4px; padding-right:4px;}
+    th.sel-col, td.sel-col{ width: 42px; text-align:center; padding-left:6px; padding-right:6px;}
     th[data-key="opd"], td[data-col="opd"]{ width: 90px; font-weight:900; color: var(--primary); }
     td[data-col="opd"]{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    th[data-key="full_name"], td[data-col="full_name"]{ width: 220px; font-weight:800; }
-    th[data-key="phone"], td[data-col="phone"]{ width: 140px; }
+    th[data-key="full_name"], td[data-col="full_name"]{ width: 240px; font-weight:900; }
     th[data-key="vip"], td[data-col="vip"]{ width: 95px; text-align:center; }
     th[data-key="birthMonth"], td[data-col="birthMonth"]{ width: 90px; text-align:center; }
-    th[data-key="birth_th_ddmmyyyy"], td[data-col="birth_th_ddmmyyyy"]{ width: 140px; }
-    th[data-key="facebook_name"], td[data-col="facebook_name"]{ width: 160px; }
-    th[data-key="profile"], td[data-col="profile"]{ width: auto; min-width: 260px; }
-    td[data-col="profile"] textarea { min-height: 2.8em; line-height: 1.4; color: #475569; }
-    th[data-key="note"], td[data-col="note"]{ width: 180px; }
 
-    th:last-child, td:last-child{ width: 165px; text-align:center; }
-    .actions{ display:flex; justify-content:center; gap:4px; opacity:0.6; transition:opacity .2s; }
+    th:last-child, td:last-child{ width: 200px; text-align:center; }
+    .actions{ display:flex; justify-content:center; gap:6px; opacity:0.85; transition:opacity .2s; }
     tr:hover .actions{ opacity:1; }
 
     .skeleton{ height:12px; background:#e2e8f0; border-radius:4px; animation: pulse 1.5s infinite; }
     @keyframes pulse{ 0%{opacity:.6} 50%{opacity:.3} 100%{opacity:.6} }
 
-    .toast-wrap{ position:fixed; right:20px; bottom:20px; z-index:100; display:flex; flex-direction:column; gap:10px; }
+    .toast-wrap{ position:fixed; right:16px; bottom:16px; z-index:100; display:flex; flex-direction:column; gap:10px; }
     .toast{
-      background:#fff; border-left:4px solid var(--success); padding:12px 16px; border-radius:8px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1); font-weight:800; display:flex; align-items:center; gap:10px;
-      transform:translateY(20px); opacity:0; transition:all .3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      background:#fff; border-left:4px solid var(--success); padding:12px 14px; border-radius:12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1); font-weight:900; display:flex; align-items:center; gap:10px;
+      transform:translateY(20px); opacity:0; transition:all .28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      max-width: min(360px, calc(100vw - 32px));
     }
     .toast.show{ transform:translateY(0); opacity:1; }
     .toast.error{ border-left-color:var(--danger); }
     .toast.warn{ border-left-color:var(--warn); }
 
-    .modal{ position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; }
-    .modal.open{ display:flex; }
-    .modal-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,0.4); backdrop-filter:blur(2px); }
-    .modal-box{
-      position:relative; width:92%; max-width:720px; background:#fff; border-radius:16px;
-      box-shadow:0 20px 50px rgba(0,0,0,0.2); padding:18px; animation: popIn .2s ease;
+    .modal{
+      position:fixed; inset:0; z-index:60;
+      display:none; align-items:flex-end; justify-content:center;
     }
-    @keyframes popIn{ from{transform:scale(0.95); opacity:0} to{transform:scale(1); opacity:1} }
-    .modal-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:12px; }
-    .modal-title{ font-size:16px; font-weight:900; color:var(--primary); display:flex; align-items:center; gap:8px; }
-    .modal-sub{ font-size:11px; color:#64748b; font-weight:800; }
+    .modal.open{ display:flex; }
+    .modal-backdrop{
+      position:absolute; inset:0; background:rgba(0,0,0,0.45);
+      backdrop-filter: blur(3px);
+    }
+    .modal-box{
+      position:relative; width:100%; max-width:760px;
+      background:#fff; border-radius:18px 18px 0 0;
+      box-shadow:0 30px 70px rgba(0,0,0,0.25);
+      padding:16px 14px;
+      max-height: 86vh; overflow:auto;
+      animation: slideUp .18s ease;
+    }
+    @keyframes slideUp{ from{transform:translateY(10px); opacity:0} to{transform:translateY(0); opacity:1} }
+
+    .modal-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; gap:12px; }
+    .modal-title{ font-size:16px; font-weight:1000; color:var(--primary); display:flex; align-items:center; gap:8px; }
+    .modal-sub{ font-size:11px; color:#64748b; font-weight:900; }
 
     .grid{ display:grid; gap:10px; grid-template-columns: repeat(12, 1fr); }
     .col-12{ grid-column: span 12; }
@@ -139,41 +156,109 @@
     .col-4{ grid-column: span 4; }
     .col-3{ grid-column: span 3; }
 
-    .field-group label{ display:block; margin-bottom:4px; font-weight:900; font-size:11px; color:#64748b; }
+    .field-group label{ display:block; margin-bottom:4px; font-weight:1000; font-size:11px; color:#64748b; }
     .field-group input, .field-group textarea, .field-group select{
-      width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:10px; font-family:inherit; font-size:13px;
-      outline:none;
+      width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:12px;
+      font-family:inherit; font-size:13px; outline:none;
     }
     .field-group input:focus, .field-group textarea:focus, .field-group select:focus{
       border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring);
     }
     .field-group textarea{ resize:vertical; min-height:90px; }
 
-    .modal-footer{ display:flex; justify-content:space-between; gap:8px; margin-top:14px; align-items:center; }
+    .modal-footer{ display:flex; justify-content:space-between; gap:8px; margin-top:14px; align-items:center; flex-wrap:wrap; }
 
     /* Scroll Top */
     #scrollTop{
-      position:fixed; right:20px; bottom:20px; width:40px; height:40px; border-radius:50%;
+      position:fixed; right:16px; bottom:16px; width:44px; height:44px; border-radius:50%;
       background:var(--primary); color:white; border:none; cursor:pointer;
       display:flex; align-items:center; justify-content:center; font-size:20px;
-      box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3); opacity:0; pointer-events:none; transition:all .3s;
+      box-shadow: 0 8px 18px rgba(15, 118, 110, 0.28);
+      opacity:0; pointer-events:none; transition:all .25s;
       z-index: 900;
     }
-    #scrollTop.visible{ opacity:1; bottom:90px; pointer-events:auto; }
+    #scrollTop.visible{ opacity:1; bottom:92px; pointer-events:auto; }
 
+    /* ✅ Popup (View) */
+    .view-card{
+      border:1px solid var(--line);
+      border-radius:16px;
+      background: linear-gradient(180deg, #f8fafc, #ffffff 55%);
+      padding:12px;
+    }
+    .view-top{
+      display:flex; align-items:flex-start; gap:10px;
+      padding:8px 10px;
+      border-radius:14px;
+      background:#ffffff;
+      border:1px solid var(--line);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.04);
+    }
+    .badge-opd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-weight:1000;
+      color:#0f766e;
+      background:#ecfeff;
+      border:1px solid #a5f3fc;
+      padding:6px 10px;
+      border-radius:999px;
+      white-space:nowrap;
+    }
+    .view-name{
+      font-weight:1000; font-size:15px; color:#0f172a; line-height:1.25;
+    }
+    .view-subline{
+      margin-top:4px;
+      display:flex; gap:8px; flex-wrap:wrap;
+      font-weight:900; color:#475569; font-size:11px;
+    }
+    .kv{
+      display:grid;
+      grid-template-columns: 120px 1fr;
+      gap:8px 10px;
+      margin-top:12px;
+    }
+    .k{
+      color:#64748b; font-weight:1000; font-size:11px;
+      display:flex; align-items:center; gap:6px;
+    }
+    .v{
+      color:#0f172a; font-weight:900; font-size:12px;
+      word-break: break-word;
+    }
+    .v.mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .divider{
+      height:1px; background:var(--line); margin:12px 0;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:6px 10px; border-radius:999px;
+      font-weight:1000; font-size:11px;
+      background:#f1f5f9; color:#334155;
+      border:1px solid #e2e8f0;
+    }
+
+    /* ✅ Mobile: ซ่อนคอลัมน์ในหน้าหลักตามที่ขอ */
     @media (max-width: 768px){
       .container{ margin-top:10px; padding:0 10px; }
-      .toolbar{ gap:8px; padding:8px; }
+      .toolbar{ gap:8px; padding:10px; }
       .search{ min-width:100%; order:2; }
-      .btn{ padding:6px 10px; font-size:11px; }
-      th[data-key="note"], td[data-col="note"]{ display:none; }
-      th[data-key="facebook_name"], td[data-col="facebook_name"]{ display:none; }
-      th[data-key="birth_th_ddmmyyyy"], td[data-col="birth_th_ddmmyyyy"]{ display:none; }
+      .btn{ padding:8px 10px; font-size:11px; }
+
+      /* ตาราง: ให้แสดงน้อยลง + ให้แตะแถวได้ง่าย */
+      table{ min-width: 680px; }
+      th[data-key="phone"], td[data-col="phone"]{ display:none; }               /* ซ่อนเบอร์ */
+      th[data-key="birth_th_ddmmyyyy"], td[data-col="birth_th_ddmmyyyy"]{ display:none; } /* ซ่อนวันเกิดเต็ม */
+      th[data-key="profile"], td[data-col="profile"]{ display:none; }          /* ซ่อน profile */
+      th[data-key="note"], td[data-col="note"]{ display:none; }                /* ซ่อนหมายเหตุ */
+      th[data-key="facebook_name"], td[data-col="facebook_name"]{ display:none; } /* ซ่อน FB (เดิม) */
+
+      /* Modal ฟอร์มให้เป็น full width */
+      .modal-box{ border-radius:18px 18px 0 0; padding:14px 12px; }
       .col-6,.col-4,.col-3{ grid-column: span 12; }
+      .kv{ grid-template-columns: 96px 1fr; }
     }
   </style>
-
-  <script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>
 </head>
 
 <body>
@@ -237,28 +322,31 @@
     </div>
   </div>
 
-  <!-- ✅ Add/Edit Modal: ใช้ฟอร์มเดียวกัน -->
+  <!-- ✅ Add/Edit Modal -->
   <div id="addModal" class="modal">
     <div class="modal-backdrop" onclick="closeModal('addModal')"></div>
     <div class="modal-box">
       <div class="modal-header">
-        <div>
+        <div style="flex:1;">
           <div class="modal-title" id="formModalTitle">➕ เพิ่มลูกค้าใหม่</div>
           <div class="modal-sub" id="formModalSub">บันทึกเข้าฐาน (ตาราง customers ผ่าน Flask API)</div>
+
+          <div style="margin-top:12px; padding:10px; background:#f0f9ff; border-radius:14px; border:1px dashed #0ea5e9; display:flex; align-items:center; gap:10px;">
+            <span style="font-size:20px;">🪪</span>
+            <div style="flex:1;">
+              <div style="font-weight:1000; color:#0369a1;">สแกนบัตรประชาชน (AI)</div>
+
+              <div style="font-size:10px; color:#64748b; font-weight:900;">อัปโหลดรูปเพื่อกรอกข้อมูลอัตโนมัติ</div>
+            </div>
+
+            <input type="file" id="idCardInput" accept="image/*" style="display:none" onchange="processIDCard(this)">
+            <button id="scanBtn" class="btn btn-primary" type="button" onclick="$('#idCardInput').click()">📸 เลือกรูป</button>
+          </div>
         </div>
-        <div style="margin-bottom:15px; padding:10px; background:#f0f9ff; border-radius:8px; border:1px dashed #0ea5e9; display:flex; align-items:center; gap:10px;">
-  <span style="font-size:20px;">🪪</span>
-  <div style="flex:1;">
-    <div style="font-weight:bold; color:#0369a1;">สแกนบัตรประชาชน</div>
-    <div style="font-size:10px; color:#64748b;">อัปโหลดรูปเพื่อกรอกข้อมูลอัตโนมัติ</div>
-  </div>
-  <input type="file" id="idCardInput" accept="image/*" style="display:none" onchange="processIDCard(this)">
-  <button class="btn btn-primary" onclick="$('#idCardInput').click()">📸 เลือกรูป / ถ่ายรูป</button>
-</div>
+
         <button class="btn btn-ghost btn-icon" onclick="closeModal('addModal')">✕</button>
       </div>
 
-      <!-- ✅ state: add | edit -->
       <input type="hidden" id="formMode" value="add">
 
       <div class="grid">
@@ -326,7 +414,7 @@
 
       <div class="modal-footer">
         <div class="muted" id="formHint">✨ กรอกข้อมูลแล้วกดบันทึก</div>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:8px; width:100%; justify-content:flex-end;">
           <button class="btn btn-ghost" onclick="closeModal('addModal')">ยกเลิก</button>
           <button id="saveCustomerBtn" class="btn btn-primary">บันทึก</button>
         </div>
@@ -334,7 +422,72 @@
     </div>
   </div>
 
-  <!-- Detail Modal (ยังเก็บไว้ได้ แต่จะเปลี่ยนให้ปุ่มแก้ไขไปใช้ฟอร์มเดียวกัน) -->
+  <!-- ✅ Popup ดูข้อมูลทั้งหมด -->
+  <div id="viewModal" class="modal">
+    <div class="modal-backdrop" onclick="closeModal('viewModal')"></div>
+    <div class="modal-box">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">👁️ ดูข้อมูลลูกค้า</div>
+          <div class="modal-sub">ดูทั้งหมดในหน้าเดียว (แตะ ✏️ เพื่อแก้ไข)</div>
+        </div>
+        <button class="btn btn-ghost btn-icon" onclick="closeModal('viewModal')">✕</button>
+      </div>
+
+      <div class="view-card">
+        <div class="view-top">
+          <div class="badge-opd" id="v_opd">OPD 0000</div>
+          <div style="flex:1; min-width:0;">
+            <div class="view-name" id="v_full_name">-</div>
+            <div class="view-subline">
+              <span class="pill" id="v_vip">VIP: -</span>
+              <span class="pill" id="v_birth_month">เดือนเกิด: -</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="kv">
+          <div class="k">🪪 เลขบัตร</div>
+          <div class="v mono" id="v_national_id">-</div>
+
+          <div class="k">🎂 วันเกิด (ไทย)</div>
+          <div class="v" id="v_birth_th">-</div>
+
+          <div class="k">📞 โทร</div>
+          <div class="v mono" id="v_phone">-</div>
+
+          <div class="k">📘 Facebook</div>
+          <div class="v" id="v_fb">-</div>
+
+          <div class="k">🏠 ที่อยู่</div>
+          <div class="v" id="v_address">-</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="k" style="margin-bottom:6px;">📝 โปรไฟล์</div>
+        <div class="v" id="v_profile" style="white-space:pre-wrap;">-</div>
+
+        <div class="divider"></div>
+
+        <div class="k" style="margin-bottom:6px;">🗒️ หมายเหตุ</div>
+        <div class="v" id="v_note" style="white-space:pre-wrap;">-</div>
+      </div>
+
+      <div class="modal-footer">
+        <div class="muted" id="v_hint">แตะที่แถวในตารางเพื่อเปิดหน้าดูข้อมูลได้เลย</div>
+        <div style="display:flex; gap:8px; width:100%; justify-content:flex-end;">
+          <button class="btn btn-danger" id="v_deleteBtn">🗑️ ลบ</button>
+          <button class="btn btn-ghost" onclick="closeModal('viewModal')">ปิด</button>
+          <button class="btn btn-primary" id="v_editBtn">✏️ แก้ไข</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Modal เดิม (ยังเก็บไว้ เผื่อใช้) -->
   <div id="detailModal" class="modal">
     <div class="modal-backdrop" onclick="closeModal('detailModal')"></div>
     <div class="modal-box">
@@ -411,7 +564,7 @@
 
       <div class="modal-footer">
         <div class="muted" id="d_hint">🧾 กดบันทึกเพื่ออัปเดตฐานข้อมูล</div>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:8px; width:100%; justify-content:flex-end;">
           <button class="btn btn-danger" id="detailDeleteBtn">🗑️ ลบ</button>
           <button class="btn btn-ghost" onclick="closeModal('detailModal')">ปิด</button>
           <button class="btn btn-primary" id="detailSaveBtn">💾 บันทึก</button>
@@ -443,7 +596,7 @@
       el.className = `toast ${type==='error'?'error':type==='warn'?'warn':''} show`;
       el.innerHTML = type==='error' ? `❌ ${msg}` : type==='warn' ? `⚠️ ${msg}` : `✅ ${msg}`;
       $('#toastWrap').appendChild(el);
-      setTimeout(() => { el.classList.remove('show'); setTimeout(()=>el.remove(), 300); }, 3000);
+      setTimeout(() => { el.classList.remove('show'); setTimeout(()=>el.remove(), 280); }, 3000);
     };
 
     function openModal(id){ $('#'+id).classList.add('open'); }
@@ -509,8 +662,24 @@
       return j;
     }
 
+    // ✅ Google Vision OCR ผ่าน Flask
+    async function apiOCRIdCard(file){
+      const fd = new FormData();
+      fd.append('image', file);
+
+      const r = await fetch('/api/ocr_idcard', {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: fd
+      });
+
+      const j = await r.json().catch(()=> ({}));
+      if (!r.ok) throw new Error(j.error || 'ocr_failed');
+      return j; // { text: "..." }
+    }
+
     // =========================
-    // ✅ Add/Edit Form helpers (ใช้ฟอร์มเดียวกัน)
+    // ✅ Add/Edit Form helpers
     // =========================
     function clearForm(){
       $$('#addModal input, #addModal textarea, #addModal select').forEach(i => {
@@ -532,7 +701,7 @@
         $('#formModalTitle').textContent = '✏️ แก้ไขข้อมูลลูกค้า';
         $('#formModalSub').textContent = 'แก้ไขข้อมูลแล้วกดบันทึกเพื่ออัปเดตฐานข้อมูล';
         $('#formHint').textContent = '🧾 แก้ไขแล้วกดบันทึกเพื่ออัปเดตฐานข้อมูล';
-        $('#f_opd').readOnly = true;              // ✅ ล็อก OPD ในโหมดแก้ไข
+        $('#f_opd').readOnly = true;
         $('#f_opd').style.background = '#f8fafc';
       }
     }
@@ -551,7 +720,6 @@
       clearForm();
       setFormMode('edit');
 
-      // เติมค่าลงฟอร์ม
       $('#f_opd').value = r.opd || '';
       $('#f_birthMonth').value = r.birthMonth || '';
       $('#f_birth_th').value = r.birth_th_ddmmyyyy || '';
@@ -574,10 +742,38 @@
     }
 
     // =========================
+    // ✅ Popup View helpers
+    // =========================
+    function safeDash(v){ return (v===null || v===undefined || String(v).trim()==='') ? '-' : String(v); }
+
+    function openViewPopup(opd){
+      const r = rawData.find(x => x.opd === opd);
+      if (!r) return;
+
+      $('#v_opd').textContent = `OPD ${r.opd}`;
+      $('#v_full_name').textContent = safeDash(r.full_name || r.name);
+      $('#v_vip').textContent = `VIP: ${safeDash(r.vip)}`;
+      $('#v_birth_month').textContent = `เดือนเกิด: ${safeDash(r.birthMonth)}`;
+
+      $('#v_national_id').textContent = safeDash(r.national_id);
+      $('#v_birth_th').textContent = safeDash(r.birth_th_ddmmyyyy);
+      $('#v_phone').textContent = safeDash(r.phone);
+      $('#v_fb').textContent = safeDash(r.facebook_name);
+      $('#v_address').textContent = safeDash(r.address);
+      $('#v_profile').textContent = safeDash(r.profile);
+      $('#v_note').textContent = safeDash(r.note);
+
+      $('#v_editBtn').onclick = () => { closeModal('viewModal'); openEditForm(opd); };
+      $('#v_deleteBtn').onclick = () => deleteRow(opd, true);
+
+      openModal('viewModal');
+    }
+
+    // =========================
     // Load + Render
     // =========================
     async function loadData() {
-      tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:40px; color:#94a3b8;">
+      tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:40px; color:#94a3b8; font-weight:900;">
         กำลังโหลดข้อมูล...
       </td></tr>`;
 
@@ -606,7 +802,7 @@
 
       }catch(err){
         console.error("load error:", err);
-        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:crimson; padding:20px;">
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:crimson; padding:20px; font-weight:900;">
           โหลดข้อมูลไม่สำเร็จ
         </td></tr>`;
         showToast('โหลดข้อมูลไม่สำเร็จ', 'error');
@@ -639,7 +835,7 @@
       });
 
       if (viewData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:30px; color:#cbd5e1;">ไม่พบข้อมูล</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:30px; color:#cbd5e1; font-weight:900;">ไม่พบข้อมูล</td></tr>`;
         $('#clearSearch').style.display = q ? 'block' : 'none';
         return;
       }
@@ -649,67 +845,73 @@
         const displayName = r.full_name || r.name || '-';
 
         return `
-        <tr data-opd="${esc(r.opd)}">
+        <tr data-opd="${esc(r.opd)}" class="row-tap">
           <td class="sel-col">
-            <input type="checkbox" value="${esc(r.opd)}" ${selected.has(r.opd)?'checked':''} onchange="toggleSelect('${esc(r.opd)}')">
+            <input type="checkbox" value="${esc(r.opd)}" ${selected.has(r.opd)?'checked':''}
+              onchange="toggleSelect('${esc(r.opd)}'); event.stopPropagation();">
           </td>
 
           <td data-col="opd">${esc(r.opd)}</td>
 
           <td data-col="full_name">
             <div class="cell">
-              <input data-key="full_name" value="${esc(displayName)}" readonly ondblclick="editRow(this)">
+              <input data-key="full_name" value="${esc(displayName)}" readonly ondblclick="editRow(this); event.stopPropagation();">
             </div>
           </td>
 
           <td data-col="phone">
-            <div class="cell"><input data-key="phone" value="${esc(r.phone)}" readonly ondblclick="editRow(this)"></div>
+            <div class="cell"><input data-key="phone" value="${esc(r.phone)}" readonly ondblclick="editRow(this); event.stopPropagation();"></div>
           </td>
 
           <td data-col="vip" style="text-align:center">
             <div class="cell" style="justify-content:center;">
-              <input data-key="vip" value="${esc(r.vip)}" readonly style="text-align:center; max-width:86px;" ondblclick="editRow(this)">
+              <input data-key="vip" value="${esc(r.vip)}" readonly style="text-align:center; max-width:86px;" ondblclick="editRow(this); event.stopPropagation();">
               <span>${vipChip}</span>
             </div>
           </td>
 
           <td data-col="birthMonth">
-            <div class="cell"><input data-key="birthMonth" value="${esc(r.birthMonth)}" readonly style="text-align:center" ondblclick="editRow(this)"></div>
+            <div class="cell"><input data-key="birthMonth" value="${esc(r.birthMonth)}" readonly style="text-align:center" ondblclick="editRow(this); event.stopPropagation();"></div>
           </td>
 
           <td data-col="birth_th_ddmmyyyy">
-            <div class="cell"><input data-key="birth_th_ddmmyyyy" value="${esc(r.birth_th_ddmmyyyy)}" readonly ondblclick="editRow(this)"></div>
+            <div class="cell"><input data-key="birth_th_ddmmyyyy" value="${esc(r.birth_th_ddmmyyyy)}" readonly ondblclick="editRow(this); event.stopPropagation();"></div>
           </td>
 
           <td data-col="facebook_name">
-            <div class="cell"><input data-key="facebook_name" value="${esc(r.facebook_name)}" readonly ondblclick="editRow(this)"></div>
+            <div class="cell"><input data-key="facebook_name" value="${esc(r.facebook_name)}" readonly ondblclick="editRow(this); event.stopPropagation();"></div>
           </td>
 
           <td data-col="profile">
-            <div class="cell"><textarea data-key="profile" readonly ondblclick="editRow(this)">${esc(r.profile)}</textarea></div>
+            <div class="cell"><textarea data-key="profile" readonly ondblclick="editRow(this); event.stopPropagation();">${esc(r.profile)}</textarea></div>
           </td>
 
           <td data-col="note">
-            <div class="cell"><input data-key="note" value="${esc(r.note)}" readonly ondblclick="editRow(this)"></div>
+            <div class="cell"><input data-key="note" value="${esc(r.note)}" readonly ondblclick="editRow(this); event.stopPropagation();"></div>
           </td>
 
           <td>
             <div class="actions">
-              <!-- 🔍 ดูรายละเอียด: เปลี่ยนให้เปิดฟอร์มเดียวกันแบบ Edit -->
-              <button class="btn-icon btn-ghost" onclick="openEditForm('${esc(r.opd)}')" title="ดูรายละเอียด/แก้ไข">🔍</button>
-
-              <!-- ✏️ แก้ไข: เปิดฟอร์มเดียวกันแบบ Edit -->
-              <button class="btn-icon btn-ghost" onclick="openEditForm('${esc(r.opd)}')" title="แก้ไข (ฟอร์ม)">✏️</button>
-
-              <!-- (ตัวเดิมสำหรับ inline edit ยังเก็บไว้ ถ้าอยากใช้) -->
-              <button class="btn-icon btn-ghost save-btn" onclick="saveRow(this)" style="display:none; color:var(--primary);" title="บันทึก">💾</button>
-              <button class="btn-icon btn-ghost cancel-btn" onclick="cancelRow(this)" style="display:none; color:var(--warn);" title="ยกเลิก">❌</button>
-
-              <button class="btn-icon btn-ghost" onclick="deleteRow('${esc(r.opd)}')" title="ลบ" style="color:var(--danger);">🗑️</button>
+              <button class="btn-icon btn-ghost" onclick="openViewPopup('${esc(r.opd)}'); event.stopPropagation();" title="ดูทั้งหมด">👁️</button>
+              <button class="btn-icon btn-ghost" onclick="openEditForm('${esc(r.opd)}'); event.stopPropagation();" title="แก้ไข (ฟอร์ม)">✏️</button>
+              <button class="btn-icon btn-ghost save-btn" onclick="saveRow(this); event.stopPropagation();" style="display:none; color:var(--primary);" title="บันทึก">💾</button>
+              <button class="btn-icon btn-ghost cancel-btn" onclick="cancelRow(this); event.stopPropagation();" style="display:none; color:var(--warn);" title="ยกเลิก">❌</button>
+              <button class="btn-icon btn-ghost" onclick="deleteRow('${esc(r.opd)}'); event.stopPropagation();" title="ลบ" style="color:var(--danger);">🗑️</button>
             </div>
           </td>
         </tr>`;
       }).join('');
+
+      // ✅ แตะแถวเพื่อเปิด popup (เหมาะมากบนมือถือ)
+      $$('#tbody tr.row-tap').forEach(tr => {
+        tr.onclick = (e) => {
+          // กันไม่ให้กดจากปุ่ม/checkbox แล้วเปิดซ้อน
+          const t = e.target;
+          if (t.closest('button') || t.matches('input[type="checkbox"]') || t.closest('.actions')) return;
+          const opd = tr.dataset.opd;
+          if (opd) openViewPopup(opd);
+        };
+      });
 
       $('#clearSearch').style.display = q ? 'block' : 'none';
     }
@@ -738,7 +940,7 @@
     });
 
     // =========================
-    // Inline Edit (ยังคงไว้ เผื่ออยากใช้แก้แบบเร็วในตาราง)
+    // Inline Edit
     // =========================
     window.editRow = (el) => {
       const tr = el.closest('tr');
@@ -747,8 +949,8 @@
 
       const actions = tr.querySelector('.actions');
       actions.querySelectorAll('button').forEach(btn => btn.style.display = 'none');
-      actions.querySelector('.save-btn').style.display = 'inline-block';
-      actions.querySelector('.cancel-btn').style.display = 'inline-block';
+      actions.querySelector('.save-btn').style.display = 'inline-flex';
+      actions.querySelector('.cancel-btn').style.display = 'inline-flex';
 
       const backup = {};
       $$('[data-key]', tr).forEach(inp => backup[inp.dataset.key] = inp.value);
@@ -767,7 +969,7 @@
       $$('input, textarea', tr).forEach(i => i.readOnly = true);
 
       const actions = tr.querySelector('.actions');
-      actions.querySelectorAll('button').forEach(btn => btn.style.display = 'inline-block');
+      actions.querySelectorAll('button').forEach(btn => btn.style.display = 'inline-flex');
       actions.querySelector('.save-btn').style.display = 'none';
       actions.querySelector('.cancel-btn').style.display = 'none';
       render();
@@ -782,19 +984,16 @@
         patch[inp.dataset.key] = (inp.value ?? '').trim();
       });
 
-      // normalize
       if (patch.birthMonth !== undefined) patch.birthMonth = pad2(patch.birthMonth);
 
-      // ปิดโหมด edit ทันที (UX)
       tr.classList.remove('editing');
       $$('input, textarea', tr).forEach(i => i.readOnly = true);
 
       const actions = tr.querySelector('.actions');
-      actions.querySelectorAll('button').forEach(btn => btn.style.display = 'inline-block');
+      actions.querySelectorAll('button').forEach(btn => btn.style.display = 'inline-flex');
       actions.querySelector('.save-btn').style.display = 'none';
       actions.querySelector('.cancel-btn').style.display = 'none';
 
-      // empty string -> null
       Object.keys(patch).forEach(k => { if (patch[k] === '') patch[k] = null; });
 
       try{
@@ -822,6 +1021,7 @@
         selected.delete(opd);
         showToast('ลบลูกค้าแล้ว', 'warn');
         closeModal('detailModal');
+        closeModal('viewModal');
         await loadData();
       }catch(err){
         console.error(err);
@@ -829,7 +1029,6 @@
       }
     };
 
-    // Bulk Delete
     $('#bulkDeleteBtn').onclick = async () => {
       if (selected.size === 0) return showToast('ยังไม่ได้เลือกรายการ', 'warn');
       if (!confirm(`ลบ ${selected.size} รายการที่เลือก? (ถาวร)`)) return;
@@ -850,19 +1049,16 @@
     };
 
     // =========================
-    // ✅ Add/Edit Customer Save (แก้ไขใหม่)
+    // Add/Edit Save
     // =========================
     $('#openAddModalBtn').onclick = openAddForm;
 
     $('#saveCustomerBtn').onclick = async () => {
-      // 1. ตรวจสอบ OPD ก่อน
       const opd = pad4($('#f_opd').value.trim());
       if (!opd || opd.length !== 4) return alert('กรุณากรอกเลข OPD 4 หลักให้ถูกต้อง');
 
-      // 2. ดึงค่าโหมด (add หรือ edit)
-      const mode = $('#formMode').value; // add | edit
+      const mode = $('#formMode').value;
 
-      // 3. เตรียมข้อมูลจากฟอร์ม
       const rawPayload = {
         opd: opd,
         birthMonth: pad2($('#f_birthMonth').value.trim()),
@@ -878,98 +1074,36 @@
         note: $('#f_note').value.trim()
       };
 
-      // แปลง empty string เป็น null
-      Object.keys(rawPayload).forEach(k => { 
-        if (rawPayload[k] === '') rawPayload[k] = null; 
-      });
+      Object.keys(rawPayload).forEach(k => { if (rawPayload[k] === '') rawPayload[k] = null; });
 
-      // Validate เดือนเกิด (ถ้ามี)
       if (rawPayload.birthMonth && !/^(0[1-9]|1[0-2])$/.test(rawPayload.birthMonth)) {
-         return alert('เดือนเกิดต้องเป็น 01-12');
+        return alert('เดือนเกิดต้องเป็น 01-12');
       }
 
-      // Validate วันเกิดไทย (ถ้ามี)
       if (rawPayload.birth_th_ddmmyyyy && !/^\d{2}\/\d{2}\/\d{4}$/.test(rawPayload.birth_th_ddmmyyyy)) {
         return alert('วันเกิดไทยต้องเป็นรูปแบบ dd/mm/yyyy (เช่น 05/09/2530)');
       }
 
       try {
         if (mode === 'add') {
-          // --- โหมดเพิ่มลูกค้าใหม่ ---
           await apiAddCustomerFull(rawPayload);
           showToast('เพิ่มลูกค้าสำเร็จ');
         } else {
-          // --- โหมดแก้ไขลูกค้า ---
           const patch = { ...rawPayload };
-          delete patch.opd; // ห้ามแก้ OPD
-          
+          delete patch.opd;
           await apiUpdateCustomerPatch(opd, patch);
           showToast('บันทึกการแก้ไขสำเร็จ');
         }
 
-        // ปิด Modal และโหลดข้อมูลใหม่
         closeModal('addModal');
         await loadData();
 
       } catch (err) {
         console.error(err);
-        alert(mode === 'add' 
-          ? 'เพิ่มไม่สำเร็จ (ตรวจสอบ OPD ซ้ำ หรือ Server Error)' 
+        alert(mode === 'add'
+          ? 'เพิ่มไม่สำเร็จ (ตรวจสอบ OPD ซ้ำ หรือ Server Error)'
           : 'บันทึกไม่สำเร็จ (Server Error)');
       }
-    };
-
-    // =========================
-    // Detail Modal (ยังใช้งานได้เหมือนเดิม)
-    // =========================
-    window.openDetail = (opd) => {
-      const r = rawData.find(x => x.opd === opd);
-      if (!r) return;
-
-      $('#d_opd').value = r.opd;
-      $('#d_opd_chip').textContent = `OPD ${r.opd}`;
-
-      $('#d_birthMonth').value = r.birthMonth || '';
-      $('#d_birth_th').value = r.birth_th_ddmmyyyy || '';
-      $('#d_name').value = r.name || '';
-      $('#d_full_name').value = r.full_name || '';
-      $('#d_phone').value = r.phone || '';
-      $('#d_facebook_name').value = r.facebook_name || '';
-      $('#d_national_id').value = r.national_id || '';
-      $('#d_vip').value = r.vip || '';
-      $('#d_address').value = r.address || '';
-      $('#d_profile').value = r.profile || '';
-      $('#d_note').value = r.note || '';
-
-      $('#detailSaveBtn').onclick = async () => {
-        const patch = {
-          birthMonth: pad2($('#d_birthMonth').value.trim()),
-          birth_th_ddmmyyyy: $('#d_birth_th').value.trim(),
-          name: $('#d_name').value.trim(),
-          full_name: $('#d_full_name').value.trim(),
-          phone: $('#d_phone').value.trim(),
-          facebook_name: $('#d_facebook_name').value.trim(),
-          national_id: $('#d_national_id').value.trim(),
-          vip: $('#d_vip').value,
-          address: $('#d_address').value.trim(),
-          profile: $('#d_profile').value.trim(),
-          note: $('#d_note').value.trim()
-        };
-        Object.keys(patch).forEach(k => { if (patch[k] === '') patch[k] = null; });
-
-        try{
-          await apiUpdateCustomerPatch(opd, patch);
-          showToast('บันทึกจากหน้ารายละเอียดแล้ว');
-          closeModal('detailModal');
-          await loadData();
-        }catch(err){
-          console.error(err);
-          showToast('บันทึกไม่สำเร็จ', 'error');
-        }
-      };
-
-      $('#detailDeleteBtn').onclick = () => deleteRow(opd, true);
-      openModal('detailModal');
     };
 
     // =========================
@@ -1011,117 +1145,109 @@
     loadData();
 
     // =========================
-  // 🪪 OCR Function (Tesseract.js)
-  // =========================
-  async function processIDCard(input) {
-    const file = input.files[0];
-    if (!file) return;
-
-    // แสดงสถานะว่ากำลังทำงาน
-    showToast('กำลังอ่านข้อมูลจากบัตร รอสักครู่นะ...', 'warn');
-    const btnText = input.nextElementSibling.innerText;
-    input.nextElementSibling.innerText = '⏳ กำลังสแกน...';
-    input.nextElementSibling.disabled = true;
-
-    try {
-      // เริ่มกระบวนการ OCR (ใช้ภาษาไทย + อังกฤษ)
-      const { data: { text } } = await Tesseract.recognize(
-        file,
-        'tha+eng', 
-        { logger: m => console.log(m) }
-      );
-
-      console.log("Raw OCR Text:", text); // ดู log เผื่อเอาไปจูน Regex
-
-      // --- ส่วนของการแกะข้อความ (Regex Parsing) ---
-      
-      // 1. เลขบัตรประชาชน (หาเลข 13 หลัก)
-      // พยายามหาเลขกลุ่ม 1-4-5-2-1 หลัก หรือเลขติดกัน 13 ตัว
-      const idMatch = text.match(/(\d\s?-?){12}\d/);
-      if (idMatch) {
-        let cleanID = idMatch[0].replace(/[^0-9]/g, '');
-        if (cleanID.length === 13) {
-          // จัด format x-xxxx-xxxxx-xx-x
-          cleanID = `${cleanID[0]}-${cleanID.slice(1,5)}-${cleanID.slice(5,10)}-${cleanID.slice(10,12)}-${cleanID[12]}`;
-          $('#f_national_id').value = cleanID;
-        }
-      }
-
-      // 2. ชื่อ-นามสกุล (ภาษาไทย)
-      // หาคำว่า "ชื่อ" หรือ "Name" แล้วเอาบรรทัดนั้น หรือบรรทัดถัดไป
-      const lines = text.split('\n');
-      let foundName = false;
-      
-      for (let i = 0; i < lines.length; i++) {
-        let line = lines[i].trim();
-        
-        // ถ้าเจอบรรทัดที่มีคำว่า "ชื่อ" และ "สกุล" ในบรรทัดเดียวกัน (แบบบัตรใหม่)
-        if (line.includes('ชื่อ') && line.includes('สกุล')) {
-           // พยายามตัดคำขยะออกเหลือแต่ชื่อไทย
-           let cleanName = line.replace(/ชื่อ|ตัว|สกุล|Last|name|Name/g, '').trim();
-           // ลบตัวอักษรภาษาอังกฤษออก (เผื่อติดมา)
-           cleanName = cleanName.replace(/[A-Za-z]/g, '').trim();
-           $('#f_full_name').value = cleanName;
-           // แยกชื่อเล่น (เดาจากชื่อหน้า)
-           $('#f_name').value = "คุณ" + cleanName.split(' ')[0];
-           foundName = true;
-           break;
-        }
-        
-        // กรณีบัตรเก่า หรือ OCR แยกบรรทัด (หาคำว่า ชื่อ นำหน้า)
-        if (!foundName && line.startsWith('ชื่อ')) {
-           let cleanName = line.replace('ชื่อ', '').trim();
-           // อาจจะต้องดูบรรทัดถัดไปว่าเป็นนามสกุลไหม (อันนี้ต้องจูนตามผลลัพธ์จริง)
-           $('#f_full_name').value = cleanName;
-           $('#f_name').value = "คุณ" + cleanName.split(' ')[0];
-           foundName = true;
-        }
-      }
-
-      // 3. วันเกิด (dd/mm/yyyy)
-      // หาคำว่า "เกิด" หรือ "Birth"
-      const birthMatch = text.match(/\d{1,2}\s+(ม.ค.|ก.พ.|มี.ค.|เม.ย.|พ.ค.|มิ.ย.|ก.ค.|ส.ค.|ก.ย.|ต.ค.|พ.ย.|ธ.ค.)\s+\d{4}/);
-      if (birthMatch) {
-        // แปลงเดือนไทยเป็นเลข
-        const thMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-        const parts = birthMatch[0].split(/\s+/); // [25, พ.ค., 2530]
-        const d = parts[0].padStart(2, '0');
-        const mIndex = thMonths.indexOf(parts[1]);
-        const y = parts[2];
-        
-        if (mIndex > -1) {
-           const m = String(mIndex + 1).padStart(2, '0');
-           $('#f_birth_th').value = `${d}/${m}/${y}`;
-           $('#f_birthMonth').value = m;
-        }
-      }
-
-      // 4. ที่อยู่
-      // หาบรรทัดที่มีคำว่า "ที่อยู่" หรือเริ่มด้วยเลขที่บ้าน
-      let address = "";
-      for (let i = 0; i < lines.length; i++) {
-        if (lines[i].includes('ที่อยู่')) {
-          // เอาบรรทัดนี้และบรรทัดถัดไปมารวมกัน
-          let addrLine = lines[i].replace('ที่อยู่', '').trim();
-          if(lines[i+1]) addrLine += " " + lines[i+1];
-          // ลบคำว่า Address ออก
-          addrLine = addrLine.replace(/Address|Date|of|Birth/gi, '').trim();
-          $('#f_address').value = addrLine;
-          break;
-        }
-      }
-
-      showToast('อ่านข้อมูลเรียบร้อย ตรวจสอบความถูกต้องอีกครั้งนะ');
-
-    } catch (err) {
-      console.error(err);
-      showToast('อ่านบัตรไม่สำเร็จ ลองถ่ายรูปใหม่ให้ชัดขึ้นนะ', 'error');
-    } finally {
-      input.value = ''; // เคลียร์ไฟล์
-      input.nextElementSibling.innerText = btnText;
-      input.nextElementSibling.disabled = false;
+    // 🪪 OCR Function (Google Vision via Flask)
+    // =========================
+    function formatThaiId13(id13){
+      const s = String(id13 || '').replace(/\D/g,'');
+      if (s.length !== 13) return '';
+      return `${s[0]}-${s.slice(1,5)}-${s.slice(5,10)}-${s.slice(10,12)}-${s[12]}`;
     }
+
+    function normalizeOCRText(text){
+      return (text || '')
+        .replace(/\r/g,'\n')
+        .replace(/[ \t]+/g,' ')
+        .replace(/\n{2,}/g,'\n')
+        .trim();
+    }
+
+      async function processIDCard(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  showToast('กำลังอ่านข้อมูลจากบัตรด้วย AI...', 'warn');
+
+  // ปุ่มอยู่ถัดจาก input (ตาม HTML ของคุณ)
+  const btn = input.nextElementSibling;
+  const oldText = btn ? btn.innerText : '';
+  if (btn) { btn.innerText = '⏳ กำลังอ่าน...'; btn.disabled = true; }
+
+  try {
+    const fd = new FormData();
+    fd.append('image', file);
+
+    // ✅ เปลี่ยน endpoint มาที่ OpenAI route
+    const res = await fetch('/api/idcard_extract', {
+      method: 'POST',
+      credentials: 'same-origin',
+      body: fd
+    });
+
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error(out);
+      throw new Error(out.error || 'idcard_extract_failed');
+    }
+
+    // out คาดว่าจะเป็น:
+    // { id_number, title_th, first_name_th, last_name_th, birth_date, address, issue_date, expiry_date }
+
+    // ✅ 1) ชื่อ-สกุล (ใช้ full_name เท่านั้นตามที่คุณบอก)
+    const title = (out.title_th || '').trim();
+    const first = (out.first_name_th || '').trim();
+    const last  = (out.last_name_th || '').trim();
+
+    const fullName = [title, first, last].filter(Boolean).join(' ').trim();
+    if (fullName) $('#f_full_name').value = fullName;
+
+    // ✅ 2) วันเกิด (ไทย dd/mm/yyyy - อ่านไม่ได้ปล่อยว่าง)
+    const birth = (out.birth_date || '').trim();
+    if (birth) {
+      $('#f_birth_th').value = birth;
+
+      // ตั้งเดือนเกิดจาก dd/mm/yyyy
+      const parts = birth.split('/');
+      const mm = (parts[1] || '').trim();
+      if (/^\d{2}$/.test(mm)) $('#f_birthMonth').value = mm;
+    }
+
+    // ✅ 3) เลขบัตร
+    const idNo = (out.id_number || '').trim();
+    if (idNo) $('#f_national_id').value = idNo;
+
+    // ✅ 4) ที่อยู่
+    const addr = (out.address || '').trim();
+    if (addr) $('#f_address').value = addr;
+
+    // ✅ (ถ้าคุณอยากโชว์เพิ่มในโปรไฟล์/หมายเหตุแบบอัตโนมัติ)
+    // - issue_date / expiry_date ไม่มีช่องเฉพาะในฟอร์มนี้
+    // - แนะนำใส่รวมในหมายเหตุ (ถ้ามีค่าจริง)
+    const issue = (out.issue_date || '').trim();
+    const exp   = (out.expiry_date || '').trim();
+    const extra = [];
+    if (issue) extra.push(`วันออกบัตร: ${issue}`);
+    if (exp) extra.push(`วันหมดอายุ: ${exp}`);
+    if (extra.length) {
+      const oldNote = ($('#f_note').value || '').trim();
+      const addText = extra.join(' | ');
+      $('#f_note').value = oldNote ? `${oldNote}\n${addText}` : addText;
+    }
+
+    if (fullName || birth || idNo || addr) {
+      showToast('ดึงข้อมูลสำเร็จ (โปรดตรวจสอบความถูกต้อง)', 'ok');
+    } else {
+      showToast('AI อ่านไม่ชัด ลองถ่ายใหม่ให้ตรง/ชัดขึ้นนะ', 'warn');
+    }
+
+  } catch (err) {
+    console.error(err);
+    showToast('อ่านบัตรไม่สำเร็จ ลองถ่ายรูปใหม่ให้ชัดขึ้นนะ', 'error');
+  } finally {
+    input.value = '';
+    if (btn) { btn.innerText = oldText; btn.disabled = false; }
   }
+}
+
   </script>
 </body>
 </html>

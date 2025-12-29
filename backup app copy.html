@@ -108,44 +108,52 @@ def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
+# =============================================================
+# ✅ Helpers: ตัวจัดการข้อมูลแบบกันตาย (Bulletproof)
+# =============================================================
 def _ensure_items(val: Any) -> Any:
-    """
-    JSON Handling Correction:
-    - ถ้าเป็น list/dict อยู่แล้ว ใช้เลย (jsonb array/object)
-    - ถ้าเป็น string (เผื่อข้อมูลเก่าหลงเหลือ) ค่อย json.loads
-    - อื่น ๆ ให้ fallback เป็น []
-    """
-    if isinstance(val, (list, dict)):
-        return val
-    if isinstance(val, str):
-        s = val.strip()
-        if not s:
-            return []
-        try:
-            return json.loads(s)
-        except Exception:
-            return []
-    return []
-
+    """แปลงข้อมูลดิบให้เป็นโครงสร้างที่ Python อ่านรู้เรื่อง"""
+    try:
+        if val is None: return []
+        if isinstance(val, (list, dict)): return val
+        if isinstance(val, str):
+            s = val.strip()
+            if not s: return []
+            try: return json.loads(s)
+            except: return [s] 
+        return []
+    except Exception:
+        return []
 
 def _ensure_item_list(val: Any) -> List[Any]:
-    """
-    ทำให้ item ที่อ่านจาก DB "เป็น list เสมอ"
-    รองรับ:
-    - list (jsonb array) -> ใช้เลย
-    - dict (jsonb object) -> wrap เป็น [dict]
-    - string (ข้อมูลเก่า) -> json.loads แล้ว normalize เป็น list
-    - อื่น ๆ -> []
-    """
-    raw = _ensure_items(val)
-    if isinstance(raw, list):
-        return raw
-    if isinstance(raw, dict):
-        return [raw]
-    if isinstance(raw, str):
-        s = raw.strip()
-        return [s] if s else []
-    return []
+    try:
+        raw = _ensure_items(val)
+        if isinstance(raw, list): return raw
+        if isinstance(raw, dict): return [raw]
+        return []
+    except Exception:
+        return []
+
+def _coerce_items_to_text_list(val: Any) -> List[str]:
+    """รับข้อมูลขยะอะไรมาก็ได้ จะคืนค่าเป็น List of Strings เสมอ"""
+    try:
+        raw_list = _ensure_item_list(val)
+        out = []
+        for item in raw_list:
+            # แปลงแต่ละชิ้นเป็น Text อย่างระมัดระวัง
+            try:
+                if isinstance(item, dict):
+                    n = str(item.get("name") or item.get("label") or "").strip()
+                    q = str(item.get("qty") or "1")
+                    p = str(item.get("price") or "0")
+                    if n: out.append(f"{n} - {q} ชิ้น x {p} บาท")
+                elif item:
+                    out.append(str(item))
+            except:
+                continue
+        return out
+    except Exception:
+        return []
 
 
 # =======================
@@ -908,93 +916,74 @@ def sales_issue_receipt():
         app.logger.error(f"/api/sales_issue_receipt error: {e}")
         return jsonify({"success": False, "error": "server_error", "detail": str(e)}), 500
 
-
 @app.route("/api/rebuild_display_receipts", methods=["POST"])
 @login_required
 def rebuild_display_receipts():
-    """
-    Task 3.3: API - Rebuild Display Numbers (Red Button)
-    Input: { "year": 2025 }
-    - เลือกเฉพาะ receipt_status='issued'
-    - sort: date ASC, created_at ASC, id ASC
-    - assign RB-YYYY-XXXX ใหม่
-    """
     try:
         data = request.get_json(silent=True) or {}
-        if not isinstance(data, dict):
-            return jsonify({"success": False, "error": "invalid_payload"}), 400
+        year = int(data.get("year") or 0)
+        
+        if year < 2000 or year > 2100:
+            return jsonify({"success": False, "error": "Invalid year"}), 400
 
-        year = data.get("year")
-        try:
-            year_i = int(year)
-        except Exception:
-            return jsonify({"success": False, "error": "invalid_year"}), 400
-        if year_i < 2000 or year_i > 2100:
-            return jsonify({"success": False, "error": "invalid_year"}), 400
+        # ดึงเฉพาะรายการที่สถานะ issued ของปีนั้น
+        start_date = f"{year}-01-01"
+        end_date = f"{year}-12-31"
 
-        # ดึง records ปีนั้น (ใช้ date range เป็นหลัก กันข้อมูล orig_year ว่าง)
-        start_date = f"{year_i}-01-01"
-        end_date = f"{year_i}-12-31"
-
+        # ✅ Select เฉพาะคอลัมน์ที่จำเป็น (ไม่ดึง item เพื่อเลี่ยง Error)
         q = (
             supabase.table("sales_records")
-            .select("id,date,created_at,disp_version,receipt_status")
+            .select("id, date, created_at, disp_no") 
             .gte("date", start_date)
             .lte("date", end_date)
             .eq("receipt_status", "issued")
-            .order("date", desc=False)
+            .order("date", desc=False)  # เรียงตามวันที่ขาย
         )
-
-        q = q.order("created_at", desc=False)
-        q = q.order("id", desc=False)
-
-        all_rows: List[Dict[str, Any]] = []
+        
+        # ดึงข้อมูลมาทั้งหมด
+        all_rows = []
         start = 0
         limit = 1000
         while True:
             resp = q.range(start, start + limit - 1).execute()
             batch = resp.data or []
             all_rows.extend(batch)
-            if len(batch) < limit:
-                break
+            if len(batch) < limit: break
             start += limit
 
-        def sort_key(r: Dict[str, Any]):
-            return (safe_date_str(r.get("date")), _get_sales_created_at(r), str(r.get("id")))
-
+        # เรียงลำดับใน Python อีกที (Date -> CreatedAt -> ID)
+        def sort_key(r):
+            d = r.get("date") or ""
+            c = r.get("created_at") or ""
+            i = r.get("id") or 0
+            return (d, c, i)
+        
         all_rows.sort(key=sort_key)
 
         updated = 0
         seq = 1
+        
+        # วนลูปอัปเดตเลข
         for r in all_rows:
             rid = r.get("id")
-            if not rid:
-                continue
-
-            disp_no = f"RB-{year_i}-{_pad4(seq)}"
-            old_v = r.get("disp_version")
-            try:
-                old_v_i = int(old_v) if old_v is not None else 0
-            except Exception:
-                old_v_i = 0
-
-            patch = {
-                "disp_year": year_i,
+            # สร้างเลขใหม่: RB-2025-0001
+            new_disp_no = f"RB-{year}-{str(seq).zfill(4)}"
+            
+            # อัปเดตลง DB
+            supabase.table("sales_records").update({
+                "disp_year": year,
                 "disp_seq": seq,
-                "disp_no": disp_no,
-                "disp_version": old_v_i + 1,
-            }
-
-            supabase.table("sales_records").update(patch).eq("id", rid).execute()
+                "disp_no": new_disp_no
+            }).eq("id", rid).execute()
+            
             updated += 1
             seq += 1
 
-        return jsonify({"success": True, "count": updated}), 200
+        return jsonify({"success": True, "count": updated})
 
     except Exception as e:
-        app.logger.error(f"/api/rebuild_display_receipts error: {e}")
-        return jsonify({"success": False, "error": "server_error", "detail": str(e)}), 500
-
+        print(f"REBUILD ERROR: {e}") # ปริ้นท์ error ลงจอดำให้เห็น
+        return jsonify({"success": False, "error": str(e)}), 500
 
 # =============================================================
 # API — Sales
