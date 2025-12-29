@@ -4,548 +4,653 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta charset="UTF-8" />
 <title>แดชบอร์ด</title>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
+
 <style>
-  /* CSS เดิมทั้งหมด พลอยคงไว้ให้เหมือนเดิมนะ */
-  body {
-    font-family: 'Prompt', 'Segoe UI', sans-serif;
-    margin: 0;
-    background-color: white;
-    padding: 10px;
-    padding-bottom: 120px;
+  /* =========================
+     MODERN UI (clean + fast)
+     ========================= */
+
+  :root{
+    --bg: #0b1220;
+    --bg2:#0a1020;
+    --card: rgba(255,255,255,.06);
+    --card2: rgba(255,255,255,.08);
+    --line: rgba(255,255,255,.10);
+
+    --text:#eaf2ff;
+    --muted: rgba(234,242,255,.68);
+
+    --brand:#14b8a6;
+    --brand2:#22c55e;
+    --danger:#fb7185;
+    --warn:#fbbf24;
+
+    --shadow: 0 14px 40px rgba(0,0,0,.35);
+    --shadow2: 0 10px 24px rgba(0,0,0,.28);
+
+    --r14: 14px;
+    --r18: 18px;
+    --r22: 22px;
+
+    --pad: 16px;
+    --pad2: 18px;
+  }
+
+  *{ box-sizing:border-box; }
+  html, body{ height:100%; }
+  body{
+    font-family:'Prompt', system-ui, -apple-system, Segoe UI, sans-serif;
+    margin:0;
+    padding: 14px;
+    padding-bottom: 130px;
+    color: var(--text);
+    background:
+      radial-gradient(900px 450px at 10% 10%, rgba(20,184,166,.22), transparent 60%),
+      radial-gradient(700px 360px at 92% 0%, rgba(34,197,94,.18), transparent 55%),
+      radial-gradient(650px 380px at 75% 95%, rgba(59,130,246,.12), transparent 60%),
+      linear-gradient(180deg, var(--bg), var(--bg2));
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
     font-size: 14px;
   }
 
-  .menu-bar {
-    display: flex;
-    justify-content: space-around;
-    background-color: white;
-    padding: 10px;
+  a{ color: inherit; }
+
+  /* ---- Top Menu ---- */
+  .menu-bar{
+    display:flex;
+    justify-content:space-around;
+    gap:10px;
+    background: rgba(255,255,255,.06);
+    border:1px solid var(--line);
+    padding: 12px 12px;
+    border-radius: var(--r18);
+    margin: 6px auto 16px;
+    box-shadow: var(--shadow2);
+    max-width: 1200px;
+    backdrop-filter: blur(10px);
+  }
+  .menu-bar a{
+    text-decoration:none;
+    font-weight:700;
+    color: rgba(234,242,255,.86);
+    padding: 10px 12px;
+    border-radius: 999px;
+    transition: background .15s ease, transform .12s ease;
+  }
+  .menu-bar a:hover{
+    background: rgba(20,184,166,.14);
+    transform: translateY(-1px);
+  }
+
+  /* ---- Month nav ---- */
+  .month-nav{
+    max-width:1200px;
+    margin: 0 auto 14px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .month-nav button{
+    border:none;
+    color:#07101e;
+    font-weight:800;
+    background: linear-gradient(135deg, var(--brand), rgba(20,184,166,.65));
+    padding: 10px 16px;
+    border-radius: 999px;
+    cursor:pointer;
+    box-shadow: 0 14px 24px rgba(20,184,166,.18);
+    transition: transform .12s ease, filter .18s ease, box-shadow .18s ease;
+    white-space:nowrap;
+  }
+  .month-nav button:hover{
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+    box-shadow: 0 18px 30px rgba(20,184,166,.22);
+  }
+  .month-nav button:active{ transform: translateY(0px) scale(.99); }
+
+  #openRangeBtn{
+    background: linear-gradient(135deg, rgba(59,130,246,.9), rgba(147,197,253,.85));
+    box-shadow: 0 14px 24px rgba(59,130,246,.18);
+  }
+  #clearRangeBtn{
+    background: linear-gradient(135deg, rgba(251,113,133,.95), rgba(244,63,94,.8));
+    box-shadow: 0 14px 24px rgba(244,63,94,.18);
+  }
+
+  /* ---- Hero ---- */
+  #mainTitle{
+    max-width:1200px;
+    margin: 0 auto 16px;
+    padding: 18px 18px;
+    border-radius: var(--r22);
+    border:1px solid rgba(255,255,255,.10);
+    background:
+      radial-gradient(700px 220px at 15% 20%, rgba(20,184,166,.18), transparent 60%),
+      radial-gradient(550px 200px at 90% 15%, rgba(34,197,94,.16), transparent 55%),
+      rgba(255,255,255,.06);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(12px);
+    cursor:pointer;
+
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    align-items:flex-start;
+  }
+  #mainTitle .month{
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing:.3px;
+  }
+  #mainTitle .total{
+    font-size: 16px;
+    color: rgba(234,242,255,.92);
+  }
+  #mainTitle .compare{
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.35;
+  }
+
+  /* ---- Cards ---- */
+  .card{
+    max-width:1200px;
+    margin: 0 auto 16px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--line);
+    border-radius: var(--r18);
+    box-shadow: var(--shadow2);
+    backdrop-filter: blur(12px);
+    overflow:hidden;
+  }
+  .card-header{
+    padding: 14px 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    background: rgba(255,255,255,.04);
+  }
+  .card-header h3{
+    margin:0;
+    font-size: 14px;
+    font-weight: 800;
+    color: rgba(234,242,255,.92);
+    letter-spacing:.2px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .card-body{ padding: 14px 16px; }
+
+  /* ---- Top10 ---- */
+  .top10-box{ padding:0; }
+  .top10-box ul{ list-style:none; padding:0; margin:0; }
+  .top10-box li{
+    padding: 10px 0;
+    border-bottom: 1px dashed rgba(255,255,255,.14);
+    display:flex;
+    gap:8px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+  .top10-box li:last-child{ border-bottom:none; }
+  .top10-box .name{
+    font-weight:800;
+    color: rgba(234,242,255,.92);
+  }
+  .top10-box .date{
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .top10-box .amount{
+    margin-left:auto;
+    font-weight:900;
+    font-variant-numeric: tabular-nums;
+    color: #7dd3fc;
+    white-space:nowrap;
+  }
+
+  #totalCustomer{
+    margin: 10px 0 0;
+    padding: 10px 12px;
     border-radius: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.10);
+    text-align:center;
+    cursor:pointer;
+    color: rgba(234,242,255,.86);
+    font-weight:700;
   }
-  .menu-bar a { text-decoration: none; font-weight: bold; color: teal; }
+  #totalCustomer:hover{
+    background: rgba(20,184,166,.10);
+    border-color: rgba(20,184,166,.20);
+  }
 
-  .month-nav {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  /* ---- Summary grid ---- */
+  .chart-summary-row{
+    max-width:1200px;
+    margin: 0 auto 16px;
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .summary-list{
+    flex: 1;
+    min-width: 320px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--line);
+    border-radius: var(--r18);
+    box-shadow: var(--shadow2);
+    backdrop-filter: blur(12px);
+    padding: 14px;
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .summary-group{
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.05);
+    border-radius: 14px;
+    padding: 12px;
+    transition: transform .12s ease, background .18s ease, border-color .18s ease;
+    cursor:pointer;
+    min-height: 92px;
+  }
+  .summary-group:hover{
+    transform: translateY(-1px);
+    background: rgba(20,184,166,.09);
+    border-color: rgba(20,184,166,.22);
+  }
+  .summary-group strong{
+    display:block;
+    font-size: 12px;
+    font-weight: 900;
+    color: rgba(234,242,255,.92);
+    margin-bottom: 6px;
+  }
+  .summary-group ul{
+    list-style:none;
+    padding:0;
+    margin: 8px 0 0;
+    color: rgba(234,242,255,.80);
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  /* ---- Filter Section ---- */
+  .filter-section{
+    max-width:1200px;
+    margin: 0 auto 16px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--line);
+    border-radius: var(--r18);
+    box-shadow: var(--shadow2);
+    backdrop-filter: blur(12px);
+    padding: 14px 16px;
+  }
+
+  .filter-section h3{
+    margin:0 0 10px;
+    font-size: 14px;
+    font-weight: 900;
+  }
+
+  .inline-field{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom: 10px;
+  }
+  .inline-field label{
+    min-width: 170px;
+    font-weight: 800;
+    color: rgba(234,242,255,.88);
+  }
+
+  .input-pair{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+  input, select{
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(10,16,32,.55);
+    color: rgba(234,242,255,.92);
+    padding: 9px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    outline:none;
+    transition: box-shadow .15s ease, border-color .15s ease;
+  }
+  input:focus, select:focus{
+    border-color: rgba(20,184,166,.45);
+    box-shadow: 0 0 0 4px rgba(20,184,166,.18);
+  }
+
+  .search-button{
+    border:none;
+    color:#07101e;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--brand2), rgba(34,197,94,.65));
+    padding: 10px 16px;
+    border-radius: 999px;
+    cursor:pointer;
+    box-shadow: 0 14px 24px rgba(34,197,94,.18);
+    transition: transform .12s ease, filter .18s ease, box-shadow .18s ease;
+  }
+  .search-button:hover{
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+    box-shadow: 0 18px 30px rgba(34,197,94,.22);
+  }
+
+  .add-product-button{
+    border: 1px solid rgba(255,255,255,.16);
+    background: rgba(255,255,255,.06);
+    color: rgba(234,242,255,.92);
+    padding: 10px 14px;
+    border-radius: 999px;
+    cursor:pointer;
+    font-weight: 800;
+    transition: transform .12s ease, background .18s ease, border-color .18s ease;
+  }
+  .add-product-button:hover{
+    transform: translateY(-1px);
+    background: rgba(255,255,255,.10);
+    border-color: rgba(20,184,166,.25);
+  }
+
+  /* ---- Lead Score ---- */
+  .lead-score-box{
+    max-width:1200px;
+    margin: 0 auto 16px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--line);
+    border-radius: var(--r18);
+    box-shadow: var(--shadow2);
+    backdrop-filter: blur(12px);
+    overflow:hidden;
+  }
+  .lead-score-box .head{
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    background: rgba(255,255,255,.04);
+  }
+  .lead-score-box h3{
+    margin:0;
+    font-size:14px;
+    font-weight:900;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .lead-score-sub{
+    margin-top:6px;
+    font-size: 11px;
+    color: var(--muted);
+    line-height:1.45;
+  }
+  #leadScoreList{ list-style:none; padding: 0 16px 12px; margin:0; }
+  #leadScoreList li{
+    padding: 12px 0;
+    border-bottom: 1px dashed rgba(255,255,255,.14);
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+  }
+  #leadScoreList li:last-child{ border-bottom:none; }
+
+  .lead-name{
+    font-weight: 900;
+    color: rgba(234,242,255,.92);
+    cursor:pointer;
+  }
+  .lead-score-badge{
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 900;
+    border: 1px solid rgba(20,184,166,.22);
+    background: rgba(20,184,166,.10);
+    color: rgba(234,242,255,.92);
+  }
+  .lead-score-meta{
+    flex: 1 1 auto;
+    font-size: 11px;
+    color: rgba(234,242,255,.78);
+  }
+  .lead-absent{ color: var(--danger); font-weight: 900; }
+  .lead-money{ margin-left:auto; font-variant-numeric: tabular-nums; font-weight: 900; color: #7dd3fc; }
+
+  /* ---- Modals ---- */
+  #customer-modal, #group-modal, #group-modal-legacy, .range-modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background: rgba(0,0,0,.65);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    justify-content:center;
+    align-items:center;
+    padding: 14px;
+  }
+  #customer-modal-box, .range-modal__panel, #group-modal-content, #group-modal-content-legacy{
+    background: rgba(10,16,32,.92) !important;
+    border: 1px solid rgba(255,255,255,.12) !important;
+    border-radius: var(--r22) !important;
+    box-shadow: var(--shadow) !important;
+    color: rgba(234,242,255,.92);
+    backdrop-filter: blur(14px);
+  }
+  #customer-modal-box{
+    width: min(900px, 92vw);
+    max-height: 90vh;
+    overflow:auto;
+    padding: 16px;
+    position: relative;
+  }
+  #customer-modal-box button{
+    border:none;
+    background: rgba(255,255,255,.06);
+    color: rgba(234,242,255,.92);
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    cursor:pointer;
+    transition: transform .12s ease, background .18s ease;
+  }
+  #customer-modal-box button:hover{
+    transform: translateY(-1px);
+    background: rgba(255,255,255,.10);
+  }
+
+  /* Range modal */
+  .range-modal{ z-index: 1200; }
+  .range-modal__backdrop{ position:absolute; inset:0; }
+  .range-modal__panel{
+    position:relative;
+    width:min(420px, 92vw);
+    overflow:hidden;
+  }
+  .range-modal__header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding: 12px 14px;
+    background: rgba(255,255,255,.05);
+    border-bottom: 1px solid rgba(255,255,255,.10);
+    font-weight: 900;
+  }
+  .range-modal__close{
+    width:auto !important;
+    height:auto !important;
+    padding: 6px 10px !important;
+    border-radius: 999px !important;
+    background: rgba(255,255,255,.06) !important;
+  }
+  .range-modal__body{
+    padding: 14px;
+    display:grid;
+    gap: 12px;
+  }
+  .range-modal__body label{ display:grid; gap:6px; font-size: 12px; color: rgba(234,242,255,.78); }
+  .range-modal__footer{
+    display:flex;
+    justify-content:flex-end;
     gap: 10px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
+    padding: 12px 14px;
+    border-top: 1px solid rgba(255,255,255,.10);
   }
-  .month-nav button {
-    background-color: #009688; color: white; border: none;
-    padding: 8px 16px; font-size: 14px; border-radius: 8px;
-    cursor: pointer; transition: background-color 0.2s ease;
+  .btn-primary, .btn-secondary{
+    border:none;
+    padding: 10px 14px;
+    border-radius: 999px;
+    cursor:pointer;
+    font-weight: 900;
   }
-  .month-nav button:hover { background-color: #00796b; }
-  .month-nav input[type="month"]{
-    padding: 6px 8px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px;
+  .btn-primary{
+    background: linear-gradient(135deg, var(--brand), rgba(20,184,166,.65));
+    color:#07101e;
   }
-  .month-nav .sep{opacity:.7}
-
-  #mainTitle {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background-color: #e0f2f1; border-radius: 16px; padding: 20px 30px;
-    margin: 0 auto 30px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    max-width: fit-content; text-align: center;
-    cursor: pointer;
-  }
-  #mainTitle .month { font-size: 26px; font-weight: 600; color: #004d40; }
-  #mainTitle .total { font-size: 18px; color: #009688; margin-top: 6px; }
-
-  .top10-box {
-    max-width: 1200px; margin: 0 auto 20px; background: #fff; padding: 15px 20px;
-    border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-  }
-  .top10-box h3 { margin-top: 0; color: teal; font-size: 18px; text-align: center; }
-  .top10-box ul { list-style: none; padding-left: 0; }
-  .top10-box li { margin-bottom: 6px; padding: 4px 0; border-bottom: 1px dashed #ddd; white-space: nowrap; }
-  .top10-box li span.name { font-weight: 600; color: #333; }
-  .top10-box li span.date { font-size: 13px; color: #999; margin-left: 6px; }
-  .top10-box li span.amount { float: right; color: #009688; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
-
-  @media (max-width: 768px) {
-    .top10-box li span.date { font-size: 8px !important; }
+  .btn-secondary{
+    background: rgba(255,255,255,.06);
+    color: rgba(234,242,255,.92);
+    border:1px solid rgba(255,255,255,.12);
   }
 
-  .chart-summary-row {
-    display: flex; justify-content: space-between; align-items: flex-start;
-    gap: 20px; max-width: 1200px; margin: 0 auto 20px; flex-wrap: wrap;
+  /* Popup table (mini) */
+  .table-mini{
+    width:100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    overflow:hidden;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.12);
   }
-  .chart-container {
-    flex: 1; background: #fff; padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  .table-mini th{
+    text-align:left;
+    padding: 10px 10px;
+    background: rgba(255,255,255,.06);
+    color: rgba(234,242,255,.88);
+    border-bottom: 1px solid rgba(255,255,255,.10);
+    white-space:nowrap;
   }
-  canvas { width: 100% !important; height: 300px !important; }
+  .table-mini td{
+    padding: 10px 10px;
+    border-bottom: 1px dashed rgba(255,255,255,.12);
+    color: rgba(234,242,255,.82);
+    vertical-align:top;
+  }
+  .table-mini tr:last-child td{ border-bottom:none; }
 
-  .summary-list {
-    flex: 1; background: #fff; padding: 15px 20px; border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06); font-size: 14px;
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
-  }
-  .summary-group ul { list-style: none; padding-left: 0px; margin: 5px 0 10px; }
-  .summary-group li { margin-bottom: 4px; }
-  .summary-group strong { color: #00796b; display: block; margin-bottom: 6px; font-size: 15px; }
-
-  .floating-dock {
-    position: fixed; bottom: env(safe-area-inset-bottom, 16px); left: 50%; transform: translateX(-50%);
-    background: white; border-radius: 16px; padding: 6px 6px env(safe-area-inset-bottom, 16px);
-    display: flex; gap: 6px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); z-index: 1000; max-width: 95vw;
-  }
-  .icon-button { width: 64px; height: 64px; padding: 4px; border-radius: 12px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s ease; text-decoration: none; flex: 0 0 auto; }
-  .icon-button img { width: 60px; height: 60px; object-fit: contain; }
-  .icon-button:hover { transform: scale(1.1); }
-
-  .inline-field { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; max-width: 600px; }
-  .inline-field label { min-width: 160px; font-weight: bold; font-size: 14px; color: #333; }
-  .inline-field .input-pair { display: flex; gap: 6px; align-items: center; }
-  .inline-field input, .inline-field select { padding: 6px 8px; font-size: 13px; width: 120px; border: 1px solid #ccc; border-radius: 6px; max-width: 100%; }
-  button[type="button"] { background-color: teal; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; margin-top: 10px; }
-
-  @media (max-width: 768px) {
-    .inline-field { flex-direction: column; align-items: flex-start; max-width: 100%; }
-    .inline-field label { min-width: unset; }
-    .inline-field input, .inline-field select { width: auto; min-width: 100px; max-width: 100%; }
-    .inline-field .input-pair { flex-direction: row; width: 100%; }
-  }
-
-  .add-product-button {
-    background-color: #e0f7fa; color: #00796b; border: 1px solid #00bfa5;
-    padding: 6px 14px; font-size: 13px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;
-  }
-  .add-product-button:hover { background-color: #b2dfdb; color: #004d40; transform: scale(1.03); }
-
-  .floating-toggle {
-    position: fixed; bottom: env(safe-area-inset-bottom, 18px); left: 50%; transform: translateX(-50%);
-    background: rgba(0, 128, 128, 0); width: 58px; height: 58px; border-radius: 50%;
-    box-shadow: 0 4px 16px rgba(251, 251, 251, 0); display: flex; justify-content: center; align-items: center; z-index: 1000; cursor: pointer;
-  }
-  .floating-menu {
-    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
-    background: white; border-radius: 16px; padding: 10px; display: none; flex-direction: column; align-items: center; gap: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.2); z-index: 999; max-height: 60vh; overflow-y: auto;
-  }
-  .floating-menu a img { width: 52px; height: 52px; }
-
-  @media (max-width: 768px) {
-    body { font-size: 10px; }
-    #mainTitle .month { font-size: 14px; }
-    #mainTitle .total, #mainTitle .compare { font-size: 10px; }
-    .summary-list { font-size: 10px; grid-template-columns: repeat(4, 1fr); }
-    .summary-group strong { font-size: 10px; }
-    .top10-box h3 { font-size: 12px; }
-    .top10-box li span.name, .top10-box li span.date, .top10-box li span.amount { font-size: 10px; }
-    .inline-field label, .inline-field input, .inline-field select { font-size: 10px; }
-    .add-product-button { font-size: 10px; padding: 4px 8px; }
-    #customer-modal > div { font-size: 10px !important; }
-    .icon-button { width: 48px; height: 48px; }
-    .icon-button img { width: 48px; height: 48px; }
-    .chart-summary-row { flex-direction: column; }
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(20,184,166,.12);
+    border: 1px solid rgba(20,184,166,.20);
+    color: rgba(234,242,255,.90);
+    font-size: 11px;
+    font-weight: 900;
+    margin: 4px 6px 0 0;
+    white-space:nowrap;
   }
 
-  @media (max-width: 1024px) {
-    .floating-dock { bottom: 0; padding-bottom: env(safe-area-inset-bottom); }
+  /* Group modal UI */
+  .group-header{
+    font-size: 14px;
+    font-weight: 900;
+    color: rgba(234,242,255,.92);
+    margin-bottom: 12px;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.05);
+  }
+  .customer-entry{
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.05);
+    margin-bottom: 10px;
+  }
+  .customer-name{ font-weight: 900; margin-bottom: 6px; }
+  .date-info{ display:flex; flex-wrap:wrap; gap:8px; }
+  .date-box{
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.12);
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    color: rgba(234,242,255,.86);
+    white-space:nowrap;
   }
 
-  #mainTitle .compare { font-size: 13px; }
-  @media (max-width: 768px) { #mainTitle .compare { font-size: 10px; } }
-
-  .filter-section {
-    max-width: 650px; margin: auto; padding: 20px; background: #fefefe; border: 1px solid #ddd; border-radius: 12px; font-size: 14px;
+  /* Responsive */
+  @media (max-width: 1024px){
+    .summary-list{ grid-template-columns: repeat(3, 1fr); }
   }
-  h3 { margin-top: 0; color: #00695c; margin-bottom: 20px; font-size: 16px; }
-
-  .product-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
-  .inline-field { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
-  .inline-field label { min-width: 180px; font-weight: bold; font-size: 14px; color: #333; }
-  .input-pair { display: flex; gap: 6px; align-items: center; }
-  .input-pair input { padding: 6px 8px; font-size: 13px; width: 120px; max-width: 100%; border: 1px solid #ccc; border-radius: 6px; }
-  .product-list-container { margin-bottom: 16px; }
-  .search-button { background-color: teal; color: white; border: none; padding: 8px 20px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 12px; }
-  .search-button:hover { background-color: #00796b; }
-
-  @media (max-width: 768px) {
-    .inline-field { flex-direction: column; align-items: flex-start; }
-    .inline-field label { min-width: unset; }
-    .input-pair { width: 100%; }
-    .input-pair input { width: 100%; }
-    .product-row { flex-direction: column; align-items: flex-start; }
+  @media (max-width: 768px){
+    body{ font-size: 12px; padding: 12px; padding-bottom: 150px; }
+    #mainTitle .month{ font-size: 16px; }
+    #mainTitle .total{ font-size: 13px; }
+    #mainTitle .compare{ font-size: 11px; }
+    .summary-list{ grid-template-columns: repeat(2, 1fr); }
+    .inline-field{ flex-direction:column; align-items:flex-start; }
+    .inline-field label{ min-width: unset; }
+    input, select{ width: 100%; }
+    .input-pair{ width: 100%; }
   }
-  @media (max-width: 768px) {
-    body { font-size: 10px; }
-    .filter-section, .inline-field label, .inline-field input, .inline-field select, .add-product-button, .search-button, .input-pair input { font-size: 10px !important; }
-    h3 { font-size: 11px !important; }
+  @media (max-width: 420px){
+    .summary-list{ grid-template-columns: 1fr; }
   }
-  @media (max-width: 768px) {
-    #filterResults, #filterResults div, #filterResults strong, #filterResults span { font-size: 10px !important; }
-  }
-  .inline-field input[type="text"] { padding: 6px 8px; font-size: 13px; width: 240px; max-width: 100%; border: 1px solid #ccc; border-radius: 6px; }
-  @media (max-width: 768px) { .inline-field input[type="text"] { font-size: 10px !important; } }
-  @media (max-width: 480px) { #customer-modal > div { max-width: 94vw !important; padding: 12px !important; } }
-
-  .group-header {
-    font-size: 18px; color: #004d40; font-weight: bold; margin-bottom: 20px;
-    text-align: center; background: #e0f2f1; padding: 10px 16px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-  }
-  .customer-entry { padding: 12px 16px; background: #f9f9f9; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
-  .customer-name { font-size: 15px; color: #00695c; margin-bottom: 6px; }
-  .date-info { font-size: 13px; color: #444; display: flex; flex-wrap: wrap; gap: 8px; }
-  .date-box { background: #e0f7fa; color: #004d40; padding: 4px 8px; border-radius: 8px; font-size: 13px; white-space: nowrap; border: 1px solid #b2dfdb; }
-
-  #customer-modal-box {
-    width: auto; max-width: 90vw; max-height: 90vh; font-size: 13.5px; padding: 16px; border-radius: 16px;
-    overflow: auto; background: white; box-sizing: border-box;
-  }
-  #customer-modal {
-    display: flex; justify-content: center; align-items: center; padding: 16px;
-  }
-
-  /* ปุ่มในแถบเดือน */
-.month-nav {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-.month-nav button {
-  background-color: #009688;
-  color: #fff;
-  border: none;
-  padding: 8px 14px;
-  font-size: 13px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background-color .2s ease, transform .05s ease;
-  white-space: nowrap;
-}
-.month-nav button:hover { background-color: #00796b; }
-.month-nav button:active { transform: translateY(1px); }
-#openRangeBtn { background-color: #00897b; }
-#clearRangeBtn { background-color: #607d8b; }
-#clearRangeBtn:hover { background-color: #546e7a; }
-
-/* ===== Modal เลือกช่วงเดือน ===== */
-.range-modal { position: fixed; inset: 0; z-index: 1200; display: none; }
-.range-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.45); }
-.range-modal__panel {
-  position: absolute; left: 50%; top: 50%;
-  transform: translate(-50%, -50%);
-  width: min(92vw, 420px);
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 12px 30px rgba(0,0,0,.18);
-  overflow: hidden;
-  display: flex; flex-direction: column;
-}
-.range-modal__header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 14px; background: #e0f2f1; font-weight: 600; color: #004d40;
-}
-.range-modal__close {
-  background: transparent; border: none; font-size: 18px;
-  cursor: pointer; color: #004d40;
-}
-.range-modal__body { display: grid; gap: 12px; padding: 14px; }
-.range-modal__body label { display: grid; gap: 6px; font-size: 13px; color: #335; }
-.range-modal__body input[type="month"]{
-  -webkit-appearance: none; appearance: none;
-  width: 100%; padding: 8px 10px; font-size: 14px;
-  border: 1px solid #cfe7e5; border-radius: 10px; background: #fff;
-}
-.range-modal__footer {
-  display: flex; justify-content: flex-end; gap: 8px; padding: 12px 14px;
-  border-top: 1px solid #eee;
-}
-.btn-primary, .btn-secondary {
-  border: none; padding: 8px 14px; border-radius: 10px; font-size: 13px; cursor: pointer;
-}
-.btn-primary { background: #009688; color: #fff; }
-.btn-primary:hover { background: #00796b; }
-.btn-secondary { background: #eceff1; color: #37474f; }
-.btn-secondary:hover { background: #e0e3e6; }
-
-/* มือถือ: ปุ่มและ modal กระชับขึ้น */
-@media (max-width: 768px){
-  .month-nav { gap: 6px; margin-bottom: 12px; }
-  .month-nav button { padding: 7px 12px; font-size: 12px; border-radius: 9px; }
-  .range-modal__panel { width: min(94vw, 380px); }
-  .range-modal__body input[type="month"]{ font-size: 13px; padding: 7px 10px; }
-}
-
-/* ===== ตารางสรุปใน popup ===== */
-.table-mini { width:100%; border-collapse:collapse; font-size:13px; }
-.table-mini th, .table-mini td { padding:6px 8px; border-bottom:1px dashed #e0e0e0; text-align:right; }
-.table-mini th:first-child, .table-mini td:first-child { text-align:left; }
-.badge { display:inline-block; padding:2px 8px; border-radius:999px; background:#e0f2f1; color:#004d40; font-size:12px; }
-
-/* === กล่องลูกค้าที่ควรโทรก่อน (Lead Score) === */
-.lead-score-box {
-  max-width: 1200px;
-  margin: 0 auto 20px;
-  background: #fff;
-  padding: 15px 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-}
-.lead-score-box h3 {
-  margin-top: 0;
-  color: teal;
-  font-size: 18px;
-  text-align: center;
-}
-.lead-score-sub {
-  text-align: center;
-  font-size: 12px;
-  color: #64748b;
-  margin-top: 4px;
-  margin-bottom: 10px;
-}
-#leadScoreList {
-  list-style: none;
-  padding-left: 0;
-  margin: 0;
-}
-#leadScoreList li {
-  padding: 6px 0;
-  border-bottom: 1px dashed #e5e7eb;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-}
-.lead-name {
-  font-weight: 600;
-  color: #00695c;
-  cursor: pointer;
-}
-.lead-score-badge {
-  background: #e0f2f1;
-  color: #004d40;
-  border-radius: 999px;
-  padding: 2px 10px;
-  font-size: 12px;
-  font-weight: 600;
-}
-.lead-score-meta {
-  font-size: 12px;
-  color: #4b5563;
-  flex: 1 1 auto;   /* ไม่บังคับให้ลงบรรทัดใหม่ */
-  white-space: normal;
-}
-.lead-absent {
-  color: #dc2626;
-  font-weight: 600;
-}
-.lead-money {
-  font-weight: 600;
-  color: #009688;
-  margin-left: auto;
-  font-variant-numeric: tabular-nums;
-}
-@media (max-width: 768px) {
-  .lead-score-box h3 { font-size: 14px; }
-  .lead-score-sub,
-  .lead-score-meta,
-  .lead-score-badge,
-  #leadScoreList li { font-size: 10px; }
-}
-/* ===== CSS สำหรับ Followup Summary ===== */
-.summary-box {
-  max-width: 1200px; margin: 0 auto 20px; background: #fff; padding: 0; /* padding 0 เพื่อให้ tab ชิดขอบ */
-  border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); overflow: hidden;
-}
-.tabs-wrap {
-  display: flex; background: #f1f5f9; border-bottom: 1px solid #e2e8f0;
-  overflow-x: auto; /* เผื่อจอเล็ก */
-}
-.tab-btn {
-  flex: 1; border: none; background: transparent; padding: 12px 16px;
-  cursor: pointer; font-family: 'Prompt', sans-serif; font-size: 13px; color: #64748b;
-  border-bottom: 3px solid transparent; transition: all 0.2s;
-  display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 100px;
-}
-.tab-btn:hover { background: #e2e8f0; }
-.tab-btn.active {
-  background: #fff; color: #0f766e; border-bottom-color: #0f766e; font-weight: bold;
-}
-.tab-count {
-  background: #cbd5e1; color: #334155; padding: 2px 8px; border-radius: 99px; font-size: 11px;
-}
-.tab-btn.active .tab-count { background: #ccfbf1; color: #0f766e; }
-
-#summaryContentArea { padding: 0; overflow-x: auto; }
-.summary-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.summary-table th {
-  background: #f8fafc; text-align: left; padding: 10px 16px; color: #475569; font-weight: 600; border-bottom: 1px solid #e2e8f0; white-space: nowrap;
-}
-.summary-table td {
-  padding: 10px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: top; color: #334155;
-}
-.summary-table tr:last-child td { border-bottom: none; }
-.customer-link { color: #0f766e; font-weight: 600; cursor: pointer; text-decoration: underline; }
-.customer-link:hover { color: #0d9488; }
-/* ===== ย่อตาราง Followup Summary ให้จิ๋วลง ===== */
-.summary-table { 
-    font-size: 11px !important; /* ลดขนาดตัวหนังสือในตาราง */
-}
-
-.summary-table th, 
-.summary-table td {
-    padding: 4px 8px !important; /* ลดช่องว่างขอบตาราง (บนล่าง 4px, ซ้ายขวา 8px) */
-    vertical-align: middle !important; /* จัดให้อยู่กึ่งกลางแนวตั้ง */
-}
-
-/* ปรับขนาดชื่อลูกค้าให้เด่นกว่านิดนึง แต่ไม่ใหญ่เทอะทะ */
-.customer-link { 
-    font-size: 12px !important; 
-}
-
-/* ถ้าอยากให้บรรทัด Timeline ที่ยาวๆ ตัวเล็กลงอีก */
-.summary-table td div {
-    line-height: 1.4; /* ระยะห่างบรรทัด */
-}
-
-
-/* =========================================
-   🔙 RESET: กลับสู่ค่าเริ่มต้น (Original Teal Theme)
-   ========================================= */
-
-/* 1. พื้นหลังและฟอนต์ */
-body {
-    background-color: white !important;
-    color: black !important;
-    font-family: 'Prompt', 'Segoe UI', sans-serif !important;
-}
-
-/* 2. กล่องต่างๆ กลับมาเป็นทรงเดิม */
-.menu-bar, .top10-box, .chart-container, .summary-list, 
-.lead-score-box, .summary-box, .filter-section, 
-#mainTitle, #customer-modal-box, .range-modal__panel {
-    background: #fff !important;
-    border-radius: 12px !important; /* กลับมาโค้งน้อยลง */
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
-    border: none !important;
-}
-
-/* 3. หัวข้อสี Teal */
-h3, .group-header, #mainTitle .month {
-    color: teal !important;
-    font-weight: bold !important;
-}
-#mainTitle {
-    background-color: #e0f2f1 !important; /* สีเขียวอ่อนเดิม */
-    border: none !important;
-}
-#mainTitle .total { color: #009688 !important; }
-
-/* 4. ปุ่มกลับเป็นสี่เหลี่ยมมนๆ สี Teal */
-button, .add-product-button, .search-button, 
-.month-nav button, .tab-btn {
-    border-radius: 6px !important; /* กลับมาเหลี่ยม */
-    letter-spacing: normal !important;
-    transform: none !important;
-    box-shadow: none !important;
-}
-
-/* ปุ่มหลัก */
-.month-nav button, .search-button, .btn-primary, #openRangeBtn {
-    background: teal !important; /* สี Teal เดิม */
-    color: white !important;
-}
-.month-nav button:hover, .search-button:hover {
-    background-color: #00796b !important;
-    transform: none !important;
-}
-#clearRangeBtn {
-    background-color: #607d8b !important;
-    color: white !important;
-    border: none !important;
-}
-
-/* 5. Input ฟอร์ม */
-input, select {
-    border: 1px solid #ccc !important;
-    background-color: #fff !important;
-    border-radius: 8px !important;
-    padding: 6px 8px !important;
-    color: black !important;
-    box-shadow: none !important;
-}
-input:focus, select:focus {
-    border-color: teal !important;
-}
-
-/* 6. ตัวเลขและการเงิน */
-.top10-box li span.amount, .lead-money {
-    color: #009688 !important;
-}
-.badge, .lead-score-badge {
-    background: #e0f2f1 !important;
-    color: #004d40 !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-
-/* Modal Backdrop ธรรมดา (ไม่เบลอ) */
-#customer-modal, #group-modal, #group-modal-legacy, .range-modal {
-    backdrop-filter: none !important;
-    background-color: rgba(0,0,0,0.5) !important;
-}
-
-/* เส้นขอบตาราง */
-.top10-box li, #leadScoreList li, .summary-table th, .summary-table td {
-    border-bottom: 1px dashed #ddd !important;
-}
-
-/* Tab Active */
-.tab-btn.active {
-    color: #0f766e !important; 
-    border-bottom-color: #0f766e !important;
-    background: #fff !important;
-}
-.tab-count {
-    background: #cbd5e1 !important; 
-    color: #334155 !important;
-}
-.tab-btn.active .tab-count {
-    background: #ccfbf1 !important; 
-    color: #0f766e !important;
-}
 </style>
 </head>
+
 <body>
+{% block content %}
+
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
-<div id="group-modal-legacy" style="display:none; position:fixed; inset:0; background-color:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
-  <div id="group-modal-content-legacy" style="background:#fff; padding:20px; border-radius:10px; max-height:80vh; overflow:auto; width:90%; max-width:500px;">
+<!-- Legacy Group modal -->
+<div id="group-modal-legacy">
+  <div id="group-modal-content-legacy" style="padding:16px; max-height:80vh; overflow:auto; width:min(520px, 92vw);">
     <div id="groupSelectedList-legacy"></div>
-    <div style="text-align:right; margin-top:20px;">
-      <button onclick="closeGroupModal()" style="padding:6px 12px;">❌ ปิด</button>
+    <div style="text-align:right; margin-top:14px;">
+      <button onclick="closeGroupModal()" style="padding:10px 14px; border-radius:999px; font-weight:900;">ปิด</button>
     </div>
   </div>
 </div>
 
-<div id="customer-modal" style="display:none;position:fixed;inset:0;background-color:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
-  <div id="customer-modal-box" style="background:white;padding:16px;border-radius:16px;width:auto;max-width:90vw;box-sizing:border-box;margin:auto;max-height:90vh;overflow:auto;position:relative; font-size:13.5px;">
-    <button onclick="closeCustomerModal()" style="position:absolute;top:10px;right:14px;font-size:20px;border:none;background:none;cursor:pointer;">&times;</button>
+<!-- Customer modal -->
+<div id="customer-modal">
+  <div id="customer-modal-box">
+    <button onclick="closeCustomerModal()" style="position:absolute; top:10px; right:12px;">✕</button>
     <div id="modal-content"></div>
   </div>
 </div>
 
+<!-- Month nav -->
 <div class="month-nav">
   <button onclick="changeMonth(-1)">← เดือนก่อนหน้า</button>
-
   <button id="openRangeBtn" onclick="openRangeModal()">เลือกช่วงเวลา</button>
   <button id="clearRangeBtn" onclick="clearRange()">ล้างช่วง</button>
-
   <button onclick="changeMonth(1)">เดือนถัดไป →</button>
 </div>
 
-<div id="rangeModal" class="range-modal" style="display:none;">
+<!-- Range modal -->
+<div id="rangeModal" class="range-modal">
   <div class="range-modal__backdrop" onclick="closeRangeModal()"></div>
   <div class="range-modal__panel">
     <div class="range-modal__header">
@@ -569,66 +674,57 @@ input:focus, select:focus {
   </div>
 </div>
 
+<!-- Hero -->
 <div id="mainTitle">
   <div class="month">...</div>
   <div class="total">กำลังโหลดข้อมูล...</div>
-  <div class="compare" style="margin-top: 6px;"></div>
+  <div class="compare"></div>
 </div>
 
-<div class="top10-box">
-  <h3>Top 10 ลูกค้าใช้จ่ายสูงสุด</h3>
-  <ul id="top10List"><li style="text-align:center; color:#999;">กำลังโหลดข้อมูล...</li></ul>
-  <p id="totalCustomer" onclick="toggleCustomerList()" style="text-align:center; margin-top: 10px; font-weight: bold; color: teal; cursor: pointer;"></p>
-  <ul id="allCustomerList" style="display:none; padding-top: 10px;"></ul>
+<!-- Top10 card -->
+<div class="card top10-box">
+  <div class="card-header">
+    <h3>🏆 Top 10 ลูกค้าใช้จ่ายสูงสุด</h3>
+  </div>
+  <div class="card-body">
+    <ul id="top10List"><li style="text-align:center; color: rgba(234,242,255,.65);">กำลังโหลดข้อมูล...</li></ul>
+    <p id="totalCustomer" onclick="toggleCustomerList()"></p>
+    <ul id="allCustomerList" style="display:none; padding-top: 10px;"></ul>
+  </div>
 </div>
 
+<!-- Summary grid -->
 <div class="chart-summary-row">
-  <div class="summary-list" id="summaryList"><div style="text-align:center; color:#999; grid-column: 1 / -1;">กำลังโหลดข้อมูลสินค้า...</div></div>
+  <div class="summary-list" id="summaryList">
+    <div style="text-align:center; color: rgba(234,242,255,.65); grid-column: 1 / -1;">กำลังโหลดข้อมูลสินค้า...</div>
+  </div>
 </div>
+
 <div id="filter-placeholder"></div>
 
-<div class="summary-box" id="summaryBody">
-  <div style="padding:20px; text-align:center; color:#64748b;">
-    กำลังโหลดข้อมูลประวัติการโทร... ⏳
-  </div>
-</div>
-
+<!-- Lead score -->
 <div class="lead-score-box">
-  <h3>📞 ลูกค้าที่ควรตามในเดือนนี้</h3>
-  <div class="lead-score-sub">
-    ระบบจะดูจาก <b>= มูลค่าลูกค้า (ยอดรวม + จำนวนครั้ง + บิลเฉลี่ย) + คะแนนหายไปนาน (ดีที่สุดช่วง 46–120 วัน) และตัดคนที่มา 45 วัน</b><br>
-     
+  <div class="head">
+    <h3>📞 ลูกค้าที่ควรตามในเดือนนี้</h3>
+    <div class="lead-score-sub">
+      ระบบจะดูจาก <b>= มูลค่าลูกค้า (ยอดรวม + จำนวนครั้ง + บิลเฉลี่ย) + คะแนนหายไปนาน (ดีที่สุดช่วง 46–120 วัน) และตัดคนที่มา 45 วัน</b>
+      <br><span style="opacity:.8;">หมายเหตุ: ลบ Sale Pitch ออกแล้ว เพื่อให้โหลดเร็วขึ้น</span>
+    </div>
   </div>
   <ul id="leadScoreList">
-    <li style="text-align:center; color:#999; padding:10px;">กำลังวิเคราะห์ข้อมูล...</li>
+    <li style="text-align:center; color: rgba(234,242,255,.65); padding:14px;">กำลังวิเคราะห์ข้อมูล...</li>
   </ul>
 </div>
 
-<div id="group-modal" style="display:none;position:fixed;inset:0;background-color:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
-  <div id="group-modal-content" style="background:white;padding:20px;border-radius:16px;width:95%;max-width:700px;max-height:90vh;overflow:auto;position:relative; font-size:13px;">
+<!-- Group modal -->
+<div id="group-modal">
+  <div id="group-modal-content" style="padding:16px; width:min(760px, 95vw); max-height:90vh; overflow:auto; position:relative;">
     <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
-      <button onclick="saveGroupModalAsImage()" title="บันทึกเป็นรูปภาพ" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">💾</button>
-      <button onclick="closeGroupModal()" title="ปิดหน้าต่าง" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">❌</button>
+      <button onclick="saveGroupModalAsImage()" title="บันทึกเป็นรูปภาพ" style="width:40px; height:40px; border-radius:999px; background:rgba(255,255,255,.06); color:rgba(234,242,255,.92); border:1px solid rgba(255,255,255,.12); cursor:pointer;">💾</button>
+      <button onclick="closeGroupModal()" title="ปิดหน้าต่าง" style="width:40px; height:40px; border-radius:999px; background:rgba(255,255,255,.06); color:rgba(234,242,255,.92); border:1px solid rgba(255,255,255,.12); cursor:pointer;">✕</button>
     </div>
-    <div style="margin-top: 20px;" id="groupSelectedList"></div>
+    <div style="margin-top: 40px;" id="groupSelectedList"></div>
   </div>
-</div>
-
-<div id="floatingToggle" class="floating-toggle" onclick="toggleFloatingMenu()">
-  <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu" style="width:60px;height:60px;">
-</div>
-
-<div id="floatingMenu" class="floating-menu" aria-hidden="true">
-  <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}" alt="Dashboard"></a>
-  <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}" alt="Sale summary"></a>
-  <a href="{{ url_for('crm') }}"><img src="{{ url_for('static', filename='icon/icon_crm.png') }}" alt="CRM"></a>
-  <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}" alt="Record sales"></a>
-  <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}" alt="Customer list"></a>
-  <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}" alt="Record customer"></a>
-  <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}" alt="Old customers"></a>
-  <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}" alt="Inventory"></a>
-  <a href="{{ url_for('staff') }}"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}" alt="Staff"></a>
-  <a href="{{ url_for('appointments') }}"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}" alt="Appointments"></a>
 </div>
 
 <script>
@@ -637,72 +733,18 @@ input:focus, select:focus {
   const dateYM = (s)=> s.slice(0,7);
   const ymNum = (ym)=>{const[a,b]=ym.split('-').map(Number);return a*100+b;}
 
-  // ===== เพิ่ม Helper Functions ที่ขาดหายไป (สำคัญ) =====
   const pad4 = (s) => String(s||'').padStart(4,'0');
   const esc = (s) => (s||'').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   const fmtShortDate = (d) => { if(!d)return'-'; const date=new Date(d); return `${date.getDate()}/${date.getMonth()+1}/${String(date.getFullYear()).slice(-2)}`; };
   const makeCustomerKey = (opd, name, phone) => `${opd}|${name}|${phone}`;
 
-  let viewingDate = new Date();     // โหมดรายเดือน (เดิม)
+  let viewingDate = new Date();
   let allSalesRecords = [];
   let allCustomerRecords = [];
-  let fullCustomerList = [];
-
-  // cache สำหรับ Sale pitch (ใช้กับกล่องคะแนนโทร)
-  const leadPitchCache = new Map();
-
-  // ฟังก์ชันดึง Pitch เดี่ยว (สำหรับ Lead Score)
-  async function fetchLatestPitchForOPD(opd){
-    if(!opd || opd === '-') return null;
-    // เช็ค cache ก่อน
-    if(leadPitchCache.has(opd)) return leadPitchCache.get(opd);
-
-    try{
-      const r = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
-      if(!r.ok){ 
-        leadPitchCache.set(opd, null);
-        return null;
-      }
-      const arr = await r.json() || [];
-      // เผื่อ backend ไม่ sort ให้
-      arr.sort((a,b) => String(b.created_at||'').localeCompare(String(a.created_at||'')));
-      const top = arr[0];
-      
-      // คืนค่าเป็น object ตามที่ระบบต้องการ
-      const latest = top ? {
-        date: top.created_at || top.date,
-        outcome: top.outcome || '',
-        content: top.content || ''
-      } : null;
-      
-      leadPitchCache.set(opd, latest);
-      return latest;
-    }catch(e){
-      console.error('fetchLatestPitchForOPD error', e);
-      leadPitchCache.set(opd, null);
-      return null;
-    }
-  }
-
-  // ฟังก์ชันดึง Pitch ทั้งหมดเป็น Array (สำหรับ Timeline Summary)
-  async function fetchAllPitchesForOPD(opd) {
-    if (!opd || opd === '-') return [];
-    try {
-        const res = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
-        if (!res.ok) return [];
-        const data = await res.json();
-        if (!Array.isArray(data)) return [];
-        return data.sort((a, b) => (b.created_at || b.date || '').localeCompare(a.created_at || a.date || ''));
-    } catch (e) {
-        console.error(e);
-        return [];
-    }
-  }
 
   // โหมดช่วงเดือน
   const monthRange = { enabled:false, startYM:null, endYM:null };
 
-  // ใช้ฟังก์ชันนี้แทนทุกที่ที่เคย filter(r => r.date.startsWith(prefix))
   function activeFilter(r){
     if (monthRange.enabled){
       const ym = dateYM(r.date);
@@ -711,36 +753,19 @@ input:focus, select:focus {
     return r.date.startsWith(formatYM(viewingDate));
   }
 
-  function applyRange(){
-    const s = document.getElementById('rangeStart').value;
-    const e = document.getElementById('rangeEnd').value;
-    if(!s || !e){ alert('กรุณาเลือกเดือนเริ่มต้นและสิ้นสุด'); return; }
-    if(ymNum(s) > ymNum(e)){ alert('เดือนเริ่มต้องไม่เกินเดือนสิ้นสุด'); return; }
-    monthRange.enabled = true; monthRange.startYM = s; monthRange.endYM = e;
-    fetchDataAndUpdate();
-  }
-  function clearRange(){
-    monthRange.enabled = false; monthRange.startYM = monthRange.endYM = null;
-    fetchDataAndUpdate();
-  }
-
   function changeMonth(delta) {
     viewingDate.setMonth(viewingDate.getMonth() + delta);
-    monthRange.enabled = false; // ถ้าขยับเดือน ให้ปิดโหมดช่วงเดือน
+    monthRange.enabled = false;
     fetchDataAndUpdate();
     refreshCustomerList();
   }
 
-  // ปรับปรุงฟังก์ชันโหลดข้อมูลหลัก ให้รองรับ loadDataForSummary
   function fetchAllCustomerRecords() {
     return fetch("/api/sales")
       .then(res => res.json())
-      .then(records => { 
-          allCustomerRecords = records; 
-          // เมื่อโหลดเสร็จ ให้รันส่วนอื่นต่อ
-          if(records.length > 0) {
-             loadDataForSummary();
-          }
+      .then(records => {
+        allCustomerRecords = records;
+        if(records.length > 0) buildLeadScoreList();
       })
       .catch(err => { console.error("❌ โหลดข้อมูลทั้งหมดไม่สำเร็จ:", err); });
   }
@@ -757,16 +782,16 @@ input:focus, select:focus {
         updateDashboard(allSalesRecords);
       }).catch(err => {
         console.error("❌ โหลดข้อมูลไม่สำเร็จ:", err);
-        // alert("เกิดข้อผิดพลาดในการโหลดข้อมูล");
       });
     }
   }
 
+  function daysInMonth(y,m){ return new Date(y,m,0).getDate(); }
+
   function updateDashboard(records) {
     const compareEl = document.querySelector('#mainTitle .compare');
-    compareEl.innerHTML = ''; // reset
+    compareEl.innerHTML = '';
 
-    // ===== หัวเรื่อง =====
     if (monthRange.enabled){
       const [sy, sm] = monthRange.startYM.split('-').map(Number);
       const [ey, em] = monthRange.endYM.split('-').map(Number);
@@ -779,12 +804,12 @@ input:focus, select:focus {
       document.querySelector('#mainTitle .month').textContent = `${monthName} ${yearBE}`;
     }
 
-    // ===== สรุปยอดรวม + เทียบเดือนก่อน (เฉพาะโหมดรายเดือน) =====
     let totalSales = 0;
+
     if (monthRange.enabled){
       records.filter(activeFilter).forEach(r => totalSales += parseFloat(r.amount || 0));
-      document.querySelector('#mainTitle .total').innerHTML = `💰 ยอดขายรวม ${totalSales.toLocaleString()} บาท`;
-      compareEl.innerHTML = `<span style="color:gray;">โหมดช่วงเดือน: ไม่เปรียบเทียบกับเดือนก่อน</span>`;
+      document.querySelector('#mainTitle .total').innerHTML = `💰 ยอดขายรวม <b>${totalSales.toLocaleString()}</b> บาท`;
+      compareEl.innerHTML = `<span style="opacity:.85;">โหมดช่วงเดือน: ไม่เปรียบเทียบกับเดือนก่อน</span>`;
     } else {
       const today = new Date();
       const todayDate = Math.min(today.getDate(), daysInMonth(viewingDate.getFullYear(), viewingDate.getMonth()+1));
@@ -807,67 +832,25 @@ input:focus, select:focus {
         }
       });
 
-      document.querySelector('#mainTitle .total').innerHTML = `💰 ยอดขายรวม ${totalSales.toLocaleString()} บาท`;
+      document.querySelector('#mainTitle .total').innerHTML = `💰 ยอดขายรวม <b>${totalSales.toLocaleString()}</b> บาท`;
 
       let diff = totalSales - lastMonthSales;
       let text = diff > 0
-        ? `<span style="color: green;">+${diff.toLocaleString()} บาท จากเดือนก่อน</span>`
+        ? `<span style="color:${'#22c55e'}; font-weight:900;">+${diff.toLocaleString()} บาท</span> <span style="opacity:.8;">จากเดือนก่อน</span>`
         : diff < 0
-          ? `<span style="color: red;">-${Math.abs(diff).toLocaleString()} บาท จากเดือนก่อน</span>`
-          : `<span style="color: gray;">ยอดเท่าเดิมกับเดือนก่อน</span>`;
+          ? `<span style="color:${'#fb7185'}; font-weight:900;">-${Math.abs(diff).toLocaleString()} บาท</span> <span style="opacity:.8;">จากเดือนก่อน</span>`
+          : `<span style="opacity:.85;">ยอดเท่าเดิมกับเดือนก่อน</span>`;
 
       diff = toDateSales - toDateLastMonthSales;
       let text2 = diff > 0
-        ? `<span style="color: green;">📆 รวมเฉพาะ ${todayDate} วัน : +${diff.toLocaleString()} บาท จากเดือนก่อน</span>`
+        ? `<span style="color:${'#22c55e'}; font-weight:900;">📆 ${todayDate} วันแรก: +${diff.toLocaleString()} บาท</span> <span style="opacity:.8;">จากเดือนก่อน</span>`
         : diff < 0
-          ? `<span style="color: red;">📆 รวมเฉพาะ ${todayDate} วัน: -${Math.abs(diff).toLocaleString()} บาท จากเดือนก่อน</span>`
-          : `<span style="color: gray;">📆 รวมเฉพาะ ${todayDate} วัน: ยอดเท่าเดิมกับเดือนก่อน</span>`;
+          ? `<span style="color:${'#fb7185'}; font-weight:900;">📆 ${todayDate} วันแรก: -${Math.abs(diff).toLocaleString()} บาท</span> <span style="opacity:.8;">จากเดือนก่อน</span>`
+          : `<span style="opacity:.85;">📆 ${todayDate} วันแรก: ยอดเท่าเดิมกับเดือนก่อน</span>`;
+
       compareEl.innerHTML = `${text}<br>${text2}`;
 
-      // เทียบค่าเฉลี่ย 1–n วันของเดือนดี ๆ
-      const allDates = records.map(r => r.date).filter(Boolean);
-      const latestDate = allDates.sort().reverse()[0];
-      if (latestDate){
-        const targetRangeEnd = todayDate;
-        const monthlyTotalMap = {};
-        records.forEach(r => {
-          const [y,m] = r.date.split("-");
-          const ym = `${y}-${m}`;
-          if (!monthlyTotalMap[ym]) monthlyTotalMap[ym] = 0;
-          monthlyTotalMap[ym] += parseFloat(r.amount || 0);
-        });
-        const VALID_MONTH_THRESHOLD = 400000;
-        const qualifiedMonths = Object.entries(monthlyTotalMap)
-          .filter(([m,total]) => m !== currentPrefix && total >= VALID_MONTH_THRESHOLD)
-          .map(([m]) => m);
-
-        const rangeTotals = {};
-        records.forEach(r => {
-          const [y,m,d] = r.date.split("-");
-          const ym = `${y}-${m}`;
-          if (!qualifiedMonths.includes(ym)) return;
-          if (parseInt(d) <= targetRangeEnd) {
-            if (!rangeTotals[ym]) rangeTotals[ym] = 0;
-            rangeTotals[ym] += parseFloat(r.amount || 0);
-          }
-        });
-        const totalPast = Object.values(rangeTotals).reduce((s,v)=>s+v,0);
-        const averagePast = Math.round(totalPast / (Object.keys(rangeTotals).length || 1));
-        const currentMonthN = toDateSales;
-        const diffFromAvg = currentMonthN - averagePast;
-
-        const compareAvgDiv = document.createElement('div');
-        compareAvgDiv.style.marginTop = '4px';
-        compareAvgDiv.style.color = diffFromAvg > 0 ? 'green' : diffFromAvg < 0 ? 'crimson' : 'gray';
-        compareAvgDiv.innerHTML =
-          `📊 รวมเฉพาะ ${targetRangeEnd} วัน คือ: ${currentMonthN.toLocaleString()} บาท ${
-            diffFromAvg > 0 ? `✅ มากกว่าค่าเฉลี่ย +${diffFromAvg.toLocaleString()} บาท (${averagePast.toLocaleString()})` :
-            diffFromAvg < 0 ? `⚠️ น้อยกว่าค่าเฉลี่ย ${Math.abs(diffFromAvg).toLocaleString()} บาท (${averagePast.toLocaleString()})` :
-            `😐 เท่ากับค่าเฉลี่ย (${averagePast.toLocaleString()} บาท)`}`;
-        compareEl.appendChild(compareAvgDiv);
-      }
-
-      // วันนี้ / สัปดาห์นี้ (อิงเดือนปัจจุบันเท่านั้น)
+      // today/week
       let todaySales = 0, weekSales = 0;
       const todayObj = new Date();
       const dow = todayObj.getDay();
@@ -887,12 +870,14 @@ input:focus, select:focus {
       });
 
       const extraInfo = document.createElement("div");
-      extraInfo.style.marginTop = "6px"; extraInfo.style.fontSize = "10px"; extraInfo.style.color = "green";
-      extraInfo.innerHTML = `<span style="color: green; font-size: 10px;"> วันนี้: ${todaySales.toLocaleString()} บาท สัปดาห์นี้ (${monday.getDate()}–${sunday.getDate()}): ${weekSales.toLocaleString()} บาท</span>`;
+      extraInfo.style.marginTop = "6px";
+      extraInfo.style.fontSize = "11px";
+      extraInfo.style.color = "rgba(234,242,255,.78)";
+      extraInfo.innerHTML = `วันนี้: <b>${todaySales.toLocaleString()}</b> บาท · สัปดาห์นี้ (${monday.getDate()}–${sunday.getDate()}): <b>${weekSales.toLocaleString()}</b> บาท`;
       compareEl.appendChild(extraInfo);
     }
 
-    // ===== ประมวลหมวด / ลูกค้าในช่วงที่เลือก =====
+    // ===== Summary by category =====
     const categoryCounts = {}, categoryDetails = {}, customerMap = {};
     records.filter(activeFilter).forEach(r => {
       const key = `${r.name}|${r.phone}`;
@@ -915,23 +900,26 @@ input:focus, select:focus {
       });
     });
 
-    // สรุปหมวด
     const sortedEntries = Object.entries(categoryCounts).sort((a,b)=>b[1]-a[1]);
-    document.getElementById('summaryList').innerHTML = sortedEntries.map(([cat]) => {
-      const items = Object.entries(categoryDetails[cat] || {}).map(([sub, d]) => `• ${sub} ${d.qty}`).join('<br>');
-      const sumQty = categoryCounts[cat];
-      return `
-        <div class="summary-group" style="cursor:pointer;" onclick="openGroupModalByCategory('${cat}')">
-          <strong>${cat}</strong> รวม ${sumQty} ชิ้น
-          <ul>${items}</ul>
-        </div>`;
-    }).join('');
-    
-   // หลังสรุปหมวดสินค้า เสร็จแล้ว -> สร้าง list ลูกค้าที่ควรโทรก่อน
-   if (typeof buildLeadScoreList === 'function') {
-     buildLeadScoreList();
-   }
-    // Top 10
+    document.getElementById('summaryList').innerHTML = sortedEntries.length
+      ? sortedEntries.map(([cat]) => {
+          const items = Object.entries(categoryDetails[cat] || {})
+            .slice(0, 8)
+            .map(([sub, d]) => `• ${esc(sub)} <b>${d.qty}</b>`)
+            .join('<br>');
+          const sumQty = categoryCounts[cat];
+          return `
+            <div class="summary-group" onclick="openGroupModalByCategory('${esc(cat).replace(/'/g,"\\'")}')">
+              <strong>${esc(cat)}</strong>
+              รวม <b>${sumQty}</b> ชิ้น
+              <ul>${items || ''}</ul>
+            </div>`;
+        }).join('')
+      : `<div style="text-align:center; color: rgba(234,242,255,.65); grid-column: 1 / -1;">ไม่มีข้อมูลในช่วงนี้</div>`;
+
+    if (typeof buildLeadScoreList === 'function') buildLeadScoreList();
+
+    // ===== Top10 =====
     const top10 = Object.values(customerMap).sort((a,b)=>b.amount-a.amount).slice(0,10);
     document.getElementById('top10List').innerHTML = top10.map((c) => {
       const key = `${c.name}|${c.phone}`;
@@ -946,37 +934,37 @@ input:focus, select:focus {
       const latest = allRec.length? new Date(Math.max(...allRec.map(r=>new Date(r.date)))):null;
       const daysSinceLastVisit = latest? Math.floor((new Date()-latest)/(1000*60*60*24)) : null;
 
-      let absentColor = 'gray';
-      if (daysSinceLastVisit < 30) absentColor = 'green';
-      else if (daysSinceLastVisit <= 90) absentColor = 'orange';
-      else absentColor = 'crimson';
+      let absentColor = 'rgba(234,242,255,.7)';
+      if (daysSinceLastVisit < 30) absentColor = '#22c55e';
+      else if (daysSinceLastVisit <= 90) absentColor = '#fbbf24';
+      else absentColor = '#fb7185';
 
-      let totalColor='gray', totalExtra='', totalIcon='';
-      if (totalAmount < 50000) totalColor='crimson';
-      else if (totalAmount <= 99999) totalColor='green';
-      else if (totalAmount <= 200000) totalColor='goldenrod';
-      else { totalColor='#8B6508'; totalExtra='font-weight:bold;'; totalIcon=' 💎'; }
+      let totalColor='rgba(234,242,255,.75)', totalExtra='', totalIcon='';
+      if (totalAmount < 50000) totalColor='#fb7185';
+      else if (totalAmount <= 99999) totalColor='#22c55e';
+      else if (totalAmount <= 200000) totalColor='#fbbf24';
+      else { totalColor='#7dd3fc'; totalExtra='font-weight:900;'; totalIcon=' 💎'; }
 
-      let avgColor='gray';
-      if (avg < 5000) avgColor='crimson';
-      else if (avg <= 9999) avgColor='green';
-      else avgColor='#b8860b';
+      let avgColor='rgba(234,242,255,.75)';
+      if (avg < 5000) avgColor='#fb7185';
+      else if (avg <= 9999) avgColor='#22c55e';
+      else avgColor='#fbbf24';
 
       const lastVisitText = daysSinceLastVisit != null
-        ? `<span style="color:${absentColor};">🔚 ไม่มา ${daysSinceLastVisit} วัน</span>` : `<span>🔚 ไม่มีข้อมูล</span>`;
+        ? `<span style="color:${absentColor}; font-weight:900;">ไม่มา ${daysSinceLastVisit} วัน</span>` : `<span style="opacity:.8;">ไม่มีข้อมูล</span>`;
 
       const isNewCustomer = monthRange.enabled
         ? allRec.filter(r => ymNum(dateYM(r.date)) < ymNum(monthRange.startYM)).length === 0
         : allRec.filter(r => r.date < `${formatYM(viewingDate)}-01`).length === 0;
-      const newBadge = isNewCustomer ? `<span style="color:red; font-weight:bold;"> ลูกค้าใหม่</span>` : "";
+      const newBadge = isNewCustomer ? `<span style="color:#fb7185; font-weight:900;"> · ลูกค้าใหม่</span>` : "";
 
       return `
-      <li style="margin-bottom: 8px;">
-        <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">${c.name}${newBadge}</span>
+      <li>
+        <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">${esc(c.name)}${newBadge}</span>
         <span class="date">
-          (💳 <span style="color:${avgColor};">${avg.toLocaleString()}</span> × ${totalVisits}
-           | 💰 <span style="color:${totalColor}; ${totalExtra}">${totalAmount.toLocaleString()}${totalIcon}</span>
-           | ${lastVisitText})
+          (💳 <span style="color:${avgColor}; font-weight:900;">${avg.toLocaleString()}</span> × ${totalVisits}
+           · 💰 <span style="color:${totalColor}; ${totalExtra}">${totalAmount.toLocaleString()}${totalIcon}</span>
+           · ${lastVisitText})
         </span>
         <span class="amount">${c.amount.toLocaleString()} บาท</span>
       </li>`;
@@ -986,10 +974,8 @@ input:focus, select:focus {
       `จำนวนลูกค้าที่มาใช้บริการทั้งหมด ${Object.keys(customerMap).length} คน (กดดูเพิ่มเติม)`;
   }
 
-  // === คลิกกรอบสรุปเดือนเพื่อเปิด popup รายวัน ===
   document.getElementById('mainTitle').addEventListener('click', openMonthlySalesPopup);
 
-  // ===== กลุ่มหมวด (modal) =====
   function openGroupModalByCategory(cat) {
     const summary = {};
     const totalQty = { count: 0 };
@@ -1024,30 +1010,38 @@ input:focus, select:focus {
           .map(([date, qty]) => {
             const thDate = new Date(date).toLocaleDateString('th-TH',{ day:'numeric', month:'short' });
             return `${thDate} = ${qty}`;
-          }).join(" | ");
-        return `👤 <strong>${c.name}</strong>: ${dateParts}`;
+          }).join(" · ");
+        return `👤 <b>${esc(c.name)}</b>: ${dateParts}`;
       }).join("<br>");
 
-      return `<div style="margin-bottom:15px;">
-        <div style="font-weight:bold; color:#00796b; margin-bottom:5px;">🔹 ${productName}</div>
-        <div>${buyerLines}</div>
+      return `<div style="margin-bottom:12px;">
+        <div style="font-weight:900; color: rgba(234,242,255,.92); margin-bottom:6px;">🔹 ${esc(productName)}</div>
+        <div style="color: rgba(234,242,255,.80); font-size:12px; line-height:1.5;">${buyerLines}</div>
       </div>`;
     }).join("");
 
     document.getElementById("groupSelectedList").innerHTML = `
       <div class="group-header">
-        📦 รายการในหมวด: ${cat}<br>
-        ✅ รวมทั้งหมด <strong style="font-size: 18px; color: #00796b;">${totalQty.count}</strong> ชิ้น
+        📦 หมวด: <b>${esc(cat)}</b><br>
+        ✅ รวมทั้งหมด <span style="font-size:16px; color:#7dd3fc; font-weight:900;">${totalQty.count}</span> ชิ้น
       </div>
-      ${html || '<div style="padding:10px; color:#888;">ไม่มีข้อมูลในช่วงนี้</div>'}
+      ${html || '<div style="padding:10px; opacity:.75;">ไม่มีข้อมูลในช่วงนี้</div>'}
     `;
     document.getElementById("group-modal").style.display = "flex";
   }
-  function closeGroupModal() { document.getElementById("group-modal").style.display = "none"; }
+
+  function closeGroupModal() {
+    const m1 = document.getElementById("group-modal");
+    const m2 = document.getElementById("group-modal-legacy");
+    if (m1) m1.style.display = "none";
+    if (m2) m2.style.display = "none";
+  }
+
   document.getElementById("group-modal").addEventListener("click", function (e) {
     const content = document.getElementById("group-modal-content");
-    if (!content.contains(e.target)) closeGroupModal();
+    if (content && !content.contains(e.target)) closeGroupModal();
   });
+
   function saveGroupModalAsImage() {
     const node = document.getElementById("group-modal-content");
     if (!node) return;
@@ -1059,7 +1053,6 @@ input:focus, select:focus {
     });
   }
 
-  // ===== รายการเพิ่มเติม =====
   function toggleCustomerList() {
     const listEl = document.getElementById("allCustomerList");
 
@@ -1088,37 +1081,37 @@ input:focus, select:focus {
         const latest = allRec.length? new Date(Math.max(...allRec.map(r=>new Date(r.date)))):null;
         const daysSinceLastVisit = latest? Math.floor((new Date()-latest)/(1000*60*60*24)) : null;
 
-        let absentColor='gray';
-        if (daysSinceLastVisit < 30) absentColor='green';
-        else if (daysSinceLastVisit <= 90) absentColor='orange';
-        else absentColor='crimson';
+        let absentColor='rgba(234,242,255,.7)';
+        if (daysSinceLastVisit < 30) absentColor='#22c55e';
+        else if (daysSinceLastVisit <= 90) absentColor='#fbbf24';
+        else absentColor='#fb7185';
 
-        let totalColor='gray', totalExtra='', totalIcon='';
-        if (totalAmount < 50000) totalColor='crimson';
-        else if (totalAmount <= 99999) totalColor='green';
-        else if (totalAmount <= 200000) totalColor='goldenrod';
-        else { totalColor='#8B6508'; totalExtra='font-weight:bold;'; totalIcon=' 💎'; }
+        let totalColor='rgba(234,242,255,.75)', totalExtra='', totalIcon='';
+        if (totalAmount < 50000) totalColor='#fb7185';
+        else if (totalAmount <= 99999) totalColor='#22c55e';
+        else if (totalAmount <= 200000) totalColor='#fbbf24';
+        else { totalColor='#7dd3fc'; totalExtra='font-weight:900;'; totalIcon=' 💎'; }
 
-        let avgColor='gray';
-        if (avg < 5000) avgColor='crimson';
-        else if (avg <= 9999) avgColor='green';
-        else avgColor='#b8860b';
+        let avgColor='rgba(234,242,255,.75)';
+        if (avg < 5000) avgColor='#fb7185';
+        else if (avg <= 9999) avgColor='#22c55e';
+        else avgColor='#fbbf24';
 
         const lastVisitText = daysSinceLastVisit != null
-          ? `<span style="color:${absentColor};">🔚 ไม่มา ${daysSinceLastVisit} วัน</span>` : `<span>🔚 ไม่มีข้อมูล</span>`;
+          ? `<span style="color:${absentColor}; font-weight:900;">ไม่มา ${daysSinceLastVisit} วัน</span>` : `<span style="opacity:.8;">ไม่มีข้อมูล</span>`;
 
         const isNewCustomer = monthRange.enabled
           ? allRec.filter(r => ymNum(dateYM(r.date)) < ymNum(monthRange.startYM)).length === 0
           : allRec.filter(r => r.date < `${formatYM(viewingDate)}-01`).length === 0;
-        const newBadge = isNewCustomer ? `<span style="color:red; font-weight:bold;"> ลูกค้าใหม่</span>` : "";
+        const newBadge = isNewCustomer ? `<span style="color:#fb7185; font-weight:900;"> · ลูกค้าใหม่</span>` : "";
 
         return `
-        <li style="margin-bottom: 8px;">
-          <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">${i+11}. ${c.name}${newBadge}</span>
+        <li>
+          <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">${i+11}. ${esc(c.name)}${newBadge}</span>
           <span class="date">
-            (💳 <span style="color:${avgColor};">${avg.toLocaleString()}</span> × ${totalVisits}
-             | 💰 <span style="color:${totalColor}; ${totalExtra}">${totalAmount.toLocaleString()}${totalIcon}</span>
-             | ${lastVisitText})
+            (💳 <span style="color:${avgColor}; font-weight:900;">${avg.toLocaleString()}</span> × ${totalVisits}
+             · 💰 <span style="color:${totalColor}; ${totalExtra}">${totalAmount.toLocaleString()}${totalIcon}</span>
+             · ${lastVisitText})
           </span>
           <span class="amount">${c.amount.toLocaleString()} บาท</span>
         </li>`;
@@ -1127,229 +1120,153 @@ input:focus, select:focus {
       listEl.style.display = "none";
     }
   }
-  function refreshCustomerList(){ const listEl = document.getElementById("allCustomerList"); if(listEl.style.display==="block"){ listEl.style.display="none"; toggleCustomerList(); } }
-  function daysInMonth(y,m){ return new Date(y,m,0).getDate(); }
 
-  // ===== Modal ลูกค้า =====
+  function refreshCustomerList(){
+    const listEl = document.getElementById("allCustomerList");
+    if(listEl.style.display==="block"){ listEl.style.display="none"; toggleCustomerList(); }
+  }
+
   function escapeHTML(s=''){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]) );}
   function closeCustomerModal(){ document.getElementById("customer-modal").style.display = "none"; }
   function formatDate(d){ if(!d) return ''; const [y,m,day]=d.split('-'); return `${day}/${m}/${y.slice(-2)}`; }
 
-  // แยกฟังก์ชันดึง Pitch ออกมาต่างหาก เพื่อเรียกทีหลัง
-async function loadPitchDataIntoModal(opd) {
-  const container = document.getElementById("modal-pitch-container");
-  if (!container) return;
+  // ===== Customer Modal (Sale Pitch removed) =====
+  function openCustomerModal(key) {
+    const [name, phone = ''] = String(key).split('|');
+    const norm = s => (s || '').trim().toLowerCase();
 
-  if (!opd || opd === '-' || opd === '0000') {
-    container.innerHTML = `<div class="sub-muted" style="font-size:11px;">ไม่มี OPD จึงดึง Sale Pitch ไม่ได้</div>`;
-    return;
-  }
-
-  try {
-    const res = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
-    if (res.ok) {
-      const pitches = await res.json() || [];
-      if (pitches.length) {
-        pitches.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
-        
-        const html = pitches.map(p => {
-          const d = formatDate(String(p.created_at || '').slice(0, 10));
-          return `
-            <div style="padding:2px 0; font-size:11px; color:#374151;">
-              ${d} — ${escapeHTML(p.promotion || '-')} — ${escapeHTML(p.outcome || '-')}
-            </div>`;
-        }).join("");
-        
-        container.innerHTML = html;
-      } else {
-        container.innerHTML = `<div class="sub-muted" style="font-size:11px;">ยังไม่มีข้อมูล Sale Pitch</div>`;
-      }
-    } else {
-      container.innerHTML = `<div class="sub-muted" style="font-size:11px;">โหลดไม่สำเร็จ</div>`;
-    }
-  } catch (e) {
-    console.error(e);
-    container.innerHTML = `<div class="sub-muted" style="font-size:11px;">เกิดข้อผิดพลาด</div>`;
-  }
-}
-
-// ฟังก์ชันหลัก ปรับให้ไม่ต้อง async รอ fetch แล้ว
-function openCustomerModal(key) {
-  // key รูปแบบ "name|phone"
-  const [name, phone = ''] = String(key).split('|');
-  const norm = s => (s || '').trim().toLowerCase();
-
-  // ใช้ข้อมูลที่มีอยู่ในเครื่องอยู่แล้ว (เร็วมาก)
-  const records = allCustomerRecords.filter(r =>
-    norm(r.name) === norm(name) &&
-    norm(r.phone || '') === norm(phone)
-  );
-
-  if (!records.length) {
-    alert('ไม่พบข้อมูลลูกค้าคนนี้');
-    return;
-  }
-
-  // เรียงบิล ล่าสุดอยู่บนสุด
-  records.sort((a, b) => b.date.localeCompare(a.date));
-
-  const customer = {
-    name: records[0].name,
-    phone: records[0].phone || '-',
-    opd: records[0].opd || '-'
-  };
-
-  const lastDateStr = (records[0].date || '').slice(0, 10);
-  const baseDate = new Date();
-  const lastDate = new Date(lastDateStr);
-  const daysAbsent = isNaN(lastDate)
-    ? 0
-    : Math.floor((baseDate - lastDate) / (1000 * 60 * 60 * 24));
-
-  const totalVisits = records.length;
-
-  const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
-  const paidVisits = paidRecords.length;
-  const totalAmount = paidRecords.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
-  const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
-
-  // รวมจำนวนสินค้าตามหมวด (Logic เดิม)
-  const allItems = {};
-  records.forEach(r => {
-    (r.items || []).forEach(item => {
-      let n = item;
-      const m = item.match(/\((.*?)\)/);
-      n = m ? m[1] : item.split(' - ')[0];
-      const q = item.match(/- (\d+) ชิ้น/);
-      const qty = q ? parseInt(q[1]) : 1;
-      allItems[n] = (allItems[n] || 0) + qty;
-    });
-  });
-
-  const categoryMap = {
-    "โบทอค": ["Aestox 50 u", "Aestox 100 u", "Allergan 50 u", "Allergan 100 u", "เฉพาะจุด", "แบ่งไว้แล้ว", "Nabota"],
-    "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q ระบุสีด้วย", "Restylane ระบุสีด้วย"],
-    "Fat/Hifu": ["Bromi", "Sisi", "HIFU", "HIFU แถม"],
-    "งานผิว": ["Meso Chanel", "P - Cell", "Aquatic", "Hestina", "Exosome", "Rejuran", "Belotero Revive", "Sculptra", "Juvelook", "Aesthefill", "PRP", "Mesowink", "สะกิดหน้าใส", "Alphaarbutin", "Transamine", "Biocollagen"],
-    "ดริปผิว": ["Snow White", "Super Aurawhite", "Vitamin Mix", "Brain Booster", "Energy Booster"],
-    "ทรีทเม้นท์": ["ทรีทเมนต์หน้าใส", "ทรีทเมนต์สิว", "ทรีทเมนต์ฝ้า", "ผลักวิตามิน", "ปั่น RF", "กดสิว", "subcisionสิว"],
-    "อื่นๆ": ["ยาฉีดสลายฝ้า", "ครีมทาฝ้า", "ยาทานฝ้า", "ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen", "จ่ายเงิน/จองสินค้า", "สลายฟิลเลอร์", "PRPผม", "จี้ไฝ"],
-    "โปรโมชั่น/อีเว้นพิเศษ": []
-  };
-
-  const categorizedItems = {};
-  for (const [cat, names] of Object.entries(categoryMap)) {
-    names.forEach(n => {
-      if (allItems[n]) {
-        (categorizedItems[cat] ||= []).push(`${escapeHTML(n)} : ${allItems[n]}`);
-        delete allItems[n];
-      }
-    });
-  }
-  if (Object.keys(allItems).length) {
-    (categorizedItems["อื่นๆ"] ||= []).push(
-      ...Object.entries(allItems).map(([n, q]) => `${escapeHTML(n)} : ${q}`)
+    const records = allCustomerRecords.filter(r =>
+      norm(r.name) === norm(name) &&
+      norm(r.phone || '') === norm(phone)
     );
-  }
 
-  const itemSummary = Object.entries(categorizedItems)
-    .map(([cat, items]) => `
-      <div style="margin-bottom:4px;">
-        <strong>${escapeHTML(cat)}</strong>: ${items.join(" | ")}
-      </div>
-    `).join("");
+    if (!records.length) {
+      alert('ไม่พบข้อมูลลูกค้าคนนี้');
+      return;
+    }
 
-  // ประวัติการซื้อย้อนหลัง
-  const historyHtml = records.map(r => {
-    const items = (r.items || []).map(item => {
-      const m = item.match(/\((.*?)\)/);
-      const name = m ? m[1] : item.split(" - ")[0];
-      const q = item.match(/- (\d+) ชิ้น/);
-      const qty = q ? parseInt(q[1]) : 1;
-      return `<li>${escapeHTML(name)} : ${qty}</li>`;
+    records.sort((a, b) => b.date.localeCompare(a.date));
+
+    const customer = { name: records[0].name, phone: records[0].phone || '-', opd: records[0].opd || '-' };
+
+    const lastDateStr = (records[0].date || '').slice(0, 10);
+    const baseDate = new Date();
+    const lastDate = new Date(lastDateStr);
+    const daysAbsent = isNaN(lastDate) ? 0 : Math.floor((baseDate - lastDate) / (1000 * 60 * 60 * 24));
+
+    const totalVisits = records.length;
+
+    const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
+    const paidVisits = paidRecords.length;
+    const totalAmount = paidRecords.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
+    const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
+
+    const allItems = {};
+    records.forEach(r => {
+      (r.items || []).forEach(item => {
+        let n = item;
+        const m = item.match(/\((.*?)\)/);
+        n = m ? m[1] : item.split(' - ')[0];
+        const q = item.match(/- (\d+) ชิ้น/);
+        const qty = q ? parseInt(q[1]) : 1;
+        allItems[n] = (allItems[n] || 0) + qty;
+      });
+    });
+
+    const categoryMap = {
+      "โบทอค": ["Aestox 50 u", "Aestox 100 u", "Allergan 50 u", "Allergan 100 u", "เฉพาะจุด", "แบ่งไว้แล้ว", "Nabota"],
+      "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q ระบุสีด้วย", "Restylane ระบุสีด้วย"],
+      "Fat/Hifu": ["Bromi", "Sisi", "HIFU", "HIFU แถม"],
+      "งานผิว": ["Meso Chanel", "P - Cell", "Aquatic", "Hestina", "Exosome", "Rejuran", "Belotero Revive", "Sculptra", "Juvelook", "Aesthefill", "PRP", "Mesowink", "สะกิดหน้าใส", "Alphaarbutin", "Transamine", "Biocollagen"],
+      "ดริปผิว": ["Snow White", "Super Aurawhite", "Vitamin Mix", "Brain Booster", "Energy Booster"],
+      "ทรีทเม้นท์": ["ทรีทเมนต์หน้าใส", "ทรีทเมนต์สิว", "ทรีทเมนต์ฝ้า", "ผลักวิตามิน", "ปั่น RF", "กดสิว", "subcisionสิว"],
+      "อื่นๆ": ["ยาฉีดสลายฝ้า", "ครีมทาฝ้า", "ยาทานฝ้า", "ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen", "จ่ายเงิน/จองสินค้า", "สลายฟิลเลอร์", "PRPผม", "จี้ไฝ"],
+      "โปรโมชั่น/อีเว้นพิเศษ": []
+    };
+
+    const categorizedItems = {};
+    for (const [cat, names] of Object.entries(categoryMap)) {
+      names.forEach(n => {
+        if (allItems[n]) {
+          (categorizedItems[cat] ||= []).push(`${escapeHTML(n)} : ${allItems[n]}`);
+          delete allItems[n];
+        }
+      });
+    }
+    if (Object.keys(allItems).length) {
+      (categorizedItems["อื่นๆ"] ||= []).push(...Object.entries(allItems).map(([n, q]) => `${escapeHTML(n)} : ${q}`));
+    }
+
+    const itemSummary = Object.entries(categorizedItems)
+      .map(([cat, items]) => `
+        <div style="margin-bottom:6px;">
+          <b>${escapeHTML(cat)}</b>: <span style="opacity:.9;">${items.join(" · ")}</span>
+        </div>
+      `).join("");
+
+    const historyHtml = records.map(r => {
+      const items = (r.items || []).map(item => {
+        const m = item.match(/\((.*?)\)/);
+        const name = m ? m[1] : item.split(" - ")[0];
+        const q = item.match(/- (\d+) ชิ้น/);
+        const qty = q ? parseInt(q[1]) : 1;
+        return `<li style="margin:3px 0;">${escapeHTML(name)} : <b>${qty}</b></li>`;
+      }).join("");
+
+      const noteText = r.note
+        ? `<div style="font-size:11px; margin-top:6px; opacity:.85;">📝 หมายเหตุ: ${escapeHTML(r.note)}</div>`
+        : "";
+
+      return `
+        <div style="margin-bottom:14px;">
+          <div style="font-weight:900; font-size:12px;">📅 ${formatDate((r.date || '').slice(0, 10))}</div>
+          <ul style="padding-left:16px; margin:6px 0 0; font-size:12px; opacity:.92;">${items}</ul>
+          <div style="margin-top:6px; font-size:12px; color:#7dd3fc; font-weight:900;">💵 ${Math.round(parseFloat(r.amount || 0)).toLocaleString()} บาท</div>
+          ${noteText}
+          <div style="height:1px; background: rgba(255,255,255,.10); margin:10px 0;"></div>
+        </div>
+      `;
     }).join("");
 
-    const noteText = r.note
-      ? `<div style="font-size:11px; margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${escapeHTML(r.note)}</div>`
-      : "";
+    const daysAbsentText = `<span style="color:#fb7185; font-weight:900;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
 
-    return `
-      <div style="margin-bottom:14px;">
-        <div style="font-weight:600; font-size:12px;">📅 ${formatDate((r.date || '').slice(0, 10))}</div>
-        <ul style="padding-left:16px; margin:0; font-size:11px;">${items}</ul>
-        <div style="margin-top:4px; color:#0a645a; font-size:11px;">💵 ${Math.round(parseFloat(r.amount || 0)).toLocaleString()} บาท</div>
-        ${noteText}
-        <hr style="margin:8px auto; border:0; border-top:1px dashed #ddd; width:60%;">
+    document.getElementById("modal-content").innerHTML = `
+      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; align-items:flex-start;">
+        <div>
+          <div style="font-size:18px; font-weight:900;">📇 ${escapeHTML(customer.name)}</div>
+          <div style="font-size:12px; opacity:.85; margin-top:2px;">🆔 OPD: ${escapeHTML(customer.opd)}</div>
+          <div style="font-size:12px; opacity:.85;">📞 เบอร์: ${escapeHTML(customer.phone)}</div>
+          <div style="font-size:12px; opacity:.85;">📅 วันล่าสุด: ${formatDate(lastDateStr)} ${daysAbsentText}</div>
+        </div>
+        <div style="min-width:220px;">
+          <div class="badge">💰 ยอดรวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท</div>
+          <div class="badge">🔁 จำนวนครั้ง: ${totalVisits} ครั้ง</div>
+          <div class="badge">💳 เฉลี่ย/บิล: ${average.toLocaleString()} บาท</div>
+        </div>
       </div>
+
+      <div style="height:1px; background: rgba(255,255,255,.10); margin:14px 0;"></div>
+
+      <div style="font-weight:900; font-size:13px; margin-bottom:8px;">📦 สรุปรายการซื้อทั้งหมด</div>
+      <div style="font-size:12px; opacity:.92; line-height:1.55;">${itemSummary || '-'}</div>
+
+      <div style="height:1px; background: rgba(255,255,255,.10); margin:14px 0;"></div>
+
+      <div style="font-weight:900; font-size:13px; margin-bottom:8px;">🧾 ประวัติการซื้อย้อนหลัง</div>
+      ${historyHtml}
     `;
-  }).join("");
 
-  const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
-
-  // === สร้าง HTML ใส่ Modal ทันที (ยังไม่รอ Pitch) ===
-  document.getElementById("modal-content").innerHTML = `
-    <h3 style="font-size:16px; margin-bottom:4px;">📇 ${escapeHTML(customer.name)}</h3>
-    <div style="font-size:12px;">🆔 OPD: ${escapeHTML(customer.opd)}</div>
-    <div style="font-size:12px;">📞 เบอร์: ${escapeHTML(customer.phone)}</div>
-    <div style="font-size:12px;">📅 วันล่าสุด: ${formatDate(lastDateStr)} ${daysAbsentText}</div>
-    <div style="font-size:12px; color:#00796b;">💰 ยอดรวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท</div>
-    <div style="font-size:12px;">🔁 จำนวนครั้ง: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
-    <div style="font-size:12px;">💳 เฉลี่ยต่อครั้ง: ${average.toLocaleString()} บาท</div>
-
-    <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
-
-    <div style="font-weight:600; font-size:13px; margin-bottom:6px;">📦 สรุปรายการซื้อทั้งหมด:</div>
-    <div style="font-size:11px;">${itemSummary || '-'}</div>
-
-    <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
-
-    <div style="font-weight:600; font-size:13px; margin-bottom:4px;">🗣️ Sale Pitch (แบบสั้น):</div>
-    <div id="modal-pitch-container" style="min-height:30px;">
-       <span style="color:#666; font-size:11px;">⏳ กำลังโหลดข้อมูล...</span>
-    </div>
-
-    <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
-
-    <div style="font-weight:600; font-size:13px; margin-bottom:6px;">🧾 ประวัติการซื้อย้อนหลัง:</div>
-    ${historyHtml}
-  `;
-
-  // 1. เปิด Modal ทันที! ไม่ต้องรอใคร
-  document.getElementById("customer-modal").style.display = 'flex';
-
-  // 2. ค่อยไปดึงข้อมูล Sale Pitch มาแปะทีหลัง
-  loadPitchDataIntoModal(customer.opd);
-}
-
-
-
-  function saveModalAsImage() {
-    const node = document.getElementById("modal-content");
-    if (!node) return alert("ไม่พบเนื้อหาใน modal");
-    html2canvas(node, { scale: 2 }).then(canvas => {
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      if (isIOS) {
-        const previewArea = document.createElement("div");
-        previewArea.style.marginTop = "20px";
-        previewArea.innerHTML = `<div style="font-weight:bold; margin-bottom:6px;">แตะค้างที่ภาพด้านล่างเพื่อบันทึกรูป</div><img src="${dataUrl}" style="width:100%; border:1px solid #ccc; border-radius:12px;">`;
-        const existing = document.getElementById("modalImagePreview"); if (existing) existing.remove();
-        previewArea.id = "modalImagePreview";
-        node.appendChild(previewArea);
-      } else {
-        const link = document.createElement("a"); link.download = 'customer-info.jpg'; link.href = dataUrl; link.click();
-      }
-    });
+    document.getElementById("customer-modal").style.display = 'flex';
   }
 
-  // ปิด modal เมื่อคลิกนอกกล่อง
+  // ===== Modal close on backdrop click =====
   document.addEventListener("DOMContentLoaded", function () {
     const modal = document.getElementById("customer-modal");
     const box = document.getElementById("customer-modal-box");
     if (modal && box) modal.addEventListener("click", e => { if (!box.contains(e.target)) closeCustomerModal(); });
   });
 
-  // ===== ฟิลเตอร์ส่วนค้นหา (โค้ดเดิมคงไว้) =====
+  // ===== Filter UI =====
   const productCategories = {
     "โบทอค": ["Aestox 50 u", "Aestox 100 u", "Allergan 50 u", "Allergan 100 u"],
     "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q", "Restylane"],
@@ -1361,90 +1278,110 @@ function openCustomerModal(key) {
   };
 
   const filterUI = document.createElement("div");
-  filterUI.style.cssText = "margin: 40px auto 20px; padding: 20px; background: #fefefe; border: 1px solid #e0e0e0; border-radius: 12px; max-width: 1100px; font-size: 13px; line-height: 1.6; font-family: 'Prompt', sans-serif; box-shadow: 0 3px 10px rgba(0,0,0,0.03);";
   filterUI.innerHTML = `
     <div class="filter-section">
       <h3>🔍 ฟิลเตอร์ค้นหาลูกค้า</h3>
-      <div class="product-row">
-        <label>🧴 สินค้าที่เคยซื้อ:</label>
+
+      <div class="inline-field" style="margin-top:10px;">
+        <label>🧴 สินค้าที่เคยซื้อ</label>
         <button type="button" class="add-product-button" onclick="addProductSelect()">➕ เพิ่มสินค้า</button>
       </div>
-      <div id="productListContainer" class="product-list-container"></div>
+      <div id="productListContainer" style="margin-bottom:12px;"></div>
 
       <div class="inline-field">
-        <label>📅 ช่วงเวลา:</label>
+        <label>📅 ช่วงเวลา</label>
         <div class="input-pair">
           <input type="date" id="startDate">
-          <span>-</span>
+          <span style="opacity:.7;">–</span>
           <input type="date" id="endDate">
         </div>
       </div>
 
       <div class="inline-field">
-        <label>💰 ยอดรวมทั้งหมด (บาท):</label>
+        <label>💰 ยอดรวมทั้งหมด (บาท)</label>
         <div class="input-pair">
           <input type="number" id="minTotal" placeholder="ขั้นต่ำ">
-          <span>-</span>
+          <span style="opacity:.7;">–</span>
           <input type="number" id="maxTotal" placeholder="สูงสุด">
         </div>
       </div>
 
       <div class="inline-field">
-        <label>📄 จำนวนครั้งที่เคยมาคลินิก:</label>
+        <label>📄 จำนวนครั้งที่เคยมาคลินิก</label>
         <div class="input-pair">
           <input type="number" id="minVisits" placeholder="ขั้นต่ำ">
-          <span>-</span>
+          <span style="opacity:.7;">–</span>
           <input type="number" id="maxVisits" placeholder="สูงสุด">
         </div>
       </div>
 
       <div class="inline-field">
-        <label>⏳ จำนวนวันที่ไม่ได้มาคลินิก:</label>
+        <label>⏳ จำนวนวันที่ไม่ได้มาคลินิก</label>
         <div class="input-pair">
           <input type="number" id="minAbsent" placeholder="ขั้นต่ำ">
-          <span>-</span>
+          <span style="opacity:.7;">–</span>
           <input type="number" id="maxAbsent" placeholder="สูงสุด">
         </div>
       </div>
 
       <div class="inline-field">
-        <label>💳 ยอดเฉลี่ยต่อบิล (บาท):</label>
+        <label>💳 ยอดเฉลี่ยต่อบิล (บาท)</label>
         <div class="input-pair">
           <input type="number" id="minAvg" placeholder="ขั้นต่ำ">
-          <span>-</span>
+          <span style="opacity:.7;">–</span>
           <input type="number" id="maxAvg" placeholder="สูงสุด">
         </div>
       </div>
 
       <div class="inline-field">
-        <label>👤 ชื่อลูกค้า:</label>
-        <input type="text" id="customerName" placeholder="ระบุชื่อลูกค้า">
+        <label>👤 ชื่อลูกค้า</label>
+        <input type="text" id="customerName" placeholder="ระบุชื่อลูกค้า" style="width:min(360px, 100%);">
       </div>
 
-      <button type="button" onclick="filterGeneral()" class="search-button">ค้นหา</button>
-      <button type="button" onclick="resetFilters()" class="add-product-button" style="margin-left: 10px;">รีเซ็ตค่า</button>
-      <button type="button" onclick="openGroupModal()" class="add-product-button" style="margin-left: 10px;">ดูรายการที่เลือก</button>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px;">
+        <button type="button" onclick="filterGeneral()" class="search-button">ค้นหา</button>
+        <button type="button" onclick="resetFilters()" class="add-product-button">รีเซ็ตค่า</button>
+        <button type="button" onclick="openGroupModal()" class="add-product-button">ดูรายการที่เลือก</button>
+      </div>
+
+      <div id="filterResults" style="margin-top: 18px; font-size: 13px;"></div>
     </div>
-    <div id="filterResults" style="margin-top: 24px; font-size: 13px;"></div>`;
-  
-// สั่งให้เอากล่องค้นหา ไปใส่ในตะกร้าที่เราวางไว้ข้างบน
-const placeholder = document.getElementById('filter-placeholder');
-if (placeholder) {
-    placeholder.appendChild(filterUI);
-} else {
-    document.body.appendChild(filterUI);
-}
+  `;
+
+  const placeholder = document.getElementById('filter-placeholder');
+  if (placeholder) placeholder.appendChild(filterUI);
+  else document.body.appendChild(filterUI);
+
   function addProductSelect() {
     const container = document.getElementById("productListContainer");
-    const wrapper = document.createElement("div"); wrapper.style.marginBottom = "6px";
-    const select = document.createElement("select"); select.className = "productInput"; select.style.cssText = "width: 240px; padding: 4px; font-size: 13px;";
-    const def = document.createElement("option"); def.textContent = "กดเพื่อเลือกสินค้า"; def.value = ""; def.disabled = true; def.selected = true; select.appendChild(def);
+    const wrapper = document.createElement("div");
+    wrapper.style.marginBottom = "8px";
+
+    const select = document.createElement("select");
+    select.className = "productInput";
+    select.style.width = "min(360px, 100%)";
+
+    const def = document.createElement("option");
+    def.textContent = "กดเพื่อเลือกสินค้า";
+    def.value = "";
+    def.disabled = true;
+    def.selected = true;
+    select.appendChild(def);
+
     Object.entries(productCategories).forEach(([cat, items]) => {
-      const group = document.createElement("optgroup"); group.label = cat;
-      items.forEach(p => { const option = document.createElement("option"); option.value = p; option.textContent = p; group.appendChild(option); });
+      const group = document.createElement("optgroup");
+      group.label = cat;
+      items.forEach(p => {
+        const option = document.createElement("option");
+        option.value = p;
+        option.textContent = p;
+        group.appendChild(option);
+      });
       select.appendChild(group);
     });
-    wrapper.appendChild(select); container.appendChild(wrapper);
+
+    wrapper.appendChild(select);
+    container.appendChild(wrapper);
   }
 
   function filterGeneral() {
@@ -1506,710 +1443,343 @@ if (placeholder) {
 
     const html = results.map(c => {
       const formattedDate = new Date(c.lastVisit).toLocaleDateString('th-TH',{day:'numeric', month:'short', year:'2-digit'});
-      return `<div>
-        <input type="checkbox" class="selectCustomerCheckbox" value="${c.key}" style="margin-right:6px; vertical-align: middle;">
-        📇 <strong style="cursor:pointer;color:#00796b;" onclick="openCustomerModal('${c.key}')">${c.name}</strong>
-        💰 ยอด: ${c.totalAmount.toLocaleString()} |
-        💳 ${Math.round(c.averageBill).toLocaleString()} |
-        🔁 ${c.totalVisits} (${c.paidVisits} จ่าย) |
-        ⏱️ ${c.absentDays} วัน |
-        ${formattedDate}
-      </div><hr>`;
+      return `<div style="padding:10px 0;">
+        <input type="checkbox" class="selectCustomerCheckbox" value="${c.key}" style="margin-right:8px; transform: translateY(1px);">
+        📇 <b style="cursor:pointer; color:#7dd3fc;" onclick="openCustomerModal('${c.key}')">${esc(c.name)}</b>
+        <span style="opacity:.85;">· 💰 ${c.totalAmount.toLocaleString()} · 💳 ${Math.round(c.averageBill).toLocaleString()}
+        · 🔁 ${c.totalVisits} (${c.paidVisits} จ่าย) · ⏱️ ${c.absentDays} วัน · ${formattedDate}</span>
+      </div>
+      <div style="height:1px; background: rgba(255,255,255,.10);"></div>`;
     }).join('');
 
-    document.getElementById("filterResults").innerHTML = `<h4>ผลลัพธ์ ${results.length} คน</h4>` + html;
+    document.getElementById("filterResults").innerHTML = `<div style="font-weight:900; margin-bottom:10px;">ผลลัพธ์ ${results.length} คน</div>` + (html || `<div style="opacity:.75;">ไม่พบข้อมูล</div>`);
   }
 
-  // เมนูลอย
-  function toggleFloatingMenu(){ const menu = document.getElementById("floatingMenu"); menu.style.display = (menu.style.display==="flex")?"none":"flex"; }
-  document.addEventListener('click', function(e) {
-    const toggle = document.getElementById("floatingToggle");
-    const menu = document.getElementById("floatingMenu");
-    if (!toggle.contains(e.target) && !menu.contains(e.target)) menu.style.display = "none";
-  });
+  function openGroupModal() {
+    const checked = Array.from(document.querySelectorAll('.selectCustomerCheckbox:checked'))
+      .map(cb => cb.value);
 
-  // ===== Modal เลือกช่วงเดือน =====
-function openRangeModal(){
-  const s = document.getElementById('rangeStartModal');
-  const e = document.getElementById('rangeEndModal');
-  s.value = monthRange.startYM || '';
-  e.value = monthRange.endYM || '';
-  document.getElementById('rangeModal').style.display = 'block';
-}
-function closeRangeModal(){ document.getElementById('rangeModal').style.display = 'none'; }
-function applyRangeFromModal(){
-  const s = document.getElementById('rangeStartModal').value;
-  const e = document.getElementById('rangeEndModal').value;
-  if(!s || !e){ alert('กรุณาเลือกเดือนเริ่มต้นและสิ้นสุด'); return; }
-  if(ymNum(s) > ymNum(e)){ alert('เดือนเริ่มต้องไม่เกินเดือนสิ้นสุด'); return; }
-  monthRange.enabled = true;
-  monthRange.startYM = s;
-  monthRange.endYM = e;
-  closeRangeModal();
-  fetchDataAndUpdate();
-}
-function clearRange(){
-  monthRange.enabled = false;
-  monthRange.startYM = monthRange.endYM = null;
-  closeRangeModal();
-  fetchDataAndUpdate();
-}
+    const box = document.getElementById("groupSelectedList");
+    if (!box) return;
 
-/* =======================
-   Popup รายวัน (ไม่เอาวันศูนย์)
-   ======================= */
-function openMonthlySalesPopup(){
-  // Helpers
-  const fmtYM = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-  const parseQty = (items=[]) => items.reduce((s,it)=>{
-    const m = it.match(/- (\d+) ชิ้น/); return s + (m? parseInt(m[1]):1);
-  },0);
-  const thDateWithWeekday = (iso)=>{
-    const d = new Date(iso);
-    const wd = d.toLocaleDateString('th-TH',{ weekday:'long' });
-    const dt = d.toLocaleDateString('th-TH',{ day:'2-digit', month:'short', year:'numeric' });
-    return `${dt} (${wd})`;
-  };
+    if (!checked.length) {
+      box.innerHTML = `<div style="padding:12px; opacity:.8;">ยังไม่ได้เลือกลูกค้า (ติ๊ก checkbox ก่อน)</div>`;
+    } else {
+      box.innerHTML = checked.map((key, idx) => {
+        const [name, phone=''] = String(key).split('|');
+        return `
+          <div class="customer-entry">
+            <div class="customer-name">${idx+1}. ${escapeHTML(name || '-')}</div>
+            <div class="date-info">
+              <span class="date-box">📞 ${escapeHTML(phone || '-')}</span>
+              <span class="date-box" style="cursor:pointer; border-color: rgba(125,211,252,.25);" onclick="openCustomerModal('${key}')">🔍 เปิดข้อมูล</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
 
-  // ระบุช่วงเดือน
-  const now = new Date();
-  const curY = viewingDate.getFullYear();
-  const curM = viewingDate.getMonth();
+    document.getElementById("group-modal").style.display = "flex";
+  }
 
-  // เดือนปัจจุบัน: 1→วันนี้ / ถ้าเปิดดูเดือนเก่าจะเป็นทั้งเดือนนั้น
-  let curStart = new Date(curY, curM, 1);
-  let curEnd   = (curY===now.getFullYear() && curM===now.getMonth())
-                  ? new Date(now.getFullYear(), now.getMonth(), now.getDate())
-                  : new Date(curY, curM+1, 0);
-
-  // เดือนที่แล้ว: ทั้งเดือน
-  const prevStart = new Date(curY, curM-1, 1);
-  const prevEnd   = new Date(curY, curM, 0);
-
-  const curPrefix  = fmtYM(curStart);
-  const prevPrefix = fmtYM(prevStart);
-
-  // สร้างสรุปรายวัน (เฉพาะวันที่มียอด)
-  function dailySummary(from, to, prefix){
-    const map = {}; // date -> {total, bills, items, customers:Set}
-    allSalesRecords.forEach(r=>{
-      if(!r.date.startsWith(prefix)) return;
-      const d = new Date(r.date);
-      if(d < from || d > to) return;
-
-      if(!map[r.date]) map[r.date] = { total:0, bills:0, items:0, customers:new Set() };
-      map[r.date].total   += parseFloat(r.amount||0);
-      map[r.date].bills   += 1;
-      map[r.date].items   += parseQty(r.items);
-      map[r.date].customers.add(`${r.name}|${r.phone}`);
+  function resetFilters(){
+    ['startDate','endDate','minTotal','maxTotal','minVisits','maxVisits','minAbsent','maxAbsent','minAvg','maxAvg','customerName'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.value = '';
     });
-
-    const rows = Object.entries(map)
-      .map(([date, v])=>({
-        date,
-        total: v.total,
-        bills: v.bills,
-        avgBill: v.bills ? Math.round(v.total / v.bills) : 0,
-        items: v.items,
-        customers: v.customers.size
-      }))
-      .filter(r=>r.total>0) // ไม่เอาวันศูนย์
-      .sort((a,b)=>a.date.localeCompare(b.date));
-
-    const sum = rows.reduce((s,r)=>s+r.total,0);
-    const days = rows.length;
-    const avgPerDay = days? Math.round(sum/days):0;
-    const best = rows.slice().sort((a,b)=>b.total-a.total)[0] || null;
-    const worst = rows.slice().sort((a,b)=>a.total-b.total)[0] || null;
-
-    const wdTotal = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
-    rows.forEach(r=>{
-      const wd = new Date(r.date).getDay(); // 0=อา
-      wdTotal[wd] += r.total;
-    });
-
-    return { rows, sum, days, avgPerDay, best, worst, wdTotal };
+    const container = document.getElementById("productListContainer");
+    if(container) container.innerHTML = '';
+    const results = document.getElementById("filterResults");
+    if(results) results.innerHTML = '';
   }
 
-  const cur = dailySummary(curStart, curEnd, curPrefix);
-  const prev = dailySummary(prevStart, prevEnd, prevPrefix);
-
-  // วาดตาราง
-  const toRow = r => `
-    <tr>
-      <td>${thDateWithWeekday(r.date)}</td>
-      <td>${r.total.toLocaleString()}</td>
-      <td>${r.bills.toLocaleString()}</td>
-      <td>${r.avgBill.toLocaleString()}</td>
-      <td>${r.items.toLocaleString()}</td>
-      <td>${r.customers.toLocaleString()}</td>
-    </tr>`;
-
-  const wdNames = ['อา','จ','อ','พ','พฤ','ศ','ส'];
-  const wdBadges = (wdTotal)=> wdNames.map((n,i)=>`<span class="badge" title="รวม ${n}">${n}: ${Math.round(wdTotal[i]).toLocaleString()}</span>`).join(' ');
-
-  const curTitle = new Date(curStart).toLocaleString('th-TH',{month:'long'}) + ' ' + (curStart.getFullYear()+543);
-  const prevTitle= new Date(prevStart).toLocaleString('th-TH',{month:'long'}) + ' ' + (prevStart.getFullYear()+543);
-
-  const html = `
-    <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
-      <button onclick="saveModalAsImage()" title="บันทึกเป็นรูปภาพ" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer;">💾</button>
-      <button onclick="closeCustomerModal()" title="ปิดหน้าต่าง" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer;">❌</button>
-    </div>
-
-    <h3 style="margin:0 0 6px;">📅 สรุปรายวันเดือนปัจจุบัน — ${curTitle}</h3>
-    <div style="margin-bottom:8px;">
-      <span class="badge">รวม: ${cur.sum.toLocaleString()} บาท</span>
-      <span class="badge">จำนวนวันที่มีขาย: ${cur.days} วัน</span>
-      <span class="badge">เฉลี่ย/วัน: ${cur.avgPerDay.toLocaleString()}</span>
-      ${cur.best ? `<span class="badge">สูงสุด: ${thDateWithWeekday(cur.best.date)} = ${cur.best.total.toLocaleString()}</span>`:''}
-      ${cur.worst ? `<span class="badge">ต่ำสุด: ${thDateWithWeekday(cur.worst.date)} = ${cur.worst.total.toLocaleString()}</span>`:''}
-    </div>
-    <div style="margin-bottom:10px;">${wdBadges(cur.wdTotal)}</div>
-    <table class="table-mini">
-      <thead>
-        <tr>
-          <th>วันที่ (วัน)</th>
-          <th>ยอดรวม</th>
-          <th>บิล</th>
-          <th>เฉลี่ย/บิล</th>
-          <th>ชิ้น</th>
-          <th>ลูกค้า</th>
-        </tr>
-      </thead>
-      <tbody>${cur.rows.map(toRow).join('')}</tbody>
-    </table>
-
-    <hr style="margin:16px 0; border:0; border-top:1px solid #ddd;">
-
-    <h3 style="margin:0 0 6px;">📅 เดือนที่แล้ว — ${prevTitle}</h3>
-    <div style="margin-bottom:8px;">
-      <span class="badge">รวม: ${prev.sum.toLocaleString()} บาท</span>
-      <span class="badge">จำนวนวันที่มีขาย: ${prev.days} วัน</span>
-      <span class="badge">เฉลี่ย/วัน: ${prev.avgPerDay.toLocaleString()}</span>
-      ${prev.best ? `<span class="badge">สูงสุด: ${thDateWithWeekday(prev.best.date)} = ${prev.best.total.toLocaleString()}</span>`:''}
-      ${prev.worst ? `<span class="badge">ต่ำสุด: ${thDateWithWeekday(prev.worst.date)} = ${prev.worst.total.toLocaleString()}</span>`:''}
-    </div>
-    <div style="margin-bottom:10px;">${wdBadges(prev.wdTotal)}</div>
-    <table class="table-mini">
-      <thead>
-        <tr>
-          <th>วันที่ (วัน)</th>
-          <th>ยอดรวม</th>
-          <th>บิล</th>
-          <th>เฉลี่ย/บิล</th>
-          <th>ชิ้น</th>
-          <th>ลูกค้า
-                  </tr>
-      </thead>
-      <tbody>${prev.rows.map(toRow).join('')}</tbody>
-    </table>
-  `;
-
-  // ใช้ modal เดิม
-  document.getElementById('modal-content').innerHTML = html;
-  document.getElementById('customer-modal').style.display = 'flex';
-}
-
-// ===== ฟังก์ชันคำนวณคะแนน Lead (เวอร์ชันใหม่) =====
-
-// คะแนนจาก "ไม่ได้มานานกี่วัน" (โค้งขึ้นแล้วค่อย ๆ ลด)
-function recencyScore(absentDays) {
-  if (absentDays <= 45) return 0; // ช่วงพักตัว
-
-  // 46–90 วัน: จาก 20 → 40
-  if (absentDays <= 90) {
-    return 20 + (absentDays - 46) * (20 / (90 - 46));
+  // ===== Range modal =====
+  function openRangeModal(){
+    const s = document.getElementById('rangeStartModal');
+    const e = document.getElementById('rangeEndModal');
+    s.value = monthRange.startYM || '';
+    e.value = monthRange.endYM || '';
+    document.getElementById('rangeModal').style.display = 'flex';
+  }
+  function closeRangeModal(){ document.getElementById('rangeModal').style.display = 'none'; }
+  function applyRangeFromModal(){
+    const s = document.getElementById('rangeStartModal').value;
+    const e = document.getElementById('rangeEndModal').value;
+    if(!s || !e){ alert('กรุณาเลือกเดือนเริ่มต้นและสิ้นสุด'); return; }
+    if(ymNum(s) > ymNum(e)){ alert('เดือนเริ่มต้องไม่เกินเดือนสิ้นสุด'); return; }
+    monthRange.enabled = true;
+    monthRange.startYM = s;
+    monthRange.endYM = e;
+    closeRangeModal();
+    fetchDataAndUpdate();
+  }
+  function clearRange(){
+    monthRange.enabled = false;
+    monthRange.startYM = monthRange.endYM = null;
+    closeRangeModal();
+    fetchDataAndUpdate();
   }
 
-  // 91–180 วัน: จาก 40 → 25
-  if (absentDays <= 180) {
-    return 40 - (absentDays - 90) * (15 / (180 - 90));
+  // ===== Popup รายวัน =====
+  function openMonthlySalesPopup(){
+    const fmtYM = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const parseQty = (items=[]) => items.reduce((s,it)=>{ const m = it.match(/- (\d+) ชิ้น/); return s + (m? parseInt(m[1]):1); },0);
+    const thDateWithWeekday = (iso)=>{ const d = new Date(iso); const wd = d.toLocaleDateString('th-TH',{ weekday:'long' }); const dt = d.toLocaleDateString('th-TH',{ day:'2-digit', month:'short', year:'numeric' }); return `${dt} (${wd})`; };
+
+    const now = new Date();
+    const curY = viewingDate.getFullYear();
+    const curM = viewingDate.getMonth();
+
+    let curStart = new Date(curY, curM, 1);
+    let curEnd   = (curY===now.getFullYear() && curM===now.getMonth())
+                    ? new Date(now.getFullYear(), now.getMonth(), now.getDate())
+                    : new Date(curY, curM+1, 0);
+
+    const prevStart = new Date(curY, curM-1, 1);
+    const prevEnd   = new Date(curY, curM, 0);
+
+    const curPrefix  = fmtYM(curStart);
+    const prevPrefix = fmtYM(prevStart);
+
+    function dailySummary(from, to, prefix){
+      const map = {};
+      allSalesRecords.forEach(r=>{
+        if(!r.date.startsWith(prefix)) return;
+        const d = new Date(r.date);
+        if(d < from || d > to) return;
+
+        if(!map[r.date]) map[r.date] = { total:0, bills:0, items:0, customers:new Set() };
+        map[r.date].total   += parseFloat(r.amount||0);
+        map[r.date].bills   += 1;
+        map[r.date].items   += parseQty(r.items);
+        map[r.date].customers.add(`${r.name}|${r.phone}`);
+      });
+
+      const rows = Object.entries(map)
+        .map(([date, v])=>({ date, total:v.total, bills:v.bills, avgBill: v.bills ? Math.round(v.total / v.bills) : 0, items:v.items, customers:v.customers.size }))
+        .filter(r=>r.total>0)
+        .sort((a,b)=>a.date.localeCompare(b.date));
+
+      const sum = rows.reduce((s,r)=>s+r.total,0);
+      const days = rows.length;
+      const avgPerDay = days? Math.round(sum/days):0;
+      const best = rows.slice().sort((a,b)=>b.total-a.total)[0] || null;
+      const worst = rows.slice().sort((a,b)=>a.total-b.total)[0] || null;
+
+      const wdTotal = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
+      rows.forEach(r=>{ const wd = new Date(r.date).getDay(); wdTotal[wd] += r.total; });
+
+      return { rows, sum, days, avgPerDay, best, worst, wdTotal };
+    }
+
+    const cur = dailySummary(curStart, curEnd, curPrefix);
+    const prev = dailySummary(prevStart, prevEnd, prevPrefix);
+
+    const toRow = r => `
+      <tr>
+        <td>${thDateWithWeekday(r.date)}</td>
+        <td style="text-align:right;">${r.total.toLocaleString()}</td>
+        <td style="text-align:right;">${r.bills.toLocaleString()}</td>
+        <td style="text-align:right;">${r.avgBill.toLocaleString()}</td>
+        <td style="text-align:right;">${r.items.toLocaleString()}</td>
+        <td style="text-align:right;">${r.customers.toLocaleString()}</td>
+      </tr>`;
+
+    const wdNames = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+    const wdBadges = (wdTotal)=> wdNames.map((n,i)=>`<span class="badge" title="รวม ${n}">${n}: ${Math.round(wdTotal[i]).toLocaleString()}</span>`).join(' ');
+
+    const curTitle = new Date(curStart).toLocaleString('th-TH',{month:'long'}) + ' ' + (curStart.getFullYear()+543);
+    const prevTitle= new Date(prevStart).toLocaleString('th-TH',{month:'long'}) + ' ' + (prevStart.getFullYear()+543);
+
+    const html = `
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
+        <div style="font-weight:900; font-size:14px;">📅 สรุปรายวัน — ${curTitle}</div>
+        <button onclick="closeCustomerModal()" title="ปิดหน้าต่าง">✕</button>
+      </div>
+
+      <div style="margin-bottom:10px;">
+        <span class="badge">รวม: ${cur.sum.toLocaleString()} บาท</span>
+        <span class="badge">วันที่มีขาย: ${cur.days} วัน</span>
+        <span class="badge">เฉลี่ย/วัน: ${cur.avgPerDay.toLocaleString()}</span>
+        ${cur.best ? `<span class="badge">สูงสุด: ${thDateWithWeekday(cur.best.date)} = ${cur.best.total.toLocaleString()}</span>`:''}
+        ${cur.worst ? `<span class="badge">ต่ำสุด: ${thDateWithWeekday(cur.worst.date)} = ${cur.worst.total.toLocaleString()}</span>`:''}
+      </div>
+      <div style="margin-bottom:10px;">${wdBadges(cur.wdTotal)}</div>
+      <table class="table-mini">
+        <thead>
+          <tr>
+            <th>วันที่ (วัน)</th>
+            <th style="text-align:right;">ยอดรวม</th>
+            <th style="text-align:right;">บิล</th>
+            <th style="text-align:right;">เฉลี่ย/บิล</th>
+            <th style="text-align:right;">ชิ้น</th>
+            <th style="text-align:right;">ลูกค้า</th>
+          </tr>
+        </thead>
+        <tbody>${cur.rows.map(toRow).join('')}</tbody>
+      </table>
+
+      <div style="height:1px; background: rgba(255,255,255,.10); margin:16px 0;"></div>
+
+      <div style="font-weight:900; font-size:14px; margin-bottom:10px;">📅 เดือนที่แล้ว — ${prevTitle}</div>
+      <div style="margin-bottom:10px;">
+        <span class="badge">รวม: ${prev.sum.toLocaleString()} บาท</span>
+        <span class="badge">วันที่มีขาย: ${prev.days} วัน</span>
+        <span class="badge">เฉลี่ย/วัน: ${prev.avgPerDay.toLocaleString()}</span>
+        ${prev.best ? `<span class="badge">สูงสุด: ${thDateWithWeekday(prev.best.date)} = ${prev.best.total.toLocaleString()}</span>`:''}
+        ${prev.worst ? `<span class="badge">ต่ำสุด: ${thDateWithWeekday(prev.worst.date)} = ${prev.worst.total.toLocaleString()}</span>`:''}
+      </div>
+      <div style="margin-bottom:10px;">${wdBadges(prev.wdTotal)}</div>
+      <table class="table-mini">
+        <thead>
+          <tr>
+            <th>วันที่ (วัน)</th>
+            <th style="text-align:right;">ยอดรวม</th>
+            <th style="text-align:right;">บิล</th>
+            <th style="text-align:right;">เฉลี่ย/บิล</th>
+            <th style="text-align:right;">ชิ้น</th>
+            <th style="text-align:right;">ลูกค้า</th>
+          </tr>
+        </thead>
+        <tbody>${prev.rows.map(toRow).join('')}</tbody>
+      </table>
+    `;
+
+    document.getElementById('modal-content').innerHTML = html;
+    document.getElementById('customer-modal').style.display = 'flex';
   }
 
-  // 181–365 วัน: จาก 25 → 10
-  if (absentDays <= 365) {
-    return 25 - (absentDays - 180) * (15 / (365 - 180));
+  // ===== Lead Score (no pitch fetch) =====
+  function recencyScore(absentDays) {
+    if (absentDays <= 45) return 0;
+    if (absentDays <= 90)  return 20 + (absentDays - 46) * (20 / (90 - 46));
+    if (absentDays <= 180) return 40 - (absentDays - 90) * (15 / (180 - 90));
+    if (absentDays <= 365) return 25 - (absentDays - 180) * (15 / (365 - 180));
+    if (absentDays <= 730) return 10 - (absentDays - 365) * (7 / (730 - 365));
+    if (absentDays <= 1460) return 3 - (absentDays - 730) * (2 / (1460 - 730));
+    return 0.5;
   }
-
-  // 366–730 วัน (1–2 ปี): จาก 10 → 3
-  if (absentDays <= 730) {
-    return 10 - (absentDays - 365) * (7 / (730 - 365));
-  }
-
-  // 731–1460 วัน (2–4 ปี): จาก 3 → 1
-  if (absentDays <= 1460) {
-    return 3 - (absentDays - 730) * (2 / (1460 - 730));
-  }
-
-  // เก่ามากแล้ว ให้แค่นิดเดียวพอ
-  return 0.5;
-}
-
-// คะแนนจากยอดรวมตลอดชีพ
-function valueScore(totalAmount) {
-  if (totalAmount >= 200000) return 45;
-  if (totalAmount >= 100000) return 40;
-  if (totalAmount >= 50000)  return 32;
-  if (totalAmount >= 20000)  return 24;
-  if (totalAmount >= 10000)  return 16;
-  if (totalAmount >= 5000)   return 10;
-  if (totalAmount >= 3000)   return 6;
-  if (totalAmount >= 1000)   return 3;
-  return 0;
-}
-
-// คะแนนจากจำนวนครั้งที่มา
-function visitScore(totalVisits) {
-  if (totalVisits >= 12) return 18;
-  if (totalVisits >= 8)  return 14;
-  if (totalVisits >= 5)  return 10;
-  if (totalVisits >= 3)  return 6;
-  if (totalVisits >= 2)  return 3;
-  return 0;
-}
-
-// คะแนนจากบิลเฉลี่ย
-function avgScore(averageBill) {
-  if (averageBill >= 20000) return 18;
-  if (averageBill >= 12000) return 14;
-  if (averageBill >= 8000)  return 10;
-  if (averageBill >= 5000)  return 7;
-  if (averageBill >= 3000)  return 4;
-  if (averageBill >= 1500)  return 2;
-  return 0;
-}
-
-// ฟังก์ชันรวมทุกอย่างเป็นคะแนนสุดท้าย
-function computeLeadScoreForCustomer(core) {
-  const totalAmount  = core.totalAmount || 0;
-  const totalVisits  = core.totalVisits || 0;
-  const averageBill  = core.averageBill || 0;
-  const absentDays   = core.absentDays || 0;
-
-  // ตัดลูกค้าจิ๋ว: ยอดรวมน้อยมาก + มาครั้งเดียว -> ไม่ต้องติดลิสต์
-  if (totalAmount < 2000 && totalVisits <= 1) {
+  function valueScore(totalAmount) {
+    if (totalAmount >= 200000) return 45;
+    if (totalAmount >= 100000) return 40;
+    if (totalAmount >= 50000)  return 32;
+    if (totalAmount >= 20000)  return 24;
+    if (totalAmount >= 10000)  return 16;
+    if (totalAmount >= 5000)   return 10;
+    if (totalAmount >= 3000)   return 6;
+    if (totalAmount >= 1000)   return 3;
     return 0;
   }
+  function visitScore(totalVisits) {
+    if (totalVisits >= 12) return 18;
+    if (totalVisits >= 8)  return 14;
+    if (totalVisits >= 5)  return 10;
+    if (totalVisits >= 3)  return 6;
+    if (totalVisits >= 2)  return 3;
+    return 0;
+  }
+  function avgScore(averageBill) {
+    if (averageBill >= 20000) return 18;
+    if (averageBill >= 12000) return 14;
+    if (averageBill >= 8000)  return 10;
+    if (averageBill >= 5000)  return 7;
+    if (averageBill >= 3000)  return 4;
+    if (averageBill >= 1500)  return 2;
+    return 0;
+  }
+  function computeLeadScoreForCustomer(core) {
+    const totalAmount  = core.totalAmount || 0;
+    const totalVisits  = core.totalVisits || 0;
+    const averageBill  = core.averageBill || 0;
+    const absentDays   = core.absentDays || 0;
 
-  const r = recencyScore(absentDays);       // 0–~40
-  const v = valueScore(totalAmount);        // 0–45
-  const f = visitScore(totalVisits);        // 0–18
-  const a = avgScore(averageBill);          // 0–18
+    if (totalAmount < 2000 && totalVisits <= 1) return 0;
 
-  // VIP Boost: ลูกค้าหนัก ๆ ที่กำลังห่างไปช่วงน่าโทร
-  let vipBoost = 0;
-  const isVIP = (totalAmount >= 100000) || (averageBill >= 10000);
-  if (isVIP) {
-    if (absentDays >= 60 && absentDays <= 210) {
-      vipBoost = 10;       // หายไปช่วง 2–7 เดือน ดันขึ้นอีกหน่อย
-    } else if (absentDays <= 365) {
-      vipBoost = 5;        // ภายใน 1 ปี ยังถือว่าควรตาม
+    const r = recencyScore(absentDays);
+    const v = valueScore(totalAmount);
+    const f = visitScore(totalVisits);
+    const a = avgScore(averageBill);
+
+    let vipBoost = 0;
+    const isVIP = (totalAmount >= 100000) || (averageBill >= 10000);
+    if (isVIP) {
+      if (absentDays >= 60 && absentDays <= 210) vipBoost = 10;
+      else if (absentDays <= 365) vipBoost = 5;
     }
+    return Math.round(r + v + f + a + vipBoost);
   }
 
-  const rawScore = r + v + f + a + vipBoost;
+  async function buildLeadScoreList() {
+    const ul = document.getElementById('leadScoreList');
+    if (!ul || !allCustomerRecords.length) return;
 
-  // ปัดให้เป็นเลขเต็มสวย ๆ
-  return Math.round(rawScore);
-}
+    const grouped = {};
+    const today = new Date();
 
-// ===== โค้ดใหม่ที่พลอยแก้ให้ (วางแทนที่อันเดิม) =====
-async function buildLeadScoreList() {
-  const ul = document.getElementById('leadScoreList');
-  if (!ul || !allCustomerRecords.length) return;
+    allCustomerRecords.forEach(r => {
+      const key = `${r.name}|${r.phone}`;
+      if (!grouped[key]) {
+        grouped[key] = { key, name: r.name, phone: r.phone || '-', opd: r.opd || '-', records: [] };
+      }
+      grouped[key].records.push(r);
+    });
 
-  const grouped = {};
-  const today = new Date();
+    let scored = Object.values(grouped).map(c => {
+      const recs = c.records;
+      const totalVisits = recs.length;
+      const paid = recs.filter(r => parseFloat(r.amount || 0) > 0);
+      const paidVisits = paid.length;
+      const totalAmount = paid.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
+      const averageBill = paidVisits > 0 ? totalAmount / paidVisits : 0;
 
-  // 1. รวมข้อมูลลูกค้า
-  allCustomerRecords.forEach(r => {
-    const key = `${r.name}|${r.phone}`;
-    if (!grouped[key]) {
-      grouped[key] = {
-        key,
-        name: r.name,
-        phone: r.phone || '-',
-        opd: r.opd || '-',
-        records: []
-      };
+      const latest = recs.reduce((last, r) => new Date(r.date) > new Date(last.date) ? r : last, recs[0]);
+      const lastDate = new Date(latest.date);
+      const absentDays = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+
+      const core = { key: c.key, name: c.name, phone: c.phone, opd: c.opd, totalVisits, totalAmount, averageBill, absentDays, lastDate: latest.date };
+      const score = computeLeadScoreForCustomer(core);
+      return { ...core, score };
+    });
+
+    const topLeadCandidates = scored
+      .filter(c => c.absentDays > 45)
+      .filter(c => c.score >= 20)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 45);
+
+    if (!topLeadCandidates.length) {
+      ul.innerHTML = `<li style="text-align:center; padding:16px; opacity:.8;">
+        ยังไม่มีลูกค้าที่เข้าเกณฑ์ (เช่น หายเกิน 45 วัน และมีมูลค่าพอสมควร)
+      </li>`;
+      return;
     }
-    grouped[key].records.push(r);
-  });
 
-  // 2. คำนวณคะแนน (ยังไม่ดึงข้อมูลการโทร เพื่อความเร็ว)
-  let scored = Object.values(grouped).map(c => {
-    const recs = c.records;
-    const totalVisits = recs.length;
-    const paid = recs.filter(r => parseFloat(r.amount || 0) > 0);
-    const paidVisits = paid.length;
-    const totalAmount = paid.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
-    const averageBill = paidVisits > 0 ? totalAmount / paidVisits : 0;
+    ul.innerHTML = topLeadCandidates.map(c => {
+      const total = Math.round(c.totalAmount || 0).toLocaleString();
+      const last  = new Date(c.lastDate).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
 
-    const latest = recs.reduce(
-      (last, r) => new Date(r.date) > new Date(last.date) ? r : last,
-      recs[0]
-    );
-    const lastDate = new Date(latest.date);
-    const absentDays = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
-
-    const core = {
-      key: c.key,
-      name: c.name,
-      phone: c.phone,
-      opd: c.opd,
-      totalVisits,
-      totalAmount,
-      averageBill,
-      absentDays,
-      lastDate: latest.date
-    };
-
-    const score = computeLeadScoreForCustomer(core);
-    return { ...core, score };
-  });
-
-  // 3. คัดเลือกคนที่จะแสดงผลมาก่อน (แก้ตรงนี้แหละที่ทำให้เร็วขึ้น!)
-  // กรองและเรียงลำดับ "ก่อน" จะไปดึงข้อมูล Sale Pitch
-  const topCandidates = scored
-    .filter(c => c.absentDays > 45) // หายไปนานกว่า 45 วัน
-    .filter(c => c.score >= 20)     // คะแนนถึงเกณฑ์
-    .sort((a, b) => b.score - a.score) // เรียงคะแนนมากไปน้อย
-    .slice(0, 45); // *** ตัดเอาแค่ 45 คนแรกเท่านั้น ***
-
-  if (!topCandidates.length) {
-    ul.innerHTML = `<li class="lead-score-meta">
-      ยังไม่มีลูกค้าที่เข้าเกณฑ์ (เช่น หายเกิน 45 วัน และมีมูลค่าพอสมควร)
-    </li>`;
-    return;
+      return `
+        <li>
+          <span class="lead-name" onclick="openCustomerModal('${c.key}')">${escapeHTML(c.name || '-')}</span>
+          <span class="lead-score-badge">คะแนน: ${c.score}</span>
+          <span class="lead-score-meta">
+            ⏳ ไม่มา <span class="lead-absent">${c.absentDays} วัน</span>
+            · 💰 รวม <b>${total}</b> บ.
+            · 📅 มาล่าสุด: <b>${last}</b>
+          </span>
+          <span class="lead-money">${Math.round(c.averageBill || 0).toLocaleString()} /บิล</span>
+        </li>`;
+    }).join('');
   }
 
-  // 4. ค่อยดึงข้อมูล Sale Pitch เฉพาะ 45 คนนี้ (จากเดิมดึงเป็นร้อยเป็นพัน)
-  const enriched = await Promise.all(topCandidates.map(async c => {
-    const pitch = await fetchLatestPitchForOPD(c.opd);
-    return { ...c, pitch };
-  }));
-
-  // 5. แสดงผล
-  ul.innerHTML = enriched.map(c => {
-    const avg    = Math.round(c.averageBill || 0).toLocaleString();
-    const total = Math.round(c.totalAmount || 0).toLocaleString();
-    const last  = new Date(c.lastDate).toLocaleDateString('th-TH', {
-      day: '2-digit', month: 'short', year: '2-digit'
-    });
-    const key = c.key;
-
-    // Sale pitch
-    let pitchDateText = 'ยังไม่เคยโทร';
-    let pitchOutcomeShort = '—';
-    if (c.pitch && c.pitch.date) {
-      pitchDateText = formatDate(String(c.pitch.date).slice(0, 10));
-      const raw = c.pitch.outcome || c.pitch.content || '';
-      pitchOutcomeShort = raw ? raw : '—';
-    }
-
-    return `
-      <li>
-        <span class="lead-name" onclick="openCustomerModal('${key}')">
-          ${escapeHTML(c.name || '-')}
-        </span>
-        <span class="lead-score-badge">คะแนนโทร: ${c.score}</span>
-        <span class="lead-score-meta">
-          ⏳ ไม่มาแล้ว <span class="lead-absent">${c.absentDays} วัน</span>
-          • 💰 ยอดรวม ${total} บ.
-          • 💳 เฉลี่ย/บิล ${avg} บ.
-          • 🔁 มา ${c.totalVisits} ครั้ง
-          • 📅 มาล่าสุด: ${last}
-          • 📞 โทรล่าสุด: ${escapeHTML(pitchDateText)}
-          • ผล: ${escapeHTML(pitchOutcomeShort)}
-        </span>
-      </li>
-    `;
-  }).join('');
-}
-
-// ========= Followup Summary (Logic แยกโหลดข้อมูล Top 100) =========
-    
-    let currentSummaryTab = 1;
-    let summaryDataCache = []; 
-    // สร้าง Maps สำหรับ Cache ลูกค้าและ Records เพื่อใช้ในหน้านี้โดยเฉพาะ
-    let customerByOPD = new Map();
-    let recordsByKey = new Map();
-
-    // ฟังก์ชันหลัก: โหลดข้อมูลลูกค้าเพื่อมาทำสรุป (แก้ให้ดึงเยอะขึ้น)
-    async function loadDataForSummary() {
-        const wrap = document.getElementById('summaryBody');
-        if(!wrap) return;
-        
-        wrap.innerHTML = `<div style="padding:30px; text-align:center; color:#64748b;">
-            กำลังประมวลผลข้อมูลลูกค้าทั้งหมด... ⏳
-        </div>`;
-
-        // 1. รอให้ข้อมูลการขาย (Sales Records) โหลดเสร็จก่อน
-        if (!allCustomerRecords || !allCustomerRecords.length) {
-            return; // ถ้ายังไม่มีข้อมูล ให้รอรอบถัดไป
-        }
-        
-        // 2. เตรียมข้อมูล Customer Map
-        customerByOPD.clear();
-        recordsByKey.clear();
-        
-        const customerStats = new Map();
-
-        allCustomerRecords.forEach(r => {
-            const opd = pad4(r.opd);
-            // ถ้าไม่มี OPD ข้ามไปเลย เพราะเช็ค Pitch ไม่ได้
-            if (opd === '0000' || opd === '-' || !opd) return;
-            
-            const key = makeCustomerKey(opd, r.name, r.phone);
-            
-            // เก็บ Records by key
-            if (!recordsByKey.has(key)) recordsByKey.set(key, []);
-            recordsByKey.get(key).push(r);
-
-            // เก็บ Customer Info By OPD
-            if (!customerByOPD.has(opd)) {
-                customerByOPD.set(opd, { name: r.name, phone: r.phone, opd: opd });
-            }
-
-            // เก็บไว้ในรายการที่จะไปดึง Pitch
-            if (!customerStats.has(key)) {
-                customerStats.set(key, { 
-                    opd, name: r.name, phone: r.phone, 
-                    total: 0, lastDate: '1970-01-01' 
-                });
-            }
-            const c = customerStats.get(key);
-            c.total += parseFloat(r.amount || 0);
-            if ((r.date||'') > c.lastDate) c.lastDate = r.date;
-        });
-
-        const allCusts = Array.from(customerStats.values());
-        
-        // --- แก้ไข: เพิ่มจำนวนลิมิตให้เยอะขึ้น (จากเดิม 100 เป็น 1000 หรือเอาทั้งหมด) ---
-        // เอาคนที่มาล่าสุดขึ้นก่อน เพื่อให้เจอคนที่เพิ่งคุย
-        const targetList = allCusts.sort((a, b) => b.lastDate.localeCompare(a.lastDate)).slice(0, 1000);
-        
-        const targetOPDs = new Set(targetList.map(c => c.opd));
-
-        // 3. ดึง Pitch ของลูกค้าเหล่านี้
-        const promises = Array.from(targetOPDs).map(opd => fetchAllPitchesForOPD(opd));
-        const results = await Promise.all(promises);
-
-        // เก็บผลลัพธ์ลง Cache
-        summaryDataCache = results.flat().filter(x => x !== null);
-
-        // 4. สร้างตาราง
-        renderFollowupSummaryUI();
-    }
-
-
-
-    
-    // ฟังก์ชันคำนวณและวาด UI (แยกออกมาเพื่อให้กด Tab แล้วไม่โหลดใหม่)
-    function renderFollowupSummaryUI() {
-        const wrap = document.getElementById('summaryBody');
-        
-        if(!summaryDataCache.length){
-            wrap.innerHTML = '<div style="padding:20px; text-align:center;">ไม่พบประวัติการติดตามในกลุ่มลูกค้าเป้าหมาย</div>';
-            return;
-        }
-
-        // --- Logic แบ่งกลุ่ม (เหมือนเดิม) ---
-        const byCustomer = new Map();
-        summaryDataCache.forEach(x => {
-            const opd = pad4(x.opd || '');
-            const cust = customerByOPD.get(opd) || {};
-            const name = (x.customer_name || cust.name || '').trim();
-            const phone = x.customer_phone || cust.phone || '';
-            const key = makeCustomerKey(opd, name, phone);
-            if(!key) return;
-
-            if(!byCustomer.has(key)) byCustomer.set(key, {
-                opd, name: name || opd, phone, pitches: []
-            });
-            byCustomer.get(key).pitches.push(x);
-        });
-
-        const groups = { 1: [], 2: [], 3: [], 4: [] };
-
-        byCustomer.forEach((cust, key) => {
-            // เรียง pitch เก่า -> ใหม่
-            const pitches = cust.pitches.sort((a, b) => (a.created_at || a.date || '').localeCompare(b.created_at || b.date || ''));
-
-            // หาวันที่มาใช้บริการล่าสุด
-            let recs = recordsByKey.get(key) || [];
-            let lastVisitDate = null;
-            recs.forEach(r => {
-                const d = String(r.date || '').slice(0, 10);
-                if (d && (!lastVisitDate || d > lastVisitDate)) lastVisitDate = d;
-            });
-
-            // ตัดเอาเฉพาะ Pitch ที่เกิด "หลัง" มาใช้บริการ
-            let activePitches = [];
-            if (lastVisitDate) {
-                activePitches = pitches.filter(p => {
-                    const d = (p.created_at || p.date || '').slice(0, 10);
-                    return d > lastVisitDate;
-                });
-            } else {
-                activePitches = pitches;
-            }
-
-            if (!activePitches.length) return;
-
-            const lastPitch = activePitches[activePitches.length - 1];
-            const lastOutcome = String(lastPitch.outcome || '').trim();
-            const count = activePitches.length;
-            const interestPitch = activePitches.find(p => /^สนใจ/.test(String(p.outcome || '').trim()));
-            const hasEverBeenInterested = !!interestPitch;
-            const isCurrentlyReject = /^ไม่สนใจ/.test(lastOutcome);
-            const timelineTexts = activePitches.map(p => p.outcome).filter(Boolean);
-
-            const dataObj = {
-                opd: cust.opd, name: cust.name, phone: cust.phone,
-                activePitches, lastVisitDate, lastOutcome, count, timelineTexts, interestPitch,
-                lastDate: (lastPitch.created_at || lastPitch.date || '').slice(0, 10)
-            };
-
-            // Logic จัดกลุ่ม 1-4
-            if (hasEverBeenInterested) {
-                const callsAfterInterest = activePitches.filter(p => (p.created_at || p.date) > (interestPitch.created_at || interestPitch.date)).length;
-                if (isCurrentlyReject || callsAfterInterest >= 3) {
-                    groups[2].push(dataObj); // เคยสน -> หลุด
-                } else {
-                    groups[1].push(dataObj); // สนใจ -> ตามต่อ (สำคัญสุด)
-                }
-            } else {
-                if (isCurrentlyReject || count >= 3) {
-                    groups[3].push(dataObj); // ไม่สน -> เลิกตาม
-                } else {
-                    groups[4].push(dataObj); // ยังตามไม่ครบ
-                }
-            }
-        });
-
-        // Sorting
-        groups[1].sort((a, b) => b.lastDate.localeCompare(a.lastDate));
-        [2, 3, 4].forEach(g => groups[g].sort((a, b) => b.lastDate.localeCompare(a.lastDate)));
-
-        // --- Rendering ---
-        const renderContent = () => {
-            const list = groups[currentSummaryTab];
-            if (!list || !list.length) {
-                return `<div style="padding:30px; text-align:center; color:#9ca3af;">
-                    <div style="font-size:40px; margin-bottom:10px;">📭</div>
-                    ไม่มีรายชื่อในหมวดนี้
-                </div>`;
-            }
-
-            let thead = '';
-            if(currentSummaryTab === 1) thead = `<tr><th width="25%">ลูกค้า</th><th width="30%">จุดเริ่มความสนใจ</th><th width="25%">Timeline</th><th width="20%">สถานะล่าสุด</th></tr>`;
-            else if(currentSummaryTab === 2) thead = `<tr><th width="25%">ลูกค้า</th><th width="30%">เคยสนใจเมื่อ</th><th width="45%">สาเหตุที่หลุด / สถานะจบ</th></tr>`;
-            else if(currentSummaryTab === 3) thead = `<tr><th width="30%">ลูกค้า</th><th width="20%">วันมาล่าสุด</th><th width="50%">ผลลัพธ์</th></tr>`;
-            else thead = `<tr><th width="30%">ลูกค้า</th><th width="20%">จำนวนครั้ง</th><th width="50%">สถานะล่าสุด</th></tr>`;
-
-            const rows = list.map((r, idx) => {
-                const i = idx + 1;
-                // --- แก้ไขตรงนี้: สร้าง key และเพิ่ม onclick ---
-                const modalKey = `${r.name}|${r.phone}`; 
-                const custHtml = `<span class="customer-link" onclick="openCustomerModal('${modalKey}')" data-name="${esc(r.name)}" data-phone="${esc(r.phone)}" data-opd="${esc(r.opd)}">${i}. ${esc(r.name)}</span>`;
-                // -----------------------------------------
-
-                if (currentSummaryTab === 1) {
-                    const intDate = fmtShortDate(r.interestPitch.created_at || r.interestPitch.date);
-                    const after = r.activePitches.filter(p => (p.created_at || p.date) > (r.interestPitch.created_at || r.interestPitch.date));
-                    const afterText = after.length 
-                        ? after.map(x => `<div><span style="color:#6b7280;font-size:10px;">${fmtShortDate(x.created_at||x.date)}:</span> ${esc(x.outcome)}</div>`).join('') 
-                        : '<span style="color:#d1d5db; font-size:10px;">-รอติดตาม-</span>';
-
-                    return `<tr>
-                        <td>${custHtml}</td>
-                        <td style="background:#f0fdf4;">
-                            <div style="font-weight:700; color:#166534;">${intDate}</div>
-                            <div style="font-size:11px; color:#15803d;">${esc(r.interestPitch.content || r.interestPitch.promotion || '-')}</div>
-                        </td>
-                        <td>${afterText}</td>
-                        <td><span style="font-weight:700; color:#059669;">${esc(r.lastOutcome)}</span></td>
-                    </tr>`;
-                }
-                
-                if (currentSummaryTab === 2) {
-                      const intDate = fmtShortDate(r.interestPitch.created_at || r.interestPitch.date);
-                      return `<tr>
-                        <td>${custHtml}</td>
-                        <td style="color:#92400e; background:#fffbeb;">
-                          <div>📅 ${intDate}</div>
-                          <div style="font-size:11px;">${esc(r.interestPitch.content||'-')}</div>
-                        </td>
-                        <td>
-                          <div style="color:#b91c1c; font-weight:600;">${esc(r.lastOutcome)}</div>
-                          <div style="font-size:10px; color:#6b7280;">(ตามหลังสนใจไปแล้ว ${r.activePitches.length} ครั้ง)</div>
-                        </td>
-                      </tr>`;
-                }
-
-                if (currentSummaryTab === 3) {
-                      return `<tr>
-                        <td>${custHtml}</td>
-                        <td>${esc(fmtShortDate(r.lastVisitDate)||'-')}</td>
-                        <td>
-                          <div><span style="color:#ef4444;">${esc(r.lastOutcome)}</span></div>
-                          <div style="font-size:10px; color:#6b7280;">ประวัติ: ${r.timelineTexts.join(' → ')}</div>
-                        </td>
-                      </tr>`;
-                }
-
-                // Tab 4
-                return `<tr>
-                    <td>${custHtml}</td>
-                    <td><strong>${r.count}</strong> / 3</td>
-                    <td>${esc(r.lastOutcome)}</td>
-                </tr>`;
-            }).join('');
-
-            return `<table class="summary-table" style="width:100%;"><thead>${thead}</thead><tbody>${rows}</tbody></table>`;
-        };
-
-        wrap.innerHTML = `
-            <div class="tabs-wrap">
-                <button class="tab-btn ${currentSummaryTab===1?'active':''}" onclick="switchSummaryTab(1)" data-tab="1">
-                    <span>🟢 สนใจ/ตามต่อ</span><span class="tab-count">${groups[1].length}</span>
-                </button>
-                <button class="tab-btn ${currentSummaryTab===2?'active':''}" onclick="switchSummaryTab(2)" data-tab="2">
-                    <span>🟠 เคยสน/หลุด</span><span class="tab-count">${groups[2].length}</span>
-                </button>
-                <button class="tab-btn ${currentSummaryTab===3?'active':''}" onclick="switchSummaryTab(3)" data-tab="3">
-                    <span>🔴 เลิกตาม (>3)</span><span class="tab-count">${groups[3].length}</span>
-                </button>
-                <button class="tab-btn ${currentSummaryTab===4?'active':''}" onclick="switchSummaryTab(4)" data-tab="4">
-                    <span>🔵 ยังไม่ครบ 3</span><span class="tab-count">${groups[4].length}</span>
-                </button>
-            </div>
-            <div id="summaryContentArea">${renderContent()}</div>
-        `;
-    }
-    
-    // ประกาศ Global function สำหรับกดเปลี่ยน Tab
-    window.switchSummaryTab = (id) => {
-        currentSummaryTab = id;
-        renderFollowupSummaryUI();
-    };
-
-    // ===== ส่วนสำคัญที่พลอยแก้ให้ใหม่: เรียกใช้งานข้อมูลหลังโหลดหน้าเว็บเสร็จ =====
-    document.addEventListener('DOMContentLoaded', function() {
-        // โค้ด HTML พร้อมแล้ว แต่ข้อมูลยังไม่มา
-        // ใส่ Loading state ไว้ก่อน (พลอยใส่ไว้ใน HTML body แล้ว)
-        
-        // เริ่มโหลดข้อมูล
-        fetchDataAndUpdate();
-        fetchAllCustomerRecords();
-    });
-
+  // Start load
+  document.addEventListener('DOMContentLoaded', function() {
+    fetchDataAndUpdate();
+    fetchAllCustomerRecords();
+  });
 </script>
+
+{% endblock %}
+{% include "floating_menu.html" %}
 </body>
 </html>
-
-
-
-toLocaleString
