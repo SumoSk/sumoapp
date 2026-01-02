@@ -2006,11 +2006,212 @@
       showCustomerModal();
     }
 
+   
+
     async function renderCustomerModal(opd){
-      // ... (ส่วน modal เดิมของคุณยาวมาก ผม “คงเดิมทั้งหมด” ได้เลย)
-      // เพื่อไม่ให้คำตอบเกินเพดานแชต: ให้คุณเอา modal เดิมของคุณทั้งก้อนมาวางต่อได้เลย
-      // (ถ้าต้องการให้ผมส่ง modal ต่อครบแบบ 1 ไฟล์จริง ๆ บอกได้ เดี๋ยวผมแยกเป็น 2 ตอนให้)
-      modalBody.innerHTML = `<div style="padding:12px; color:#64748b;">(วางโค้ด renderCustomerModal เดิมของคุณต่อที่นี่)</div>`;
+      const a = analytics.find(x=> x.opd === opd) || calcCustomerAnalytics(opd);
+      const pitchList = pitchesByOPD.get(opd) || [];
+      const recList = recordsByOPD.get(opd) || [];
+
+      modalTitle.innerHTML = `📇 ${esc(a.name)} <span class="badge b-slate">OPD <span class="mono">${esc(a.opd)}</span></span>`;
+
+      if(currentModalTab === 'overview'){
+        const daysPitch = a.daysSincePitch===null ? '-' : `${a.daysSincePitch} วัน`;
+        const daysBuy = a.daysSinceBuy===null ? '-' : `${a.daysSinceBuy} วัน`;
+        modalBody.innerHTML = `
+          <div class="mini-grid">
+            <div class="mini">
+              <div class="k">Priority</div>
+              <div class="v mono">${a.priority}</div>
+              <div class="s">${renderRecommend(a)}</div>
+            </div>
+            <div class="mini">
+              <div class="k">Segment</div>
+              <div class="v">${segBadge(a.segment)}</div>
+              <div class="s">Bucket: <b>${esc(a.bucket)}</b></div>
+            </div>
+            <div class="mini">
+              <div class="k">ยอดซื้อรวม</div>
+              <div class="v mono">${fmtMoney(a.totalAmount)} บาท</div>
+              <div class="s">เฉลี่ย/ครั้ง ${fmtMoney(a.avgAmount)} • ${a.paidVisits} ครั้งจ่ายเงิน</div>
+            </div>
+            <div class="mini">
+              <div class="k">ความล่าสุด</div>
+              <div class="v mono">${a.lastPitchDate ? fmtShortDate(a.lastPitchDate) : '-'}</div>
+              <div class="s">โทรล่าสุด: ${daysPitch} • ซื้อล่าสุด: ${daysBuy}</div>
+            </div>
+          </div>
+
+          <div style="height:12px;"></div>
+
+          <div class="card" style="box-shadow:none;">
+            <div class="card-head">
+              <div class="card-title">🧾 สรุปสัญญาณ</div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                ${a.phone ? `<span class="badge b-slate">📞 ${esc(a.phone)}</span>` : `<span class="badge b-slate">📞 —</span>`}
+                <span class="badge b-slate">โทรแล้ว <span class="mono">${a.attempts}</span> ครั้ง</span>
+                ${a.everInterested ? `<span class="badge b-green">เคยสนใจ</span>` : `<span class="badge b-slate">ไม่เคยสนใจ</span>`}
+              </div>
+            </div>
+            <div class="card-body">
+              <div style="color:#334155; font-weight:900; margin-bottom:6px;">Outcome ล่าสุด</div>
+              <div>${a.lastOutcome ? `<span class="badge b-slate">${esc(a.lastOutcome)}</span>` : `<span style="color:#64748b;">-</span>`}</div>
+
+              <div style="height:10px;"></div>
+              <div style="color:#334155; font-weight:900; margin-bottom:6px;">แนะนำ Next step</div>
+              <div style="color:#0f172a;">
+                ${a.segment==='STOP'
+                  ? 'พักไว้ก่อน (Hard reject/ครบโควตาแล้ว) เพื่อไม่เสียเวลาทีม'
+                  : a.segment==='VIP'
+                    ? 'ลูกค้ามูลค่าสูง: โทร/ไลน์แบบ personal + offer ที่ตรงรายการซื้อ'
+                    : a.bucket==='Hot'
+                      ? 'โทรวันนี้: สัญญาณดี + recency เหมาะ'
+                      : a.bucket==='Warm'
+                        ? 'ตามต่อ: ยังมีโอกาสปิด'
+                        : 'ค่อยโทร: จัดเป็นคิวรอง'}
+              </div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if(currentModalTab === 'pitches'){
+        const rows = pitchList.slice(0, 30).map(p=>{
+          const d = String(p.created_at||p.date||'').slice(0,10);
+          const promo = p.promotion || '-';
+          const out = p.outcome || '-';
+          const note = p.content || '';
+          const ch = p.channel || '-';
+          return `
+            <tr>
+              <td class="mono">${fmtShortDate(d)}</td>
+              <td>${esc(promo)}</td>
+              <td><span class="badge b-slate">${esc(out)}</span></td>
+              <td>${esc(note)}</td>
+              <td><span class="badge b-slate">${esc(ch)}</span></td>
+            </tr>
+          `;
+        }).join('') || `<tr><td colspan="5" style="padding:12px; color:#64748b;">ยังไม่มี Sale Pitch</td></tr>`;
+
+        modalBody.innerHTML = `
+          <div class="card" style="box-shadow:none;">
+            <div class="card-head">
+              <div class="card-title">🗣️ Sale Pitch ล่าสุด</div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <span class="badge b-slate">แสดง 30 รายการล่าสุด</span>
+                <button class="btn" type="button" id="btnCopyLastPromo">📋 คัดลอกโปรล่าสุด</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="table-wrap">
+                <table style="min-width:920px;">
+                  <thead>
+                    <tr>
+                      <th>วันที่</th>
+                      <th>โปรโมชัน</th>
+                      <th>Outcome</th>
+                      <th>โน้ต</th>
+                      <th>ช่องทาง</th>
+                    </tr>
+                  </thead>
+                  <tbody>${rows}</tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // copy promo to plan default
+        setTimeout(()=>{
+          const btn = $('#btnCopyLastPromo');
+          if(!btn) return;
+          btn.addEventListener('click', ()=>{
+            const last = pitchList[0];
+            if(!last || !last.promotion){ showToast('ไม่พบโปรโมชันล่าสุด','warn'); return; }
+            planDefaultPromo.value = last.promotion;
+            saveDraft();
+            showToast('คัดลอกโปรโมชันไปที่ Plan แล้ว ✅');
+          });
+        }, 0);
+        return;
+      }
+
+      // buys tab
+      const paid = recList.filter(r=> Number(r.amount||0) > 0);
+      const sum = paid.reduce((s,r)=> s + Number(r.amount||0), 0);
+
+      const itemCounts = new Map();
+      for(const r of recList){
+        for(const item of (r.items||[])){
+          let name = item;
+          const m = item.match(/\((.*?)\)/);
+          if(m) name = m[1];
+          else name = item.split(' - ')[0];
+          const qtyMatch = item.match(/- (\d+)\s*ชิ้น/);
+          const qty = qtyMatch ? parseInt(qtyMatch[1],10) : 1;
+          itemCounts.set(name, (itemCounts.get(name)||0) + qty);
+        }
+      }
+      const topItems = Array.from(itemCounts.entries()).sort((a,b)=> b[1]-a[1]).slice(0,10);
+
+      const historyHtml = recList.slice(0, 30).map(r=>{
+        const d = String(r.date||'').slice(0,10);
+        const amount = Number(r.amount||0);
+        const items = (r.items||[]).slice(0, 8).map(x=> `• ${esc(x)}`).join('<br>');
+        const note = r.note ? `<div style="margin-top:6px; color:#334155; font-size:11px;"><b>หมายเหตุ:</b> ${esc(r.note)}</div>` : '';
+        return `
+          <div style="border:1px solid var(--line); border-radius:16px; padding:10px 12px; background:#fff; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+              <div style="font-weight:1000;">📅 ${fmtShortDate(d)}</div>
+              <div class="badge b-slate">💵 ${fmtMoney(amount)} บาท</div>
+            </div>
+            <div style="margin-top:8px; color:#475569; font-size:11px; line-height:1.55;">
+              ${items || '<span style="color:#94a3b8;">(ไม่มีรายการสินค้า)</span>'}
+            </div>
+            ${note}
+          </div>
+        `;
+      }).join('') || `<div style="padding:12px; color:#64748b;">ยังไม่มีประวัติซื้อ</div>`;
+
+      modalBody.innerHTML = `
+        <div class="mini-grid">
+          <div class="mini">
+            <div class="k">ยอดซื้อรวม</div>
+            <div class="v mono">${fmtMoney(sum)} บาท</div>
+            <div class="s">นับเฉพาะ amount &gt; 0</div>
+          </div>
+          <div class="mini">
+            <div class="k">จำนวนบิล</div>
+            <div class="v mono">${recList.length}</div>
+            <div class="s">จ่ายเงินจริง ${paid.length}</div>
+          </div>
+          <div class="mini">
+            <div class="k">ซื้อครั้งล่าสุด</div>
+            <div class="v mono">${a.lastBuyDate ? fmtShortDate(a.lastBuyDate) : '-'}</div>
+            <div class="s">ห่าง ${a.daysSinceBuy===null?'-':a.daysSinceBuy+' วัน'}</div>
+          </div>
+          <div class="mini">
+            <div class="k">Top Items</div>
+            <div class="v" style="font-size:12px; margin-top:10px;">
+              ${topItems.length ? topItems.map(([n,q])=> `<div>${esc(n)} <span class="badge b-slate mono">${q}</span></div>`).join('') : '<span style="color:#64748b;">-</span>'}
+            </div>
+            <div class="s">10 อันดับแรก</div>
+          </div>
+        </div>
+
+        <div style="height:12px;"></div>
+
+        <div class="card" style="box-shadow:none;">
+          <div class="card-head">
+            <div class="card-title">🛍️ ประวัติซื้อย้อนหลัง</div>
+            <div class="card-sub">แสดง 30 รายการล่าสุด</div>
+          </div>
+          <div class="card-body">
+            ${historyHtml}
+          </div>
+        </div>
+      `;
     }
 
     // ===================== View switch (top tabs) =====================
