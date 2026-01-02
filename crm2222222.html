@@ -19,6 +19,7 @@
       --shadow: 0 10px 28px rgba(2,8,23,.06);
       --shadow-2: 0 18px 46px rgba(2,8,23,.12);
       --appbar-h:60px;
+      --sidebar-w: 260px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -44,10 +45,9 @@
     .appbar-inner{
       max-width:1360px;
       margin:0 auto;
-      padding:10px 14px 12px;
+      padding:10px 14px;
       min-height:var(--appbar-h);
       display:flex; align-items:center; gap:10px;
-      flex-wrap:wrap;
     }
     .brand{
       display:flex; align-items:center; gap:10px;
@@ -76,37 +76,62 @@
     .pill strong{font-weight:900}
     .pill .dot{width:8px;height:8px;border-radius:999px;background:var(--primary);}
 
-    /* ===== Top tabs (4 tabs on top) ===== */
-    .tabs-wrap{
-      width:100%;
+    /* ===== Layout ===== */
+    .shell{
+      max-width:1360px;
+      margin:14px auto 110px;
+      padding:0 14px;
       display:grid;
-      grid-template-columns: repeat(4, minmax(0,1fr));
-      gap:10px;
-      margin-top:6px;
+      grid-template-columns: var(--sidebar-w) 1fr;
+      gap:14px;
+      align-items:start;
     }
-    .tab-btn{
+
+    /* ===== Sidebar ===== */
+    .sidebar{
+      position:sticky;
+      top: calc(var(--appbar-h) + 14px);
+      border-radius:var(--radius);
+      background: color-mix(in oklab, white 92%, var(--bg) 8%);
+      border:1px solid var(--line);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .side-head{
+      padding:12px 12px;
+      border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between;
+      background: linear-gradient(180deg, #ffffff, #fbfffe);
+    }
+    .side-title{font-weight:900; font-size:13px;}
+    .nav{
+      padding:8px;
+      display:grid;
+      gap:8px;
+    }
+    .nav-btn{
       width:100%;
+      text-align:left;
       border:1px solid var(--line);
       background:#fff;
-      border-radius:16px;
-      padding:10px 12px;
+      border-radius:14px;
+      padding:10px 10px;
       cursor:pointer;
       display:flex; align-items:center; justify-content:space-between; gap:10px;
       transition:.15s;
       user-select:none;
-      box-shadow: 0 6px 18px rgba(2,8,23,.04);
     }
-    .tab-btn:hover{ box-shadow:0 0 0 3px var(--ring); }
-    .tab-btn.active{
+    .nav-btn:hover{ box-shadow:0 0 0 3px var(--ring); }
+    .nav-btn.active{
       border-color: transparent;
       background: linear-gradient(180deg, color-mix(in oklab, var(--primary) 18%, #fff 82%), #fff);
       box-shadow: 0 10px 24px rgba(14,165,164,.18);
     }
-    .tab-left{display:flex; flex-direction:column; gap:2px; min-width:0}
-    .tab-left b{font-size:12px; font-weight:1000}
-    .tab-left span{font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-    .tab-chip{
-      font-weight:1000;
+    .nav-left{display:flex; flex-direction:column; gap:2px}
+    .nav-left b{font-size:12px; font-weight:900}
+    .nav-left span{font-size:11px; color:var(--muted)}
+    .nav-chip{
+      font-weight:900;
       border-radius:999px;
       padding:4px 8px;
       border:1px solid var(--line);
@@ -115,19 +140,11 @@
       white-space:nowrap;
     }
 
-    /* ===== Layout ===== */
-    .shell{
-      max-width:1360px;
-      margin:14px auto 110px;
-      padding:0 14px;
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:14px;
-      align-items:start;
-    }
-
     /* ===== Main ===== */
-    .main{ display:grid; gap:14px; }
+    .main{
+      display:grid;
+      gap:14px;
+    }
     .card{
       background:var(--card);
       border:1px solid var(--line);
@@ -140,7 +157,6 @@
       display:flex; align-items:center; justify-content:space-between; gap:10px;
       border-bottom:1px solid var(--line);
       background: linear-gradient(180deg, #ffffff, #fbfbfb);
-      flex-wrap:wrap;
     }
     .card-title{
       font-weight:900;
@@ -182,13 +198,18 @@
       background: color-mix(in oklab, var(--danger) 88%, #fff 12%);
       color:#fff;
     }
-    .btn-ghost{ background:transparent; }
+    .btn-ghost{
+      background:transparent;
+    }
     .btn-icon{ padding:8px; border-radius:12px; }
-    .btn:focus-visible, .input:focus-visible, select:focus-visible, textarea:focus-visible, .tab-btn:focus-visible{
+    .btn:focus-visible, .input:focus-visible, select:focus-visible, textarea:focus-visible, .nav-btn:focus-visible{
       outline:none; box-shadow:0 0 0 3px var(--ring);
     }
 
-    .grid{ display:grid; gap:10px; }
+    .grid{
+      display:grid;
+      gap:10px;
+    }
     .grid.kpis{ grid-template-columns: repeat(4, minmax(0,1fr)); }
     .kpi{
       border:1px solid var(--line);
@@ -220,7 +241,6 @@
       outline:none;
     }
     textarea{ min-height:80px; resize:vertical; }
-    .invalid{ border-color: var(--danger) !important; box-shadow: 0 0 0 3px color-mix(in oklab, var(--danger) 18%, transparent 82%); }
 
     /* ===== Table ===== */
     .table-wrap{ overflow:auto; border-radius:14px; border:1px solid var(--line); }
@@ -270,8 +290,11 @@
     }
     .link:hover{ text-decoration:underline; }
 
-    /* ===== Plan rows ===== */
-    .plan-rows{ display:grid; gap:10px; }
+    /* ===== Plan rows (fast input list) ===== */
+    .plan-rows{
+      display:grid;
+      gap:10px;
+    }
     .plan-row{
       border:1px solid var(--line);
       border-radius:16px;
@@ -284,6 +307,26 @@
     }
     .plan-row .meta{ font-size:10px; color:var(--muted); margin-top:4px; }
     .plan-row .row-actions{ display:flex; gap:8px; justify-content:flex-end; align-items:center; }
+    .quick-outcomes{
+      display:flex; gap:6px; flex-wrap:wrap;
+    }
+    .chip{
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:6px 10px;
+      font-weight:1000;
+      font-size:11px;
+      background:#fff;
+      cursor:pointer;
+      user-select:none;
+    }
+    .chip:hover{ box-shadow:0 0 0 3px var(--ring); }
+    .chip.active{
+      border-color:transparent;
+      background: color-mix(in oklab, var(--primary) 18%, #fff 82%);
+      box-shadow: 0 10px 22px rgba(14,165,164,.18);
+      color:#0f172a;
+    }
 
     /* ===== Sticky action bar ===== */
     .actionbar{
@@ -349,9 +392,8 @@
       border-bottom:1px solid var(--line);
       padding:12px 14px;
       display:flex; align-items:center; justify-content:space-between; gap:10px;
-      flex-wrap:wrap;
     }
-    .modal-title{ font-weight:1000; font-size:15px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .modal-title{ font-weight:1000; font-size:15px; display:flex; gap:8px; align-items:center; }
     .modal-tabs{ display:flex; gap:8px; flex-wrap:wrap; }
     .modal-tab{
       border:1px solid var(--line);
@@ -384,32 +426,20 @@
     .mini .v{ font-weight:1000; font-size:16px; margin-top:6px; }
     .mini .s{ color:var(--muted); font-size:10px; margin-top:4px; }
 
-    /* ===== History summary (per page) ===== */
-    .hist-summary{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      align-items:center;
-      justify-content:space-between;
-      margin-bottom:10px;
-    }
-    .hist-summary-left{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    .pager{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    .pager .mono{ font-weight:1000; }
-
     /* ===== Responsive ===== */
     @media (max-width: 1080px){
+      .shell{ grid-template-columns: 1fr; }
+      .sidebar{ position:relative; top:0; }
+      :root{ --sidebar-w: 1fr; }
       .grid.kpis{ grid-template-columns: repeat(2, minmax(0,1fr)); }
       .plan-row{ grid-template-columns: 1fr; }
       .mini-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
       table{ min-width:980px; }
-      .tabs-wrap{ grid-template-columns: repeat(2, minmax(0,1fr)); }
     }
     @media (max-width: 520px){
       .grid.kpis{ grid-template-columns: 1fr; }
       .actionbar-inner{ border-radius:18px; }
       .mini-grid{ grid-template-columns: 1fr; }
-      .tabs-wrap{ grid-template-columns: 1fr; }
     }
   </style>
   {% endblock %}
@@ -429,152 +459,50 @@
       <div class="spacer"></div>
 
       <button class="btn btn-ghost" id="btnRefreshAll" type="button">🔄 รีเฟรชทั้งหมด</button>
-
-      <!-- ✅ 4 แถบด้านบน (แทน sidebar) -->
-      <div class="tabs-wrap" id="topTabs">
-        <button class="tab-btn active" data-view="plan" type="button">
-          <div class="tab-left"><b>📝 บันทึกการโทร</b><span>เพิ่มรายการ + บันทึกชุด</span></div>
-          <span class="tab-chip mono" id="tabChipPlan">0</span>
-        </button>
-
-        <button class="tab-btn" data-view="dashboard" type="button">
-          <div class="tab-left"><b>📊 สรุปข้อมูล</b><span>ภาพรวม + วิเคราะห์</span></div>
-          <span class="tab-chip mono" id="tabChipDash">OK</span>
-        </button>
-
-        <button class="tab-btn" data-view="customers" type="button">
-          <div class="tab-left"><b>👥 ลูกค้าทั้งหมด</b><span>เรียงตาม Pitch ล่าสุด</span></div>
-          <span class="tab-chip mono" id="tabChipCust">—</span>
-        </button>
-
-        <button class="tab-btn" data-view="history" type="button">
-          <div class="tab-left"><b>🕰️ ประวัติการโทร</b><span>สรุปเป็นหน้า + Export</span></div>
-          <span class="tab-chip mono" id="tabChipHist">—</span>
-        </button>
-      </div>
+      <button class="btn btn-primary" id="btnOpenPlan" type="button">➕ บันทึกการโทรวันนี้</button>
     </div>
   </div>
 
   <div class="shell">
+
+    <!-- ===== Sidebar ===== -->
+    <aside class="sidebar">
+      <div class="side-head">
+        <div class="side-title">เมนูหลัก</div>
+        <span class="nav-chip mono" id="navTotalCustomers">0 ลูกค้า</span>
+      </div>
+
+      <div class="nav" id="nav">
+        <button class="nav-btn active" data-view="dashboard" type="button">
+          <div class="nav-left"><b>📊 Dashboard</b><span>ภาพรวม + วิเคราะห์</span></div>
+          <span class="nav-chip mono" id="navChipDash">—</span>
+        </button>
+
+        <button class="nav-btn" data-view="plan" type="button">
+          <div class="nav-left"><b>📝 Plan วันนี้</b><span>กรอกเร็ว + บันทึกชุด</span></div>
+          <span class="nav-chip mono" id="navChipPlan">0</span>
+        </button>
+
+        <button class="nav-btn" data-view="customers" type="button">
+          <div class="nav-left"><b>👥 ลูกค้าทั้งหมด</b><span>จัดลำดับ/คะแนน/เซกเมนต์</span></div>
+          <span class="nav-chip mono" id="navChipCust">—</span>
+        </button>
+
+        <button class="nav-btn" data-view="history" type="button">
+          <div class="nav-left"><b>🕰️ History</b><span>ค้นย้อนหลัง + ส่งออก</span></div>
+          <span class="nav-chip mono" id="navChipHist">—</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ===== Main ===== -->
     <main class="main">
 
-      <!-- ===================== CALL LOG (was PLAN) ===================== -->
-      <section class="card" data-view-panel="plan">
+      <!-- ===================== DASHBOARD ===================== -->
+      <section class="card" data-view-panel="dashboard">
         <div class="card-head">
           <div>
-            <div class="card-title">📝 บันทึกการโทร</div>
-            <div class="card-sub">Draft บันทึกในเครื่องอัตโนมัติ, แล้วกดยิง API ทีเดียว</div>
-          </div>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <div class="badge b-slate">วันที่: <span class="mono" id="planTitleDate">—</span></div>
-            <button class="btn" id="btnClearDraft" type="button">🧹 ล้าง Draft</button>
-          </div>
-        </div>
-
-        <div class="card-body">
-          <div class="filters">
-            <div class="field" style="min-width:200px;">
-              <label>วันที่บันทึก</label>
-              <input class="input" type="date" id="planDate">
-            </div>
-            <div class="field" style="min-width:260px;">
-              <label>โปรโมชันเริ่มต้น (คัดลอกให้แถวใหม่)</label>
-              <input class="input" type="text" id="planDefaultPromo" placeholder="เช่น โปร X / แพ็กเกจ Y">
-            </div>
-            <div class="field" style="min-width:260px;">
-              <label>ช่องทางเริ่มต้น</label>
-              <select class="input" id="planDefaultChannel"></select>
-            </div>
-            <div style="display:flex; gap:8px; align-items:flex-end;">
-              <button class="btn" id="btnAddRow" type="button">➕ เพิ่มแถว</button>
-              <button class="btn btn-primary" id="btnSaveBulk" type="button">💾 บันทึกทั้งหมด</button>
-            </div>
-          </div>
-
-          <div style="height:12px;"></div>
-
-          <datalist id="customerList"></datalist>
-          <div class="plan-rows" id="planRows"></div>
-
-          <!-- ✅ TODAY SUMMARY (ใต้หน้าบันทึกการโทร) -->
-          <div style="height:14px;"></div>
-
-          <section class="card" style="box-shadow:none;">
-            <div class="card-head">
-              <div>
-                <div class="card-title">🧾 สรุปข้อมูลที่บันทึกวันนี้</div>
-                <div class="card-sub">อิงจากวันที่บันทึกด้านบน (ดึงจากฐานข้อมูลจริง ไม่ใช่ Draft)</div>
-              </div>
-              <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-                <span class="badge b-slate">วันที่: <span class="mono" id="todaySummaryDate">—</span></span>
-                <button class="btn" id="btnReloadTodaySummary" type="button">🔄 โหลดสรุปวันนี้</button>
-              </div>
-            </div>
-
-            <div class="card-body">
-              <div class="grid kpis" style="grid-template-columns: repeat(4, minmax(0,1fr));" id="todayKpis"></div>
-
-              <div style="height:12px;"></div>
-
-              <div class="grid" style="grid-template-columns: 1fr 1fr; gap:10px;">
-                <div class="card" style="box-shadow:none;">
-                  <div class="card-head">
-                    
-                  </div>
-                  <div class="card-body" id="todayStats"></div>
-                </div>
-
-                <div class="card" style="box-shadow:none;">
-                  <div class="card-head">
-                    
-                  </div>
-                  <div class="card-body" id="todayPromoTop"></div>
-                </div>
-              </div>
-
-              <div style="height:12px;"></div>
-
-              <div class="table-wrap">
-                <table style="min-width:980px;">
-                  <thead>
-                    <tr>
-                      <th>เวลา</th>
-                      <th>ลูกค้า</th>
-                      <th>โปรโมชัน</th>
-                      <th>Outcome</th>
-                      <th>คอมเมนต์</th>
-                      <th>ช่องทาง</th>
-                    </tr>
-                  </thead>
-                  <tbody id="todaySummaryTbody"></tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-          <!-- ✅ /TODAY SUMMARY -->
-
-          <div class="actionbar">
-            <div class="actionbar-inner">
-              <div class="actionbar-left">
-                <span class="badge b-slate">รายการ: <span class="mono" id="planCount">0</span></span>
-                <span class="badge b-slate">Valid: <span class="mono" id="planValid">0</span></span>
-                <span class="badge b-slate">Draft: <span class="mono" id="planDraftStatus">—</span></span>
-              </div>
-              <div class="actionbar-right">
-                <button class="btn" id="btnAddRow2" type="button">➕ เพิ่มแถว</button>
-                <button class="btn btn-primary" id="btnSaveBulk2" type="button">💾 บันทึก</button>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      <!-- ===================== SUMMARY (was DASHBOARD) ===================== -->
-      <section class="card" data-view-panel="dashboard" style="display:none;">
-        <div class="card-head">
-          <div>
-            <div class="card-title">📊 สรุปข้อมูล</div>
+            <div class="card-title">📊 Dashboard ภาพรวม</div>
             <div class="card-sub">คำนวณจาก: /api/customers + /api/pitches_by_date + /api/reccord_sale</div>
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
@@ -591,7 +519,7 @@
               <div class="hint">นับจาก /api/customers (OPD)</div>
             </div>
             <div class="kpi">
-              <div class="label">การโทร/พิตช์ทั้งหมด</div>
+              <div class="label">Pitch ทั้งหมด</div>
               <div class="value mono" id="kpiPitches">0</div>
               <div class="hint">นับจาก /api/pitches_by_date</div>
             </div>
@@ -687,7 +615,7 @@
                       <th>Segment</th>
                       <th class="right">Priority</th>
                       <th class="right">ยอดซื้อรวม</th>
-                      <th class="right">โทรล่าสุด</th>
+                      <th class="right">Pitch ล่าสุด</th>
                       <th>Outcome ล่าสุด</th>
                       <th class="right">โทรแล้ว</th>
                       <th>แนะนำ</th>
@@ -702,12 +630,67 @@
         </div>
       </section>
 
+      <!-- ===================== PLAN TODAY ===================== -->
+      <section class="card" data-view-panel="plan" style="display:none;">
+        <div class="card-head">
+          <div>
+            <div class="card-title">📝 Plan วันนี้ (กรอกเร็ว)</div>
+            <div class="card-sub">Draft บันทึกในเครื่องอัตโนมัติ, แล้วกดยิง API ทีเดียว</div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <div class="badge b-slate">วันที่: <span class="mono" id="planTitleDate">—</span></div>
+            <button class="btn" id="btnClearDraft" type="button">🧹 ล้าง Draft</button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="filters">
+            <div class="field" style="min-width:200px;">
+              <label>วันที่บันทึก</label>
+              <input class="input" type="date" id="planDate">
+            </div>
+            <div class="field" style="min-width:260px;">
+              <label>โปรโมชันเริ่มต้น (คัดลอกให้แถวใหม่)</label>
+              <input class="input" type="text" id="planDefaultPromo" placeholder="เช่น โปร X / แพ็กเกจ Y">
+            </div>
+            <div class="field" style="min-width:260px;">
+              <label>ช่องทางเริ่มต้น</label>
+              <select class="input" id="planDefaultChannel"></select>
+            </div>
+            <div style="display:flex; gap:8px; align-items:flex-end;">
+              <button class="btn" id="btnAddRow" type="button">➕ เพิ่มแถว</button>
+              <button class="btn btn-primary" id="btnSaveBulk" type="button">💾 บันทึกทั้งหมด</button>
+            </div>
+          </div>
+
+          <div style="height:12px;"></div>
+
+          <datalist id="customerList"></datalist>
+          <div class="plan-rows" id="planRows"></div>
+
+          <div class="actionbar">
+            <div class="actionbar-inner">
+              <div class="actionbar-left">
+                <span class="badge b-slate">รายการ: <span class="mono" id="planCount">0</span></span>
+                <span class="badge b-slate">Valid: <span class="mono" id="planValid">0</span></span>
+                <span class="badge b-slate">Draft: <span class="mono" id="planDraftStatus">—</span></span>
+              </div>
+              <div class="actionbar-right">
+                <button class="btn" id="btnAddRow2" type="button">➕ เพิ่มแถว</button>
+                <button class="btn btn-primary" id="btnSaveBulk2" type="button">💾 บันทึก</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       <!-- ===================== CUSTOMERS ===================== -->
       <section class="card" data-view-panel="customers" style="display:none;">
         <div class="card-head">
           <div>
-            <div class="card-title">👥 ลูกค้าทั้งหมด (เรียงตาม Pitch ล่าสุด)</div>
-            <div class="card-sub">ค่าเริ่มต้น: Pitch ล่าสุด ใหม่ → เก่า (กดชื่อลูกค้าเพื่อเปิดโปรไฟล์)</div>
+            <div class="card-title">👥 ลูกค้าทั้งหมด (จัดลำดับ + เซกเมนต์)</div>
+            <div class="card-sub">กดชื่อลูกค้าเพื่อเปิดโปรไฟล์: ซื้อย้อนหลัง + pitch timeline</div>
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn" id="btnExportCustomersCsv2" type="button">📦 Export CSV</button>
@@ -734,9 +717,9 @@
             <div class="field" style="min-width:210px;">
               <label>เรียงตาม</label>
               <select class="input" id="custSort">
-                <option value="last_pitch_desc">Pitch ล่าสุด ใหม่ → เก่า</option>
                 <option value="priority_desc">Priority มาก → น้อย</option>
                 <option value="value_desc">ยอดซื้อ มาก → น้อย</option>
+                <option value="last_pitch_desc">Pitch ล่าสุด ใหม่ → เก่า</option>
                 <option value="attempts_desc">โทรแล้ว มาก → น้อย</option>
               </select>
             </div>
@@ -783,8 +766,8 @@
       <section class="card" data-view-panel="history" style="display:none;">
         <div class="card-head">
           <div>
-            <div class="card-title">🕰️ ประวัติการโทร</div>
-            <div class="card-sub">มีหัวข้อย่อ: ข้อมูลวันไหน, โทรกี่คน, สนใจกี่คน และแบ่งเป็นหน้า (เพื่อให้เซลแคปส่งสรุปได้)</div>
+            <div class="card-title">🕰️ History (ค้นย้อนหลัง)</div>
+            <div class="card-sub">Filter + Export จาก /api/pitches_by_date</div>
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn" id="btnExportHistoryCsv" type="button">📤 Export History CSV</button>
@@ -819,21 +802,6 @@
           </div>
 
           <div style="height:12px;"></div>
-
-          <!-- ✅ summary ต่อหน้า -->
-          <div class="hist-summary">
-            <div class="hist-summary-left">
-              <span class="badge b-slate">ช่วง: <span class="mono" id="histSummaryRange">ทั้งหมด</span></span>
-              <span class="badge b-slate">โทรทั้งหมด: <span class="mono" id="histSummaryCalls">0</span></span>
-              <span class="badge b-slate">สนใจ: <span class="mono" id="histSummaryInterested">0</span></span>
-              <span class="badge b-slate">คนที่โทร: <span class="mono" id="histSummaryUnique">0</span></span>
-            </div>
-            <div class="pager">
-              <button class="btn" id="btnHistPrev" type="button">⬅️ ก่อนหน้า</button>
-              <span class="badge b-slate">หน้า <span class="mono" id="histPageNow">1</span>/<span class="mono" id="histPageTotal">1</span></span>
-              <button class="btn" id="btnHistNext" type="button">ถัดไป ➡️</button>
-            </div>
-          </div>
 
           <div class="table-wrap">
             <table>
@@ -974,22 +942,18 @@
     let chartOutcomes = null;
     let chartFunnel = null;
 
-    // History paging
-    const HIST_PAGE_SIZE = 50;
-    let historyAll = [];
-    let histPage = 1;
-
     // ===================== Elements =====================
     const lastSyncText = $('#lastSyncText');
 
-    // Top tabs
-    const topTabs = $('#topTabs');
-    const tabChipDash = $('#tabChipDash');
-    const tabChipPlan = $('#tabChipPlan');
-    const tabChipCust = $('#tabChipCust');
-    const tabChipHist = $('#tabChipHist');
+    const nav = $('#nav');
+    const navTotalCustomers = $('#navTotalCustomers');
+    const navChipDash = $('#navChipDash');
+    const navChipPlan = $('#navChipPlan');
+    const navChipCust = $('#navChipCust');
+    const navChipHist = $('#navChipHist');
 
     const btnRefreshAll = $('#btnRefreshAll');
+    const btnOpenPlan = $('#btnOpenPlan');
 
     // Dashboard
     const kpiCustomers = $('#kpiCustomers');
@@ -1022,14 +986,6 @@
     const btnClearDraft = $('#btnClearDraft');
     const dlCustomers = $('#customerList');
 
-    // ✅ Today summary elements (added)
-    const todaySummaryDate = $('#todaySummaryDate');
-    const btnReloadTodaySummary = $('#btnReloadTodaySummary');
-    const todayKpis = $('#todayKpis');
-    const todayStats = $('#todayStats');
-    const todayPromoTop = $('#todayPromoTop');
-    const todaySummaryTbody = $('#todaySummaryTbody');
-
     // Customers view
     const custQ = $('#custQ');
     const custSegment = $('#custSegment');
@@ -1051,15 +1007,6 @@
     const histTbody = $('#histTbody');
     const btnExportHistoryCsv = $('#btnExportHistoryCsv');
 
-    const histSummaryRange = $('#histSummaryRange');
-    const histSummaryCalls = $('#histSummaryCalls');
-    const histSummaryInterested = $('#histSummaryInterested');
-    const histSummaryUnique = $('#histSummaryUnique');
-    const btnHistPrev = $('#btnHistPrev');
-    const btnHistNext = $('#btnHistNext');
-    const histPageNow = $('#histPageNow');
-    const histPageTotal = $('#histPageTotal');
-
     // Modal
     const customerModal = $('#customer-modal');
     const customerModalBox = $('#customer-modal-box');
@@ -1070,7 +1017,7 @@
     const btnModalSaveImg = $('#btnModalSaveImg');
 
     // ===================== Draft (Plan) =====================
-    const DRAFT_KEY = 'crm_intel_plan_draft_v3';
+    const DRAFT_KEY = 'crm_intel_plan_draft_v2';
     const loadDraft = ()=>{ try{ return JSON.parse(localStorage.getItem(DRAFT_KEY))||null; }catch{return null;} };
     const saveDraft = debounce(()=>{
       const draft = {
@@ -1103,6 +1050,7 @@
         if(label) customerIndex.set(label, {opd, name, phone});
         if(opd) customerByOPD.set(opd, {opd, name, phone});
       }
+      // datalist
       const keys = Array.from(customerIndex.keys()).sort((a,b)=> a.localeCompare(b,'th'));
       dlCustomers.innerHTML = keys.map(k=> `<option value="${esc(k)}"></option>`).join('');
     }
@@ -1133,19 +1081,35 @@
       }
     }
 
-    // ===================== Scoring & Segmentation =====================
-    const VIP_THRESHOLD = 15000;
+    // ===================== Scoring & Segmentation (แม่นยำและปรับได้) =====================
+    /*
+      Priority Score: 0..100 (ยิ่งมากยิ่งควรโทรก่อน)
+      - Interest signal (0..40): เคยสนใจ + ล่าสุดสนใจ
+      - Recency pitch (0..20): โทรล่าสุดนานพอดี (7-21 วัน) ดีสุด, นานเกินไปลดลง
+      - Attempts (0..15): โทรน้อย/กลางได้คะแนนมากกว่าโทรถี่เกิน
+      - Purchase value (0..25): ยอดซื้อรวมสูง = worth follow-up
+
+      Segment:
+      - VIP: totalAmount >= vipThreshold
+      - STOP: hard reject ล่าสุด หรือ attempts>=3 และไม่เคยสนใจ
+      - ACTIVE: lastOutcome สนใจ หรือ เคยสนใจและยังไม่หลุด
+      - WARM: ยังไม่ครบ 3 ครั้ง และไม่มี hard reject
+      - COLD: ที่เหลือ
+    */
+    const VIP_THRESHOLD = 15000; // ปรับได้ตามคลินิก/ธุรกิจ
     function calcCustomerAnalytics(opd){
       const cust = customerByOPD.get(opd) || {opd, name:opd, phone:''};
       const pitchList = pitchesByOPD.get(opd) || [];
       const recList = recordsByOPD.get(opd) || [];
 
+      // Purchases
       const paid = recList.filter(r=> Number(r.amount||0) > 0);
       const totalAmount = paid.reduce((s,r)=> s + Number(r.amount||0), 0);
       const paidVisits = paid.length;
       const avgAmount = paidVisits ? totalAmount/paidVisits : 0;
       const lastBuyDate = recList[0]?.date ? String(recList[0].date).slice(0,10) : '';
 
+      // Pitch
       const attempts = pitchList.length;
       const lastPitch = pitchList[0] || null;
       const lastPitchDate = lastPitch ? String(lastPitch.created_at||lastPitch.date||'').slice(0,10) : '';
@@ -1156,17 +1120,22 @@
         return f ? String(f.created_at||f.date||'').slice(0,10) : '';
       })();
 
+      // Recency
       const daysSincePitch = lastPitchDate ? daysBetween(lastPitchDate, todayISO()) : null;
       const daysSinceBuy = lastBuyDate ? daysBetween(lastBuyDate, todayISO()) : null;
 
+      // Interest score 0..40
       let sInterest = 0;
       if(everInterested) sInterest += 18;
       if(isInterested(lastOutcome)) sInterest += 22;
+      // If last outcome is hard reject, clamp interest part
       if(isHardReject(lastOutcome)) sInterest = Math.min(sInterest, 8);
 
+      // Recency pitch score 0..20
       let sRecency = 0;
-      if(daysSincePitch === null) sRecency = 8;
+      if(daysSincePitch === null) sRecency = 8; // unknown: give small base
       else{
+        // sweet spot 7..21 days (peak)
         if(daysSincePitch < 2) sRecency = 2;
         else if(daysSincePitch < 7) sRecency = 10;
         else if(daysSincePitch <= 21) sRecency = 20;
@@ -1174,6 +1143,7 @@
         else sRecency = 8;
       }
 
+      // Attempts score 0..15
       let sAttempts = 0;
       if(attempts === 0) sAttempts = 10;
       else if(attempts === 1) sAttempts = 15;
@@ -1181,9 +1151,11 @@
       else if(attempts === 3) sAttempts = 7;
       else sAttempts = 4;
 
+      // Value score 0..25 (log-ish)
       let sValue = 0;
       if(totalAmount <= 0) sValue = 4;
       else{
+        // scale: 5k -> ~10, 15k -> ~18, 30k -> ~22, 60k+ -> 25
         const x = Math.log10(totalAmount + 1);
         sValue = Math.max(6, Math.min(25, Math.round((x - 3) * 12 + 10)));
       }
@@ -1191,6 +1163,7 @@
       let priority = sInterest + sRecency + sAttempts + sValue;
       priority = Math.max(0, Math.min(100, Math.round(priority)));
 
+      // Stop logic
       const stopByReject = isHardReject(lastOutcome);
       const stopByAttempts = (!everInterested && attempts >= 3);
 
@@ -1200,13 +1173,15 @@
       else if(isInterested(lastOutcome) || (everInterested && attempts < 3)) segment = 'ACTIVE';
       else if(attempts < 3) segment = 'WARM';
 
+      // Recommendation (action line)
       let recommend = 'โทรตาม';
       if(segment === 'STOP') recommend = 'พัก/หยุด';
       else if(segment === 'VIP') recommend = 'VIP follow-up';
-      else if(priority >= 70) recommend = 'โทรวันนี้';
-      else if(priority >= 50) recommend = 'ตามต่อ';
-      else recommend = 'ค่อยโทร';
+      else if(segment === 'ACTIVE') recommend = 'โทรวันนี้';
+      else if(segment === 'WARM') recommend = 'ลองอีกครั้ง';
+      else recommend = 'โทรเมื่อว่าง';
 
+      // Funnel bucket
       let bucket = 'Cold';
       if(segment === 'STOP') bucket = 'Stop';
       else if(priority >= 70) bucket = 'Hot';
@@ -1237,7 +1212,9 @@
 
     function rebuildAnalytics(){
       const opds = new Set();
+      // make sure we include all customers from master list
       for(const c of customers) opds.add(pad4(c?.opd));
+      // include opds that appear in pitches/records even if not in master list
       for(const p of pitches) opds.add(pad4(p?.opd));
       for(const r of records) opds.add(pad4(r?.opd));
 
@@ -1245,6 +1222,7 @@
         .filter(Boolean)
         .map(opd => calcCustomerAnalytics(opd));
 
+      // default sort: priority desc then value desc
       analytics.sort((a,b)=> (b.priority - a.priority) || (b.totalAmount - a.totalAmount) || (String(b.lastPitchDate||'').localeCompare(a.lastPitchDate||'')));
     }
 
@@ -1305,41 +1283,18 @@
       return `<span class="badge b-red">STOP</span>`;
     }
 
-    function renderRecommend(a){
-      if(a.segment==='STOP') return `<span class="badge b-red">พัก/หยุด</span>`;
-      if(a.segment==='VIP') return `<span class="badge b-green">VIP follow-up</span>`;
-      if(a.bucket==='Hot') return `<span class="badge b-green">โทรวันนี้</span>`;
-      if(a.bucket==='Warm') return `<span class="badge b-amber">ตามต่อ</span>`;
-      return `<span class="badge b-slate">ค่อยโทร</span>`;
-    }
-
-    function filterAnalyticsForDash(list){
-      const q = (dashQ.value||'').trim().toLowerCase();
-      const seg = dashSegment.value || '';
-      let out = list;
-
-      if(seg) out = out.filter(a=> a.segment === seg);
-      if(q){
-        out = out.filter(a=>{
-          return (
-            String(a.opd).toLowerCase().includes(q) ||
-            String(a.name||'').toLowerCase().includes(q) ||
-            String(a.phone||'').toLowerCase().includes(q)
-          );
-        });
-      }
-      return out;
-    }
-
     function renderDashboard(){
-      tabChipDash.textContent = 'OK';
-      tabChipCust.textContent = analytics.length.toString();
-      tabChipHist.textContent = pitches.length.toString();
+      navTotalCustomers.textContent = `${analytics.length} ลูกค้า`;
+      navChipDash.textContent = 'OK';
+      navChipCust.textContent = analytics.length.toString();
+      navChipHist.textContent = pitches.length.toString();
 
+      // KPIs
       kpiCustomers.textContent = analytics.length.toString();
       kpiPitches.textContent = pitches.length.toString();
       kpiInterested.textContent = pitches.filter(p=> isInterested(p.outcome)).length.toString();
 
+      // Conversion Score (simple)
       const total = pitches.length || 1;
       const interested = pitches.filter(p=> isInterested(p.outcome)).length;
       const rate = interested / total;
@@ -1347,13 +1302,16 @@
       const conv = Math.round(rate*60 + avgPriority*0.4);
       kpiConvScore.textContent = `${Math.max(0, Math.min(100, conv))}`;
 
+      // Date range badge
       const f = dashFrom.value || '';
       const t = dashTo.value || '';
       dashRange.textContent = (f||t) ? `${f||'—'} ถึง ${t||'—'}` : 'ทั้งหมด';
 
+      // Charts
       buildOutcomeChart(pitches);
       buildFunnelChart(analytics);
 
+      // Top priority (apply dashboard filters)
       const filtered = filterAnalyticsForDash(analytics);
       const top = filtered.slice(0, 30);
 
@@ -1375,12 +1333,39 @@
       `).join('') || `<tr><td colspan="9" style="padding:14px; color:#64748b;">ไม่มีข้อมูลตามตัวกรอง</td></tr>`;
     }
 
+    function renderRecommend(a){
+      if(a.segment==='STOP') return `<span class="badge b-red">พัก/หยุด</span>`;
+      if(a.segment==='VIP') return `<span class="badge b-green">VIP follow-up</span>`;
+      if(a.bucket==='Hot') return `<span class="badge b-green">โทรวันนี้</span>`;
+      if(a.bucket==='Warm') return `<span class="badge b-amber">ตามต่อ</span>`;
+      return `<span class="badge b-slate">ค่อยโทร</span>`;
+    }
+
+    function filterAnalyticsForDash(list){
+      const q = (dashQ.value||'').trim().toLowerCase();
+      const seg = dashSegment.value || '';
+      let out = list;
+
+      if(seg) out = out.filter(a=> a.segment === seg);
+
+      if(q){
+        out = out.filter(a=>{
+          return (
+            String(a.opd).toLowerCase().includes(q) ||
+            String(a.name||'').toLowerCase().includes(q) ||
+            String(a.phone||'').toLowerCase().includes(q)
+          );
+        });
+      }
+      return out;
+    }
+
     function renderCustomersTable(){
       let list = [...analytics];
 
       const q = (custQ.value||'').trim().toLowerCase();
       const seg = custSegment.value || '';
-      const sort = custSort.value || 'last_pitch_desc';
+      const sort = custSort.value || 'priority_desc';
       const limit = parseInt(custLimit.value||'50', 10);
 
       if(seg) list = list.filter(a=> a.segment === seg);
@@ -1419,36 +1404,6 @@
       `).join('') || `<tr><td colspan="10" style="padding:14px; color:#64748b;">ไม่พบลูกค้าตามเงื่อนไข</td></tr>`;
     }
 
-    function renderHistorySummary(){
-      const from = (histFrom.value||'').trim();
-      const to = (histTo.value||'').trim();
-      histSummaryRange.textContent = (from||to) ? `${from||'—'} ถึง ${to||'—'}` : 'ทั้งหมด';
-
-      const calls = historyAll.length;
-      const interested = historyAll.filter(p=> isInterested(p.outcome)).length;
-
-      const uniq = new Set(historyAll.map(p=> pad4(p.opd||''))).size;
-
-      histSummaryCalls.textContent = String(calls);
-      histSummaryInterested.textContent = String(interested);
-      histSummaryUnique.textContent = String(uniq);
-
-      const totalPages = Math.max(1, Math.ceil(calls / HIST_PAGE_SIZE));
-      histPage = Math.min(histPage, totalPages);
-      histPageNow.textContent = String(histPage);
-      histPageTotal.textContent = String(totalPages);
-
-      btnHistPrev.disabled = histPage <= 1;
-      btnHistNext.disabled = histPage >= totalPages;
-    }
-
-    function renderHistoryTablePaged(){
-      renderHistorySummary();
-      const start = (histPage - 1) * HIST_PAGE_SIZE;
-      const pageItems = historyAll.slice(start, start + HIST_PAGE_SIZE);
-      renderHistoryTable(pageItems);
-    }
-
     function renderHistoryTable(list){
       histTbody.innerHTML = list.map(p=>{
         const d = String(p.created_at||p.date||'').slice(0,10);
@@ -1482,106 +1437,6 @@
       }).join('') || `<tr><td colspan="8" style="padding:14px; color:#64748b;">ยังไม่มีข้อมูล</td></tr>`;
     }
 
-    // ===================== ✅ Today Summary (added) =====================
-    function kpiBox(label, value, hint=''){
-      return `
-        <div class="kpi">
-          <div class="label">${esc(label)}</div>
-          <div class="value mono">${esc(value)}</div>
-          <div class="hint">${esc(hint)}</div>
-        </div>
-      `;
-    }
-
-    function renderFreqBadges(mapObj, limit=8){
-      const arr = Array.from(mapObj.entries()).sort((a,b)=> b[1]-a[1]).slice(0, limit);
-      if(!arr.length) return `<span style="color:#64748b;">-</span>`;
-      return arr.map(([k,v])=> `<span class="badge b-slate">${esc(k)} <span class="mono">${v}</span></span>`).join(' ');
-    }
-
-    async function loadTodaySummary(){
-      const d = planDate.value || todayISO();
-      todaySummaryDate.textContent = fmtShortDate(d);
-
-      try{
-        const url = new URL('/api/pitches_by_date', window.location.origin);
-        url.searchParams.set('from', d);
-        url.searchParams.set('to', d);
-
-        const list = await fetchJSON(url).catch(()=>[]);
-        const rows = Array.isArray(list) ? list : [];
-        rows.sort((a,b)=> String(b.created_at||b.date||'').localeCompare(String(a.created_at||a.date||'')));
-
-        const total = rows.length;
-        const interested = rows.filter(r=> isInterested(r.outcome)).length;
-        const hardReject = rows.filter(r=> isHardReject(r.outcome)).length;
-
-        const noPickup = rows.filter(r=> {
-          const o = String(r.outcome||'');
-          return o.includes('ไม่รับสาย') || o.includes('ปิดเครื่อง');
-        }).length;
-
-        const uniq = new Set(rows.map(r=> pad4(r.opd||''))).size;
-
-        const freqOutcome = new Map();
-        const freqChannel = new Map();
-        const freqPromo = new Map();
-
-        for(const r of rows){
-          const o = String(r.outcome||'(ไม่ระบุ)').trim() || '(ไม่ระบุ)';
-          const ch = String(r.channel||'(ไม่ระบุ)').trim() || '(ไม่ระบุ)';
-          const pr = String(r.promotion||'(ไม่ระบุ)').trim() || '(ไม่ระบุ)';
-          freqOutcome.set(o, (freqOutcome.get(o)||0) + 1);
-          freqChannel.set(ch, (freqChannel.get(ch)||0) + 1);
-          freqPromo.set(pr, (freqPromo.get(pr)||0) + 1);
-        }
-
-        const topOutcome = Array.from(freqOutcome.entries()).sort((a,b)=> b[1]-a[1])[0]?.[0] || '-';
-        const topChannel = Array.from(freqChannel.entries()).sort((a,b)=> b[1]-a[1])[0]?.[0] || '-';
-
-        todayKpis.innerHTML =
-          kpiBox('โทรทั้งหมด (วันนี้)', total, 'จำนวนรายการที่บันทึกจริง') +
-          kpiBox('สนใจ', interested, 'Outcome ขึ้นต้นด้วย “สนใจ”') +
-          kpiBox('ปฏิเสธ/ควรหยุด', hardReject, 'Outcome “ไม่สนใจ/ไม่น่าจะกลับมา”') +
-          kpiBox('ไม่รับสาย/ปิดเครื่อง', noPickup, 'รวม 2 outcome นี้');
-
-                
-
-        todaySummaryTbody.innerHTML = rows.map(r=>{
-          const t = String(r.created_at||'').slice(11,16) || '-';
-          const opd = pad4(r.opd||'');
-          const name = r.customer_name || customerByOPD.get(opd)?.name || opd;
-          const promo = r.promotion || '';
-          const outcome = r.outcome || '';
-          const content = r.content || '';
-          const channel = r.channel || '';
-
-          return `
-            <tr>
-              <td class="mono">${esc(t)}</td>
-              <td>
-                <a class="link" data-open-profile="${esc(opd)}">${esc(name)}</a>
-                <div style="color:#64748b; font-size:10px; margin-top:3px;">OPD <span class="mono">${esc(opd)}</span></div>
-              </td>
-              <td>${esc(promo)}</td>
-              <td><span class="badge b-slate">${esc(outcome)}</span></td>
-              <td>${esc(content)}</td>
-              <td><span class="badge b-slate">${esc(channel||'-')}</span></td>
-            </tr>
-          `;
-        }).join('') || `<tr><td colspan="6" style="padding:14px; color:#64748b;">วันนี้ยังไม่มีข้อมูลที่บันทึก</td></tr>`;
-
-      }catch(e){
-        console.error(e);
-        todayKpis.innerHTML = '';
-        todayStats.innerHTML = `<span style="color:#ef4444;">โหลดสรุปวันนี้ไม่สำเร็จ</span>`;
-        todayPromoTop.innerHTML = '';
-        todaySummaryTbody.innerHTML = `<tr><td colspan="6" style="padding:14px; color:#64748b;">-</td></tr>`;
-        showToast('โหลดสรุปวันนี้ไม่สำเร็จ','error');
-      }
-    }
-    // ===================== /Today Summary =====================
-
     // ===================== History edit/delete =====================
     async function deletePitch(id){
       if(!confirm('ลบรายการนี้หรือไม่?')) return;
@@ -1591,15 +1446,14 @@
         showToast('ลบแล้ว ✅');
         await reloadAllData(false);
         await loadHistoryFromFilters();
-        await loadTodaySummary(); // ✅ refresh summary
       }catch{
         showToast('ลบไม่สำเร็จ','error');
       }
     }
 
     async function editPitchInline(id){
-      const p = pitches.find(x => String(x.id||`${x.created_at||''}|${pad4(x.opd||'')}`) === String(id))
-              || historyAll.find(x => String(x.id||`${x.created_at||''}|${pad4(x.opd||'')}`) === String(id));
+      // minimal prompt-based edit (เร็วและชัด) — ถ้าต้องการ inline form จริง ค่อยอัปเกรดต่อ
+      const p = pitches.find(x => String(x.id||`${x.created_at||''}|${pad4(x.opd||'')}`) === String(id));
       if(!p){ showToast('ไม่พบรายการนี้','warn'); return; }
 
       const promotion = prompt('โปรโมชัน', p.promotion||'') ?? null;
@@ -1621,7 +1475,6 @@
         showToast('บันทึกการแก้ไขแล้ว ✅');
         await reloadAllData(false);
         await loadHistoryFromFilters();
-        await loadTodaySummary(); // ✅ refresh summary
       }catch{
         showToast('แก้ไขไม่สำเร็จ','error');
       }
@@ -1658,7 +1511,12 @@
 
         <div>
           <div class="field">
-            <label>Outcome</label>
+            <label>Outcome (กดปุ่มลัด หรือเลือก)</label>
+            <div class="quick-outcomes" data-quick>
+              <span class="chip" data-quick-val="สนใจแต่ยังต้องตามต่อ">สนใจ/ตามต่อ</span>
+              <span class="chip" data-quick-val="ไม่รับสาย">ไม่รับสาย</span>
+              <span class="chip" data-quick-val="ไม่สนใจไม่บอกเหตุผล">ไม่สนใจ</span>
+            </div>
             <select class="input" data-outcome>
               ${OUTCOMES.map(o=> `<option ${o===(row.outcome||OUTCOMES[0])?'selected':''}>${esc(o)}</option>`).join('')}
             </select>
@@ -1682,11 +1540,13 @@
         </div>
       `;
 
+      // set meta if opd exists
       const meta = el.querySelector('[data-meta]');
       if(row.opd){
         const c = customerByOPD.get(pad4(row.opd));
         meta.textContent = c ? `OPD ${pad4(c.opd)}${c.phone?` • ${c.phone}`:''}` : `OPD ${pad4(row.opd)}`;
       }
+
       return el;
     }
 
@@ -1695,7 +1555,7 @@
       const valid = payload.filter(x=> x.opd && x.outcome).length;
       planCount.textContent = payload.length.toString();
       planValid.textContent = valid.toString();
-      tabChipPlan.textContent = payload.length.toString();
+      navChipPlan.textContent = payload.length.toString();
     }
 
     function getPlanRowsPayload(includeInvalid=false){
@@ -1744,9 +1604,11 @@
     async function saveBulkPitches(){
       const rows = getPlanRowsPayload(true);
 
+      // validate
       const invalid = rows.filter(r=> !r.opd);
       if(invalid.length){
-        showToast('มีแถวที่ยังไม่ได้เลือกลูกค้า (OPD ว่าง)','warn');
+        showToast('มีแถวที่ยังไม่ได้เลือกลูกค้าจากรายการ (OPD ว่าง)','warn');
+        // mark invalid inputs
         $$('#planRows .plan-row').forEach(rowEl=>{
           const custInput = rowEl.querySelector('[data-cust]');
           if(!rowEl.dataset.opd) custInput.classList.add('invalid');
@@ -1784,13 +1646,15 @@
 
         showToast(`บันทึกสำเร็จ ${d.inserted||payload.length} รายการ ✅`);
 
+        // reset rows keep 1 blank
         planRows.innerHTML = '';
         addPlanRow({});
         clearDraft();
         planDraftStatus.textContent = 'cleared';
 
         await reloadAllData(false);
-        await loadTodaySummary(); // ✅ refresh today summary
+        // also refresh history table if user is on history view later
+
       }catch(e){
         showToast(String(e.message||'บันทึกไม่สำเร็จ'), 'error');
       }finally{
@@ -1810,6 +1674,7 @@
       const rowEl = e.target.closest('.plan-row');
       if(!rowEl) return;
 
+      // customer select
       if(e.target.matches('[data-cust]')){
         const v = (e.target.value||'').trim();
         const picked = customerIndex.get(v);
@@ -1832,6 +1697,18 @@
       const rowEl = e.target.closest('.plan-row');
       if(!rowEl) return;
 
+      // quick outcomes
+      const chip = e.target.closest('.chip[data-quick-val]');
+      if(chip){
+        const v = chip.dataset.quickVal;
+        rowEl.querySelector('[data-outcome]').value = v;
+        rowEl.querySelectorAll('.chip').forEach(c=> c.classList.toggle('active', c===chip));
+        refreshPlanCounters();
+        saveDraft();
+        return;
+      }
+
+      // delete row
       const del = e.target.closest('[data-del-row]');
       if(del){
         rowEl.remove();
@@ -1841,6 +1718,7 @@
         return;
       }
 
+      // open profile
       const open = e.target.closest('[data-open-profile]');
       if(open){
         const opd = rowEl.dataset.opd || '';
@@ -1850,7 +1728,7 @@
       }
     });
 
-    // ===================== History loader from filters (paged) =====================
+    // ===================== History loader from filters =====================
     async function loadHistoryFromFilters(){
       const from = (histFrom.value||'').trim();
       const to = (histTo.value||'').trim();
@@ -1872,31 +1750,14 @@
         if(channel) url.searchParams.set('channel', channel);
 
         const list = await fetchJSON(url);
-        historyAll = Array.isArray(list)?list:[];
-        historyAll.sort((a,b)=> String(b.created_at||b.date||'').localeCompare(String(a.created_at||a.date||'')));
-
-        histPage = 1;
-        renderHistoryTablePaged();
-        tabChipHist.textContent = String(historyAll.length);
+        // Update local pitches cache too (so edit/delete works)
+        // But keep "pitches" as current dashboard dataset (which may have different range)
+        renderHistoryTable(Array.isArray(list)?list:[]);
       }catch{
-        historyAll = [];
-        histPage = 1;
-        renderHistoryTablePaged();
-        showToast('โหลด ประวัติการโทร ไม่สำเร็จ','error');
+        renderHistoryTable([]);
+        showToast('โหลด History ไม่สำเร็จ','error');
       }
     }
-
-    btnHistPrev.addEventListener('click', ()=>{
-      histPage = Math.max(1, histPage - 1);
-      renderHistoryTablePaged();
-      window.scrollTo({ top: 0, behavior:'smooth' });
-    });
-    btnHistNext.addEventListener('click', ()=>{
-      const totalPages = Math.max(1, Math.ceil(historyAll.length / HIST_PAGE_SIZE));
-      histPage = Math.min(totalPages, histPage + 1);
-      renderHistoryTablePaged();
-      window.scrollTo({ top: 0, behavior:'smooth' });
-    });
 
     // ===================== Export CSV =====================
     function exportCustomersCSV(list){
@@ -1935,6 +1796,7 @@
         const outcome = tds[4].innerText.trim();
         const content = tds[5].innerText.trim();
         const channel = tds[6].innerText.trim();
+        // parse opd from subtext "OPD 0123"
         const m = nameCell.match(/OPD\s*(\d{4})/);
         const opd = m ? m[1] : '';
         const name = nameCell.split('\n')[0] || '';
@@ -1946,10 +1808,10 @@
       const csv = lines.join('\n');
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
-      a.download = `history_${todayISO()}_page${histPage}.csv`;
+      a.download = `history_${todayISO()}.csv`;
       a.click();
       URL.revokeObjectURL(a.href);
-      showToast('Export History (หน้านี้) CSV แล้ว');
+      showToast('Export History CSV แล้ว');
     }
 
     // ===================== Modal (Customer Profile) =====================
@@ -2007,30 +1869,228 @@
     }
 
     async function renderCustomerModal(opd){
-      // ... (ส่วน modal เดิมของคุณยาวมาก ผม “คงเดิมทั้งหมด” ได้เลย)
-      // เพื่อไม่ให้คำตอบเกินเพดานแชต: ให้คุณเอา modal เดิมของคุณทั้งก้อนมาวางต่อได้เลย
-      // (ถ้าต้องการให้ผมส่ง modal ต่อครบแบบ 1 ไฟล์จริง ๆ บอกได้ เดี๋ยวผมแยกเป็น 2 ตอนให้)
-      modalBody.innerHTML = `<div style="padding:12px; color:#64748b;">(วางโค้ด renderCustomerModal เดิมของคุณต่อที่นี่)</div>`;
+      const a = analytics.find(x=> x.opd === opd) || calcCustomerAnalytics(opd);
+      const pitchList = pitchesByOPD.get(opd) || [];
+      const recList = recordsByOPD.get(opd) || [];
+
+      modalTitle.innerHTML = `📇 ${esc(a.name)} <span class="badge b-slate">OPD <span class="mono">${esc(a.opd)}</span></span>`;
+
+      if(currentModalTab === 'overview'){
+        const daysPitch = a.daysSincePitch===null ? '-' : `${a.daysSincePitch} วัน`;
+        const daysBuy = a.daysSinceBuy===null ? '-' : `${a.daysSinceBuy} วัน`;
+        modalBody.innerHTML = `
+          <div class="mini-grid">
+            <div class="mini">
+              <div class="k">Priority</div>
+              <div class="v mono">${a.priority}</div>
+              <div class="s">${renderRecommend(a)}</div>
+            </div>
+            <div class="mini">
+              <div class="k">Segment</div>
+              <div class="v">${segBadge(a.segment)}</div>
+              <div class="s">Bucket: <b>${esc(a.bucket)}</b></div>
+            </div>
+            <div class="mini">
+              <div class="k">ยอดซื้อรวม</div>
+              <div class="v mono">${fmtMoney(a.totalAmount)} บาท</div>
+              <div class="s">เฉลี่ย/ครั้ง ${fmtMoney(a.avgAmount)} • ${a.paidVisits} ครั้งจ่ายเงิน</div>
+            </div>
+            <div class="mini">
+              <div class="k">ความล่าสุด</div>
+              <div class="v mono">${a.lastPitchDate ? fmtShortDate(a.lastPitchDate) : '-'}</div>
+              <div class="s">โทรล่าสุด: ${daysPitch} • ซื้อล่าสุด: ${daysBuy}</div>
+            </div>
+          </div>
+
+          <div style="height:12px;"></div>
+
+          <div class="card" style="box-shadow:none;">
+            <div class="card-head">
+              <div class="card-title">🧾 สรุปสัญญาณ</div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                ${a.phone ? `<span class="badge b-slate">📞 ${esc(a.phone)}</span>` : `<span class="badge b-slate">📞 —</span>`}
+                <span class="badge b-slate">โทรแล้ว <span class="mono">${a.attempts}</span> ครั้ง</span>
+                ${a.everInterested ? `<span class="badge b-green">เคยสนใจ</span>` : `<span class="badge b-slate">ไม่เคยสนใจ</span>`}
+              </div>
+            </div>
+            <div class="card-body">
+              <div style="color:#334155; font-weight:900; margin-bottom:6px;">Outcome ล่าสุด</div>
+              <div>${a.lastOutcome ? `<span class="badge b-slate">${esc(a.lastOutcome)}</span>` : `<span style="color:#64748b;">-</span>`}</div>
+
+              <div style="height:10px;"></div>
+              <div style="color:#334155; font-weight:900; margin-bottom:6px;">แนะนำ Next step</div>
+              <div style="color:#0f172a;">
+                ${a.segment==='STOP'
+                  ? 'พักไว้ก่อน (Hard reject/ครบโควตาแล้ว) เพื่อไม่เสียเวลาทีม'
+                  : a.segment==='VIP'
+                    ? 'ลูกค้ามูลค่าสูง: โทร/ไลน์แบบ personal + offer ที่ตรงรายการซื้อ'
+                    : a.bucket==='Hot'
+                      ? 'โทรวันนี้: สัญญาณดี + recency เหมาะ'
+                      : a.bucket==='Warm'
+                        ? 'ตามต่อ: ยังมีโอกาสปิด'
+                        : 'ค่อยโทร: จัดเป็นคิวรอง'}
+              </div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if(currentModalTab === 'pitches'){
+        const rows = pitchList.slice(0, 30).map(p=>{
+          const d = String(p.created_at||p.date||'').slice(0,10);
+          const promo = p.promotion || '-';
+          const out = p.outcome || '-';
+          const note = p.content || '';
+          const ch = p.channel || '-';
+          return `
+            <tr>
+              <td class="mono">${fmtShortDate(d)}</td>
+              <td>${esc(promo)}</td>
+              <td><span class="badge b-slate">${esc(out)}</span></td>
+              <td>${esc(note)}</td>
+              <td><span class="badge b-slate">${esc(ch)}</span></td>
+            </tr>
+          `;
+        }).join('') || `<tr><td colspan="5" style="padding:12px; color:#64748b;">ยังไม่มี Sale Pitch</td></tr>`;
+
+        modalBody.innerHTML = `
+          <div class="card" style="box-shadow:none;">
+            <div class="card-head">
+              <div class="card-title">🗣️ Sale Pitch ล่าสุด</div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <span class="badge b-slate">แสดง 30 รายการล่าสุด</span>
+                <button class="btn" type="button" id="btnCopyLastPromo">📋 คัดลอกโปรล่าสุด</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="table-wrap">
+                <table style="min-width:920px;">
+                  <thead>
+                    <tr>
+                      <th>วันที่</th>
+                      <th>โปรโมชัน</th>
+                      <th>Outcome</th>
+                      <th>โน้ต</th>
+                      <th>ช่องทาง</th>
+                    </tr>
+                  </thead>
+                  <tbody>${rows}</tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // copy promo to plan default
+        setTimeout(()=>{
+          const btn = $('#btnCopyLastPromo');
+          if(!btn) return;
+          btn.addEventListener('click', ()=>{
+            const last = pitchList[0];
+            if(!last || !last.promotion){ showToast('ไม่พบโปรโมชันล่าสุด','warn'); return; }
+            planDefaultPromo.value = last.promotion;
+            saveDraft();
+            showToast('คัดลอกโปรโมชันไปที่ Plan แล้ว ✅');
+          });
+        }, 0);
+        return;
+      }
+
+      // buys tab
+      const paid = recList.filter(r=> Number(r.amount||0) > 0);
+      const sum = paid.reduce((s,r)=> s + Number(r.amount||0), 0);
+
+      const itemCounts = new Map();
+      for(const r of recList){
+        for(const item of (r.items||[])){
+          let name = item;
+          const m = item.match(/\((.*?)\)/);
+          if(m) name = m[1];
+          else name = item.split(' - ')[0];
+          const qtyMatch = item.match(/- (\d+)\s*ชิ้น/);
+          const qty = qtyMatch ? parseInt(qtyMatch[1],10) : 1;
+          itemCounts.set(name, (itemCounts.get(name)||0) + qty);
+        }
+      }
+      const topItems = Array.from(itemCounts.entries()).sort((a,b)=> b[1]-a[1]).slice(0,10);
+
+      const historyHtml = recList.slice(0, 30).map(r=>{
+        const d = String(r.date||'').slice(0,10);
+        const amount = Number(r.amount||0);
+        const items = (r.items||[]).slice(0, 8).map(x=> `• ${esc(x)}`).join('<br>');
+        const note = r.note ? `<div style="margin-top:6px; color:#334155; font-size:11px;"><b>หมายเหตุ:</b> ${esc(r.note)}</div>` : '';
+        return `
+          <div style="border:1px solid var(--line); border-radius:16px; padding:10px 12px; background:#fff; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+              <div style="font-weight:1000;">📅 ${fmtShortDate(d)}</div>
+              <div class="badge b-slate">💵 ${fmtMoney(amount)} บาท</div>
+            </div>
+            <div style="margin-top:8px; color:#475569; font-size:11px; line-height:1.55;">
+              ${items || '<span style="color:#94a3b8;">(ไม่มีรายการสินค้า)</span>'}
+            </div>
+            ${note}
+          </div>
+        `;
+      }).join('') || `<div style="padding:12px; color:#64748b;">ยังไม่มีประวัติซื้อ</div>`;
+
+      modalBody.innerHTML = `
+        <div class="mini-grid">
+          <div class="mini">
+            <div class="k">ยอดซื้อรวม</div>
+            <div class="v mono">${fmtMoney(sum)} บาท</div>
+            <div class="s">นับเฉพาะ amount &gt; 0</div>
+          </div>
+          <div class="mini">
+            <div class="k">จำนวนบิล</div>
+            <div class="v mono">${recList.length}</div>
+            <div class="s">จ่ายเงินจริง ${paid.length}</div>
+          </div>
+          <div class="mini">
+            <div class="k">ซื้อครั้งล่าสุด</div>
+            <div class="v mono">${a.lastBuyDate ? fmtShortDate(a.lastBuyDate) : '-'}</div>
+            <div class="s">ห่าง ${a.daysSinceBuy===null?'-':a.daysSinceBuy+' วัน'}</div>
+          </div>
+          <div class="mini">
+            <div class="k">Top Items</div>
+            <div class="v" style="font-size:12px; margin-top:10px;">
+              ${topItems.length ? topItems.map(([n,q])=> `<div>${esc(n)} <span class="badge b-slate mono">${q}</span></div>`).join('') : '<span style="color:#64748b;">-</span>'}
+            </div>
+            <div class="s">10 อันดับแรก</div>
+          </div>
+        </div>
+
+        <div style="height:12px;"></div>
+
+        <div class="card" style="box-shadow:none;">
+          <div class="card-head">
+            <div class="card-title">🛍️ ประวัติซื้อย้อนหลัง</div>
+            <div class="card-sub">แสดง 30 รายการล่าสุด</div>
+          </div>
+          <div class="card-body">
+            ${historyHtml}
+          </div>
+        </div>
+      `;
     }
 
-    // ===================== View switch (top tabs) =====================
+    // ===================== View switch =====================
     function showView(view){
       $$('[data-view-panel]').forEach(p=>{
         p.style.display = (p.dataset.viewPanel === view) ? '' : 'none';
       });
-      $$('#topTabs .tab-btn').forEach(b=> b.classList.toggle('active', b.dataset.view === view));
+      $$('#nav .nav-btn').forEach(b=> b.classList.toggle('active', b.dataset.view === view));
+      // sync some chips
       if(view === 'plan') restorePlanDraft();
-      if(view === 'history') renderHistoryTablePaged();
-
-      // ✅ เมื่อเข้าหน้า plan ให้โหลดสรุปวันนี้
-      if(view === 'plan') loadTodaySummary();
     }
 
-    topTabs.addEventListener('click', (e)=>{
-      const btn = e.target.closest('.tab-btn[data-view]');
+    nav.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.nav-btn[data-view]');
       if(!btn) return;
       showView(btn.dataset.view);
     });
+
+    btnOpenPlan.addEventListener('click', ()=> showView('plan'));
 
     // ===================== Main reload =====================
     async function reloadAllData(resetDashDates=true){
@@ -2041,8 +2101,10 @@
           dashTo.value = '';
         }
 
+        // load master
         customers = await fetchJSON('/api/customers').catch(()=>[]);
         records = await fetchJSON('/api/reccord_sale').catch(()=>[]);
+        // pitches for dashboard: by date range (use dashFrom/dashTo, default all)
         await loadPitchesForDashboard();
 
         buildCustomerIndexes();
@@ -2050,9 +2112,9 @@
         buildPitchesIndex();
         rebuildAnalytics();
 
-        tabChipDash.textContent = 'OK';
-        tabChipCust.textContent = `${analytics.length}`;
-        tabChipHist.textContent = `${pitches.length}`;
+        navChipDash.textContent = 'OK';
+        navChipCust.textContent = `${analytics.length}`;
+        navChipHist.textContent = `${pitches.length}`;
         lastSyncText.textContent = `Sync: ${nowStamp()}`;
 
         renderDashboard();
@@ -2078,6 +2140,16 @@
       }
       const list = await fetchJSON(url).catch(()=>[]);
       pitches = Array.isArray(list) ? list : [];
+
+      // IMPORTANT: enrich pitch objects with customer_name/customer_phone if absent (for better accuracy)
+      for(const p of pitches){
+        const opd = pad4(p.opd||'');
+        const c = customerByOPD.get(opd);
+        if(c){
+          p.customer_name ||= c.name;
+          p.customer_phone ||= c.phone;
+        }
+      }
     }
 
     // ===================== Dashboard filters =====================
@@ -2087,14 +2159,14 @@
       rebuildAnalytics();
       renderDashboard();
       renderCustomersTable();
-      showToast('อัปเดต สรุปข้อมูล แล้ว ✅');
+      showToast('อัปเดต Dashboard แล้ว ✅');
     });
 
     btnResetDash.addEventListener('click', async ()=>{
       dashFrom.value = ''; dashTo.value = '';
       dashSegment.value = ''; dashQ.value = '';
       await reloadAllData(false);
-      showToast('รีเซ็ต สรุปข้อมูล แล้ว');
+      showToast('รีเซ็ต Dashboard แล้ว');
     });
 
     // ===================== Customers filters =====================
@@ -2104,7 +2176,7 @@
     });
 
     btnResetCustomers.addEventListener('click', ()=>{
-      custQ.value=''; custSegment.value=''; custSort.value='last_pitch_desc'; custLimit.value='50';
+      custQ.value=''; custSegment.value=''; custSort.value='priority_desc'; custLimit.value='50';
       renderCustomersTable();
       showToast('รีเซ็ตตารางลูกค้าแล้ว');
     });
@@ -2120,7 +2192,7 @@
     btnResetHistory.addEventListener('click', ()=>{
       histFrom.value=''; histTo.value=''; histQ.value=''; histOutcome.value=''; histChannel.value='';
       loadHistoryFromFilters();
-      showToast('รีเซ็ต ประวัติการโทร แล้ว');
+      showToast('รีเซ็ต History แล้ว');
     });
 
     histQ.addEventListener('input', debounce(loadHistoryFromFilters, 350));
@@ -2146,7 +2218,6 @@
     planDate.addEventListener('change', ()=>{
       planTitleDate.textContent = fmtShortDate(planDate.value);
       saveDraft();
-      loadTodaySummary(); // ✅ update summary when date changes
     });
     planDefaultPromo.addEventListener('input', saveDraft);
     planDefaultChannel.addEventListener('change', saveDraft);
@@ -2165,9 +2236,6 @@
       showToast('ล้าง Draft แล้ว','warn');
     });
 
-    // ✅ Manual reload today summary
-    btnReloadTodaySummary.addEventListener('click', loadTodaySummary);
-
     // ===================== Global click: open profile links =====================
     document.addEventListener('click', (e)=>{
       const a = e.target.closest('[data-open-profile]');
@@ -2180,29 +2248,31 @@
     // ===================== Refresh all =====================
     btnRefreshAll.addEventListener('click', async ()=>{
       await reloadAllData(false);
-      await loadTodaySummary(); // ✅ refresh summary
       showToast('รีเฟรชข้อมูลแล้ว ✅');
     });
 
     // ===================== Init =====================
     (async function init(){
+      // plan defaults
       initPlanDefaults();
 
+      // init dates
       planDate.value = todayISO();
       planTitleDate.textContent = fmtShortDate(planDate.value);
 
-      custSort.value = 'last_pitch_desc';
-
+      // load
       await reloadAllData(true);
 
+      // default view
+      showView('dashboard');
+
+      // initial history view data (lightweight)
       histFrom.value = '';
       histTo.value = '';
       await loadHistoryFromFilters();
 
-      showView('plan');
+      // restore plan draft quietly
       restorePlanDraft();
-
-      await loadTodaySummary(); // ✅ initial load
     })();
   </script>
 

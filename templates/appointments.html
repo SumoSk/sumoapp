@@ -1,366 +1,849 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Wedding Guest Check‑In (Realtime)</title>
-  <!-- Tailwind CSS CDN (no build step) -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ตารางนัด & ตารางเวร</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
   <style>
-    html, body { height: 100%; }
-    .seat-badge { @apply inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold; }
+    :root{
+      --teal:#0f766e; --teal-600:#0d9488;
+      --bg:#f7faf9; --card:#ffffff; --line:#e5e7eb;
+      --text:#0f172a; --muted:#6b7280;
+      --shadow:0 8px 24px rgba(2,8,23,.06);
+      --radius:16px;
+
+      /* ตารางแบบสบายตา */
+      --grid:#e5e7eb;
+      --grid-soft:#f1f5f9;
+      --hover:#f8fafc;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      font-family:'Prompt','Segoe UI',sans-serif;
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      padding:10px 10px 120px;
+      font-size:12px;
+    }
+    .container{
+      max-width:1280px;
+      margin:12px auto;
+      background:#fff;
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:14px;
+    }
+
+    .headline{font-size:18px;font-weight:800;color:#0b7660;margin:0 0 6px}
+    .sub-muted{color:var(--muted);font-size:12px;margin-top:-2px;line-height:1.35}
+
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .chip{
+      padding:8px 12px;border:1px solid #a7e1da;border-radius:999px;
+      background:#fff;color:#0b7660;font-size:12px;cursor:pointer;font-weight:800;user-select:none;
+    }
+    .chip.active{background:#0b7660;color:#fff}
+
+    .panel{display:none}
+    .panel.active{display:block}
+
+    .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px}
+    .section{margin:12px 0 16px}
+
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; gap:6px;
+      padding:10px 12px;border-radius:10px;border:1px solid #a7e1da;background:#fff;color:#0b7660;
+      cursor:pointer;font-weight:800;font-size:12px;
+    }
+    .btn-primary{border-color:transparent;background:var(--teal-600);color:#fff}
+    .btn-ghost{background:#f1f5f9;border-color:#e5e7eb;color:#0f172a}
+
+    .ipt{
+      width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff;
+      font-size:13px;font-family:inherit;-webkit-appearance:none;appearance:none;
+    }
+
+    /* =========================
+       DAILY: สไตล์ “คลีน” ไม่ขอบดำ
+       ========================= */
+    .paperWrap{
+      border:1px solid var(--grid);
+      border-radius:14px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .paperHeader{
+      display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;
+      padding:12px 12px 10px;
+      border-bottom:1px solid var(--grid);
+      background:linear-gradient(180deg, #ffffff 0%, #fbfffe 100%);
+    }
+    .paperHeader .left{
+      display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;
+      font-weight:800;color:#0f172a;
+    }
+    .paperTitle{
+      font-weight:900;font-size:13px;color:#0b3d35;margin-right:4px;
+    }
+    .lineField{
+      display:inline-flex;align-items:flex-end;gap:6px;white-space:nowrap;font-size:12px;color:#0f172a;
+    }
+    .line{
+      display:inline-block;
+      min-width:86px;
+      border-bottom:1px dotted #94a3b8;
+      padding:0 6px 2px;
+      font-weight:900;
+      text-align:center;
+      color:#0f172a;
+    }
+    .line.small{min-width:60px}
+    .line.medium{min-width:110px}
+
+    .paperControls{
+      display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;
+      margin-top:10px;
+    }
+    .paperControls .group{
+      display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+    }
+
+    .tableScroll{overflow:auto;-webkit-overflow-scrolling:touch}
+    table.clean{
+      width:100%;
+      min-width:820px;
+      border-collapse:separate;
+      border-spacing:0;
+      background:#fff;
+    }
+    table.clean thead th{
+      position:sticky; top:0;
+      background:#f8fafc;
+      z-index:1;
+      text-align:center;
+      font-weight:900;
+      font-size:12px;
+      padding:10px 8px;
+      border-bottom:1px solid var(--grid);
+    }
+    table.clean th, table.clean td{
+      border-right:1px solid var(--grid);
+    }
+    table.clean thead th:last-child,
+    table.clean tbody td:last-child{border-right:none}
+
+    table.clean tbody td{
+      border-bottom:1px solid var(--grid);
+      padding:8px;
+      vertical-align:top;
+      background:#fff;
+    }
+    table.clean tbody tr:nth-child(even) td{
+      background:#fcfcfd;
+    }
+    .timeCell{
+      width:90px;
+      text-align:center;
+      font-weight:900;
+      color:#0f172a;
+      background:#fbfffe !important;
+    }
+
+    /* ช่องว่าง: ไม่มี + แล้ว แต่ทั้งช่องคลิกได้ */
+    .slotEmpty{
+      width:100%;
+      min-height:38px;
+      border:1px solid transparent;
+      border-radius:12px;
+      padding:8px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#94a3b8;
+      font-weight:900;
+      font-size:11px;
+      user-select:none;
+    }
+    .slotEmpty:hover{
+      background:var(--hover);
+      border-color:#e2e8f0;
+      color:#64748b;
+    }
+    .slotEmpty.noText{color:transparent}
+    .slotEmpty.noText::after{
+      content:'';
+      display:block;
+      width:100%;
+      height:22px;
+    }
+
+    /* การ์ดนัด */
+    .apptCard{
+      border-radius:14px;
+      padding:8px 10px;
+      border:1px solid rgba(15,23,42,.10);
+      box-shadow:0 10px 24px rgba(2,8,23,.08);
+      display:grid; gap:2px;
+      cursor:pointer;
+    }
+    .apptCard .name{font-weight:900;font-size:13px}
+    .apptCard .meta{font-size:11px;color:#334155;opacity:.85}
+    .apptCard .foot{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+    .tag{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:4px 8px;border-radius:999px;font-size:10px;font-weight:900;
+      border:1px solid rgba(0,0,0,.06);
+      background:rgba(255,255,255,.7);
+    }
+    .dot{width:8px;height:8px;border-radius:999px}
+    .old{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
+    .old .dot{background:#22c55e}
+    .guest{background:#fffbeb;border-color:#fde68a;color:#92400e}
+    .guest .dot{background:#f59e0b}
+
+    /* =========================
+       MONTHLY (คง iOS-style)
+       ========================= */
+    .iosMonthHeader{
+      display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap;
+      padding:6px 2px 10px;
+    }
+    .iosMonthHeader .monthTitle{font-size:28px;font-weight:900;letter-spacing:.2px}
+    .iosMonthHeader .todayBtn{font-weight:900;color:#ef4444;cursor:pointer;user-select:none}
+
+    .iosWeekHead{
+      display:grid;grid-template-columns:repeat(7,1fr);
+      border-top:1px solid var(--grid);border-bottom:1px solid var(--grid);
+      padding:8px 0;margin-top:6px;
+      color:#94a3b8;font-weight:900;font-size:12px;text-align:center;
+    }
+    .iosGrid{
+      display:grid;
+      grid-template-columns:repeat(7,1fr);
+      border-bottom:1px solid var(--grid);
+    }
+    .iosDay{
+      min-height:110px;
+      border-right:1px solid var(--grid);
+      border-top:1px solid var(--grid);
+      padding:8px 8px 10px;
+      background:#fff;
+      overflow:hidden;
+    }
+    .iosDay:nth-child(7n){border-right:none}
+    .iosDay .num{font-weight:900;font-size:16px;color:#0f172a}
+    .iosDay.muted .num{color:#cbd5e1}
+    .iosDay .events{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+
+    .eventPill{
+      display:flex;align-items:center;gap:6px;
+      padding:6px 8px;border-radius:8px;
+      font-weight:900;font-size:12px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .ev-green{background:#d9f2cc;color:#1f5e2b}
+    .ev-purple{background:#e9d5ff;color:#6b21a8}
+    .ev-blue{background:#cfe8ff;color:#0b4b7a}
+    .ev-brown{background:#ead8c5;color:#5a3a1a}
+    .eventPill .icon{
+      width:14px;height:14px;border-radius:4px;
+      display:inline-flex;align-items:center;justify-content:center;
+      font-size:10px;background:rgba(0,0,0,.12);flex:0 0 auto;
+    }
+
+    /* =========================
+       MODAL: เพิ่มนัดหมาย
+       ========================= */
+    .modal{
+      display:none;
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.45);
+      z-index:9999;
+      align-items:flex-end;
+      justify-content:center;
+      padding:10px;
+    }
+    .modal.show{display:flex}
+    .modal .box{
+      width:min(520px, 100%);
+      background:#fff;
+      border-radius:16px;
+      overflow:hidden;
+      box-shadow:0 12px 30px rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.25);
+    }
+    .modal .hdr{
+      background:#e0f2f1;
+      color:#004d40;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:12px 14px;
+      font-weight:900;
+      font-size:13px;
+    }
+    .modal .close{background:transparent;border:none;font-size:18px;cursor:pointer;color:#004d40}
+    .modal .body{padding:14px; display:grid; gap:10px}
+    .modal .ftr{
+      padding:12px 14px;
+      border-top:1px solid #eee;
+      display:flex; justify-content:flex-end; gap:8px;
+    }
+
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+    @media (max-width:640px){
+      .iosMonthHeader .monthTitle{font-size:26px}
+      .line{min-width:80px}
+      .line.medium{min-width:96px}
+      .grid2{grid-template-columns:1fr}
+    }
   </style>
 </head>
-<body class="min-h-full bg-gray-50 text-gray-900">
-  <div class="max-w-7xl mx-auto px-3 py-6">
-    <header class="mb-6">
-      <h1 class="text-2xl md:text-3xl font-bold">💍 Wedding Guest Check‑In — Realtime</h1>
-      <p class="text-sm text-gray-600">โต๊ะละ 10 ที่นั่ง • อัปเดตแบบเรียลไทม์ • ใช้ได้บนมือถือ/แท็บเล็ต</p>
-    </header>
 
-    <!-- CONFIG PANEL -->
-    <section class="mb-6 p-4 rounded-2xl bg-white shadow-sm border">
-      <details open>
-        <summary class="cursor-pointer font-semibold">🔧 ตั้งค่า (ครั้งแรก)</summary>
-        <div class="mt-3 grid md:grid-cols-3 gap-3">
-          <label class="block">
-            <span class="text-sm font-medium">จำนวนโต๊ะ (TABLE_COUNT)</span>
-            <input id="tableCountInput" type="number" min="1" value="12" class="mt-1 w-full rounded-xl border px-3 py-2" />
-          </label>
-          <label class="block">
-            <span class="text-sm font-medium">รหัสงาน/อีเวนต์ (EVENT_ID)</span>
-            <input id="eventIdInput" type="text" value="wedding001" class="mt-1 w-full rounded-xl border px-3 py-2" />
-          </label>
-          <div class="flex items-end gap-3">
-            <button id="applyConfigBtn" class="rounded-xl px-4 py-2 border bg-gray-100 hover:bg-gray-200">Apply</button>
-            <button id="seedDemoBtn" class="rounded-xl px-4 py-2 border bg-gray-100 hover:bg-gray-200">Seed Demo Guests</button>
+<body>
+
+  <div class="container">
+    <div class="headline">ระบบนัดหมาย & ตารางเวร</div>
+    <div class="sub-muted">
+      UI สะอาดตา เส้นบาง ไม่รก | คลิกช่องว่างเพื่อเพิ่มนัดได้ | บันทึกจริงลงเครื่อง (LocalStorage)
+    </div>
+
+    <div class="chips">
+      <span class="chip active" data-tab="daily">ตารางนัดรายวัน</span>
+      <span class="chip" data-tab="monthly">ตารางเวรรายเดือน</span>
+      <span class="chip" data-tab="settings">ตั้งค่า</span>
+    </div>
+
+    <!-- ================= TAB: DAILY ================= -->
+    <div class="panel active" id="panel-daily">
+      <div class="section">
+
+        <div class="paperControls">
+          <div class="group">
+            <div style="font-weight:900;color:#0b3d35">Daily Schedule</div>
+            <button class="btn btn-ghost" type="button" onclick="UI.dailyToday()">วันนี้</button>
+          </div>
+          <div class="group" style="min-width:240px;flex:1;justify-content:flex-end">
+            <input class="ipt" style="max-width:220px" type="date" id="dailyDate">
+            <button class="btn btn-primary" type="button" onclick="UI.openApptModal()">เพิ่มนัด</button>
           </div>
         </div>
-        <p class="mt-3 text-xs text-gray-500">หมายเหตุ: ระบบรองรับหลายงานผ่าน <code>EVENT_ID</code> ใช้ค่านี้เป็น namespace ของข้อมูล</p>
-      </details>
-    </section>
 
-    <!-- CHECK-IN PANEL -->
-    <section class="mb-6 grid lg:grid-cols-3 gap-6">
-      <div class="lg:col-span-1 p-4 rounded-2xl bg-white shadow-sm border">
-        <h2 class="text-lg font-semibold mb-3">🧾 เช็กอินแขก</h2>
-        <div class="space-y-3">
-          <label class="block">
-            <span class="text-sm">ค้นหาจากชื่อหรือโค้ดแขก</span>
-            <input id="searchInput" type="text" placeholder="เช่น พิชาญ หรือ GUEST-001" class="mt-1 w-full rounded-xl border px-3 py-2" />
-          </label>
-          <div class="flex gap-2">
-            <button id="searchBtn" class="rounded-xl px-4 py-2 bg-black text-white hover:opacity-90">ค้นหา</button>
-            <button id="clearSearchBtn" class="rounded-xl px-4 py-2 border">ล้าง</button>
-          </div>
-
-          <div id="resultCard" class="hidden mt-3 p-3 rounded-xl border">
-            <div class="flex justify-between items-start gap-2">
-              <div>
-                <div class="font-semibold" id="rName">ชื่อแขก</div>
-                <div class="text-xs text-gray-500" id="rId">ID</div>
-                <div class="text-sm mt-1" id="rStatus">สถานะ: -</div>
-                <div class="text-sm" id="rSeat">ที่นั่ง: -</div>
-              </div>
-              <div class="flex flex-col gap-2">
-                <button id="checkinBtn" class="rounded-lg px-3 py-2 bg-emerald-600 text-white hover:bg-emerald-700">เช็กอิน</button>
-                <button id="undoCheckinBtn" class="rounded-lg px-3 py-2 bg-amber-600 text-white hover:bg-amber-700">ยกเลิกเช็กอิน</button>
-              </div>
+        <div class="paperWrap" style="margin-top:10px;">
+          <div class="paperHeader">
+            <div class="left">
+              <span class="paperTitle">ตารางนัดลูกค้า</span>
+              <span class="lineField">วัน <span class="line small" id="hdrDay">ศุกร์</span></span>
+              <span class="lineField">ที่ <span class="line small" id="hdrDateNum">2</span></span>
+              <span class="lineField">เดือน <span class="line medium" id="hdrMonth">มกราคม</span></span>
             </div>
-            <div class="mt-3 grid grid-cols-2 gap-2">
-              <input id="manualTable" type="number" min="1" class="rounded-lg border px-2 py-1" placeholder="โต๊ะ (ไม่บังคับ)" />
-              <input id="manualSeat" type="number" min="1" max="10" class="rounded-lg border px-2 py-1" placeholder="ที่นั่ง (1-10)" />
-              <button id="assignSeatBtn" class="col-span-2 rounded-lg px-3 py-2 border">กำหนดโต๊ะ/ที่นั่ง</button>
+            <div class="right">
+              <span class="lineField">หมอเข้าเวลา <span class="line small" id="hdrDoctorTime">11:00</span></span>
             </div>
           </div>
 
-          <details class="mt-4">
-            <summary class="font-medium cursor-pointer">➕ เพิ่มแขก (Walk‑in)</summary>
-            <div class="mt-2 grid grid-cols-2 gap-2">
-              <input id="newName" class="rounded-lg border px-2 py-1" placeholder="ชื่อแขก" />
-              <input id="newId" class="rounded-lg border px-2 py-1" placeholder="โค้ดแขก (อัตโนมัติได้)" />
-              <button id="addGuestBtn" class="col-span-2 rounded-lg px-3 py-2 bg-blue-600 text-white hover:bg-blue-700">เพิ่มแขก</button>
-            </div>
-          </details>
+          <div class="tableScroll">
+            <table class="clean" id="dailyTable">
+              <thead>
+                <tr>
+                  <th style="width:90px">เวลา</th>
+                  <th>เคสแพทย์</th>
+                  <th>เคสแพทย์</th>
+                  <th>เคสพยาบาล<br><span style="font-weight:700;font-size:11px;color:#64748b">Treatment</span></th>
+                  <th>เคสพยาบาล<br><span style="font-weight:700;font-size:11px;color:#64748b">IV, PRP</span></th>
+                </tr>
+              </thead>
+              <tbody id="dailyBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ================= TAB: MONTHLY ================= -->
+    <div class="panel" id="panel-monthly">
+      <div class="section card">
+        <div class="iosMonthHeader">
+          <div class="monthTitle" id="monthTitle">ธันวาคม 2568</div>
+          <div class="todayBtn" onclick="UI.monthToday()">วันนี้</div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;align-items:center">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input class="ipt" style="max-width:200px" type="month" id="monthPicker">
+            <button class="btn btn-ghost" type="button" onclick="UI.renderMonth()">โหลดเดือน</button>
+          </div>
+          <button class="btn btn-primary" type="button" onclick="UI.copyWeekMock()">Copy เวร</button>
+        </div>
+
+        <div class="iosWeekHead">
+          <div>อา.</div><div>จ.</div><div>อ.</div><div>พ.</div><div>พฤ.</div><div>ศ.</div><div>ส.</div>
+        </div>
+
+        <div class="iosGrid" id="iosGrid"></div>
+      </div>
+    </div>
+
+    <!-- ================= TAB: SETTINGS ================= -->
+    <div class="panel" id="panel-settings">
+      <div class="section card">
+        <div style="font-weight:900;color:#0b3d35;margin-bottom:8px">ตั้งค่า (placeholder)</div>
+        <div class="sub-muted">เดี๋ยวผูกกับฐานข้อมูลภายหลัง</div>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+
+  <!-- ================= Modal: เพิ่ม/แก้นัดหมาย ================= -->
+  <div class="modal" id="apptModal" onclick="UI.closeOnBackdrop(event,'apptModal')">
+    <div class="box" onclick="event.stopPropagation()">
+      <div class="hdr">
+        <div>เพิ่มนัดหมาย</div>
+        <button class="close" onclick="UI.closeModal('apptModal')">✕</button>
+      </div>
+
+      <div class="body">
+        <div class="sub-muted" style="font-size:11px">
+          ตอนนี้บันทึกลงเครื่อง (LocalStorage) เพื่อให้ใช้ได้จริงทันที เดี๋ยวค่อยย้ายไป Supabase ภายหลัง
+        </div>
+
+        <div>
+          <label style="font-weight:800;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ประเภทลูกค้า</label>
+          <select class="ipt" id="apptType">
+            <option value="existing">ลูกค้าเก่า (Existing)</option>
+            <option value="guest">ลูกค้าใหม่ (Guest / Walk-in)</option>
+          </select>
+        </div>
+
+        <div id="existingBox">
+          <label style="font-weight:800;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ค้นหาลูกค้า (ชื่อ/เบอร์)</label>
+          <input class="ipt" id="custSearch" placeholder="พิมพ์ชื่อเพื่อใช้เป็นชื่อในตาราง (ยังไม่ผูกค้นหา)">
+          <div class="sub-muted" style="font-size:11px">ถ้าจะผูกค้นหา จะยิงไป /api/customers แล้วทำ autocomplete ได้</div>
+        </div>
+
+        <div id="guestBox" style="display:none">
+          <label style="font-weight:800;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ชื่อลูกค้าใหม่</label>
+          <input class="ipt" id="guestName" placeholder="กรอกชื่อ">
+          <label style="font-weight:800;color:#334155;font-size:12px;margin:10px 0 4px;display:block">เบอร์โทร (ไม่บังคับ)</label>
+          <input class="ipt" id="guestPhone" placeholder="กรอกเบอร์">
+        </div>
+
+        <div class="grid2">
+          <div>
+            <label style="font-weight:800;color:#334155;font-size:12px;margin:2px 0 4px;display:block">วันที่นัด</label>
+            <input type="date" class="ipt" id="apptDate">
+          </div>
+          <div>
+            <label style="font-weight:800;color:#334155;font-size:12px;margin:2px 0 4px;display:block">เวลาเริ่ม</label>
+            <input type="time" class="ipt" id="apptTime" value="11:00">
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div>
+            <label style="font-weight:800;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ลงช่อง</label>
+            <select class="ipt" id="apptCol">
+              <option value="1">เคสแพทย์ (1)</option>
+              <option value="2">เคสแพทย์ (2)</option>
+              <option value="3">เคสพยาบาล (Treatment)</option>
+              <option value="4">เคสพยาบาล (IV, PRP)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-weight:800;color:#334155;font-size:12px;margin:2px 0 4px;display:block">หัตถการ/บริการ</label>
+            <input class="ipt" id="apptService" placeholder="เช่น Botox / IV / Consult">
+          </div>
+        </div>
+
+        <div>
+          <label style="font-weight:800;color:#334155;font-size:12px;margin:2px 0 4px;display:block">หมายเหตุ</label>
+          <textarea class="ipt" id="apptNote" rows="3" placeholder="เพิ่มโน้ต..."></textarea>
         </div>
       </div>
 
-      <!-- DASHBOARD -->
-      <div class="lg:col-span-2 p-4 rounded-2xl bg-white shadow-sm border">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold">📊 แผงโต๊ะ (Realtime)</h2>
-          <div class="text-sm text-gray-600">รวม: <span id="totalGuests">0</span> คน • เช็กอินแล้ว: <span id="checkedInCount">0</span> คน</div>
-        </div>
-        <div id="tablesGrid" class="mt-3 grid md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+      <div class="ftr">
+        <button class="btn btn-ghost" type="button" onclick="UI.closeModal('apptModal')">ยกเลิก</button>
+        <button class="btn btn-primary" type="button" onclick="UI.saveApptMock()">บันทึก</button>
       </div>
-    </section>
-
-    <footer class="mt-8 text-center text-xs text-gray-500">
-      สร้างด้วย Firebase Firestore & Tailwind • อัปเดตข้อมูลแบบ Real‑time • สำหรับงานแต่งหรืองานเลี้ยงที่นั่งโต๊ะละ 10 คน
-    </footer>
+    </div>
   </div>
 
-  <!-- Firebase v10 (Modular SDK) -->
-  <script type="module">
-    // 1) ใส่ค่า config ของ Firebase โปรเจกต์คุณ (จาก Firebase Console > Project settings > SDK setup)
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID",
-    };
+  <script>
+    // ---------------- Helpers ----------------
+    function pad2(n){ return String(n).padStart(2,'0'); }
+    function toHHMM(mins){
+      const h=Math.floor(mins/60), m=mins%60;
+      return `${pad2(h)}:${pad2(m)}`;
+    }
+    function escapeHtml(s){
+      return String(s ?? '')
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+    function uuid(){
+      try{
+        if (crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+      }catch(_){}
+      // fallback
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
 
-    // 2) กำหนดค่าเริ่มต้น (แก้ได้จาก UI ด้านบน)
-    let TABLE_COUNT = 12; // จำนวนโต๊ะ
-    let EVENT_ID = 'wedding001'; // namespace ของงาน
+    // =========================
+    // Appointments Store (LocalStorage)
+    // =========================
+    const ApptStore = {
+      key: 'CLINIC_APPTS_V1',
 
-    // --- Firebase imports ---
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
-    import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, onSnapshot, query, where, serverTimestamp, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
+      _load(){
+        try{
+          const raw = localStorage.getItem(this.key);
+          const arr = raw ? JSON.parse(raw) : [];
+          return Array.isArray(arr) ? arr : [];
+        }catch(_){
+          return [];
+        }
+      },
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+      _save(arr){
+        localStorage.setItem(this.key, JSON.stringify(arr));
+      },
 
-    // Collections
-    const guestsCol = () => collection(db, 'events', EVENT_ID, 'guests');
+      listByDate(date){
+        const arr = this._load();
+        return arr
+          .filter(a => a && a.date === date)
+          .sort((a,b) => (a.time||'').localeCompare(b.time||''));
+      },
 
-    // --- DOM helpers ---
-    const $ = (id) => document.getElementById(id);
-    const toast = (msg) => {
-      const el = document.createElement('div');
-      el.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 bg-black text-white text-sm px-3 py-2 rounded-xl shadow';
-      el.textContent = msg;
-      document.body.appendChild(el);
-      setTimeout(() => el.remove(), 1800);
-    };
+      upsert(appt){
+        const arr = this._load();
+        const i = arr.findIndex(x => x.id === appt.id);
+        if(i >= 0) arr[i] = appt;
+        else arr.push(appt);
+        this._save(arr);
+      },
 
-    // --- Config UI ---
-    const applyConfig = () => {
-      TABLE_COUNT = Math.max(1, parseInt($("tableCountInput").value || '1', 10));
-      EVENT_ID = $("eventIdInput").value.trim() || 'wedding001';
-      renderTablesSkeleton();
-      attachRealtime();
-      toast('Applied settings');
-    };
-
-    $("applyConfigBtn").addEventListener('click', applyConfig);
-
-    // --- Seed demo data ---
-    $("seedDemoBtn").addEventListener('click', async () => {
-      if (!confirm('สร้างรายชื่อเดโม่ 30 คนไหม?')) return;
-      const names = Array.from({length: 30}, (_,i) => `แขกคนที่ ${i+1}`);
-      let t = 1, s = 1;
-      for (const name of names) {
-        const id = `GUEST-${String(Math.floor(Math.random()*999999)).padStart(6,'0')}`;
-        await setDoc(doc(guestsCol(), id), {
-          name, guestId: id, status: 'invited', tableNo: t, seatNo: s, createdAt: serverTimestamp(), checkedInAt: null
-        });
-        s++; if (s>10){ s=1; t++; if (t>TABLE_COUNT) t=1; }
+      remove(id){
+        const arr = this._load().filter(x => x.id !== id);
+        this._save(arr);
       }
-      toast('Seeded demo guests');
-    });
+    };
 
-    // --- Render tables ---
-    const tablesGrid = $("tablesGrid");
-    const renderTablesSkeleton = () => {
-      tablesGrid.innerHTML = '';
-      for (let i=1; i<=TABLE_COUNT; i++) {
-        const card = document.createElement('div');
-        card.className = 'border rounded-2xl p-3';
-        card.innerHTML = `
-          <div class="flex items-center justify-between mb-2">
-            <div class="font-semibold">โต๊ะ ${i}</div>
-            <div class="text-xs text-gray-500">เหลือที่นั่ง: <span id="remain-${i}">10</span>/10</div>
-          </div>
-          <ol id="seats-${i}" class="grid grid-cols-5 gap-2"></ol>
+    function apptClass(type){
+      return type === 'guest' ? 'guest' : 'old';
+    }
+    function apptTypeLabel(type){
+      return type === 'guest' ? 'ลูกค้าใหม่' : 'ลูกค้าเก่า';
+    }
+
+    // ---------------- Tabs + UI ----------------
+    const UI = {
+      _editingApptId: null,
+
+      goto(tab){
+        document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+        document.querySelector(`.chip[data-tab="${tab}"]`)?.classList.add('active');
+
+        document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+        document.getElementById(`panel-${tab}`)?.classList.add('active');
+      },
+      openModal(id){ document.getElementById(id)?.classList.add('show'); },
+      closeModal(id){
+        document.getElementById(id)?.classList.remove('show');
+        if(id === 'apptModal') UI._editingApptId = null;
+      },
+      closeOnBackdrop(e,id){ if(e.target && e.target.id===id) UI.closeModal(id); },
+
+      _syncModalFooterButtons(){
+        const ftr = document.querySelector('#apptModal .ftr');
+        if(!ftr) return;
+
+        const delBtn = UI._editingApptId
+          ? `<button class="btn" type="button" style="border-color:#fecaca;color:#b91c1c;background:#fff" onclick="UI.deleteEditingAppt()">ลบ</button>`
+          : ``;
+
+        const saveText = UI._editingApptId ? 'บันทึกการแก้ไข' : 'บันทึก';
+
+        ftr.innerHTML = `
+          <button class="btn btn-ghost" type="button" onclick="UI.closeModal('apptModal')">ยกเลิก</button>
+          ${delBtn}
+          <button class="btn btn-primary" type="button" onclick="UI.saveApptMock()">${saveText}</button>
         `;
-        tablesGrid.appendChild(card);
-        const ol = card.querySelector(`#seats-${i}`);
-        for (let seat=1; seat<=10; seat++) {
-          const li = document.createElement('li');
-          li.innerHTML = `
-            <div class="p-2 border rounded-xl h-full">
-              <div class="seat-badge bg-gray-100">${seat}</div>
-              <div class="mt-1 text-xs" id="seatname-${i}-${seat}">ว่าง</div>
-              <div class="text-[10px] text-gray-500" id="seatstatus-${i}-${seat}"></div>
-            </div>
-          `;
-          ol.appendChild(li);
-        }
-      }
-    };
+      },
 
-    renderTablesSkeleton();
+      deleteEditingAppt(){
+        if(!UI._editingApptId) return;
+        if(!confirm('ลบนัดนี้ใช่ไหม?')) return;
+        ApptStore.remove(UI._editingApptId);
+        UI._editingApptId = null;
+        UI.closeModal('apptModal');
+        renderDailyTable();
+      },
 
-    // --- Realtime subscription ---
-    let unsubscribe = null;
-    const attachRealtime = () => {
-      if (unsubscribe) unsubscribe();
-      // Listen to all guests of this EVENT_ID; filter client-side.
-      unsubscribe = onSnapshot(guestsCol(), (snap) => {
-        // Reset counts
-        const counts = Array.from({length: TABLE_COUNT+1}, () => ({ used: 0 }));
-        let total = 0, checkedIn = 0;
-        // Clear seats
-        for (let t=1; t<=TABLE_COUNT; t++){
-          for (let s=1; s<=10; s++){
-            const nameEl = $("seatname-"+t+"-"+s);
-            const stEl = $("seatstatus-"+t+"-"+s);
-            if (nameEl) nameEl.textContent = 'ว่าง';
-            if (stEl) stEl.textContent = '';
+      // เปิด modal เพิ่ม/แก้นัด
+      openApptModal(prefill={}){
+        UI._editingApptId = prefill.id || null;
+
+        const d = prefill.date || document.getElementById('dailyDate')?.value || new Date().toISOString().slice(0,10);
+        document.getElementById('apptDate').value = d;
+
+        document.getElementById('apptTime').value = prefill.time || document.getElementById('apptTime').value || '11:00';
+        document.getElementById('apptCol').value  = String(prefill.col || document.getElementById('apptCol').value || '1');
+
+        // type
+        document.getElementById('apptType').value = prefill.type || 'existing';
+        document.getElementById('existingBox').style.display = (document.getElementById('apptType').value==='existing') ? '' : 'none';
+        document.getElementById('guestBox').style.display = (document.getElementById('apptType').value==='guest') ? '' : 'none';
+
+        // fill
+        document.getElementById('custSearch').value = (prefill.type === 'existing') ? (prefill.name || '') : '';
+        document.getElementById('guestName').value  = (prefill.type === 'guest') ? (prefill.name || '') : '';
+        document.getElementById('guestPhone').value = (prefill.type === 'guest') ? (prefill.phone || '') : '';
+
+        document.getElementById('apptService').value = prefill.service || '';
+        document.getElementById('apptNote').value    = prefill.note || '';
+
+        UI.openModal('apptModal');
+        UI._syncModalFooterButtons();
+      },
+
+      // บันทึกจริงลง LocalStorage
+      saveApptMock(){
+        try{
+          const type = document.getElementById('apptType').value;
+
+          const date = (document.getElementById('apptDate').value || '').trim();
+          const time = (document.getElementById('apptTime').value || '').trim();
+          const col  = parseInt(document.getElementById('apptCol').value || '1', 10);
+
+          const service = (document.getElementById('apptService').value || '').trim();
+          const note    = (document.getElementById('apptNote').value || '').trim();
+
+          let name = '';
+          let phone = '';
+
+          if(type === 'guest'){
+            name  = (document.getElementById('guestName').value || '').trim();
+            phone = (document.getElementById('guestPhone').value || '').trim();
+          }else{
+            name = (document.getElementById('custSearch').value || '').trim();
+            phone = '';
           }
+
+          if(!date) return alert('กรุณาเลือกวันที่นัด');
+          if(!time) return alert('กรุณาเลือกเวลา');
+          if(!name) return alert('กรุณากรอกชื่อ/ค้นหาลูกค้า');
+
+          const appt = {
+            id: UI._editingApptId || uuid(),
+            date, time, col,
+            type, name, phone,
+            service, note,
+            status: 'PENDING',
+            updatedAt: new Date().toISOString()
+          };
+
+          ApptStore.upsert(appt);
+
+          UI.closeModal('apptModal');
+
+          // รีเฟรชตารางของวันที่เลือก
+          renderDailyTable();
+        }catch(e){
+          console.error(e);
+          alert('บันทึกไม่สำเร็จ');
         }
-        // Fill
-        snap.forEach(docSnap => {
-          const g = docSnap.data();
-          if (!g || g.tableNo == null || g.seatNo == null) return;
-          if (g.tableNo < 1 || g.tableNo > TABLE_COUNT) return;
-          const nameEl = $("seatname-"+g.tableNo+"-"+g.seatNo);
-          const stEl = $("seatstatus-"+g.tableNo+"-"+g.seatNo);
-          if (nameEl) nameEl.textContent = g.name || g.guestId;
-          if (stEl) stEl.textContent = (g.status === 'checked-in') ? 'เช็กอินแล้ว' : 'ยังไม่เช็กอิน';
-          counts[g.tableNo].used++;
-          total++;
-          if (g.status === 'checked-in') checkedIn++;
-        });
-        for (let t=1; t<=TABLE_COUNT; t++){
-          const remainEl = $("remain-"+t);
-          if (remainEl) remainEl.textContent = String(10 - (counts[t].used||0));
-        }
-        $("totalGuests").textContent = String(total);
-        $("checkedInCount").textContent = String(checkedIn);
-      });
+      },
+
+      dailyToday(){
+        const d = new Date();
+        const ymd = d.toISOString().slice(0,10);
+        document.getElementById('dailyDate').value = ymd;
+        applyDailyHeaderFromDate(ymd);
+        renderDailyTable();
+      },
+      monthToday(){
+        const d = new Date();
+        document.getElementById('monthPicker').value = d.toISOString().slice(0,7);
+        UI.renderMonth();
+      },
+      copyWeekMock(){ alert('Copy เวร (เดี๋ยวผูก API)'); },
+
+      renderMonth(){ renderIOSCalendar(); }
     };
 
-    attachRealtime();
-
-    // --- Search ---
-    let currentGuestDocRef = null;
-    const showResult = (g, ref) => {
-      $("resultCard").classList.remove('hidden');
-      $("rName").textContent = g.name || '-';
-      $("rId").textContent = g.guestId || ref.id;
-      $("rStatus").textContent = 'สถานะ: ' + (g.status || 'invited');
-      $("rSeat").textContent = 'ที่นั่ง: ' + (g.tableNo ? `โต๊ะ ${g.tableNo} / ที่ ${g.seatNo||'-'}` : '-');
-      currentGuestDocRef = ref;
-    };
-
-    $("searchBtn").addEventListener('click', async () => {
-      const term = $("searchInput").value.trim();
-      if (!term) return toast('กรอกคำค้นหา');
-      // Try by exact guestId first
-      let ref = doc(guestsCol(), term);
-      let snap = await getDoc(ref);
-      if (snap.exists()) return showResult(snap.data(), ref);
-      // fallback: scan all (small data)
-      const all = await getDocs(guestsCol());
-      const found = all.docs.find(d => (d.data().name||'').includes(term));
-      if (found) return showResult(found.data(), found.ref);
-      toast('ไม่พบแขกที่ค้นหา');
+    document.querySelectorAll('.chip[data-tab]').forEach(ch=>{
+      ch.addEventListener('click', ()=>UI.goto(ch.getAttribute('data-tab')));
     });
 
-    $("clearSearchBtn").addEventListener('click', () => {
-      $("resultCard").classList.add('hidden');
-      $("searchInput").value = '';
-      currentGuestDocRef = null;
+    // ---------------- Modal type switch ----------------
+    const apptType = document.getElementById('apptType');
+    apptType.addEventListener('change', ()=>{
+      const v = apptType.value;
+      document.getElementById('existingBox').style.display = (v==='existing') ? '' : 'none';
+      document.getElementById('guestBox').style.display = (v==='guest') ? '' : 'none';
+      UI._syncModalFooterButtons();
     });
 
-    // --- Add Guest (walk-in) ---
-    $("addGuestBtn").addEventListener('click', async () => {
-      const name = $("newName").value.trim();
-      let id = $("newId").value.trim();
-      if (!name) return toast('กรอกชื่อแขก');
-      if (!id) id = 'GUEST-' + Math.random().toString(36).slice(2,8).toUpperCase();
-      const ref = doc(guestsCol(), id);
-      await setDoc(ref, { name, guestId: id, status: 'invited', tableNo: null, seatNo: null, createdAt: serverTimestamp(), checkedInAt: null });
-      toast('เพิ่มแขกแล้ว');
-      $("newName").value = ''; $("newId").value='';
-      showResult({ name, guestId: id, status: 'invited', tableNo: null, seatNo: null }, ref);
-    });
+    // ---------------- Daily Table (ไม่มี + แต่คลิกได้ และโชว์นัดจริง) ----------------
+    function renderDailyTable(){
+      const tbody = document.getElementById('dailyBody');
+      tbody.innerHTML='';
 
-    // --- Seat assignment helpers ---
-    async function findFirstAvailableSeat(tx) {
-      // Simple client-side scan under transaction: get all guests then compute availability
-      const all = await getDocs(guestsCol());
-      const used = new Map(); // key `${t}-${s}`
-      all.forEach(d => {
-        const g = d.data();
-        if (g.tableNo && g.seatNo) used.set(`${g.tableNo}-${g.seatNo}`, true);
-      });
-      for (let t=1; t<=TABLE_COUNT; t++){
-        let count = 0;
-        for (let s=1; s<=10; s++){
-          if (!used.has(`${t}-${s}`)) return { t, s };
-          count++;
+      const dateSel = document.getElementById('dailyDate')?.value || new Date().toISOString().slice(0,10);
+      const appts = ApptStore.listByDate(dateSel);
+
+      const start = 11*60;
+      const end   = 19*60;
+      const step  = 30;
+
+      for(let t=start; t<=end; t+=step){
+        const tr=document.createElement('tr');
+
+        const tdTime=document.createElement('td');
+        tdTime.className='timeCell';
+        tdTime.textContent = toHHMM(t).replace(':','.');
+        tr.appendChild(tdTime);
+
+        for(let col=1; col<=4; col++){
+          const td=document.createElement('td');
+
+          const found = appts.find(a => (a.time === toHHMM(t)) && (Number(a.col) === Number(col)));
+
+          if(found){
+            td.innerHTML = `
+              <div class="apptCard ${apptClass(found.type)}">
+                <div class="name">${escapeHtml(found.name || '')}</div>
+                <div class="meta">${escapeHtml(found.service || '—')} • ${escapeHtml(found.status || 'PENDING')}</div>
+                <div class="foot">
+                  <span class="tag ${apptClass(found.type)}"><span class="dot"></span>${apptTypeLabel(found.type)}</span>
+                  <span style="font-size:11px;font-weight:900;opacity:.85">${escapeHtml(found.phone || '')}</span>
+                </div>
+              </div>
+            `;
+            td.querySelector('.apptCard')?.addEventListener('click', (e)=>{
+              e.stopPropagation();
+              UI.openApptModal(found);
+            });
+          }else{
+            const empty=document.createElement('div');
+            empty.className='slotEmpty';
+            empty.textContent='';
+            empty.onclick=()=>UI.openApptModal({
+              time: toHHMM(t),
+              col,
+              date: document.getElementById('dailyDate').value
+            });
+            td.appendChild(empty);
+          }
+
+          tr.appendChild(td);
         }
+
+        tbody.appendChild(tr);
       }
-      return null; // full
     }
 
-    async function assignSeatTransaction(guestRef, preferredTable=null, preferredSeat=null) {
-      return await runTransaction(db, async (tx) => {
-        const guestSnap = await tx.get(guestRef);
-        if (!guestSnap.exists()) throw new Error('Guest not found');
-        const g = guestSnap.data();
+    // ถ้าอยากให้ “ช่องว่างโล่งๆไม่มีคำว่าว่าง” ให้เปิดบรรทัดนี้:
+    // document.addEventListener('DOMContentLoaded', ()=>document.querySelectorAll('.slotEmpty').forEach(x=>x.classList.add('noText')));
 
-        // If already has seat, keep (unless admin provides a new seat)
-        let targetTable = g.tableNo ?? null;
-        let targetSeat = g.seatNo ?? null;
+    // ---------------- Daily header ----------------
+    const TH_DAYS = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+    const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
-        if (preferredTable) targetTable = preferredTable;
-        if (preferredSeat) targetSeat = preferredSeat;
+    function applyDailyHeaderFromDate(ymd){
+      if(!ymd) return;
+      const d = new Date(ymd + 'T00:00:00');
+      if(isNaN(d)) return;
 
-        if (!targetTable || !targetSeat) {
-          const spot = await findFirstAvailableSeat(tx);
-          if (!spot) throw new Error('ทุกโต๊ะเต็มแล้ว');
-          targetTable = targetTable || spot.t;
-          targetSeat = targetSeat || spot.s;
-        }
+      document.getElementById('hdrDay').textContent = TH_DAYS[d.getDay()];
+      document.getElementById('hdrDateNum').textContent = String(d.getDate());
+      document.getElementById('hdrMonth').textContent = TH_MONTHS[d.getMonth()];
+      document.getElementById('hdrDoctorTime').textContent = '11:00';
+    }
 
-        // Validate chosen seat is free
-        const all = await getDocs(guestsCol());
-        const clash = all.docs.find(d => {
-          const x = d.data();
-          return x.tableNo === targetTable && x.seatNo === targetSeat && d.id !== guestRef.id;
-        });
-        if (clash) throw new Error(`ที่นั่งไม่ว่าง (โต๊ะ ${targetTable} / ที่ ${targetSeat})`);
+    // ---------------- Monthly calendar (เดิม) ----------------
+    function thYear(y){ return y + 543; }
+    function renderIOSCalendar(){
+      const grid = document.getElementById('iosGrid');
+      grid.innerHTML='';
 
-        tx.update(guestRef, { tableNo: targetTable, seatNo: targetSeat });
-        return { tableNo: targetTable, seatNo: targetSeat };
+      const mp = document.getElementById('monthPicker');
+      const ym = mp.value || new Date().toISOString().slice(0,7);
+      const [Y,M] = ym.split('-').map(Number);
+
+      const first = new Date(Y, M-1, 1);
+      const last  = new Date(Y, M, 0);
+
+      document.getElementById('monthTitle').textContent = `${TH_MONTHS[M-1]} ${thYear(Y)}`;
+
+      const firstDow = first.getDay(); // 0=อาทิตย์
+      for(let i=0;i<firstDow;i++){
+        const b=document.createElement('div');
+        b.className='iosDay muted';
+        b.innerHTML=`<div class="num"></div>`;
+        grid.appendChild(b);
+      }
+
+      const mock = {
+        3: [{cls:'ev-purple',icon:'👩',text:'พยาบาล16.30-18.30'},{cls:'ev-green',icon:'🩺',text:'Dr.Palmy'}],
+        4: [{cls:'ev-green',icon:'🩺',text:'Dr.Palmy'}],
+        6: [{cls:'ev-green',icon:'🩺',text:'Dr.Palmy'}],
+        7: [{cls:'ev-purple',icon:'👩',text:'พยาบาล13.30-15.30'},{cls:'ev-green',icon:'🩺',text:'Dr.Palmy'}],
+        8: [{cls:'ev-blue',icon:'📘',text:'Dion 14.00-1...'}],
+        11:[{cls:'ev-purple',icon:'👩',text:'พยาบาล16.30-18.30'},{cls:'ev-green',icon:'🩺',text:'Dr.Palmy'}],
+        12:[{cls:'ev-brown',icon:'☕',text:'Cinder13.30'}],
+      };
+
+      for(let d=1; d<=last.getDate(); d++){
+        const box=document.createElement('div');
+        box.className='iosDay';
+        box.onclick=()=>alert(`จัดเวรวันที่ ${d}/${M}/${thYear(Y)} (เดี๋ยวผูก modal)`);
+
+        const ev=(mock[d]||[]).map(e=>`
+          <div class="eventPill ${e.cls}" title="${escapeHtml(e.text)}">
+            <span class="icon">${escapeHtml(e.icon)}</span>
+            <span style="overflow:hidden;text-overflow:ellipsis">${escapeHtml(e.text)}</span>
+          </div>
+        `).join('');
+
+        box.innerHTML = `<div class="num">${d}</div><div class="events">${ev}</div>`;
+        grid.appendChild(box);
+      }
+    }
+
+    // ---------------- Init ----------------
+    (function init(){
+      const today = new Date();
+      const ymd = today.toISOString().slice(0,10);
+
+      document.getElementById('dailyDate').value = ymd;
+      applyDailyHeaderFromDate(ymd);
+      renderDailyTable();
+
+      document.getElementById('monthPicker').value = today.toISOString().slice(0,7);
+      renderIOSCalendar();
+
+      document.getElementById('dailyDate').addEventListener('change', (e)=>{
+        applyDailyHeaderFromDate(e.target.value);
+        renderDailyTable();
       });
-    }
-
-    // --- Actions on current guest ---
-    $("assignSeatBtn").addEventListener('click', async () => {
-      if (!currentGuestDocRef) return toast('ยังไม่ได้เลือกแขก');
-      const t = parseInt($("manualTable").value || '0', 10) || null;
-      const s = parseInt($("manualSeat").value || '0', 10) || null;
-      try {
-        const seat = await assignSeatTransaction(currentGuestDocRef, t, s);
-        toast(`กำหนดที่นั่งแล้ว: โต๊ะ ${seat.tableNo} / ที่ ${seat.seatNo}`);
-      } catch(e){ toast(e.message); }
-    });
-
-    $("checkinBtn").addEventListener('click', async () => {
-      if (!currentGuestDocRef) return toast('ยังไม่ได้เลือกแขก');
-      try {
-        // Ensure seat exists
-        const seat = await assignSeatTransaction(currentGuestDocRef);
-        await updateDoc(currentGuestDocRef, { status: 'checked-in', checkedInAt: serverTimestamp() });
-        toast(`เช็กอินสำเร็จ • โต๊ะ ${seat.tableNo} / ที่ ${seat.seatNo}`);
-      } catch(e){ toast(e.message); }
-    });
-
-    $("undoCheckinBtn").addEventListener('click', async () => {
-      if (!currentGuestDocRef) return toast('ยังไม่ได้เลือกแขก');
-      await updateDoc(currentGuestDocRef, { status: 'invited', checkedInAt: null });
-      toast('ยกเลิกเช็กอินแล้ว');
-    });
-
-    // --- Init from controls
-    // (Keep defaults rendered; admin can Apply later)
+      document.getElementById('monthPicker').addEventListener('change', ()=>renderIOSCalendar());
+    })();
   </script>
+
+  {% include "floating_menu.html" %}
 </body>
 </html>

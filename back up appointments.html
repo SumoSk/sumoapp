@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ตารางนัด & ตารางเวร</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --teal:#0f766e; --teal-600:#0d9488;
+      --bg:#f7faf9; --card:#ffffff; --line:#e5e7eb;
+      --text:#0f172a; --muted:#6b7280;
+      --shadow:0 8px 24px rgba(2,8,23,.06);
+
+      --radius:16px;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      font-family:'Prompt','Segoe UI',sans-serif;
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      padding:10px 10px 120px; /* เผื่อ floating menu */
+      font-size:12px; /* mobile-first */
+    }
+
+    .container{
+      max-width:1280px;
+      margin:12px auto;
+      background:#fff;
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:14px;
+    }
+
+    /* ========== Header + Tabs (chip) ========== */
+    .headline{font-size:18px;font-weight:800;color:#0b7660;margin:0 0 6px}
+    .sub-muted{color:var(--muted);font-size:12px;margin-top:-2px;line-height:1.35}
+
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .chip{
+      padding:8px 12px;
+      border:1px solid #a7e1da;
+      border-radius:999px;
+      background:#fff;
+      color:#0b7660;
+      font-size:12px;
+      cursor:pointer;
+      font-weight:800;
+      user-select:none;
+    }
+    .chip.active{background:#0b7660;color:#fff}
+
+    .panel{display:none}
+    .panel.active{display:block}
+
+    /* ========== Cards ========== */
+    .card{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+    }
+    .section{margin:12px 0 16px}
+
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; gap:6px;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid #a7e1da;
+      background:#fff;
+      color:#0b7660;
+      cursor:pointer;
+      font-weight:800;
+      font-size:12px;
+    }
+    .btn-primary{border-color:transparent;background:var(--teal-600);color:#fff}
+    .btn-ghost{background:#f1f5f9;border-color:#e5e7eb;color:#0f172a}
+
+    .ipt{
+      width:100%;
+      padding:10px 12px;
+      border:1px solid #d1d5db;
+      border-radius:10px;
+      background:#fff;
+      font-size:13px;
+      -webkit-appearance:none; appearance:none;
+      font-family:inherit;
+    }
+
+    /* ==========================================================
+       TAB 1: DAILY SCHEDULE (ให้เหมือนกระดาษ)
+       ========================================================== */
+    .paperWrap{
+      border:2px solid #111;
+      border-radius:8px;
+      overflow:hidden;
+      background:#fff;
+    }
+
+    /* หัวกระดาษ: "ตารางนัดลูกค้า วัน...ที่... เดือน... หมอเข้าเวลา..." */
+    .paperHeader{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:10px;
+      padding:10px 10px 8px;
+      border-bottom:2px solid #111;
+      flex-wrap:wrap;
+    }
+    .paperHeader .left{
+      display:flex;
+      gap:10px;
+      align-items:flex-end;
+      flex-wrap:wrap;
+      font-weight:700;
+      color:#111;
+    }
+    .paperTitle{
+      font-weight:800;
+      font-size:13px;
+      margin-right:6px;
+    }
+    .lineField{
+      display:inline-flex;
+      align-items:flex-end;
+      gap:6px;
+      white-space:nowrap;
+      font-size:12px;
+    }
+    .line{
+      display:inline-block;
+      min-width:90px;
+      border-bottom:1px dotted #111;
+      padding:0 6px 2px;
+      font-weight:800;
+      text-align:center;
+    }
+    .line.small{min-width:60px}
+    .line.medium{min-width:110px}
+
+    .paperHeader .right{
+      display:flex;
+      gap:8px;
+      align-items:flex-end;
+      flex-wrap:wrap;
+      font-weight:700;
+    }
+
+    .paperControls{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      margin-top:10px;
+    }
+    .paperControls .group{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    /* ตารางจริง */
+    .tableScroll{
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    table.paper{
+      width:100%;
+      min-width:820px; /* ให้ 5 คอลัมน์ไม่บีบ */
+      border-collapse:collapse;
+      background:#fff;
+    }
+    table.paper th, table.paper td{
+      border:2px solid #111;
+      padding:8px;
+      font-size:12px;
+      vertical-align:top;
+    }
+    table.paper thead th{
+      text-align:center;
+      font-weight:900;
+      background:#fff;
+    }
+    .col-time{width:90px;text-align:center;font-weight:900}
+    .slotCell{
+      height:46px;
+      background:#fff;
+    }
+
+    /* appointment tag สีแบบเบาๆ (เขียว=ลูกค้าเก่า, เหลือง=guest) */
+    .apptPill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 8px;
+      border-radius:999px;
+      border:1px solid #e5e7eb;
+      font-weight:800;
+      font-size:11px;
+      margin:2px 0;
+      max-width:100%;
+    }
+    .apptPill .dot{
+      width:8px;height:8px;border-radius:999px;flex:0 0 auto;
+    }
+    .apptOld{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
+    .apptOld .dot{background:#22c55e}
+    .apptGuest{background:#fffbeb;border-color:#fde68a;color:#92400e}
+    .apptGuest .dot{background:#f59e0b}
+
+    .slotAdd{
+      display:block;
+      width:100%;
+      border:1px dashed #94a3b8;
+      border-radius:10px;
+      padding:7px 8px;
+      background:#fff;
+      color:#475569;
+      cursor:pointer;
+      font-weight:800;
+      font-size:11px;
+      text-align:center;
+    }
+    .slotAdd:hover{background:#f8fafc}
+
+    /* ==========================================================
+       TAB 2: MONTHLY ROSTER (ให้เหมือน iOS calendar)
+       ========================================================== */
+    .iosMonthHeader{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      padding:6px 2px 10px;
+    }
+    .iosMonthHeader .monthTitle{
+      font-size:28px;
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    .iosMonthHeader .todayBtn{
+      font-weight:900;
+      color:#ef4444;
+      cursor:pointer;
+      user-select:none;
+    }
+
+    .iosWeekHead{
+      display:grid;
+      grid-template-columns:repeat(7,1fr);
+      gap:0;
+      border-top:1px solid #e5e7eb;
+      border-bottom:1px solid #e5e7eb;
+      padding:8px 0;
+      margin-top:6px;
+      color:#94a3b8;
+      font-weight:900;
+      font-size:12px;
+      text-align:center;
+    }
+
+    .iosGrid{
+      display:grid;
+      grid-template-columns:repeat(7,1fr);
+      gap:0;
+      border-bottom:1px solid #e5e7eb;
+    }
+    .iosDay{
+      min-height:110px;
+      border-right:1px solid #e5e7eb;
+      border-top:1px solid #e5e7eb;
+      padding:8px 8px 10px;
+      background:#fff;
+      position:relative;
+      overflow:hidden;
+    }
+    .iosDay:nth-child(7n){border-right:none}
+    .iosDay .num{
+      font-weight:900;
+      font-size:16px;
+      color:#0f172a;
+    }
+    .iosDay.muted .num{color:#cbd5e1}
+    .iosDay .events{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      margin-top:8px;
+    }
+
+    .eventPill{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 8px;
+      border-radius:8px;
+      font-weight:900;
+      font-size:12px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    /* สี event ให้เหมือนภาพ */
+    .ev-green{background:#d9f2cc;color:#1f5e2b}
+    .ev-purple{background:#e9d5ff;color:#6b21a8}
+    .ev-blue{background:#cfe8ff;color:#0b4b7a}
+    .ev-brown{background:#ead8c5;color:#5a3a1a}
+
+    .eventPill .icon{
+      width:14px;height:14px;border-radius:4px;
+      display:inline-flex;align-items:center;justify-content:center;
+      font-size:10px;background:rgba(0,0,0,.12);
+      flex:0 0 auto;
+    }
+
+    /* Controls on roster */
+    .rosterControls{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      margin-top:8px;
+    }
+    .rosterControls .group{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    /* ==========================================================
+       Responsive
+       ========================================================== */
+    @media (max-width:640px){
+      .iosMonthHeader .monthTitle{font-size:26px}
+      .paperHeader{padding:10px 8px 8px}
+      .line{min-width:80px}
+      .line.medium{min-width:96px}
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="headline">ระบบนัดหมาย & ตารางเวร</div>
+    <div class="sub-muted">
+      หน้าตาอิงตามสมุดนัดจริง + ปฏิทินเวรแบบ iOS (Mobile-first 100%)<br>
+      * ตอนนี้ทำ “หน้าตา” ให้เหมือนรูปก่อน เดี๋ยวค่อยผูกข้อมูลกับ app.py ทีหลัง
+    </div>
+
+    <div class="chips">
+      <span class="chip active" data-tab="daily">ตารางนัดรายวัน</span>
+      <span class="chip" data-tab="monthly">ตารางเวรรายเดือน</span>
+      <span class="chip" data-tab="settings">ตั้งค่า</span>
+    </div>
+
+    <!-- ======================================================
+         TAB: DAILY
+         ====================================================== -->
+    <div class="panel active" id="panel-daily">
+      <div class="section">
+
+        <div class="paperControls">
+          <div class="group">
+            <div style="font-weight:900;color:#0b3d35">Daily Schedule</div>
+            <button class="btn btn-ghost" type="button" onclick="UI.dailyToday()">วันนี้</button>
+          </div>
+          <div class="group" style="min-width:240px;flex:1;justify-content:flex-end">
+            <input class="ipt" style="max-width:220px" type="date" id="dailyDate">
+            <button class="btn btn-primary" type="button" onclick="UI.openAddMock()">+ เพิ่มนัด</button>
+          </div>
+        </div>
+
+        <!-- กระดาษ -->
+        <div class="paperWrap" style="margin-top:10px;">
+          <div class="paperHeader">
+            <div class="left">
+              <span class="paperTitle">ตารางนัดลูกค้า</span>
+              <span class="lineField">วัน <span class="line small" id="hdrDay">ศุกร์</span></span>
+              <span class="lineField">ที่ <span class="line small" id="hdrDateNum">2</span></span>
+              <span class="lineField">เดือน <span class="line medium" id="hdrMonth">มกราคม</span></span>
+            </div>
+
+            <div class="right">
+              <span class="lineField">หมอเข้าเวลา <span class="line small" id="hdrDoctorTime">11:00</span></span>
+            </div>
+          </div>
+
+          <div class="tableScroll">
+            <table class="paper" id="dailyTable">
+              <thead>
+                <tr>
+                  <th class="col-time">เวลา</th>
+                  <th>เคสแพทย์</th>
+                  <th>เคสแพทย์</th>
+                  <th>
+                    เคสพยาบาล<br>
+                    <span style="font-weight:700;font-size:11px">Treatment</span>
+                  </th>
+                  <th>
+                    เคสพยาบาล<br>
+                    <span style="font-weight:700;font-size:11px">IV, PRP</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="dailyBody">
+                <!-- JS render slots -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ======================================================
+         TAB: MONTHLY
+         ====================================================== -->
+    <div class="panel" id="panel-monthly">
+      <div class="section card">
+
+        <div class="iosMonthHeader">
+          <div class="monthTitle" id="monthTitle">ธันวาคม 2568</div>
+          <div class="todayBtn" onclick="UI.monthToday()">วันนี้</div>
+        </div>
+
+        <div class="rosterControls">
+          <div class="group">
+            <input class="ipt" style="max-width:200px" type="month" id="monthPicker">
+            <button class="btn btn-ghost" type="button" onclick="UI.renderMonth()">โหลดเดือน</button>
+          </div>
+          <div class="group">
+            <button class="btn btn-primary" type="button" onclick="UI.copyWeekMock()">Copy เวร</button>
+          </div>
+        </div>
+
+        <div class="iosWeekHead">
+          <div>อา.</div><div>จ.</div><div>อ.</div><div>พ.</div><div>พฤ.</div><div>ศ.</div><div>ส.</div>
+        </div>
+
+        <div class="iosGrid" id="iosGrid">
+          <!-- JS render calendar -->
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ======================================================
+         TAB: SETTINGS (placeholder UI)
+         ====================================================== -->
+    <div class="panel" id="panel-settings">
+      <div class="section card">
+        <div style="font-weight:900;color:#0b3d35;margin-bottom:8px">ตั้งค่า (เตรียมไว้ก่อน)</div>
+        <div class="sub-muted">
+          ตรงนี้เดี๋ยวผูกกับ clinic_settings: เวลาเปิด-ปิด, ชื่อคอลัมน์, รายชื่อ staff
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+          <div>
+            <label>เวลาเปิด</label>
+            <input class="ipt" placeholder="11:00">
+          </div>
+          <div>
+            <label>เวลาปิด</label>
+            <input class="ipt" placeholder="19:30">
+          </div>
+        </div>
+
+        <div style="margin-top:10px;display:flex;justify-content:flex-end;gap:8px">
+          <button class="btn btn-primary" type="button" onclick="alert('mock')">บันทึก</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+
+  <script>
+    // =========================================================
+    // Tabs
+    // =========================================================
+    const UI = {
+      goto(tab){
+        document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+        document.querySelector(`.chip[data-tab="${tab}"]`)?.classList.add('active');
+
+        document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+        document.getElementById(`panel-${tab}`)?.classList.add('active');
+      },
+      dailyToday(){
+        const d = new Date();
+        const ymd = d.toISOString().slice(0,10);
+        document.getElementById('dailyDate').value = ymd;
+        applyDailyHeaderFromDate(ymd);
+      },
+      monthToday(){
+        const d = new Date();
+        document.getElementById('monthPicker').value = d.toISOString().slice(0,7);
+        UI.renderMonth();
+      },
+      openAddMock(){ alert('เพิ่มนัด (เดี๋ยวผูก modal + API)'); },
+      copyWeekMock(){ alert('Copy เวร (เดี๋ยวผูก API)'); },
+
+      // render functions
+      renderDaily(){ renderDailyTable(); },
+      renderMonth(){ renderIOSCalendar(); },
+    };
+
+    document.querySelectorAll('.chip[data-tab]').forEach(ch=>{
+      ch.addEventListener('click', ()=>UI.goto(ch.getAttribute('data-tab')));
+    });
+
+    // =========================================================
+    // Daily: render table 11:00-19:00 step 30 (เหมือนกระดาษ)
+    // =========================================================
+    function pad2(n){ return String(n).padStart(2,'0'); }
+    function toHHMM(mins){
+      const h=Math.floor(mins/60), m=mins%60;
+      return `${pad2(h)}:${pad2(m)}`;
+    }
+
+    function renderDailyTable(){
+      const tbody = document.getElementById('dailyBody');
+      tbody.innerHTML = '';
+
+      const start = 11*60;
+      const end = 19*60;   // ภาพตัวอย่างลงถึง 19.00
+      const step = 30;
+
+      for(let t=start; t<=end; t+=step){
+        const tr = document.createElement('tr');
+
+        // เวลา
+        const tdTime = document.createElement('td');
+        tdTime.className = 'col-time';
+        tdTime.textContent = toHHMM(t).replace(':','.');
+        tr.appendChild(tdTime);
+
+        // 4 ช่องงาน
+        for(let col=1; col<=4; col++){
+          const td = document.createElement('td');
+          td.className = 'slotCell';
+
+          // ปุ่มว่าง (placeholder)
+          const add = document.createElement('button');
+          add.type='button';
+          add.className='slotAdd';
+          add.textContent='+';
+          add.onclick=()=>UI.openAddMock();
+          td.appendChild(add);
+
+          // mock ตัวอย่างให้เห็น “สีแบบในบรีฟ”
+          if(toHHMM(t)==='11:30' && col===1){
+            td.innerHTML = `
+              <div class="apptPill apptOld" title="ลูกค้าเก่า">
+                <span class="dot"></span>
+                คุณเอ • Consult
+              </div>
+            `;
+          }
+          if(toHHMM(t)==='13:00' && col===3){
+            td.innerHTML = `
+              <div class="apptPill apptGuest" title="ลูกค้าใหม่">
+                <span class="dot"></span>
+                Walk-in • Treatment
+              </div>
+            `;
+          }
+
+          tr.appendChild(td);
+        }
+
+        tbody.appendChild(tr);
+      }
+    }
+
+    // =========================================================
+    // Daily header from selected date
+    // =========================================================
+    const TH_DAYS = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+    const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+    function applyDailyHeaderFromDate(ymd){
+      if(!ymd) return;
+      const d = new Date(ymd + 'T00:00:00');
+      if(isNaN(d)) return;
+
+      document.getElementById('hdrDay').textContent = TH_DAYS[d.getDay()];
+      document.getElementById('hdrDateNum').textContent = String(d.getDate());
+      document.getElementById('hdrMonth').textContent = TH_MONTHS[d.getMonth()];
+
+      // หมอเข้าเวลา (ตอนนี้คง 11:00 ตามบรีฟ)
+      document.getElementById('hdrDoctorTime').textContent = '11:00';
+    }
+
+    // =========================================================
+    // Monthly: iOS-like calendar
+    // =========================================================
+    function thYear(y){ return y + 543; }
+
+    function renderIOSCalendar(){
+      const grid = document.getElementById('iosGrid');
+      grid.innerHTML = '';
+
+      const mp = document.getElementById('monthPicker');
+      const ym = mp.value || new Date().toISOString().slice(0,7);
+      const [Y,M] = ym.split('-').map(Number);
+
+      const first = new Date(Y, M-1, 1);
+      const last = new Date(Y, M, 0);
+
+      // header "ธันวาคม 2568"
+      const monthName = TH_MONTHS[M-1];
+      document.getElementById('monthTitle').textContent = `${monthName} ${thYear(Y)}`;
+
+      // iOS calendar ในภาพ: เริ่มที่ อา.
+      // เติมช่องว่างก่อนวันแรก
+      const firstDow = first.getDay(); // 0=อาทิตย์
+      for(let i=0;i<firstDow;i++){
+        const box = document.createElement('div');
+        box.className = 'iosDay muted';
+        box.innerHTML = `<div class="num">${''}</div>`;
+        grid.appendChild(box);
+      }
+
+      // mock events ตามภาพแนว iOS (ไว้เป็นตัวอย่าง UI)
+      // key: day -> events
+      const mock = {
+        3: [
+          {cls:'ev-purple', icon:'👩', text:'พยาบาล16.30-18.30'},
+          {cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}
+        ],
+        4: [{cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}],
+        6: [{cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}],
+        7: [
+          {cls:'ev-purple', icon:'👩', text:'พยาบาล13.30-15.30'},
+          {cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}
+        ],
+        8: [{cls:'ev-blue', icon:'📘', text:'Dion 14.00-1...'}],
+        11: [
+          {cls:'ev-purple', icon:'👩', text:'พยาบาล16.30-18.30'},
+          {cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}
+        ],
+        12: [{cls:'ev-brown', icon:'☕', text:'Cinder13.30'}],
+        14: [
+          {cls:'ev-purple', icon:'👩', text:'พยาบาล13.30-15.30'},
+          {cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}
+        ],
+        16: [{cls:'ev-blue', icon:'📘', text:'Dion 14.00-1...'}],
+        17: [
+          {cls:'ev-purple', icon:'👩', text:'พยาบาล13.30-15.30'},
+          {cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}
+        ],
+        18: [{cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}],
+        19: [{cls:'ev-brown', icon:'☕', text:'Cinder13.30'}],
+        21: [
+          {cls:'ev-purple', icon:'👩', text:'พยาบาล13.30-15.30'},
+          {cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}
+        ],
+        23: [{cls:'ev-blue', icon:'📘', text:'Dion 14.00-1...'}],
+        24: [{cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}],
+        25: [
+          {cls:'ev-purple', icon:'👩', text:'พยาบาล16.30-18.30'},
+          {cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}
+        ],
+        26: [{cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}],
+        27: [{cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}],
+        28: [{cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}],
+      };
+
+      for(let d=1; d<=last.getDate(); d++){
+        const box = document.createElement('div');
+        box.className = 'iosDay';
+        box.onclick = ()=>alert(`เปิดจัดเวรวันที่ ${d}/${M}/${thYear(Y)} (เดี๋ยวผูก modal+API)`);
+
+        const ev = (mock[d] || []).map(e=>`
+          <div class="eventPill ${e.cls}" title="${e.text}">
+            <span class="icon">${e.icon}</span>
+            <span style="overflow:hidden;text-overflow:ellipsis">${e.text}</span>
+          </div>
+        `).join('');
+
+        box.innerHTML = `
+          <div class="num">${d}</div>
+          <div class="events">${ev}</div>
+        `;
+        grid.appendChild(box);
+      }
+
+      // เติมช่องว่างท้ายให้ครบแถว (optional, ให้ดูสวย)
+      const totalCells = firstDow + last.getDate();
+      const remain = (7 - (totalCells % 7)) % 7;
+      for(let i=0;i<remain;i++){
+        const box = document.createElement('div');
+        box.className = 'iosDay muted';
+        box.innerHTML = `<div class="num">${''}</div>`;
+        grid.appendChild(box);
+      }
+    }
+
+    // =========================================================
+    // Init
+    // =========================================================
+    (function init(){
+      const today = new Date();
+      const ymd = today.toISOString().slice(0,10);
+
+      // Daily default
+      document.getElementById('dailyDate').value = ymd;
+      applyDailyHeaderFromDate(ymd);
+      renderDailyTable();
+
+      // Monthly default
+      document.getElementById('monthPicker').value = today.toISOString().slice(0,7);
+      renderIOSCalendar();
+
+      // on change
+      document.getElementById('dailyDate').addEventListener('change', (e)=>{
+        applyDailyHeaderFromDate(e.target.value);
+      });
+      document.getElementById('monthPicker').addEventListener('change', ()=>renderIOSCalendar());
+    })();
+  </script>
+
+  <!-- ✅ Floating Menu (ลิงก์ไปหน้าอื่น) -->
+  {% include "floating_menu.html" %}
+
+</body>
+</html>
