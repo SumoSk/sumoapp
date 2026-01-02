@@ -3714,48 +3714,42 @@ async function saveReceiptImage(){
         margin: box.style.margin
       };
 
+      // ตัวแปรเก็บ Input ที่แปลงร่างแล้ว (เพื่อคืนค่าทีหลัง)
+      const textBackups = [];
+      const btn = document.querySelector('.receipt-actions .btn-outline:nth-child(2)'); 
+      const originalText = btn ? btn.innerText : '';
+
       try{
-        // 2. แจ้งผู้ใช้ (กันตกใจตอนจอกระพริบ)
-        const btn = document.querySelector('.receipt-actions .btn-outline:nth-child(2)'); // ปุ่มบันทึกภาพ
-        const originalText = btn ? btn.innerText : '';
         if(btn) { btn.innerText = "กำลังประมวลผล..."; btn.disabled = true; }
 
-        // 3. ปรับ Style เพื่อ "ยืด" ใบเสร็จให้เต็มใบ (ระเบิดกล่อง)
+        // 2. ระเบิดกล่อง (Capture Mode)
         overlay.classList.add('capture-mode');
-        
-        // เลื่อนจอไปบนสุดก่อน เพื่อให้ html2canvas จับพิกัดถูก
         window.scrollTo(0, 0); 
 
-        // ปรับ Overlay ให้เป็นพื้นขาวใหญ่ๆ ยาวตามเนื้อหา
         overlay.style.position = 'absolute';
         overlay.style.inset = '0';
-        overlay.style.height = 'auto'; // ยืดตามลูก
+        overlay.style.height = 'auto'; 
         overlay.style.minHeight = '100vh';
         overlay.style.overflow = 'visible';
-        overlay.style.alignItems = 'flex-start'; // ชิดบน
-        overlay.style.background = '#ffffff'; // พื้นหลังขาวทับทุกอย่าง
+        overlay.style.alignItems = 'flex-start'; 
+        overlay.style.background = '#ffffff'; 
         overlay.style.zIndex = '99999';
 
-        // ปรับกล่องใบเสร็จให้ยืดสุด ไม่มีการเลื่อน
         box.style.maxHeight = 'none';
         box.style.overflow = 'visible';
         box.style.height = 'auto';
-        box.style.borderRadius = '0'; // ลบมุมมนออกให้เหมือนกระดาษ
+        box.style.borderRadius = '0'; 
         box.style.boxShadow = 'none';
         box.style.margin = '0 auto'; 
 
-        // แปลง Input/Textarea เป็น Text ธรรมดาชั่วคราว (แก้สระลอย/กรอบเด้ง)
+        // 3. แปลง Input เป็น Text
         const inputs = box.querySelectorAll('input, textarea');
-        const textBackups = [];
         inputs.forEach(inp => {
-             // ซ่อน input เดิม
              const disp = inp.style.display;
              inp.style.display = 'none';
              
-             // สร้าง span มาแทนที่
              const span = document.createElement('div');
              span.textContent = inp.value;
-             // ลอก Style มา
              const st = window.getComputedStyle(inp);
              span.style.font = st.font;
              span.style.fontSize = st.fontSize;
@@ -3764,7 +3758,7 @@ async function saveReceiptImage(){
              span.style.color = st.color;
              span.style.textAlign = st.textAlign;
              span.style.padding = st.padding;
-             span.style.whiteSpace = 'pre-wrap'; // ให้ textarea ขึ้นบรรทัดใหม่ได้
+             span.style.whiteSpace = 'pre-wrap';
              
              if(inp.id === 'receipt_patient_info') {
                  span.style.border = 'none';
@@ -3780,52 +3774,83 @@ async function saveReceiptImage(){
              textBackups.push({ inp, span, disp });
         });
 
-        // รอให้ Browser วาดหน้าใหม่สักนิด
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 150));
 
-        // 4. ถ่ายรูปด้วย html2canvas
+        // 4. สร้าง Canvas
         const canvas = await html2canvas(box, {
-          scale: 2, // ความคมชัด 2 เท่า
+          scale: 2, 
           useCORS: true,
           allowTaint: true,
           backgroundColor: '#ffffff',
-          scrollY: 0, // บังคับเริ่มที่ 0
+          scrollY: 0,
           windowWidth: document.documentElement.scrollWidth,
           windowHeight: document.documentElement.scrollHeight
         });
 
-        // 5. ดาวน์โหลดรูป
         const opd  = (document.getElementById('opd')?.value || '0000').trim();
         const date = (document.getElementById('date')?.value || '').trim();
         const fileName = `receipt_${opd}_${date}.png`;
 
-        const a = document.createElement('a');
-        a.href = canvas.toDataURL('image/png');
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        // ===============================================
+        // ✅ ส่วนใหม่: แยกทางระหว่าง iOS (Share) กับ PC (Download)
+        // ===============================================
+        canvas.toBlob(async (blob) => {
+            if (!blob) {
+                alert('เกิดข้อผิดพลาดในการสร้างไฟล์ภาพ');
+                return;
+            }
 
-        // คืนค่าปุ่ม
-        if(btn) { btn.innerText = originalText; btn.disabled = false; }
+            const file = new File([blob], fileName, { type: 'image/png' });
 
-        // คืนค่า Input/Textarea
-        textBackups.forEach(item => {
-            item.span.remove();
-            item.inp.style.display = item.disp;
-        });
+            // ตรวจสอบว่า Browser รองรับการแชร์ไฟล์ไหม (iPhone/Android ส่วนใหญ่รองรับ)
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'ใบเสร็จรับเงิน',
+                        text: `ใบเสร็จ OPD: ${opd}`
+                    });
+                    // ถือว่าสำเร็จ
+                } catch (shareError) {
+                    // กรณีผู้ใช้กดยกเลิก Share Sheet ไม่ต้องทำอะไร หรือจะ log ก็ได้
+                    console.log('Share canceled or failed', shareError);
+                }
+            } else {
+                // กรณีเป็น PC หรือ Browser เก่า (ใช้วิธีเดิม ดาวน์โหลด)
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+            
+            // คืนค่าปุ่ม
+            if(btn) { btn.innerText = originalText; btn.disabled = false; }
+            
+            // คืนค่า UI (ต้องทำใน callback ของ toBlob เพราะเป็น Async)
+            restoreUI(); 
+        }, 'image/png');
 
       }catch(err){
         console.error(err);
         alert('บันทึกภาพไม่สำเร็จ: ' + err.message);
-      }finally{
-        // 6. คืนค่า Style ทุกอย่างกลับสู่สภาพเดิม
-        overlay.classList.remove('capture-mode');
+        restoreUI(); // คืนค่ากรณี Error ก่อนถึง toBlob
+        if(btn) { btn.innerText = originalText; btn.disabled = false; }
+      }
+
+      // ฟังก์ชันย่อยสำหรับคืนค่าหน้าจอ
+      function restoreUI(){
+        textBackups.forEach(item => {
+            item.span.remove();
+            item.inp.style.display = item.disp;
+        });
         
+        overlay.classList.remove('capture-mode');
         Object.assign(overlay.style, prevOverlayStyle);
         Object.assign(box.style, prevBoxStyle);
-        
-        // เลื่อนจอกลับที่เดิม
         window.scrollTo(0, originalScrollPos);
       }
     }

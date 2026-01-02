@@ -455,42 +455,84 @@
       color:#111827;
     }
 
-   @media print{
-  body{ padding:0 !important; background:#fff !important; }
+  /* =========================
+       ✅ CSS สำหรับสั่งพิมพ์ (Print Style) v3 (Final)
+       - แก้ปัญหาขอบหาย (ใช้ box-sizing)
+       - เว้นขอบสวยงาม 1.5 cm
+       ========================= */
+    @media print {
+      /* 1. ซ่อนทุกอย่างก่อน */
+      body * {
+        visibility: hidden;
+      }
 
-  /* ซ่อนทุกอย่างก่อน */
-  body *{ visibility:hidden !important; }
+      /* 2. แสดงเฉพาะส่วนใบเสร็จ */
+      #receiptOverlay, #receiptOverlay * {
+        visibility: visible;
+      }
 
-  /* เปิดเฉพาะใบเสร็จ */
-  #receiptOverlay, #receiptOverlay *{ visibility:visible !important; }
+      /* 3. ตั้งค่าหน้ากระดาษ (ลบ Header/Footer อัตโนมัติออก) */
+      @page {
+        margin: 0;
+        size: auto;
+      }
 
-  /* ทำ overlay ให้เป็น "หน้ากระดาษ" ไม่ใช่ popup */
-  #receiptOverlay{
-    position: static !important;
-    inset: auto !important;
-    background:#fff !important;
-    display:block !important;
-    padding:0 !important;
-  }
+      /* 4. จัดการพื้นที่กระดาษ (Overlay) */
+      #receiptOverlay {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        
+        /* ✅ สำคัญ: สั่งให้กว้างเต็ม แต่ห้ามนับ padding เพิ่ม (แก้ขอบหาย) */
+        width: 100% !important;
+        box-sizing: border-box !important;
+        
+        /* ✨ ระยะขอบ: เว้นเข้ามา 15mm (1.5 ซม.) รอบด้าน */
+        padding: 15mm !important;
+        
+        margin: 0 !important;
+        background: #fff !important;
+        display: block !important;
+        overflow: visible !important;
+        z-index: 99999 !important;
+      }
 
-  /* กล่องใบเสร็จต้องไม่เป็นกล่องเลื่อน */
-  .receipt-box{
-    width: 190mm !important;
-    max-height: none !important;
-    overflow: visible !important;
-    box-shadow:none !important;
-    border-radius:0 !important;
-    margin: 0 auto !important;
-    padding: 12mm !important;      /* ขอบกระดาษ */
-  }
+      /* 5. ตัวเนื้อใบเสร็จข้างใน */
+      .receipt-box {
+        position: relative !important;
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        max-height: none !important;
+        overflow: visible !important;
+        height: auto !important;
+      }
 
-  /* ไม่พิมพ์ปุ่ม */
-  .receipt-actions, .sig-actions{ display:none !important; }
+      /* 6. ซ่อนปุ่มต่างๆ */
+      .receipt-actions, .modal-close, .btn, button {
+        display: none !important;
+      }
 
-  /* กันตาราง/บล็อกสำคัญโดนตัดครึ่งกลางหน้า */
-  table, tr, td, th{ page-break-inside: avoid !important; }
-  .sig-wrap, .fineprint{ page-break-inside: avoid !important; }
-}
+      /* 7. ปรับแต่ง textarea */
+      textarea {
+        border: none !important;
+        resize: none !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        background: transparent !important;
+      }
+      /* ========================
+         ✅ เพิ่มส่วนนี้เพื่อลบกรอบลายเซ็น
+         ======================== */
+      canvas, .sig-pad-wrap {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important; /* เผื่อมีสีพื้นหลังเทาๆ ก็ลบออกด้วย */
+      }
+    }
 
 
 
@@ -3956,69 +3998,101 @@ function buildReceiptRowsMixedFromDate(total, rows, dateISO){
 }
 
 function openReceiptFromRecord(id){
-  const rec = findAnySaleById(id);
-  if(!rec) return alert('ไม่พบรายการนี้');
+      const rec = findAnySaleById(id);
+      if(!rec) return alert('ไม่พบรายการนี้');
 
-  const total = Math.floor(Number(rec.amount||0));
-  const rows = parseItemsStringToRows(rec.items || []);
-  if(!rows.length) return alert('รายการนี้ไม่มีรายละเอียด items');
+      const total = Math.floor(Number(rec.amount||0));
+      const rows = parseItemsStringToRows(rec.items || []);
 
-  const dispNo = (rec.disp_no || rec.display_no || '').trim();
-  const origNo = (rec.orig_no || '').trim();
-  const showNo = dispNo ? dispNo : (origNo ? origNo.replace(/^RC-/, 'RB-') : '-');
+      const dispNo = (rec.disp_no || rec.display_no || '').trim();
+      const origNo = (rec.orig_no || '').trim();
+      const showNo = dispNo ? dispNo : (origNo ? origNo.replace(/^RC-/, 'RB-') : '-');
 
-  const receiptNoEl = document.getElementById('receiptNo');
-  if(receiptNoEl) receiptNoEl.textContent = showNo;
-// ===== B) วันที่ออกใบเสร็จ (จากวันที่ใน record) =====
-const issueDateISO = (rec.date || '').slice(0,10);
-const issueDateText = issueDateISO ? formatDate(issueDateISO) : '-';
+      const receiptNoEl = document.getElementById('receiptNo');
+      if(receiptNoEl) receiptNoEl.textContent = showNo;
+      
+      const issueDateISO = (rec.date || '').slice(0,10);
+      const issueDateText = issueDateISO ? formatDate(issueDateISO) : '-';
+      const issueEl = document.getElementById('receiptIssueDate');
+      if(issueEl) issueEl.textContent = issueDateText;
 
-const issueEl = document.getElementById('receiptIssueDate');
-if(issueEl) issueEl.textContent = issueDateText;
-  // ✅ ตารางตามวันที่ของ record
-  const { tbody, sum } = buildReceiptRowsMixedFromDate(total, rows, rec.date);
+      const { tbody, sum } = buildReceiptRowsMixedFromDate(total, rows, rec.date);
 
-  document.getElementById('receiptContent').innerHTML = `
-    <table class="receipt-table">
-      <thead>
-        <tr>
-          <th colspan="7" style="text-align:center; font-weight:900;">
-            ค่าตรวจรักษาและหัตถการทางการแพทย์
-          </th>
-        </tr>
-        <tr>
-          <th style="width:60px;">ลำดับ</th>
-          <th>รายการ</th>
-          <th style="width:70px;">จำนวน</th>
-          <th style="width:130px;">ราคาต่อรายการ (บาท)</th>
-          <th style="width:120px;">รวมบรรทัด (บาท)</th>
-          <th style="width:130px;">วันที่เริ่มบริการ</th>
-          <th style="width:130px;">วันที่สิ้นสุดบริการ</th>
-        </tr>
-      </thead>
-      <tbody>${tbody}</tbody>
-    </table>
+      // ==========================================
+      // ✅ ส่วนที่ 1: ดึงข้อมูลลูกค้าอัตโนมัติ (ชื่อเต็ม/บัตร/ที่อยู่)
+      // ==========================================
+      const c = customerMap[rec.opd] || {}; // ดึงจากทะเบียนลูกค้าปัจจุบัน
+      
+      // ลำดับการใช้ข้อมูล:
+      // 1. ถ้าในประวัติ (rec) มีบันทึกไว้แล้ว ให้ใช้ของเดิม (rec.patient_info)
+      // 2. ถ้าไม่มี ให้สร้างใหม่สดๆ จากทะเบียนลูกค้า (c.full_name, c.national_id, c.address)
+      let infoText = rec.patient_info || '';
+      
+      if(!infoText){
+          const lines = [];
+          // ชื่อ: เอาชื่อเต็มก่อน -> ถ้าไม่มีเอาชื่อเล่นในทะเบียน -> ถ้าไม่มีเอาชื่อในประวัติ
+          const showName = c.full_name || c.name || rec.name || '';
+          if(showName) lines.push(showName);
+          
+          if(c.national_id) lines.push(`เลขบัตร: ${c.national_id}`);
+          if(c.address) lines.push(`ที่อยู่: ${c.address}`);
+          
+          infoText = lines.join('\n');
+      }
 
-    <div class="receipt-total">
-      รวมเป็นเงินทั้งสิ้น ${sum.toLocaleString()} บาท
-    </div>
+      // ==========================================
+      // ✅ ส่วนที่ 2: เตรียมชื่อใต้ลายเซ็น
+      // ==========================================
+      const sigAuth = "พญ.ปิยะฎา จินดาหลวง";
+      
+      // ผู้ใช้บริการ: ใช้ชื่อเต็มจากทะเบียน (ถ้ามี)
+      const sigCust = c.full_name || c.name || rec.name || '';
+      
+      // ผู้รับเงิน: ใช้ข้อมูลเก่าถ้ามีบันทึกไว้ (ถ้าไม่มีปล่อยว่าง หรือจะตั้ง Default ก็ได้)
+      const sigRec = (rec.sig && rec.sig.receiver) ? rec.sig.receiver : '';
 
-    <div class="receipt-section">
-      <b>ข้อมูลผู้รับการรักษา (ชื่อ–ที่อยู่):</b><br>
-      <textarea id="receipt_patient_info" rows="2"
-        placeholder="ชื่อ–นามสกุลผู้รับการรักษา&#10;ที่อยู่ผู้รับการรักษา"
-      ></textarea>
-    </div>
-  `;
+      document.getElementById('receiptContent').innerHTML = `
+        <table class="receipt-table">
+          <thead>
+            <tr><th colspan="7" style="text-align:center; font-weight:900;">ค่าตรวจรักษาและหัตถการทางการแพทย์</th></tr>
+            <tr>
+              <th style="width:60px;">ลำดับ</th>
+              <th>รายการ</th>
+              <th style="width:70px;">จำนวน</th>
+              <th style="width:130px;">ราคาต่อรายการ (บาท)</th>
+              <th style="width:120px;">รวมบรรทัด (บาท)</th>
+              <th style="width:130px;">วันที่เริ่มบริการ</th>
+              <th style="width:130px;">วันที่สิ้นสุดบริการ</th>
+            </tr>
+          </thead>
+          <tbody>${tbody}</tbody>
+        </table>
+        <div class="receipt-total">รวมเป็นเงินทั้งสิ้น ${sum.toLocaleString()} บาท</div>
+        <div class="receipt-section">
+          <b>ข้อมูลผู้รับการรักษา (ชื่อ–ที่อยู่):</b><br>
+          <textarea id="receipt_patient_info" rows="2">${safe(infoText)}</textarea>
+        </div>
+      `;
 
-  const ov = document.getElementById('receiptOverlay');
-  ov.style.display = 'flex';
-  ov.setAttribute('aria-hidden','false');
-// วันที่ออกใบเสร็จ = วันที่ของ record
-setReceiptIssueDateFromISO(rec.date || '');
-  applySigNamesToReceipt();
-  requestAnimationFrame(() => initAllSigPads());
-}
+      const ov = document.getElementById('receiptOverlay');
+      ov.style.display = 'flex';
+      ov.setAttribute('aria-hidden','false');
+
+      // ==========================================
+      // ✅ ส่วนที่ 3: หยอดชื่อลงช่องใต้ลายเซ็น
+      // ==========================================
+      requestAnimationFrame(() => {
+          const elAuth = document.getElementById('sigUnder_authorized');
+          const elCust = document.getElementById('sigUnder_customer');
+          const elRec  = document.getElementById('sigUnder_receiver');
+          
+          if(elAuth) elAuth.value = sigAuth;
+          if(elCust) elCust.value = sigCust; // ชื่อลูกค้า (ชื่อเต็ม)
+          if(elRec)  elRec.value  = sigRec; 
+          
+          initAllSigPads();
+      });
+    }
 
 
 
