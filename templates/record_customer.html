@@ -127,21 +127,27 @@
     .toast.error{ border-left-color:var(--danger); }
     .toast.warn{ border-left-color:var(--warn); }
 
-    .modal{
-      position:fixed; inset:0; z-index:60;
-      display:none; align-items:flex-end; justify-content:center;
+    /* ✅ Modal Center Fix */
+    .modal {
+      position: fixed; inset: 0; z-index: 60;
+      display: none;
+      align-items: center; /* จัดกึ่งกลางแนวตั้ง */
+      justify-content: center; /* จัดกึ่งกลางแนวนอน */
+      padding: 20px;
     }
     .modal.open{ display:flex; }
     .modal-backdrop{
       position:absolute; inset:0; background:rgba(0,0,0,0.45);
       backdrop-filter: blur(3px);
     }
-    .modal-box{
-      position:relative; width:100%; max-width:760px;
-      background:#fff; border-radius:18px 18px 0 0;
-      box-shadow:0 30px 70px rgba(0,0,0,0.25);
-      padding:16px 14px;
-      max-height: 86vh; overflow:auto;
+    .modal-box {
+      position: relative; width: 100%; max-width: 760px;
+      background: #fff;
+      border-radius: 18px; /* ขอบมนรอบด้าน */
+      box-shadow: 0 30px 70px rgba(0,0,0,0.25);
+      padding: 16px 14px;
+      max-height: 90vh;
+      overflow: auto;
       animation: slideUp .18s ease;
     }
     @keyframes slideUp{ from{transform:translateY(10px); opacity:0} to{transform:translateY(0); opacity:1} }
@@ -178,6 +184,25 @@
       z-index: 900;
     }
     #scrollTop.visible{ opacity:1; bottom:92px; pointer-events:auto; }
+
+    /* ✅ Gallery Styles */
+    .gallery-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 10px;
+    }
+    .gallery-item {
+      position: relative; aspect-ratio: 1/1; border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--line); background: #f1f5f9; cursor: pointer;
+    }
+    .gallery-item img {
+      width: 100%; height: 100%; object-fit: cover; transition: transform .3s;
+    }
+    .gallery-item:hover img { transform: scale(1.05); }
+    .gallery-item .del-btn {
+      position: absolute; top: 4px; right: 4px; width: 22px; height: 22px;
+      background: rgba(255,255,255,0.9); border-radius: 50%; color: var(--danger);
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+      cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
 
     /* ✅ Popup (View) */
     .view-card{
@@ -238,23 +263,18 @@
       border:1px solid #e2e8f0;
     }
 
-    /* ✅ Mobile: ซ่อนคอลัมน์ในหน้าหลักตามที่ขอ */
     @media (max-width: 768px){
       .container{ margin-top:10px; padding:0 10px; }
       .toolbar{ gap:8px; padding:10px; }
       .search{ min-width:100%; order:2; }
       .btn{ padding:8px 10px; font-size:11px; }
-
-      /* ตาราง: ให้แสดงน้อยลง + ให้แตะแถวได้ง่าย */
       table{ min-width: 680px; }
-      th[data-key="phone"], td[data-col="phone"]{ display:none; }               /* ซ่อนเบอร์ */
-      th[data-key="birth_th_ddmmyyyy"], td[data-col="birth_th_ddmmyyyy"]{ display:none; } /* ซ่อนวันเกิดเต็ม */
-      th[data-key="profile"], td[data-col="profile"]{ display:none; }          /* ซ่อน profile */
-      th[data-key="note"], td[data-col="note"]{ display:none; }                /* ซ่อนหมายเหตุ */
-      th[data-key="facebook_name"], td[data-col="facebook_name"]{ display:none; } /* ซ่อน FB (เดิม) */
-
-      /* Modal ฟอร์มให้เป็น full width */
-      .modal-box{ border-radius:18px 18px 0 0; padding:14px 12px; }
+      th[data-key="phone"], td[data-col="phone"]{ display:none; }
+      th[data-key="birth_th_ddmmyyyy"], td[data-col="birth_th_ddmmyyyy"]{ display:none; }
+      th[data-key="profile"], td[data-col="profile"]{ display:none; }
+      th[data-key="note"], td[data-col="note"]{ display:none; }
+      th[data-key="facebook_name"], td[data-col="facebook_name"]{ display:none; }
+      .modal-box{ border-radius:18px; padding:14px 12px; }
       .col-6,.col-4,.col-3{ grid-column: span 12; }
       .kv{ grid-template-columns: 96px 1fr; }
     }
@@ -322,28 +342,46 @@
     </div>
   </div>
 
-  <!-- ✅ Add/Edit Modal -->
   <div id="addModal" class="modal">
     <div class="modal-backdrop" onclick="closeModal('addModal')"></div>
     <div class="modal-box">
-      <div class="modal-header">
+      <div class="modal-header" style="align-items: flex-start;">
         <div style="flex:1;">
           <div class="modal-title" id="formModalTitle">➕ เพิ่มลูกค้าใหม่</div>
-          <div class="modal-sub" id="formModalSub">บันทึกเข้าฐาน (ตาราง customers ผ่าน Flask API)</div>
+          <div class="modal-sub" id="formModalSub">บันทึกเข้าฐาน (ตาราง customers)</div>
 
-          <div style="margin-top:12px; padding:10px; background:#f0f9ff; border-radius:14px; border:1px dashed #0ea5e9; display:flex; align-items:center; gap:10px;">
-            <span style="font-size:20px;">🪪</span>
-            <div style="flex:1;">
-              <div style="font-weight:1000; color:#0369a1;">สแกนบัตรประชาชน (AI)</div>
+          <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+             
+             <div style="position:relative; width:80px; height:80px; flex-shrink:0;">
+              <img id="previewProfile" 
+                   src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2cbdjVlIj48cGF0aCBkPSZNMTIgMTJjMi4yMSAwIDQtMS43OSA0LTRzLTEuNzktNC00LTQtNCAxLjc5LTQgNCAxLjc5IDQgNCA0em0wIDJjLTIuNjcgMC04IDEuMzQtOCA0djJoMTZ2LTJjMC0yLjY2LTUuMzMtNC04LTR6Ii8+PC9zdmc+" 
+                   style="width:100%; height:100%; object-fit:cover; border-radius:50%; border:2px solid #e2e8f0; background:#f1f5f9;">
+              
+              <button onclick="$('#profileInput').click()" title="อัปรูปใหม่"
+                      style="position:absolute; bottom:-5px; right:-5px; background:var(--primary); color:#fff; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.2); z-index:2;">
+                📷
+              </button>
 
-              <div style="font-size:10px; color:#64748b; font-weight:900;">อัปโหลดรูปเพื่อกรอกข้อมูลอัตโนมัติ</div>
+              <button onclick="openPickerGallery()" type="button" title="เลือกจากคลัง"
+                      style="position:absolute; bottom:-5px; left:-5px; background:#fff; color:#333; border:1px solid #ddd; border-radius:50%; width:28px; height:28px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.1); z-index:2;">
+                📂
+              </button>
+
+              <input type="file" id="profileInput" accept="image/*" style="display:none" onchange="previewImage(this)">
+              <input type="hidden" id="selectedGalleryUrl">
             </div>
 
-            <input type="file" id="idCardInput" accept="image/*" style="display:none" onchange="processIDCard(this)">
-            <button id="scanBtn" class="btn btn-primary" type="button" onclick="$('#idCardInput').click()">📸 เลือกรูป</button>
+            <div style="flex:1; padding:8px 12px; background:#f0f9ff; border-radius:12px; border:1px dashed #0ea5e9; display:flex; align-items:center; gap:10px;">
+              <span style="font-size:20px;">🪪</span>
+              <div style="flex:1;">
+                <div style="font-weight:1000; color:#0369a1; font-size:13px;">สแกนบัตร (AI)</div>
+                <div style="font-size:10px; color:#64748b;">อ่านชื่ออัตโนมัติ</div>
+              </div>
+              <input type="file" id="idCardInput" accept="image/*" style="display:none" onchange="processIDCard(this)">
+              <button class="btn btn-primary" style="padding:6px 10px; font-size:11px;" onclick="$('#idCardInput').click()">📸 สแกน</button>
+            </div>
           </div>
         </div>
-
         <button class="btn btn-ghost btn-icon" onclick="closeModal('addModal')">✕</button>
       </div>
 
@@ -422,7 +460,33 @@
     </div>
   </div>
 
-  <!-- ✅ Popup ดูข้อมูลทั้งหมด -->
+  <div id="galleryModal" class="modal">
+    <div class="modal-backdrop" onclick="closeModal('galleryModal')"></div>
+    <div class="modal-box">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">🖼️ คลังรูปภาพ <span class="chip mini" id="g_opd_chip">OPD 0000</span></div>
+          <div class="modal-sub">รูป before/after หรือ เอกสารต่างๆ</div>
+        </div>
+        <button class="btn btn-ghost btn-icon" onclick="closeModal('galleryModal')">✕</button>
+      </div>
+      
+      <div style="padding:10px; background:#f8fafc; border-radius:12px; display:flex; align-items:center; justify-content:space-between; border:1px solid #e2e8f0;">
+        <span class="muted" style="font-size:11px;">เลือกรูปแล้วกดอัปโหลด (รองรับหลายรูป)</span>
+        <button class="btn btn-primary" onclick="$('#galleryInput').click()">☁️ อัปโหลดรูปเพิ่ม</button>
+        <input type="file" id="galleryInput" multiple accept="image/*" style="display:none" onchange="uploadGalleryImages(this)">
+      </div>
+
+      <div class="gallery-grid" id="galleryGrid">
+        </div>
+
+      <div class="modal-footer">
+        <div class="muted">แตะที่รูปเพื่อดูขยาย (หรือเลือกใช้เป็นโปรไฟล์)</div>
+        <button class="btn btn-ghost" onclick="closeModal('galleryModal')">ปิด</button>
+      </div>
+    </div>
+  </div>
+
   <div id="viewModal" class="modal">
     <div class="modal-backdrop" onclick="closeModal('viewModal')"></div>
     <div class="modal-box">
@@ -487,95 +551,8 @@
     </div>
   </div>
 
-  <!-- Detail Modal เดิม (ยังเก็บไว้ เผื่อใช้) -->
-  <div id="detailModal" class="modal">
-    <div class="modal-backdrop" onclick="closeModal('detailModal')"></div>
-    <div class="modal-box">
-      <div class="modal-header">
-        <div>
-          <div class="modal-title">👤 รายละเอียดลูกค้า <span class="chip mini" id="d_opd_chip">OPD 0000</span></div>
-          <div class="modal-sub">แก้ไขข้อมูลทั้งหมดได้ที่นี่ แล้วกดบันทึก</div>
-        </div>
-        <button class="btn btn-ghost btn-icon" onclick="closeModal('detailModal')">✕</button>
-      </div>
-
-      <div class="grid">
-        <div class="field-group col-3">
-          <label>OPD</label>
-          <input id="d_opd" type="text" readonly style="font-family:monospace; letter-spacing:1px; background:#f8fafc;">
-        </div>
-        <div class="field-group col-3">
-          <label>เดือนเกิด</label>
-          <input id="d_birthMonth" type="text" maxlength="2" placeholder="01-12">
-        </div>
-        <div class="field-group col-6">
-          <label>วันเกิดไทย</label>
-          <input id="d_birth_th" type="text" placeholder="dd/mm/yyyy">
-        </div>
-
-        <div class="field-group col-6">
-          <label>ชื่อ (สั้น)</label>
-          <input id="d_name" type="text">
-        </div>
-        <div class="field-group col-6">
-          <label>ชื่อ-สกุล (เต็ม)</label>
-          <input id="d_full_name" type="text">
-        </div>
-
-        <div class="field-group col-6">
-          <label>โทรศัพท์</label>
-          <input id="d_phone" type="text">
-        </div>
-        <div class="field-group col-6">
-          <label>Facebook</label>
-          <input id="d_facebook_name" type="text">
-        </div>
-
-        <div class="field-group col-6">
-          <label>เลขบัตรประชาชน</label>
-          <input id="d_national_id" type="text">
-        </div>
-        <div class="field-group col-6">
-          <label>VIP</label>
-          <select id="d_vip">
-            <option value="">ไม่ระบุ</option>
-            <option value="VIP">VIP</option>
-            <option value="VVIP">VVIP</option>
-            <option value="Gold">Gold</option>
-            <option value="Silver">Silver</option>
-          </select>
-        </div>
-
-        <div class="field-group col-12">
-          <label>ที่อยู่</label>
-          <input id="d_address" type="text">
-        </div>
-
-        <div class="field-group col-12">
-          <label>โปรไฟล์</label>
-          <textarea id="d_profile"></textarea>
-        </div>
-
-        <div class="field-group col-12">
-          <label>หมายเหตุ</label>
-          <input id="d_note" type="text">
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <div class="muted" id="d_hint">🧾 กดบันทึกเพื่ออัปเดตฐานข้อมูล</div>
-        <div style="display:flex; gap:8px; width:100%; justify-content:flex-end;">
-          <button class="btn btn-danger" id="detailDeleteBtn">🗑️ ลบ</button>
-          <button class="btn btn-ghost" onclick="closeModal('detailModal')">ปิด</button>
-          <button class="btn btn-primary" id="detailSaveBtn">💾 บันทึก</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div id="toastWrap" class="toast-wrap"></div>
 
-  <!-- ✅ floating menu -->
   {% include 'floating_menu.html' %}
 
   <button id="scrollTop">↑</button>
@@ -609,6 +586,8 @@
     let viewData = [];
     let selected = new Set();
     let sortConfig = { key: 'opd', asc: true };
+    let currentGalleryOpd = null; 
+    let isPickingMode = false; // ✅ โหมดเลือกรูป
 
     // Elements
     const tbody = $('#tbody');
@@ -627,11 +606,11 @@
     }
 
     async function apiAddCustomerFull(payload){
-      const r = await fetch('/api/add_customer_full', {
+      // v2 รองรับ FormData
+      const r = await fetch('/api/add_customer_v2', {
         method:'POST',
-        headers:{'Content-Type':'application/json'},
         credentials:'same-origin',
-        body: JSON.stringify(payload)
+        body: payload 
       });
       const j = await r.json().catch(()=> ({}));
       if (!r.ok) throw new Error(j.error || 'add_failed');
@@ -662,45 +641,147 @@
       return j;
     }
 
-    // ✅ Google Vision OCR ผ่าน Flask
-    async function apiOCRIdCard(file){
+    // =========================
+    // ✅ Gallery Functions
+    // =========================
+    // 1. ปุ่มเปิด Gallery ปกติ (ไว้ดู/ลบ)
+    function openGallery(opd) {
+      isPickingMode = false;
+      currentGalleryOpd = opd;
+      $('#g_opd_chip').textContent = `OPD ${opd}`;
+      $('#galleryGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:#94a3b8;">กำลังโหลดรูป...</div>';
+      openModal('galleryModal');
+      loadGalleryImages(opd);
+    }
+
+    // 2. ปุ่ม Picker (เลือกรูปโปรไฟล์)
+    function openPickerGallery() {
+      const opd = $('#f_opd').value.trim();
+      if (!opd || opd.length !== 4) return alert('กรุณากรอก OPD ก่อนเพื่อดึงรูป');
+      
+      isPickingMode = true; // เปิดโหมดเลือก
+      currentGalleryOpd = opd;
+      
+      $('#g_opd_chip').textContent = `เลือกรูปให้ OPD ${opd}`;
+      $('#galleryGrid').innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">กำลังโหลด...</div>';
+      
+      openModal('galleryModal');
+      loadGalleryImages(opd);
+    }
+
+    async function loadGalleryImages(opd) {
+      try {
+        const r = await fetch(`/api/get_gallery?opd=${opd}`);
+        const images = await r.json();
+        renderGalleryGrid(images);
+      } catch (err) {
+        console.error(err);
+        $('#galleryGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; color:crimson;">โหลดรูปไม่สำเร็จ</div>';
+      }
+    }
+
+    function renderGalleryGrid(dataList) {
+      const grid = $('#galleryGrid');
+      if (!dataList || dataList.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:30px; border:2px dashed #e2e8f0; border-radius:12px; color:#cbd5e1;">ยังไม่มีรูปภาพ</div>';
+        return;
+      }
+
+      grid.innerHTML = dataList.map(item => `
+        <div class="gallery-item" onclick="onGalleryItemClick('${item.image_url}')">
+          <img src="${item.image_url}" loading="lazy">
+          ${!isPickingMode ? `<div class="del-btn" onclick="deleteGalleryImage(${item.id}); event.stopPropagation();">×</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    function onGalleryItemClick(url) {
+      if (isPickingMode) {
+        // ✅ โหมดเลือก: เอารูปไปแปะหน้า Modal หลัก
+        $('#previewProfile').src = url;
+        $('#selectedGalleryUrl').value = url;
+        $('#profileInput').value = ''; // ล้างค่า input file ทิ้ง
+        
+        closeModal('galleryModal');
+        isPickingMode = false;
+      } else {
+        // โหมดดู: เปิดรูปใหญ่
+        window.open(url, '_blank');
+      }
+    }
+
+    async function uploadGalleryImages(input) {
+      if (!input.files || input.files.length === 0) return;
+      
+      showToast('กำลังอัปโหลด...', 'warn');
       const fd = new FormData();
-      fd.append('image', file);
+      fd.append('opd', currentGalleryOpd);
+      for (const file of input.files) {
+        fd.append('images', file); 
+      }
 
-      const r = await fetch('/api/ocr_idcard', {
-        method: 'POST',
-        credentials: 'same-origin',
-        body: fd
-      });
+      try {
+        const r = await fetch('/api/upload_gallery', { method:'POST', body: fd });
+        if(!r.ok) throw new Error('Upload failed');
+        
+        showToast('อัปโหลดเรียบร้อย');
+        input.value = ''; 
+        loadGalleryImages(currentGalleryOpd);
+      } catch (err) {
+        showToast('อัปโหลดไม่สำเร็จ', 'error');
+      }
+    }
 
-      const j = await r.json().catch(()=> ({}));
-      if (!r.ok) throw new Error(j.error || 'ocr_failed');
-      return j; // { text: "..." }
+    window.deleteGalleryImage = async (id) => {
+      if(!confirm('ต้องการลบรูปนี้?')) return;
+      try {
+        await fetch('/api/delete_gallery_image', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({id: id})
+        });
+        showToast('ลบรูปแล้ว');
+        loadGalleryImages(currentGalleryOpd); 
+      } catch(err) {
+        showToast('ลบไม่สำเร็จ', 'error');
+      }
     }
 
     // =========================
-    // ✅ Add/Edit Form helpers
+    // ✅ Form helpers
     // =========================
+    function previewImage(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) { 
+            $('#previewProfile').src = e.target.result; 
+            $('#selectedGalleryUrl').value = ''; // ถ้าเลือกไฟล์ใหม่ ให้ล้าง url gallery ทิ้ง
+        }
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
     function clearForm(){
       $$('#addModal input, #addModal textarea, #addModal select').forEach(i => {
         if (i.id === 'formMode') return;
         i.value = '';
       });
+      // Reset รูปเป็น Base64 Icon
+      $('#previewProfile').src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2cbdjVlIj48cGF0aCBkPSZNMTIgMTJjMi4yMSAwIDQtMS43OSA0LTRzLTEuNzktNC00LTQtNCAxLjc5LTQgNCAxLjc5IDQgNCA0em0wIDJjLTIuNjcgMC04IDEuMzQtOCA0djJoMTZ2LTJjMC0yLjY2LTUuMzMtNC04LTR6Ii8+PC9zdmc+';
+      $('#profileInput').value = '';
+      $('#selectedGalleryUrl').value = '';
     }
 
     function setFormMode(mode){
       $('#formMode').value = mode;
-
       if (mode === 'add'){
         $('#formModalTitle').textContent = '➕ เพิ่มลูกค้าใหม่';
-        $('#formModalSub').textContent = 'บันทึกเข้าฐาน (ตาราง customers ผ่าน Flask API)';
-        $('#formHint').textContent = '✨ กรอกข้อมูลแล้วกดบันทึก';
+        $('#formModalSub').textContent = 'บันทึกเข้าฐาน (ตาราง customers)';
         $('#f_opd').readOnly = false;
         $('#f_opd').style.background = '#fff';
       } else {
         $('#formModalTitle').textContent = '✏️ แก้ไขข้อมูลลูกค้า';
-        $('#formModalSub').textContent = 'แก้ไขข้อมูลแล้วกดบันทึกเพื่ออัปเดตฐานข้อมูล';
-        $('#formHint').textContent = '🧾 แก้ไขแล้วกดบันทึกเพื่ออัปเดตฐานข้อมูล';
+        $('#formModalSub').textContent = 'แก้ไขข้อมูลแล้วกดบันทึก';
         $('#f_opd').readOnly = true;
         $('#f_opd').style.background = '#f8fafc';
       }
@@ -723,22 +804,22 @@
       $('#f_opd').value = r.opd || '';
       $('#f_birthMonth').value = r.birthMonth || '';
       $('#f_birth_th').value = r.birth_th_ddmmyyyy || '';
-
       $('#f_name').value = r.name || '';
       $('#f_full_name').value = r.full_name || '';
-
       $('#f_phone').value = r.phone || '';
       $('#f_facebook_name').value = r.facebook_name || '';
-
       $('#f_national_id').value = r.national_id || '';
       $('#f_vip').value = r.vip || '';
-
       $('#f_address').value = r.address || '';
       $('#f_profile').value = r.profile || '';
       $('#f_note').value = r.note || '';
+      
+      // ✅ ถ้ามีรูปเดิม ให้โชว์
+      if (r.profile_pic_url) {
+          $('#previewProfile').src = r.profile_pic_url;
+      }
 
       openModal('addModal');
-      setTimeout(() => $('#f_full_name').focus(), 50);
     }
 
     // =========================
@@ -773,27 +854,14 @@
     // Load + Render
     // =========================
     async function loadData() {
-      tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:40px; color:#94a3b8; font-weight:900;">
-        กำลังโหลดข้อมูล...
-      </td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:40px; color:#94a3b8; font-weight:900;">กำลังโหลดข้อมูล...</td></tr>`;
 
       try{
         const data = await apiGetCustomers();
-
         rawData = data.map(r => ({
-          id: r.id ?? null,
+          ...r,
           opd: pad4(r.opd ?? ''),
-          name: r.name ?? '',
-          full_name: r.full_name ?? '',
-          phone: r.phone ?? '',
-          national_id: r.national_id ?? '',
-          address: r.address ?? '',
-          facebook_name: r.facebook_name ?? '',
-          birthMonth: pad2(r.birthMonth ?? ''),
-          birth_th_ddmmyyyy: r.birth_th_ddmmyyyy ?? '',
-          vip: r.vip ?? '',
-          profile: r.profile ?? '',
-          note: r.note ?? ''
+          birthMonth: pad2(r.birthMonth ?? '')
         })).filter(r => r.opd && r.opd !== '0000');
 
         $('#totalChip').textContent = `${rawData.length} คน`;
@@ -802,10 +870,7 @@
 
       }catch(err){
         console.error("load error:", err);
-        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:crimson; padding:20px; font-weight:900;">
-          โหลดข้อมูลไม่สำเร็จ
-        </td></tr>`;
-        showToast('โหลดข้อมูลไม่สำเร็จ', 'error');
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:crimson; padding:20px;">โหลดข้อมูลไม่สำเร็จ</td></tr>`;
       }
     }
 
@@ -816,26 +881,20 @@
       viewData = rawData.filter(r => {
         const matchMonth = !m || (r.birthMonth === m);
         if (!q) return matchMonth;
-
-        const text = `${r.opd} ${r.name} ${r.full_name} ${r.phone} ${r.national_id} ${r.address} ${r.facebook_name} ${r.birthMonth} ${r.birth_th_ddmmyyyy} ${r.vip} ${r.profile} ${r.note}`.toLowerCase();
+        const text = Object.values(r).join(' ').toLowerCase();
         return matchMonth && text.includes(q);
       });
 
+      // Sort
       const { key, asc } = sortConfig;
       viewData.sort((a, b) => {
-        let valA = a[key] ?? '';
-        let valB = b[key] ?? '';
-        if (key === 'opd') {
-          valA = parseInt(valA) || 0;
-          valB = parseInt(valB) || 0;
-        }
-        if (valA < valB) return asc ? -1 : 1;
-        if (valA > valB) return asc ? 1 : -1;
-        return 0;
+        let valA = a[key] ?? ''; let valB = b[key] ?? '';
+        if (key === 'opd') { valA = parseInt(valA)||0; valB = parseInt(valB)||0; }
+        return (valA < valB ? -1 : 1) * (asc ? 1 : -1);
       });
 
       if (viewData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:30px; color:#cbd5e1; font-weight:900;">ไม่พบข้อมูล</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:30px; color:#cbd5e1;">ไม่พบข้อมูล</td></tr>`;
         $('#clearSearch').style.display = q ? 'block' : 'none';
         return;
       }
@@ -892,8 +951,9 @@
 
           <td>
             <div class="actions">
+              <button class="btn-icon btn-ghost" onclick="openGallery('${esc(r.opd)}'); event.stopPropagation();" title="คลังรูปภาพ" style="color:#0ea5e9;">🖼️</button>
               <button class="btn-icon btn-ghost" onclick="openViewPopup('${esc(r.opd)}'); event.stopPropagation();" title="ดูทั้งหมด">👁️</button>
-              <button class="btn-icon btn-ghost" onclick="openEditForm('${esc(r.opd)}'); event.stopPropagation();" title="แก้ไข (ฟอร์ม)">✏️</button>
+              <button class="btn-icon btn-ghost" onclick="openEditForm('${esc(r.opd)}'); event.stopPropagation();" title="แก้ไข">✏️</button>
               <button class="btn-icon btn-ghost save-btn" onclick="saveRow(this); event.stopPropagation();" style="display:none; color:var(--primary);" title="บันทึก">💾</button>
               <button class="btn-icon btn-ghost cancel-btn" onclick="cancelRow(this); event.stopPropagation();" style="display:none; color:var(--warn);" title="ยกเลิก">❌</button>
               <button class="btn-icon btn-ghost" onclick="deleteRow('${esc(r.opd)}'); event.stopPropagation();" title="ลบ" style="color:var(--danger);">🗑️</button>
@@ -902,10 +962,8 @@
         </tr>`;
       }).join('');
 
-      // ✅ แตะแถวเพื่อเปิด popup (เหมาะมากบนมือถือ)
       $$('#tbody tr.row-tap').forEach(tr => {
         tr.onclick = (e) => {
-          // กันไม่ให้กดจากปุ่ม/checkbox แล้วเปิดซ้อน
           const t = e.target;
           if (t.closest('button') || t.matches('input[type="checkbox"]') || t.closest('.actions')) return;
           const opd = tr.dataset.opd;
@@ -1011,27 +1069,21 @@
     // Delete
     // =========================
     window.deleteRow = async (opd, fromDetail=false) => {
-      const msg = fromDetail
-        ? `ยืนยันลบ OPD ${opd} จากฐานข้อมูล? (ถาวร)`
-        : `ยืนยันลบข้อมูลลูกค้า OPD ${opd}? (ถาวร)`;
-      if (!confirm(msg)) return;
-
+      if (!confirm(`ยืนยันลบ OPD ${opd} ?`)) return;
       try{
         await apiDeleteCustomerAndSales(opd);
         selected.delete(opd);
         showToast('ลบลูกค้าแล้ว', 'warn');
-        closeModal('detailModal');
         closeModal('viewModal');
         await loadData();
       }catch(err){
-        console.error(err);
         showToast('ลบไม่สำเร็จ', 'error');
       }
     };
 
     $('#bulkDeleteBtn').onclick = async () => {
       if (selected.size === 0) return showToast('ยังไม่ได้เลือกรายการ', 'warn');
-      if (!confirm(`ลบ ${selected.size} รายการที่เลือก? (ถาวร)`)) return;
+      if (!confirm(`ลบ ${selected.size} รายการที่เลือก?`)) return;
 
       try{
         const list = Array.from(selected);
@@ -1042,67 +1094,65 @@
         showToast('ลบรายการที่เลือกแล้ว', 'warn');
         await loadData();
       }catch(err){
-        console.error(err);
         showToast('ลบแบบกลุ่มไม่สำเร็จ', 'error');
         await loadData();
       }
     };
 
     // =========================
-    // Add/Edit Save
+    // Add/Edit Save (ใช้ FormData + Picker)
     // =========================
     $('#openAddModalBtn').onclick = openAddForm;
 
     $('#saveCustomerBtn').onclick = async () => {
       const opd = pad4($('#f_opd').value.trim());
-      if (!opd || opd.length !== 4) return alert('กรุณากรอกเลข OPD 4 หลักให้ถูกต้อง');
+      if (!opd || opd.length !== 4) return alert('กรุณากรอกเลข OPD 4 หลัก');
+
+      const fd = new FormData();
+      fd.append('opd', opd);
+      fd.append('birthMonth', pad2($('#f_birthMonth').value.trim()));
+      fd.append('birth_th_ddmmyyyy', $('#f_birth_th').value.trim());
+      fd.append('name', $('#f_name').value.trim());
+      fd.append('full_name', $('#f_full_name').value.trim());
+      fd.append('phone', $('#f_phone').value.trim());
+      fd.append('facebook_name', $('#f_facebook_name').value.trim());
+      fd.append('national_id', $('#f_national_id').value.trim());
+      fd.append('vip', $('#f_vip').value);
+      fd.append('address', $('#f_address').value.trim());
+      fd.append('profile', $('#f_profile').value.trim());
+      fd.append('note', $('#f_note').value.trim());
+
+      // ✅ 1. ส่งไฟล์ใหม่ (ถ้ามี)
+      const fileInput = $('#profileInput');
+      if (fileInput.files[0]) {
+        fd.append('profile_pic', fileInput.files[0]);
+      }
+      
+      // ✅ 2. ส่งลิงก์จาก Gallery (ถ้ามี และไม่ได้เลือกไฟล์ใหม่)
+      const galleryUrl = $('#selectedGalleryUrl').value;
+      if (galleryUrl && !fileInput.files[0]) {
+        fd.append('existing_profile_url', galleryUrl);
+      }
 
       const mode = $('#formMode').value;
-
-      const rawPayload = {
-        opd: opd,
-        birthMonth: pad2($('#f_birthMonth').value.trim()),
-        birth_th_ddmmyyyy: $('#f_birth_th').value.trim(),
-        name: $('#f_name').value.trim(),
-        full_name: $('#f_full_name').value.trim(),
-        phone: $('#f_phone').value.trim(),
-        facebook_name: $('#f_facebook_name').value.trim(),
-        national_id: $('#f_national_id').value.trim(),
-        vip: $('#f_vip').value,
-        address: $('#f_address').value.trim(),
-        profile: $('#f_profile').value.trim(),
-        note: $('#f_note').value.trim()
-      };
-
-      Object.keys(rawPayload).forEach(k => { if (rawPayload[k] === '') rawPayload[k] = null; });
-
-      if (rawPayload.birthMonth && !/^(0[1-9]|1[0-2])$/.test(rawPayload.birthMonth)) {
-        return alert('เดือนเกิดต้องเป็น 01-12');
-      }
-
-      if (rawPayload.birth_th_ddmmyyyy && !/^\d{2}\/\d{2}\/\d{4}$/.test(rawPayload.birth_th_ddmmyyyy)) {
-        return alert('วันเกิดไทยต้องเป็นรูปแบบ dd/mm/yyyy (เช่น 05/09/2530)');
-      }
-
       try {
         if (mode === 'add') {
-          await apiAddCustomerFull(rawPayload);
+          await apiAddCustomerFull(fd);
           showToast('เพิ่มลูกค้าสำเร็จ');
         } else {
-          const patch = { ...rawPayload };
-          delete patch.opd;
-          await apiUpdateCustomerPatch(opd, patch);
-          showToast('บันทึกการแก้ไขสำเร็จ');
+          // ใช้ API ใหม่ที่รองรับการอัปเดตรูป
+           const r = await fetch('/api/update_customer_with_image', { 
+             method: 'POST', 
+             body: fd 
+           });
+           if (!r.ok) throw new Error('Update failed');
+           showToast('บันทึกการแก้ไขสำเร็จ');
         }
-
         closeModal('addModal');
         await loadData();
-
       } catch (err) {
         console.error(err);
-        alert(mode === 'add'
-          ? 'เพิ่มไม่สำเร็จ (ตรวจสอบ OPD ซ้ำ หรือ Server Error)'
-          : 'บันทึกไม่สำเร็จ (Server Error)');
+        alert('บันทึกไม่สำเร็จ');
       }
     };
 
@@ -1114,16 +1164,13 @@
     monthFilter.addEventListener('change', () => render());
     $('#refreshBtn').onclick = loadData;
 
-    // Export CSV
     $('#exportBtn').onclick = () => {
       const rows = (viewData.length ? viewData : rawData);
       const headers = ['opd','name','full_name','phone','national_id','address','facebook_name','birthMonth','birth_th_ddmmyyyy','vip','profile','note'];
-
       const csv = [
         headers.join(','),
         ...rows.map(r => headers.map(h => `"${String(r[h] ?? '').replace(/"/g,'""')}"`).join(','))
       ].join('\n');
-
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1131,123 +1178,62 @@
       a.download = `customers_${new Date().toISOString().slice(0,10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
-      showToast('ส่งออก CSV แล้ว');
     };
 
-    // Scroll Top
     window.onscroll = () => {
       if (window.scrollY > 300) $('#scrollTop').classList.add('visible');
       else $('#scrollTop').classList.remove('visible');
     };
     $('#scrollTop').onclick = () => window.scrollTo({top:0, behavior:'smooth'});
 
-    // Init
     loadData();
 
     // =========================
-    // 🪪 OCR Function (Google Vision via Flask)
+    // 🪪 OCR Function
     // =========================
-    function formatThaiId13(id13){
-      const s = String(id13 || '').replace(/\D/g,'');
-      if (s.length !== 13) return '';
-      return `${s[0]}-${s.slice(1,5)}-${s.slice(5,10)}-${s.slice(10,12)}-${s[12]}`;
+    async function processIDCard(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      showToast('กำลังอ่านข้อมูลจากบัตร...', 'warn');
+      const btn = input.nextElementSibling;
+      const oldText = btn ? btn.innerText : '';
+      if (btn) { btn.innerText = '⏳ อ่าน...'; btn.disabled = true; }
+
+      try {
+        const fd = new FormData();
+        fd.append('image', file);
+        const res = await fetch('/api/idcard_extract', { method: 'POST', body: fd });
+        const out = await res.json();
+        if (!res.ok) throw new Error();
+
+        const title = (out.title_th || '').trim();
+        const first = (out.first_name_th || '').trim();
+        const last  = (out.last_name_th || '').trim();
+        const fullName = [title, first, last].filter(Boolean).join(' ').trim();
+        if (fullName) $('#f_full_name').value = fullName;
+
+        const birth = (out.birth_date || '').trim();
+        if (birth) {
+          $('#f_birth_th').value = birth;
+          const parts = birth.split('/');
+          if (/^\d{2}$/.test(parts[1])) $('#f_birthMonth').value = parts[1];
+        }
+
+        const idNo = (out.id_number || '').trim();
+        if (idNo) $('#f_national_id').value = idNo;
+
+        const addr = (out.address || '').trim();
+        if (addr) $('#f_address').value = addr;
+
+        showToast('อ่านบัตรสำเร็จ', 'ok');
+      } catch (err) {
+        showToast('อ่านบัตรไม่สำเร็จ', 'error');
+      } finally {
+        input.value = '';
+        if (btn) { btn.innerText = oldText; btn.disabled = false; }
+      }
     }
-
-    function normalizeOCRText(text){
-      return (text || '')
-        .replace(/\r/g,'\n')
-        .replace(/[ \t]+/g,' ')
-        .replace(/\n{2,}/g,'\n')
-        .trim();
-    }
-
-      async function processIDCard(input) {
-  const file = input.files[0];
-  if (!file) return;
-
-  showToast('กำลังอ่านข้อมูลจากบัตรด้วย AI...', 'warn');
-
-  // ปุ่มอยู่ถัดจาก input (ตาม HTML ของคุณ)
-  const btn = input.nextElementSibling;
-  const oldText = btn ? btn.innerText : '';
-  if (btn) { btn.innerText = '⏳ กำลังอ่าน...'; btn.disabled = true; }
-
-  try {
-    const fd = new FormData();
-    fd.append('image', file);
-
-    // ✅ เปลี่ยน endpoint มาที่ OpenAI route
-    const res = await fetch('/api/idcard_extract', {
-      method: 'POST',
-      credentials: 'same-origin',
-      body: fd
-    });
-
-    const out = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      console.error(out);
-      throw new Error(out.error || 'idcard_extract_failed');
-    }
-
-    // out คาดว่าจะเป็น:
-    // { id_number, title_th, first_name_th, last_name_th, birth_date, address, issue_date, expiry_date }
-
-    // ✅ 1) ชื่อ-สกุล (ใช้ full_name เท่านั้นตามที่คุณบอก)
-    const title = (out.title_th || '').trim();
-    const first = (out.first_name_th || '').trim();
-    const last  = (out.last_name_th || '').trim();
-
-    const fullName = [title, first, last].filter(Boolean).join(' ').trim();
-    if (fullName) $('#f_full_name').value = fullName;
-
-    // ✅ 2) วันเกิด (ไทย dd/mm/yyyy - อ่านไม่ได้ปล่อยว่าง)
-    const birth = (out.birth_date || '').trim();
-    if (birth) {
-      $('#f_birth_th').value = birth;
-
-      // ตั้งเดือนเกิดจาก dd/mm/yyyy
-      const parts = birth.split('/');
-      const mm = (parts[1] || '').trim();
-      if (/^\d{2}$/.test(mm)) $('#f_birthMonth').value = mm;
-    }
-
-    // ✅ 3) เลขบัตร
-    const idNo = (out.id_number || '').trim();
-    if (idNo) $('#f_national_id').value = idNo;
-
-    // ✅ 4) ที่อยู่
-    const addr = (out.address || '').trim();
-    if (addr) $('#f_address').value = addr;
-
-    // ✅ (ถ้าคุณอยากโชว์เพิ่มในโปรไฟล์/หมายเหตุแบบอัตโนมัติ)
-    // - issue_date / expiry_date ไม่มีช่องเฉพาะในฟอร์มนี้
-    // - แนะนำใส่รวมในหมายเหตุ (ถ้ามีค่าจริง)
-    const issue = (out.issue_date || '').trim();
-    const exp   = (out.expiry_date || '').trim();
-    const extra = [];
-    if (issue) extra.push(`วันออกบัตร: ${issue}`);
-    if (exp) extra.push(`วันหมดอายุ: ${exp}`);
-    if (extra.length) {
-      const oldNote = ($('#f_note').value || '').trim();
-      const addText = extra.join(' | ');
-      $('#f_note').value = oldNote ? `${oldNote}\n${addText}` : addText;
-    }
-
-    if (fullName || birth || idNo || addr) {
-      showToast('ดึงข้อมูลสำเร็จ (โปรดตรวจสอบความถูกต้อง)', 'ok');
-    } else {
-      showToast('AI อ่านไม่ชัด ลองถ่ายใหม่ให้ตรง/ชัดขึ้นนะ', 'warn');
-    }
-
-  } catch (err) {
-    console.error(err);
-    showToast('อ่านบัตรไม่สำเร็จ ลองถ่ายรูปใหม่ให้ชัดขึ้นนะ', 'error');
-  } finally {
-    input.value = '';
-    if (btn) { btn.innerText = oldText; btn.disabled = false; }
-  }
-}
-
   </script>
 </body>
 </html>

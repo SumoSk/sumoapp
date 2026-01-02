@@ -2735,8 +2735,194 @@ def api_staffs():
 
 
 
+import cloudinary
+import cloudinary.uploader
+
+# 1. ตั้งค่า (เอาค่ามาจากหน้า Dashboard ของ Cloudinary)
+cloudinary.config(
+  cloud_name = "du2xzjfiy", 
+  api_key = "353329988494927", 
+  api_secret = "NqLAwesdc65RApjH-RCPBj3cu1c" 
+)
+
+# 2. ฟังก์ชันสำหรับอัพโหลด (เรียกใช้ตัวนี้ได้เลย)
+def save_image_to_cloud(image_file):
+    """
+    รับไฟล์รูป -> ส่งไป Cloudinary -> คืนค่าเป็น URL (https://...)
+    """
+    try:
+        # folder='clinic_customers' คือตั้งชื่อโฟลเดอร์ใน cloud ให้เป็นระเบียบ
+        upload_result = cloudinary.uploader.upload(image_file, folder="clinic_customers")
+        
+        # สิ่งที่ต้องการที่สุดคือตัวนี้ครับ 'secure_url'
+        return upload_result['secure_url']
+    
+    except Exception as e:
+        print(f"Upload failed: {e}")
+        return None
 
 
+# ✅ เปลี่ยนชื่อ Route และ Function เป็น v2
+@app.route('/api/add_customer_v2', methods=['POST'])
+def add_customer_v2():
+    try:
+        # รับข้อมูลจาก FormData
+        data = request.form
+        
+        # รับไฟล์รูป (ถ้ามี)
+        profile_file = request.files.get('profile_pic')
+        profile_url = None
+
+        # ถ้ามีรูป -> ส่งไป Cloudinary (ถ้ายังไม่ตั้งค่า Cloudinary ให้ comment 2 บรรทัดนี้ทิ้ง)
+        if profile_file:
+            profile_url = save_image_to_cloud(profile_file) 
+            pass # (เปิดบรรทัดบนเมื่อพร้อมใช้ Cloudinary)
+
+        # เตรียมข้อมูล
+        customer_data = {
+            "opd": data.get('opd'),
+            "birthMonth": data.get('birthMonth'),
+            "birth_th_ddmmyyyy": data.get('birth_th_ddmmyyyy'),
+            "name": data.get('name'),
+            "full_name": data.get('full_name'),
+            "phone": data.get('phone'),
+            "facebook_name": data.get('facebook_name'),
+            "national_id": data.get('national_id'),
+            "vip": data.get('vip'),
+            "address": data.get('address'),
+            "profile": data.get('profile'),
+            "note": data.get('note'),
+            "profile_pic_url": profile_url # (เปิดเมื่อมีคอลัมน์นี้ใน Supabase)
+        }
+
+        # เคลียร์ค่าว่าง
+        for k, v in customer_data.items():
+            if v == '': customer_data[k] = None
+
+        # บันทึก
+        supabase.table('customers').insert(customer_data).execute()
+
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        print(f"Error adding customer v2: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# =============================================================
+# ✅ Gallery Management (Upload & List)
+# =============================================================
+
+# ดึงรูปทั้งหมดของ OPD นั้นๆ
+@app.route('/api/get_gallery')
+@login_required
+def get_gallery():
+    opd = request.args.get('opd')
+    if not opd: return jsonify([])
+    try:
+        # ดึงจากตาราง customer_gallery เรียงจากใหม่ไปเก่า
+        res = supabase.table("customer_gallery").select("*").eq("opd", opd).order("created_at", desc=True).execute()
+        return jsonify(res.data or [])
+    except Exception as e:
+        return jsonify([])
+
+# อัปโหลดรูปลง Cloudinary และบันทึกลง Supabase
+@app.route('/api/upload_gallery', methods=['POST'])
+@login_required
+def upload_gallery():
+    try:
+        opd = request.form.get('opd')
+        images = request.files.getlist('images') # รับมาหลายไฟล์
+
+        if not images:
+            return jsonify({"error": "No images"}), 400
+
+        saved_rows = []
+        for img in images:
+            # 1. ส่งไป Cloudinary
+            # (พลอยใช้ config เดิมที่คุณตั้งไว้ด้านบนไฟล์แล้ว)
+            res = cloudinary.uploader.upload(img, folder=f"clinic_gallery/{opd}")
+            url = res['secure_url']
+            
+            # 2. บันทึกลง Supabase (ตาราง customer_gallery)
+            data = {"opd": opd, "image_url": url}
+            supabase.table("customer_gallery").insert(data).execute()
+            saved_rows.append(data)
+
+        return jsonify({"status": "success", "count": len(saved_rows)})
+
+    except Exception as e:
+        print(f"Gallery upload error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# ลบรูป (ถ้าต้องการ)
+@app.route('/api/delete_gallery_image', methods=['POST'])
+@login_required
+def delete_gallery_image():
+    try:
+        data = request.get_json(silent=True) or {}
+        img_id = data.get('id')
+        if not img_id: return jsonify({"error": "missing_id"}), 400
+        
+        supabase.table("customer_gallery").delete().eq("id", img_id).execute()
+        return jsonify({"status": "deleted"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# =============================================================
+# ✅ ส่วนอัปเดตข้อมูลลูกค้า + รูปภาพ (วางต่อท้ายไฟล์ได้เลย)
+# =============================================================
+@app.route('/api/update_customer_with_image', methods=['POST'])
+@login_required
+def update_customer_with_image():
+    try:
+        # รับข้อมูลจากหน้าบ้าน (FormData)
+        data = request.form
+        opd = normalize_opd(data.get("opd"))
+        if not opd: return jsonify({"error": "missing_opd"}), 400
+
+        # เตรียมข้อมูลที่จะแก้
+        patch = {
+            "name": data.get("name"),
+            "full_name": data.get("full_name"),
+            "phone": data.get("phone"),
+            "facebook_name": data.get("facebook_name"),
+            "national_id": data.get("national_id"),
+            "vip": data.get("vip"),
+            "address": data.get("address"),
+            "profile": data.get("profile"),
+            "note": data.get("note"),
+            "birthMonth": data.get("birthMonth"),
+            "birth_th_ddmmyyyy": data.get("birth_th_ddmmyyyy"),
+        }
+
+        # --- ส่วนจัดการรูปภาพ ---
+        # 1. ถ้ามีการอัปโหลดไฟล์ใหม่ (กดปุ่มกล้อง)
+        profile_file = request.files.get('profile_pic')
+        if profile_file:
+            # อัปขึ้น Cloudinary แล้วเอาลิงก์มา
+            url = save_image_to_cloud(profile_file)
+            patch["profile_pic_url"] = url
+        
+        # 2. หรือถ้าเลือกรูปจาก Gallery (กดปุ่มโฟลเดอร์)
+        elif data.get("existing_profile_url"):
+            patch["profile_pic_url"] = data.get("existing_profile_url")
+
+        # ลบค่าว่างทิ้ง (จะได้ไม่ไปลบข้อมูลเดิมใน DB)
+        clean_patch = {k: v for k, v in patch.items() if v is not None and v != ""}
+        
+        # จัดการเดือนเกิด (ถ้าว่างให้ลบออก)
+        if "birthMonth" in clean_patch and not clean_patch["birthMonth"]:
+            del clean_patch["birthMonth"]
+
+        # สั่งอัปเดตลง Supabase
+        supabase.table("customers").update(clean_patch).eq("opd", opd).execute()
+
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        print(f"Update Image Error: {e}")
+        return jsonify({"error": str(e)}), 500
+    
 # =============================================================
 # Main
 # =============================================================

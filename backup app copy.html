@@ -2410,6 +2410,519 @@ def api_work_tx():
         return jsonify({"error": str(e)}), 500
 
 
+
+
+# =============================================================
+# ✅ Clinic Time Module — Customers Search (Search on Demand)
+# =============================================================
+@app.route("/api/search_customer")
+@login_required
+def api_search_customer():
+    try:
+        q = (request.args.get("q") or "").strip()
+        if not q or len(q) < 1:
+            return jsonify([])
+
+        # จำกัดจำนวนคืนค่า (มือถือจะไม่หน่วง)
+        limit = 20
+
+        # หาได้ทั้ง OPD / ชื่อ / เบอร์ (ilike)
+        # NOTE: customers.opd เป็น text/เลขก็ได้ แต่เรา normalize ให้เป็น 4
+        q_digits = re.sub(r"\D", "", q)
+        is_opd = q_digits.isdigit() and len(q_digits) <= 4
+
+        qry = supabase.table("customers").select("opd,name,phone,profile,note").limit(limit)
+
+        # เงื่อนไขค้นหา: OR
+        # Supabase python: ใช้ .or_("a.ilike.%x%,b.ilike.%x%")
+        or_parts = []
+        or_parts.append(f"name.ilike.%{q}%")
+        or_parts.append(f"phone.ilike.%{q}%")
+        if is_opd:
+            or_parts.append(f"opd.ilike.%{q_digits.zfill(4)}%")
+
+        qry = qry.or_(",".join(or_parts)).order("opd", desc=False)
+
+        res = qry.execute()
+        rows = res.data or []
+
+        # normalize opd
+        for r in rows:
+            r["opd"] = normalize_opd(r.get("opd"))
+
+        return jsonify(rows)
+
+    except Exception as e:
+        app.logger.error(f"/api/search_customer error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+
+
+# =============================================================
+# ✅ Clinic Time Module — Appointments CRUD (Daily)
+# =============================================================
+@app.route("/api/get_appointments")
+@login_required
+def api_get_appointments():
+    """
+    query:
+      date=YYYY-MM-DD
+    return:
+      list of appointments for that day
+    """
+    try:
+        appt_date = safe_date_str(request.args.get("date"))
+        if not appt_date:
+            return jsonify({"error": "missing_date"}), 400
+
+        res = (
+            supabase.table("appointments")
+            .select("*")
+            .eq("appt_date", appt_date)
+            .order("start_time", desc=False)
+            .execute()
+        )
+        return jsonify(res.data or [])
+    except Exception as e:
+        app.logger.error(f"/api/get_appointments error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/save_appointment", methods=["POST"])
+@login_required
+def api_save_appointment():
+    """
+    payload example:
+    {
+      "appt_date":"2025-12-30",
+      "start_time":"11:00",
+      "end_time":"11:30",           # optional
+      "column_id": 1,               # 1-4
+      "status":"pending|confirmed", # optional
+      "procedure":"Botox",          # optional
+      "note":"...",                 # optional
+
+      "customer_id": "...uuid...",  # optional
+      "opd":"0001",                 # optional (ใช้แทน customer_id ก็ได้)
+      "guest_name":"...",           # optional
+      "guest_phone":"..."           # optional
+    }
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+
+        appt_date = safe_date_str(data.get("appt_date"))
+        start_time = (data.get("start_time") or "").strip()
+        end_time = (data.get("end_time") or "").strip()
+        column_id = data.get("column_id")
+
+        if not appt_date or not start_time or not column_id:
+            return jsonify({"error": "missing_required"}), 400
+
+        try:
+            column_id = int(column_id)
+        except Exception:
+            return jsonify({"error": "invalid_column_id"}), 400
+
+        # customer (existing)
+        customer_id = data.get("customer_id")
+        opd = normalize_opd(data.get("opd")) if data.get("opd") else ""
+
+        # guest
+        guest_name = (data.get("guest_name") or "").strip()
+        guest_phone = (data.get("guest_phone") or "").strip()
+
+        # อย่างน้อยต้องมี existing หรือ guest
+        if not customer_id and not opd and not guest_name:
+            return jsonify({"error": "missing_customer_or_guest"}), 400
+
+        payload = {
+            "appt_date": appt_date,
+            "start_time": start_time,
+            "end_time": end_time or None,
+            "column_id": column_id,
+            "status": (data.get("status") or "pending").strip(),
+            "procedure": (data.get("procedure") or "").strip() or None,
+            "note": (data.get("note") or "").strip() or None,
+            "created_by": session.get("username"),
+        }
+
+        # map existing customer
+        if customer_id:
+            payload["customer_id"] = customer_id
+        elif opd:
+            # ถ้าไม่มี customer_id แต่มี OPD -> ดึง uuid จาก customers (ถ้ามีคอลัมน์ id)
+            # ถ้าตาราง customers ไม่มี id ก็ไม่ต้องทำส่วนนี้
+            try:
+                c = supabase.table("customers").select("id").eq("opd", opd).single().execute().data
+                if c and c.get("id"):
+                    payload["customer_id"] = c["id"]
+                    payload["opd"] = opd
+                else:
+                    payload["opd"] = opd
+            except Exception:
+                payload["opd"] = opd
+
+        # guest
+        if guest_name:
+            payload["guest_name"] = guest_name
+            payload["guest_phone"] = guest_phone or None
+
+        ins = supabase.table("appointments").insert(payload).execute()
+        row = (ins.data or [{}])[0]
+        return jsonify({"success": True, "row": row})
+
+    except Exception as e:
+        app.logger.error(f"/api/save_appointment error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/delete_appointment", methods=["POST"])
+@login_required
+def api_delete_appointment():
+    try:
+        data = request.get_json(silent=True) or {}
+        appt_id = data.get("id")
+        if not appt_id:
+            return jsonify({"error": "missing_id"}), 400
+        supabase.table("appointments").delete().eq("id", appt_id).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        app.logger.error(f"/api/delete_appointment error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# =============================================================
+# ✅ Clinic Time Module — Roster (Monthly)
+# =============================================================
+@app.route("/api/get_roster")
+@login_required
+def api_get_roster():
+    """
+    query:
+      month=YYYY-MM  (เช่น 2026-01)
+    return:
+      list of schedules in that month
+    """
+    try:
+        month = (request.args.get("month") or "").strip()
+        if not re.match(r"^\d{4}-\d{2}$", month):
+            return jsonify({"error": "invalid_month"}), 400
+
+        start_date = f"{month}-01"
+        # จบเดือนแบบง่าย (ไม่ต้องเป๊ะมากก็ได้ เพราะไม่มีเงื่อนไข)
+        # ใช้ gte + lt เดือนถัดไป
+        y, m = month.split("-")
+        y = int(y); m = int(m)
+        if m == 12:
+            next_month = f"{y+1}-01-01"
+        else:
+            next_month = f"{y}-{str(m+1).zfill(2)}-01"
+
+        res = (
+            supabase.table("work_schedules")
+            .select("*")
+            .gte("date", start_date)
+            .lt("date", next_month)
+            .order("date", desc=False)
+            .order("start_time", desc=False)
+            .execute()
+        )
+        return jsonify(res.data or [])
+    except Exception as e:
+        app.logger.error(f"/api/get_roster error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+
+@app.route("/api/save_roster", methods=["POST"])
+@login_required
+def api_save_roster():
+    """
+    payload:
+    {
+      "staff_id": "...",
+      "date": "YYYY-MM-DD",
+      "start_time":"11:00",
+      "end_time":"19:30",
+      "role":"doctor|nurse",        # optional
+      "note":"",                    # optional
+      "special_type":"holiday|treatment|",  # optional
+    }
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        staff_id = data.get("staff_id")
+        date_s = safe_date_str(data.get("date"))
+        st = (data.get("start_time") or "").strip()
+        et = (data.get("end_time") or "").strip()
+
+        if not staff_id or not date_s:
+            return jsonify({"error": "missing_required"}), 400
+
+        payload = {
+            "staff_id": staff_id,
+            "date": date_s,
+            "start_time": st or None,
+            "end_time": et or None,
+            "role": (data.get("role") or "").strip() or None,
+            "note": (data.get("note") or "").strip() or None,
+            "special_type": (data.get("special_type") or "").strip() or None,
+            "created_by": session.get("username"),
+        }
+
+        ins = supabase.table("work_schedules").insert(payload).execute()
+        row = (ins.data or [{}])[0]
+        return jsonify({"success": True, "row": row})
+    except Exception as e:
+        app.logger.error(f"/api/save_roster error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+
+
+@app.route("/api/delete_roster", methods=["POST"])
+@login_required
+def api_delete_roster():
+    try:
+        data = request.get_json(silent=True) or {}
+        rid = data.get("id")
+        if not rid:
+            return jsonify({"error": "missing_id"}), 400
+        supabase.table("work_schedules").delete().eq("id", rid).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        app.logger.error(f"/api/delete_roster error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+
+# =============================================================
+# ✅ Clinic Time Module — Staffs (Settings)
+# =============================================================
+@app.route("/api/staffs", methods=["GET", "POST", "DELETE"])
+@login_required
+def api_staffs():
+    try:
+        if request.method == "GET":
+            res = supabase.table("staffs").select("*").order("role", desc=False).order("name", desc=False).execute()
+            return jsonify(res.data or [])
+
+        data = request.get_json(silent=True) or {}
+
+        if request.method == "POST":
+            name = (data.get("name") or "").strip()
+            role = (data.get("role") or "").strip()  # doctor / nurse
+            color_code = (data.get("color_code") or "").strip() or None
+
+            if not name or not role:
+                return jsonify({"error": "missing_required"}), 400
+
+            payload = {"name": name, "role": role, "color_code": color_code, "is_active": True}
+            ins = supabase.table("staffs").insert(payload).execute()
+            row = (ins.data or [{}])[0]
+            return jsonify({"success": True, "row": row})
+
+        if request.method == "DELETE":
+            sid = data.get("id")
+            if not sid:
+                return jsonify({"error": "missing_id"}), 400
+            supabase.table("staffs").delete().eq("id", sid).execute()
+            return jsonify({"success": True})
+
+    except Exception as e:
+        app.logger.error(f"/api/staffs error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+
+import cloudinary
+import cloudinary.uploader
+
+# 1. ตั้งค่า (เอาค่ามาจากหน้า Dashboard ของ Cloudinary)
+cloudinary.config(
+  cloud_name = "du2xzjfiy", 
+  api_key = "353329988494927", 
+  api_secret = "NqLAwesdc65RApjH-RCPBj3cu1c" 
+)
+
+# 2. ฟังก์ชันสำหรับอัพโหลด (เรียกใช้ตัวนี้ได้เลย)
+def save_image_to_cloud(image_file):
+    """
+    รับไฟล์รูป -> ส่งไป Cloudinary -> คืนค่าเป็น URL (https://...)
+    """
+    try:
+        # folder='clinic_customers' คือตั้งชื่อโฟลเดอร์ใน cloud ให้เป็นระเบียบ
+        upload_result = cloudinary.uploader.upload(image_file, folder="clinic_customers")
+        
+        # สิ่งที่ต้องการที่สุดคือตัวนี้ครับ 'secure_url'
+        return upload_result['secure_url']
+    
+    except Exception as e:
+        print(f"Upload failed: {e}")
+        return None
+
+
+# ✅ เปลี่ยนชื่อ Route และ Function เป็น v2
+@app.route('/api/add_customer_v2', methods=['POST'])
+def add_customer_v2():
+    try:
+        # รับข้อมูลจาก FormData
+        data = request.form
+        
+        # รับไฟล์รูป (ถ้ามี)
+        profile_file = request.files.get('profile_pic')
+        profile_url = None
+
+        # ถ้ามีรูป -> ส่งไป Cloudinary (ถ้ายังไม่ตั้งค่า Cloudinary ให้ comment 2 บรรทัดนี้ทิ้ง)
+        if profile_file:
+            profile_url = save_image_to_cloud(profile_file) 
+            pass # (เปิดบรรทัดบนเมื่อพร้อมใช้ Cloudinary)
+
+        # เตรียมข้อมูล
+        customer_data = {
+            "opd": data.get('opd'),
+            "birthMonth": data.get('birthMonth'),
+            "birth_th_ddmmyyyy": data.get('birth_th_ddmmyyyy'),
+            "name": data.get('name'),
+            "full_name": data.get('full_name'),
+            "phone": data.get('phone'),
+            "facebook_name": data.get('facebook_name'),
+            "national_id": data.get('national_id'),
+            "vip": data.get('vip'),
+            "address": data.get('address'),
+            "profile": data.get('profile'),
+            "note": data.get('note'),
+            "profile_pic_url": profile_url # (เปิดเมื่อมีคอลัมน์นี้ใน Supabase)
+        }
+
+        # เคลียร์ค่าว่าง
+        for k, v in customer_data.items():
+            if v == '': customer_data[k] = None
+
+        # บันทึก
+        supabase.table('customers').insert(customer_data).execute()
+
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        print(f"Error adding customer v2: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# =============================================================
+# ✅ Gallery Management (Upload & List)
+# =============================================================
+
+# ดึงรูปทั้งหมดของ OPD นั้นๆ
+@app.route('/api/get_gallery')
+@login_required
+def get_gallery():
+    opd = request.args.get('opd')
+    if not opd: return jsonify([])
+    try:
+        # ดึงจากตาราง customer_gallery เรียงจากใหม่ไปเก่า
+        res = supabase.table("customer_gallery").select("*").eq("opd", opd).order("created_at", desc=True).execute()
+        return jsonify(res.data or [])
+    except Exception as e:
+        return jsonify([])
+
+# อัปโหลดรูปลง Cloudinary และบันทึกลง Supabase
+@app.route('/api/upload_gallery', methods=['POST'])
+@login_required
+def upload_gallery():
+    try:
+        opd = request.form.get('opd')
+        images = request.files.getlist('images') # รับมาหลายไฟล์
+
+        if not images:
+            return jsonify({"error": "No images"}), 400
+
+        saved_rows = []
+        for img in images:
+            # 1. ส่งไป Cloudinary
+            # (พลอยใช้ config เดิมที่คุณตั้งไว้ด้านบนไฟล์แล้ว)
+            res = cloudinary.uploader.upload(img, folder=f"clinic_gallery/{opd}")
+            url = res['secure_url']
+            
+            # 2. บันทึกลง Supabase (ตาราง customer_gallery)
+            data = {"opd": opd, "image_url": url}
+            supabase.table("customer_gallery").insert(data).execute()
+            saved_rows.append(data)
+
+        return jsonify({"status": "success", "count": len(saved_rows)})
+
+    except Exception as e:
+        print(f"Gallery upload error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# ลบรูป (ถ้าต้องการ)
+@app.route('/api/delete_gallery_image', methods=['POST'])
+@login_required
+def delete_gallery_image():
+    try:
+        data = request.get_json(silent=True) or {}
+        img_id = data.get('id')
+        if not img_id: return jsonify({"error": "missing_id"}), 400
+        
+        supabase.table("customer_gallery").delete().eq("id", img_id).execute()
+        return jsonify({"status": "deleted"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# =============================================================
+# ✅ ส่วนอัปเดตข้อมูลลูกค้า + รูปภาพ (วางต่อท้ายไฟล์ได้เลย)
+# =============================================================
+@app.route('/api/update_customer_with_image', methods=['POST'])
+@login_required
+def update_customer_with_image():
+    try:
+        # รับข้อมูลจากหน้าบ้าน (FormData)
+        data = request.form
+        opd = normalize_opd(data.get("opd"))
+        if not opd: return jsonify({"error": "missing_opd"}), 400
+
+        # เตรียมข้อมูลที่จะแก้
+        patch = {
+            "name": data.get("name"),
+            "full_name": data.get("full_name"),
+            "phone": data.get("phone"),
+            "facebook_name": data.get("facebook_name"),
+            "national_id": data.get("national_id"),
+            "vip": data.get("vip"),
+            "address": data.get("address"),
+            "profile": data.get("profile"),
+            "note": data.get("note"),
+            "birthMonth": data.get("birthMonth"),
+            "birth_th_ddmmyyyy": data.get("birth_th_ddmmyyyy"),
+        }
+
+        # --- ส่วนจัดการรูปภาพ ---
+        # 1. ถ้ามีการอัปโหลดไฟล์ใหม่ (กดปุ่มกล้อง)
+        profile_file = request.files.get('profile_pic')
+        if profile_file:
+            # อัปขึ้น Cloudinary แล้วเอาลิงก์มา
+            url = save_image_to_cloud(profile_file)
+            patch["profile_pic_url"] = url
+        
+        # 2. หรือถ้าเลือกรูปจาก Gallery (กดปุ่มโฟลเดอร์)
+        elif data.get("existing_profile_url"):
+            patch["profile_pic_url"] = data.get("existing_profile_url")
+
+        # ลบค่าว่างทิ้ง (จะได้ไม่ไปลบข้อมูลเดิมใน DB)
+        clean_patch = {k: v for k, v in patch.items() if v is not None and v != ""}
+        
+        # จัดการเดือนเกิด (ถ้าว่างให้ลบออก)
+        if "birthMonth" in clean_patch and not clean_patch["birthMonth"]:
+            del clean_patch["birthMonth"]
+
+        # สั่งอัปเดตลง Supabase
+        supabase.table("customers").update(clean_patch).eq("opd", opd).execute()
+
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        print(f"Update Image Error: {e}")
+        return jsonify({"error": str(e)}), 500
+    
 # =============================================================
 # Main
 # =============================================================
