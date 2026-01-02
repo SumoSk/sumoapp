@@ -1734,9 +1734,12 @@
             <input id="sig_customer" type="text" placeholder="ชื่อผู้ใช้บริการ">
           </div>
           <div class="grow">
-            <label class="muted">3) ผู้รับเงิน</label>
-            <input id="sig_receiver" type="text" placeholder="ชื่อผู้รับเงิน">
-          </div>
+  <label class="muted">3) ผู้รับเงิน</label>
+  <select id="sig_receiver">
+    <option value="วรนาถ หน่อแก้ว">วรนาถ หน่อแก้ว</option>
+    <option value="พชร เพชรสารกุล">พชร เพชรสารกุล</option>
+  </select>
+</div>
         </div>
       </div>
 
@@ -1950,11 +1953,20 @@
     let allSales = null;
 
     // ---------- Prefill customers ----------
-    fetch('/api/customers').then(r=>r.json()).then(data=>{
-      (data||[]).forEach(c=>{
-        if(c.opd){ customerMap[c.opd] = {name:c.name||'', phone:c.phone||''}; }
-      });
-    }).catch(()=>{});
+fetch('/api/customers').then(r=>r.json()).then(data=>{
+  (data||[]).forEach(c=>{
+    if(c.opd){ 
+      // ✅ เก็บข้อมูลให้ครบถ้วนเพื่อเอาไปใช้ต่อ
+      customerMap[c.opd] = {
+        name: c.name || '', 
+        phone: c.phone || '',
+        full_name: c.full_name || '',       // ชื่อเต็ม
+        national_id: c.national_id || '',   // เลขบัตร
+        address: c.address || ''            // ที่อยู่
+      }; 
+    }
+  });
+}).catch(()=>{});
 
     // ---------- Init ----------
     document.addEventListener('DOMContentLoaded', async () => {
@@ -2052,46 +2064,97 @@ async function rebuildDisplayReceipts(){
     }
 
     function onOPDInput(el){
+      // 1. กรองให้เหลือแต่ตัวเลข
       digitsOnly(el);
+      
+      // 2. ปลดล็อกปุ่ม Review ถ้าครบ 4 หลัก
       document.getElementById('btnReview').disabled = !isValidOPD(el.value);
 
       const nameEl = document.getElementById('name');
       const phoneEl = document.getElementById('phone');
       const lockName = document.getElementById('lockNameBadge');
       const lockPhone = document.getElementById('lockPhoneBadge');
+      
+      // ✅ กล่องข้อมูลผู้รับการรักษา (ที่จะไปโชว์ในใบเสร็จ)
+      const noteInput = document.getElementById('pay_note_input');
 
+      // 3. กรณี OPD ไม่ครบ 4 หลัก หรือว่างเปล่า
       if(!isValidOPD(el.value)){
         manualUnlockNamePhone = false;
         lastOPDForLock = '';
-        nameEl.value=''; phoneEl.value='';
+        
+        // เคลียร์ค่า
+        nameEl.value=''; 
+        phoneEl.value='';
+        
+        // ล็อกไว้ก่อน จนกว่าจะกรอกครบ (ตาม Logic เดิม)
         nameEl.disabled = true; phoneEl.disabled = true;
         nameEl.readOnly = false; phoneEl.readOnly = false;
         lockName.style.display='none'; lockPhone.style.display='none';
+        
+        // เคลียร์ข้อมูลที่อยู่ด้วย
+        if(noteInput) noteInput.value = '';
+        
         refreshActionButtonsState();
         return;
       }
 
       const opd = el.value;
+      
+      // ถ้าเปลี่ยนเลข OPD ให้รีเซ็ตสถานะการปลดล็อกมือ
       if(opd !== lastOPDForLock){
         manualUnlockNamePhone = false;
         lastOPDForLock = opd;
       }
 
+      // 4. ดึงข้อมูลจาก Memory (customerMap)
       const c = customerMap[opd];
+
+      // กรณี: เจอข้อมูลลูกค้า และยังไม่ได้กดปลดล็อกเอง
       if(c && !manualUnlockNamePhone){
-        nameEl.value = c.name||''; phoneEl.value = c.phone||'';
+        // --- ส่วนเดิม: เติมชื่อเล่น/เบอร์ ---
+        nameEl.value = c.name||''; 
+        phoneEl.value = c.phone||'';
+        
         nameEl.disabled = true; phoneEl.disabled = true;
         nameEl.readOnly = true; phoneEl.readOnly = true;
         lockName.style.display='inline-flex'; lockPhone.style.display='inline-flex';
-      }else{
+
+        // --- ✅ ส่วนใหม่: เติมข้อมูลลงใบเสร็จ (ชื่อเต็ม+บัตร+ที่อยู่) ---
+        if(noteInput) {
+            const lines = [];
+            
+            // 1. ชื่อ: ใช้ชื่อเต็มก่อน ถ้าไม่มีใช้ชื่อเล่น
+            if(c.full_name) lines.push(c.full_name);
+            else if(c.name) lines.push(c.name);
+
+            // 2. เลขบัตรประชาชน
+            if(c.national_id) lines.push(`เลขบัตร: ${c.national_id}`);
+
+            // 3. ที่อยู่
+            if(c.address) lines.push(`ที่อยู่: ${c.address}`);
+
+            // รวมเป็นข้อความเดียวคั่นด้วยบรรทัดใหม่
+            noteInput.value = lines.join('\n');
+        }
+
+      } else {
+        // กรณี: ไม่เจอลูกค้า หรือ กดปลดล็อกแล้ว (ให้พิมพ์เองได้)
         nameEl.disabled = false; phoneEl.disabled = false;
         nameEl.readOnly = false; phoneEl.readOnly = false;
         lockName.style.display='none'; lockPhone.style.display='none';
+        
         if(c && manualUnlockNamePhone && !nameEl.value && !phoneEl.value){
           nameEl.value = c.name || '';
           phoneEl.value = c.phone || '';
         }
+        
+        // ถ้าไม่เจอลูกค้าเลย ให้เคลียร์ช่องที่อยู่รอไว้ (กันข้อมูลเก่าค้าง)
+        if(!c && noteInput && !manualUnlockNamePhone){
+            noteInput.value = '';
+        }
       }
+      
       refreshActionButtonsState();
     }
 
@@ -3584,129 +3647,146 @@ async function fetchWithTimeout(url, options={}, ms=10000){
     }
 
 async function saveReceiptImage(){
-  const overlay = document.getElementById('receiptOverlay');
-  const box = overlay?.querySelector('.receipt-box');
-  if(!box) return alert('ไม่พบใบเสร็จสำหรับบันทึกภาพ');
+      const overlay = document.getElementById('receiptOverlay');
+      const box = overlay?.querySelector('.receipt-box');
+      
+      if(!box) return alert('ไม่พบใบเสร็จสำหรับบันทึกภาพ');
 
-  // เก็บสไตล์เดิมไว้คืนค่า
-  const prev = {
-    ovOverflow: overlay.style.overflow,
-    boxMaxH: box.style.maxHeight,
-    boxOverflow: box.style.overflow,
-    boxHeight: box.style.height
-  };
+      // 1. จำค่าเดิมไว้ก่อน (ตำแหน่ง Scroll, Style)
+      const originalScrollPos = window.scrollY;
+      const prevOverlayStyle = {
+        position: overlay.style.position,
+        overflow: overlay.style.overflow,
+        alignItems: overlay.style.alignItems,
+        display: overlay.style.display,
+        inset: overlay.style.inset,
+        height: overlay.style.height,
+        background: overlay.style.background
+      };
+      const prevBoxStyle = {
+        maxHeight: box.style.maxHeight,
+        overflow: box.style.overflow,
+        height: box.style.height,
+        borderRadius: box.style.borderRadius,
+        boxShadow: box.style.boxShadow,
+        margin: box.style.margin
+      };
 
-  try{
-    overlay.classList.add('capture-mode');
+      try{
+        // 2. แจ้งผู้ใช้ (กันตกใจตอนจอกระพริบ)
+        const btn = document.querySelector('.receipt-actions .btn-outline:nth-child(2)'); // ปุ่มบันทึกภาพ
+        const originalText = btn ? btn.innerText : '';
+        if(btn) { btn.innerText = "กำลังประมวลผล..."; btn.disabled = true; }
 
-    // ✅ ทำให้กล่องยืดเต็ม ไม่เลื่อน
-    overlay.style.overflow = 'visible';
-    box.style.maxHeight = 'none';
-    box.style.overflow = 'visible';
-    box.style.height = 'auto';
+        // 3. ปรับ Style เพื่อ "ยืด" ใบเสร็จให้เต็มใบ (ระเบิดกล่อง)
+        overlay.classList.add('capture-mode');
+        
+        // เลื่อนจอไปบนสุดก่อน เพื่อให้ html2canvas จับพิกัดถูก
+        window.scrollTo(0, 0); 
 
-    // รอให้ DOM/ฟอนต์นิ่งก่อน
-    if(document.fonts && document.fonts.ready) await document.fonts.ready;
-    await new Promise(r => setTimeout(r, 80));
+        // ปรับ Overlay ให้เป็นพื้นขาวใหญ่ๆ ยาวตามเนื้อหา
+        overlay.style.position = 'absolute';
+        overlay.style.inset = '0';
+        overlay.style.height = 'auto'; // ยืดตามลูก
+        overlay.style.minHeight = '100vh';
+        overlay.style.overflow = 'visible';
+        overlay.style.alignItems = 'flex-start'; // ชิดบน
+        overlay.style.background = '#ffffff'; // พื้นหลังขาวทับทุกอย่าง
+        overlay.style.zIndex = '99999';
 
-    const fullW = box.scrollWidth;
-    const fullH = box.scrollHeight;
+        // ปรับกล่องใบเสร็จให้ยืดสุด ไม่มีการเลื่อน
+        box.style.maxHeight = 'none';
+        box.style.overflow = 'visible';
+        box.style.height = 'auto';
+        box.style.borderRadius = '0'; // ลบมุมมนออกให้เหมือนกระดาษ
+        box.style.boxShadow = 'none';
+        box.style.margin = '0 auto'; 
 
+        // แปลง Input/Textarea เป็น Text ธรรมดาชั่วคราว (แก้สระลอย/กรอบเด้ง)
+        const inputs = box.querySelectorAll('input, textarea');
+        const textBackups = [];
+        inputs.forEach(inp => {
+             // ซ่อน input เดิม
+             const disp = inp.style.display;
+             inp.style.display = 'none';
+             
+             // สร้าง span มาแทนที่
+             const span = document.createElement('div');
+             span.textContent = inp.value;
+             // ลอก Style มา
+             const st = window.getComputedStyle(inp);
+             span.style.font = st.font;
+             span.style.fontSize = st.fontSize;
+             span.style.fontWeight = st.fontWeight;
+             span.style.lineHeight = st.lineHeight;
+             span.style.color = st.color;
+             span.style.textAlign = st.textAlign;
+             span.style.padding = st.padding;
+             span.style.whiteSpace = 'pre-wrap'; // ให้ textarea ขึ้นบรรทัดใหม่ได้
+             
+             if(inp.id === 'receipt_patient_info') {
+                 span.style.border = 'none';
+                 span.style.minHeight = '40px';
+             } else if(inp.classList.contains('sig-under-input')){
+                 span.style.textAlign = 'center';
+                 span.style.borderTop = '1px solid #ccc';
+                 span.style.width = '100%';
+                 span.style.display = 'block';
+             }
 
-// ✅ ทำ input/textarea ให้กลายเป็นตัวหนังสือชั่วคราว (html2canvas ชอบ)
-const replaced = [];
-const makeSpanFromInput = (inp) => {
-  const span = document.createElement('span');
-  span.textContent = inp.value || inp.getAttribute('value') || '';
-  // ทำให้หน้าตาคล้าย input เดิม
-  const cs = getComputedStyle(inp);
-  span.style.display = 'block';
-  span.style.width = cs.width;
-  span.style.textAlign = cs.textAlign;
-  span.style.fontSize = cs.fontSize;
-  span.style.fontWeight = cs.fontWeight;
-  span.style.color = cs.color;
-  span.style.padding = cs.padding;
-  span.style.margin = cs.margin;
-  span.style.lineHeight = cs.lineHeight;
-  span.style.whiteSpace = 'pre-wrap';
-  return span;
-};
+             inp.parentNode.insertBefore(span, inp);
+             textBackups.push({ inp, span, disp });
+        });
 
-// 1) แทนชื่อใต้ลายเซ็น (input.sig-under-input) ด้วย span
-box.querySelectorAll('input.sig-under-input').forEach(inp => {
-  const span = makeSpanFromInput(inp);
-  inp.style.display = 'none';
-  inp.insertAdjacentElement('afterend', span);
-  replaced.push({ type:'input', inp, span });
-});
+        // รอให้ Browser วาดหน้าใหม่สักนิด
+        await new Promise(r => setTimeout(r, 100));
 
-// 2) แทน textarea ข้อมูลผู้รับการรักษา ด้วย div (เพื่อให้จับขึ้นรูปแน่ ๆ)
-const ta = box.querySelector('#receipt_patient_info');
-let taDiv = null;
-if (ta) {
-  taDiv = document.createElement('div');
-  taDiv.textContent = ta.value || '';
-  const cs = getComputedStyle(ta);
-  taDiv.style.whiteSpace = 'pre-wrap';
-  taDiv.style.fontSize = cs.fontSize;
-  taDiv.style.fontWeight = cs.fontWeight;
-  taDiv.style.color = cs.color;
-  taDiv.style.lineHeight = cs.lineHeight;
-  taDiv.style.marginTop = cs.marginTop;
-  taDiv.style.padding = cs.padding;
-  taDiv.style.minHeight = cs.minHeight || '32px';
-  taDiv.style.border = 'none';
-  taDiv.style.background = 'transparent';
+        // 4. ถ่ายรูปด้วย html2canvas
+        const canvas = await html2canvas(box, {
+          scale: 2, // ความคมชัด 2 เท่า
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+          scrollY: 0, // บังคับเริ่มที่ 0
+          windowWidth: document.documentElement.scrollWidth,
+          windowHeight: document.documentElement.scrollHeight
+        });
 
-  ta.style.display = 'none';
-  ta.insertAdjacentElement('afterend', taDiv);
-}
+        // 5. ดาวน์โหลดรูป
+        const opd  = (document.getElementById('opd')?.value || '0000').trim();
+        const date = (document.getElementById('date')?.value || '').trim();
+        const fileName = `receipt_${opd}_${date}.png`;
 
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/png');
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
 
+        // คืนค่าปุ่ม
+        if(btn) { btn.innerText = originalText; btn.disabled = false; }
 
+        // คืนค่า Input/Textarea
+        textBackups.forEach(item => {
+            item.span.remove();
+            item.inp.style.display = item.disp;
+        });
 
-    const canvas = await html2canvas(box, {
-      backgroundColor: '#ffffff',
-      scale: Math.max(2, window.devicePixelRatio || 1),
-      useCORS: true,
-
-      // ✅ บังคับให้จับตามขนาดจริงของ element
-      width: fullW,
-      height: fullH,
-      windowWidth: fullW,
-      windowHeight: fullH,
-
-      // ✅ กันปัญหาตัดเพราะตำแหน่ง scroll ของหน้า
-      scrollX: 0,
-      scrollY: 0
-    });
-
-    const dataUrl = canvas.toDataURL('image/png');
-
-    const opd  = (document.getElementById('opd')?.value || '0000').trim();
-    const date = (document.getElementById('date')?.value || '').trim();
-    const fileName = `receipt_${opd}_${date || 'date'}.png`;
-
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-
-  }catch(err){
-    console.error(err);
-    alert('บันทึกภาพไม่สำเร็จ');
-  }finally{
-    // คืนค่าสไตล์เดิม
-    overlay.classList.remove('capture-mode');
-    overlay.style.overflow = prev.ovOverflow;
-    box.style.maxHeight = prev.boxMaxH;
-    box.style.overflow = prev.boxOverflow;
-    box.style.height = prev.boxHeight;
-  }
-}
+      }catch(err){
+        console.error(err);
+        alert('บันทึกภาพไม่สำเร็จ: ' + err.message);
+      }finally{
+        // 6. คืนค่า Style ทุกอย่างกลับสู่สภาพเดิม
+        overlay.classList.remove('capture-mode');
+        
+        Object.assign(overlay.style, prevOverlayStyle);
+        Object.assign(box.style, prevBoxStyle);
+        
+        // เลื่อนจอกลับที่เดิม
+        window.scrollTo(0, originalScrollPos);
+      }
+    }
 
 // =========================
 // TAB4: Slip Viewer (filter วัน/เดือน/ปี/OPD)
