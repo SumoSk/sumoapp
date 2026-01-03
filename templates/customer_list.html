@@ -7,71 +7,221 @@
   {% block head %}{% endblock %}
 
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
     :root{
-      --teal:#0f766e; --teal-600:#0d9488;
-      --bg:#f7faf9;   --card:#ffffff;
-      --muted:#6b7280; --line:#e5e7eb;
-      --chip:#eef7f6; --danger:#c62828; --amber:#92400e; --gold:#b8860b;
+      --teal:#0f766e; --teal-600:#0d9488; --teal-700:#0f766e;
+      --bg:#f6fbfa; --card:#ffffff;
+      --muted:#64748b; --text:#0f172a;
+      --line:#e5e7eb; --soft:#f8fafc;
+      --ok:#16a34a; --warn:#f59e0b; --bad:#ef4444;
+      --shadow: 0 10px 28px rgba(2,8,23,.08);
+      --shadow2: 0 14px 34px rgba(2,8,23,.12);
+      --radius: 16px;
+      --radius2: 14px;
+      --pad: 14px;
     }
     *{box-sizing:border-box}
-    body{font-family:'Prompt','Segoe UI',sans-serif;margin:0;background:var(--bg);color:#0f172a;padding:10px 10px 120px}
-    .container{max-width:1280px;margin:16px auto;background:#fff;border-radius:16px;box-shadow:0 8px 24px rgba(2,8,23,.06);padding:14px}
+    body{
+      font-family:'Prompt','Segoe UI',sans-serif;
+      margin:0;
+      background: radial-gradient(1100px 600px at 10% -10%, #dff7f4 0%, transparent 60%),
+                  radial-gradient(900px 500px at 110% 0%, #e7fbf8 0%, transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      padding:12px 12px 120px;
+    }
+    .wrap{max-width:1280px;margin:14px auto}
 
-    .headline{font-size:18px;font-weight:800;color:#0b7660;margin:0 0 8px}
-    .sub-muted{color:#6b7280;font-size:12px;margin-top:-2px}
-
-    .section{margin:14px 0 18px}
-    .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px}
-
-    label{display:block;font-size:12px;color:#334155;margin:2px 0 4px}
-    .ipt{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff;font-size:14px}
-    .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 12px;border-radius:10px;border:1px solid #a7e1da;background:#fff;color:#0b7660;cursor:pointer;font-weight:700}
+    /* Top bar */
+    .topbar{
+      display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+      padding:14px 14px;
+      background: linear-gradient(135deg, #ffffff 0%, #fbfffe 55%, #f3fffd 100%);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow: var(--shadow);
+      position:sticky; top:10px; z-index: 20;
+      backdrop-filter: blur(6px);
+    }
+    .brand{
+      display:grid;gap:2px;
+    }
+    .brand .title{
+      font-size:18px;font-weight:900;color:#064e3b;letter-spacing:.2px;
+      margin:0;
+    }
+    .brand .sub{
+      font-size:12px;color:var(--muted);
+    }
+    .actions{
+      display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;
+    }
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      padding:10px 12px;border-radius:12px;
+      border:1px solid #cfe7e5;background:#fff;color:#0b7660;
+      cursor:pointer;font-weight:800;font-size:12px;
+      box-shadow: 0 4px 14px rgba(2,8,23,.06);
+      transition: transform .08s ease, box-shadow .08s ease;
+    }
+    .btn:hover{box-shadow: 0 10px 22px rgba(2,8,23,.10)}
+    .btn:active{transform: translateY(1px)}
     .btn-primary{border-color:transparent;background:var(--teal-600);color:#fff}
     .btn-ghost{background:#f1f5f9;border-color:#e5e7eb;color:#0f172a}
-    .btn-link{border:none;background:transparent;color:#0b7660;font-weight:700;cursor:pointer}
-    .chips{display:flex;flex-wrap:wrap;gap:8px}
-    .chip{padding:8px 12px;border:1px solid #a7e1da;border-radius:999px;background:#fff;color:#0b7660;font-size:12px;cursor:pointer}
-    .chip.active{background:#0b7660;color:#fff}
-    .icon-btn{border:1px solid #d1d5db;background:#fff;border-radius:8px;cursor:pointer;font-size:13px;padding:4px 8px}
+    .btn-link{border:none;background:transparent;color:#0b7660;font-weight:900;cursor:pointer;padding:8px 10px;box-shadow:none}
+    .icon-btn{border:1px solid #d1d5db;background:#fff;border-radius:10px;cursor:pointer;font-size:13px;padding:6px 10px}
     .icon-btn:hover{background:#f8fafc}
 
-    .applied-banner{margin-top:6px;font-size:12px;color:#0b3d35;background:#ecfdf5;border:1px solid #a7f3d0;padding:6px 8px;border-radius:8px;display:none}
+    /* Layout grid */
+    .grid{
+      display:grid;
+      grid-template-columns: 380px 1fr;
+      gap:12px;
+      margin-top:12px;
+      align-items:start;
+    }
+    @media (max-width: 1024px){
+      .grid{grid-template-columns:1fr}
+      .topbar{position:relative; top:auto}
+    }
 
-    table{width:100%;border-collapse:collapse;background:#fff;margin-top:8px}
-    th,td{border:1px solid var(--line);padding:8px;font-size:13px;vertical-align:top}
-    thead tr{background:#f8fafc}
+    /* Cards */
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding:12px 14px;
+      background: linear-gradient(180deg, #f6fffe 0%, #ffffff 70%);
+      border-bottom:1px solid var(--line);
+    }
+    .card .hd .h1{
+      margin:0;font-size:14px;font-weight:900;color:#064e3b;
+    }
+    .card .hd .hint{
+      font-size:12px;color:var(--muted);
+    }
+    .card .bd{padding:14px}
+
+    /* KPI */
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap:10px;
+      margin-top:12px;
+    }
+    @media (max-width: 1024px){
+      .kpis{grid-template-columns: repeat(3, minmax(0, 1fr))}
+    }
+    @media (max-width: 640px){
+      .kpis{grid-template-columns: repeat(2, minmax(0, 1fr))}
+    }
+    .kpi{
+      background: linear-gradient(180deg, #ffffff 0%, #fbfffe 100%);
+      border:1px solid var(--line);
+      border-radius:var(--radius2);
+      padding:12px 12px;
+      display:grid;gap:6px;
+      cursor:pointer;
+      transition: transform .08s ease, box-shadow .08s ease;
+    }
+    .kpi:hover{box-shadow: var(--shadow2)}
+    .kpi:active{transform: translateY(1px)}
+    .kpi .k{font-size:12px;color:var(--muted);font-weight:700}
+    .kpi .v{font-size:18px;font-weight:900;color:#0f172a;line-height:1}
+    .kpi .s{font-size:11px;color:#0b7660;font-weight:800}
+
+    /* Filters */
+    details.filters{border:1px solid var(--line);border-radius:var(--radius);background:#fff;box-shadow: var(--shadow)}
+    details.filters summary{
+      list-style:none;cursor:pointer;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding:12px 14px;
+      font-weight:900;color:#064e3b;
+      background: linear-gradient(180deg, #f6fffe 0%, #ffffff 70%);
+      border-bottom:1px solid var(--line);
+    }
+    details.filters summary::-webkit-details-marker{display:none}
+    .flt-wrap{padding:14px;display:grid;gap:12px}
+    .flt-block{
+      border:1px solid var(--line);border-radius:var(--radius2);
+      background: linear-gradient(180deg, #fcfffe 0%, #ffffff 70%);
+      padding:12px;
+    }
+    .flt-title{font-weight:900;color:#0b3d35;margin-bottom:10px;font-size:13px}
+    label{display:block;font-size:12px;color:#334155;margin:2px 0 6px;font-weight:700}
+    .ipt{
+      width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:12px;background:#fff;font-size:12px
+    }
+
+    .chips{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{
+      padding:8px 12px;border:1px solid #a7e1da;border-radius:999px;
+      background:#fff;color:#0b7660;font-size:12px;cursor:pointer;font-weight:900;
+      transition: transform .08s ease, box-shadow .08s ease;
+    }
+    .chip:hover{box-shadow: 0 10px 22px rgba(2,8,23,.10)}
+    .chip:active{transform: translateY(1px)}
+    .chip.active{background:#0b7660;color:#fff;border-color:#0b7660}
+
+    .applied-banner{
+      margin-top:10px;font-size:12px;color:#0b3d35;background:#ecfdf5;border:1px solid #a7f3d0;
+      padding:8px 10px;border-radius:12px;display:none;font-weight:800
+    }
+
+    /* Tables */
+    .table-card{padding:0}
+    .table-wrap{padding:14px}
+    table{width:100%;border-collapse:separate;border-spacing:0;background:#fff}
+    th,td{border-bottom:1px solid var(--line);padding:10px 10px;font-size:12px;vertical-align:top}
+    thead th{
+      position:sticky; top:0; z-index: 5;
+      background:#f8fafc;
+      border-bottom:1px solid var(--line);
+      font-weight:900;color:#0f172a;
+      text-align:left;
+    }
+    tbody tr:hover{background:#f8fffe}
     tbody tr:nth-child(even){background:#fcfcfc}
-    a.link{color:#0d9488;text-decoration:none;font-weight:700;cursor:pointer}
+    a.link{color:#0d9488;text-decoration:none;font-weight:900;cursor:pointer}
     a.link:hover{text-decoration:underline}
-    .tag{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;margin:2px;border:1px solid #e5e7eb}
-    .tag-green{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
-    .tag-amber{background:#fffbeb;color:#92400e;border-color:#fde68a}
-    .tag-red{background:#fef2f2;color:#991b1b;border-color:#fecaca}
-    .tag-gray{background:#f3f4f6;color:#374151;border-color:#e5e7eb}
 
-    .mini-kpi{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:6px 0 4px}
-    .mini{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
-    .mini .k{font-size:12px;color:#64748b}
-    .mini .v{font-size:18px;font-weight:800;margin-top:4px}
-    .bar{height:8px;border-radius:6px;background:#eef2ff;overflow:hidden}
-    .bar > i{display:block;height:100%;background:#0ea5e9}
+    /* Badges */
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:4px 10px;border-radius:999px;font-size:11px;font-weight:900;
+      border:1px solid var(--line); background:#fff;
+      white-space:nowrap;
+    }
+    .b-ok{border-color:#bbf7d0;background:#ecfdf5;color:#065f46}
+    .b-warn{border-color:#fde68a;background:#fffbeb;color:#92400e}
+    .b-bad{border-color:#fecaca;background:#fef2f2;color:#991b1b}
+    .b-gray{border-color:#e5e7eb;background:#f3f4f6;color:#374151}
 
-    .filter-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
-    .filter-block{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fcfffe}
-    .filter-block .title{font-weight:800;color:#0b3d35;margin-bottom:8px}
-    .filter-row{display:grid;grid-template-columns:repeat(12,1fr);gap:8px}
-    .full{grid-column:1/-1}
-    .span3{grid-column:span 3}.span4{grid-column:span 4}.span5{grid-column:span 5}.span6{grid-column:span 6}.span2{grid-column:span 2}.span8{grid-column:span 8}
+    /* Right column sections */
+    .right{
+      display:grid;
+      gap:12px;
+    }
+    .split2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width: 900px){
+      .split2{grid-template-columns:1fr}
+    }
 
-    #customer-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9999;align-items:center;justify-content:center}
-    #customer-modal .box{background:#fff;border-radius:16px;max-width:92vw;max-height:90vh;overflow:auto;padding:18px;position:relative;box-shadow:0 8px 30px rgba(0,0,0,.2)}
-    #customer-modal .close{position:absolute;right:10px;top:10px;width:36px;height:36px;border:none;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.15);cursor:pointer;background:#fff}
-
-    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    /* Range modal + modals (คงโครงเดิม) */
+    #customer-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center}
+    #customer-modal .box{background:#fff;border-radius:16px;max-width:92vw;max-height:90vh;overflow:auto;padding:18px;position:relative;box-shadow:0 12px 34px rgba(0,0,0,.22)}
+    #customer-modal .close{position:absolute;right:10px;top:10px;width:38px;height:38px;border:none;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.16);cursor:pointer;background:#fff}
 
     .range-modal { position: fixed; inset: 0; z-index: 1200; display: none; }
     .range-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.45); }
@@ -81,265 +231,379 @@
       width: min(92vw, 420px);
       background: #fff;
       border-radius: 14px;
-      box-shadow: 0 12px 30px rgba(0,0,0,.18);
+      box-shadow:0 12px 30px rgba(0,0,0,.18);
       overflow: hidden;
       display: flex; flex-direction: column;
     }
     .range-modal__header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 14px; background: #e0f2f1; font-weight: 600; color: #004d40;
+      padding: 12px 14px; background: #e0f2f1; font-weight: 900; color: #004d40;
     }
     .range-modal__close {
       background: transparent; border: none; font-size: 18px;
       cursor: pointer; color: #004d40;
     }
     .range-modal__body { display: grid; gap: 12px; padding: 14px; }
-    .range-modal__body label { display: grid; gap: 6px; font-size: 13px; color: #335; }
+    .range-modal__body label { display: grid; gap: 6px; font-size: 12px; color: #335; font-weight:800;}
     .range-modal__body input[type="date"]{
       -webkit-appearance: none; appearance: none;
-      width: 100%; padding: 8px 10px; font-size: 14px;
-      border: 1px solid #cfe7e5; border-radius: 10px; background: #fff;
+      width: 100%; padding: 10px 12px; font-size: 12px;
+      border: 1px solid #cfe7e5; border-radius: 12px; background: #fff;
     }
     .range-modal__footer {
       display: flex; justify-content: flex-end; gap: 8px; padding: 12px 14px;
       border-top: 1px solid #eee;
     }
     .btn-primary, .btn-secondary {
-      border: none; padding: 8px 14px; border-radius: 10px; font-size: 13px; cursor: pointer;
+      border: none; padding: 10px 12px; border-radius: 12px; font-size: 12px; cursor: pointer; font-weight:900;
     }
     .btn-primary { background: #009688; color: #fff; }
     .btn-primary:hover { background: #00796b; }
     .btn-secondary { background: #eceff1; color: #37474f; }
     .btn-secondary:hover { background: #e0e3e6; }
 
-    /* โปรไฟล์ editor */
+    /* Profile editor */
     .profile-editor{
-      width:100%; min-height:36px; resize:vertical;
-      border:1px solid #e5e7eb; border-radius:8px; padding:6px 8px; font-size:12px;
+      width:100%; min-height:38px; resize:vertical;
+      border:1px solid #e5e7eb; border-radius:12px; padding:8px 10px; font-size:11px;
       background:#fff;
     }
     .profile-editor.saving{ opacity:.7; }
     .profile-editor.saved{ border-color:#22c55e; box-shadow:0 0 0 2px rgba(34,197,94,.15); }
     .profile-editor.error{ border-color:#ef4444; box-shadow:0 0 0 2px rgba(239,68,68,.15); }
 
-    @media (max-width:1000px){
-      .mini-kpi{grid-template-columns:repeat(3,1fr)}
-      .filter-grid{grid-template-columns:repeat(6,1fr)}
-      .span6{grid-column:span 6}.span5{grid-column:span 6}.span4{grid-column:span 6}.span3{grid-column:span 6}.span2{grid-column:span 3}.span8{grid-column:span 6}
-      .grid-2{grid-template-columns:1fr}
+    /* Toast + Loading */
+    .toast-wrap{
+      position: fixed;
+      right: 12px;
+      bottom: 16px;
+      display: grid;
+      gap: 8px;
+      z-index: 20000;
+      pointer-events:none;
     }
-    @media (max-width:640px){
-      .mini-kpi{grid-template-columns:repeat(2,1fr)}
-      .filter-grid{grid-template-columns:repeat(2,1fr)}
-      .span6,.span5,.span4,.span3,.span8{grid-column:1/-1}
-      .span2{grid-column:span 1}
+    .toast{
+      pointer-events:auto;
+      background:#0f172a;
+      color:#fff;
+      padding:10px 12px;
+      border-radius:14px;
+      box-shadow:0 12px 30px rgba(2,8,23,.25);
+      font-size:12px;
+      max-width:min(360px, calc(100vw - 24px));
+      font-weight:800;
     }
-    /* === Font size overrides (วางท้าย <style> เดิม) === */
-body { font-size: 10px; }                /* ฐานทั้งหน้า: ลอง 14–15px */
-th, td { font-size: 10px; }              /* ตัวเลข/ค่าที่แสดงในตาราง */
-#finalCustTable th, 
-#finalCustTable td { font-size: 10px; }  /* เน้นตารางหลักอีกชั้นกันโดนทับ */
+    .toast.ok{ background:#065f46; }
+    .toast.warn{ background:#92400e; }
+    .toast.err{ background:#991b1b; }
 
-.profile-editor { font-size: 8px; }     /* กล่อง Profile ให้ชัดขึ้น */
-.sub-muted { font-size: 8px; }          /* ตัวอธิบายย่อย (เดิม 12px) */
-.chip { font-size: 10px; }               /* ชิปเลือกช่วง/ฟิลเตอร์ */
-.ipt { font-size: 10px; }                /* อินพุตต่าง ๆ */
+    .loading{
+      position: fixed; inset: 0;
+      background: rgba(255,255,255,.65);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index: 18000;
+      backdrop-filter: blur(2px);
+    }
+    .loading .box{
+      background:#fff;border:1px solid #e5e7eb;border-radius:16px;
+      padding:12px 14px;
+      box-shadow:0 12px 30px rgba(2,8,23,.12);
+      font-size:12px;color:#0f172a;font-weight:900;
+    }
 
-/* ถ้า Outcome อยู่คอลัมน์ที่ 12 */
-#finalCustTable th:nth-child(12),
-#finalCustTable td:nth-child(12) {
-  font-size: 8px;
-  line-height: 1.25;
-  color: #334155;
-  white-space: normal;
-}
+    /* Keep your font size override as-is (ตามที่บอก "เรื่องฟ้อนเอาไว้ก่อน") */
+    body { font-size: 10px; }
+    th, td { font-size: 10px; }
+    #finalCustTable th, #finalCustTable td { font-size: 10px; }
+    .profile-editor { font-size: 8px; }
+    .sub-muted { font-size: 8px; }
+    .chip { font-size: 10px; }
+    .ipt { font-size: 10px; }
+    #finalCustTable th:nth-child(12),
+    #finalCustTable td:nth-child(12) {
+      font-size: 8px;
+      line-height: 1.25;
+      color: #334155;
+      white-space: normal;
+    }
   </style>
 </head>
+
 <body>
-  <div class="container">    
-    <div class="section card">
-      <div class="headline">ฟิลเตอร์การวิเคราะห์</div>
-      <div class="filter-grid">
-        <div class="filter-block span5">
-          <div class="title">เลือกตามเวลา</div>
-          <div class="filter-row">
+  <div class="wrap">
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="brand">
+        <p class="title">Customer Insight Dashboard</p>
+        <div class="sub">
+          มุมมองสรุป RFM, ABC, Recency, Spend Bands และรายชื่อลูกค้าในช่วงที่เลือก
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" id="btnApply">ดูข้อมูล</button>
+        <button class="btn btn-ghost" id="btnExportCsv" type="button">Export CSV</button>
+        <button class="btn" id="openCustomRange" type="button">กำหนดช่วงวัน</button>
+      </div>
+    </div>
+
+    <!-- KPI ROW -->
+    <div class="kpis" aria-label="KPI summary">
+      <div class="kpi" id="kpiCustomers" title="คลิกเพื่อดูทั้งหมด (เลื่อนลงตาราง)">
+        <div class="k">ลูกค้าทั้งหมด</div>
+        <div class="v" id="kpiCustomersV">-</div>
+        <div class="s" id="kpiCustomersS">ตามช่วงที่เลือก</div>
+      </div>
+      <div class="kpi" id="kpiRevenue" title="รายได้รวมของกลุ่มที่กำลังแสดง">
+        <div class="k">รายได้รวม</div>
+        <div class="v" id="kpiRevenueV">-</div>
+        <div class="s" id="kpiRevenueS">บาท</div>
+      </div>
+      <div class="kpi" id="kpiAov" title="Average Order Value เฉลี่ย/บิล">
+        <div class="k">AOV เฉลี่ย/บิล</div>
+        <div class="v" id="kpiAovV">-</div>
+        <div class="s" id="kpiAovS">บาท/บิล</div>
+      </div>
+      <div class="kpi" id="kpiRisk" title="ลูกค้าที่ไม่ได้มาเกิน 90 วัน (คลิกเพื่อกรอง)">
+        <div class="k">เสี่ยงหาย (90+ วัน)</div>
+        <div class="v" id="kpiRiskV">-</div>
+        <div class="s" id="kpiRiskS">คลิกเพื่อดูรายชื่อ</div>
+      </div>
+      <div class="kpi" id="kpiAClass" title="ลูกค้าชั้น A (ABC) (คลิกเพื่อกรอง)">
+        <div class="k">ลูกค้าชั้น A</div>
+        <div class="v" id="kpiAClassV">-</div>
+        <div class="s" id="kpiAClassS">คลิกเพื่อดูรายชื่อ</div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="grid">
+
+      <!-- LEFT: FILTERS -->
+      <div>
+        <details class="filters" open>
+          <summary>
+            <span>ฟิลเตอร์</span>
+            <span class="sub-muted">ซ่อน/แสดง</span>
+          </summary>
+
+          <div class="flt-wrap">
+
+            <!-- Hidden inputs still required by logic -->
             <input type="date" id="startDate" class="ipt" style="display:none"/>
             <input type="date" id="endDate" class="ipt" style="display:none"/>
-            <div class="full chips" style="margin-top:6px">
-              <span class="chip" id="openCustomRange">กำหนดเอง</span>
-              <span class="chip" data-range="thisMonth">เดือนนี้</span>
-              <span class="chip" data-range="2m">2 เดือน</span>
-              <span class="chip" data-range="3m">3 เดือน</span>
-              <span class="chip" data-range="6m">6 เดือน</span>
-              <span class="chip" data-range="thisYear">ปีนี้</span>
-              <span class="chip" data-range="all">ทั้งหมด</span>
+
+            <div class="flt-block">
+              <div class="flt-title">เลือกตามเวลา (Quick)</div>
+              <div class="chips" style="margin-bottom:10px">
+                <span class="chip" data-range="thisMonth">เดือนนี้</span>
+                <span class="chip" data-range="2m">2 เดือน</span>
+                <span class="chip" data-range="3m">3 เดือน</span>
+                <span class="chip" data-range="6m">6 เดือน</span>
+                <span class="chip" data-range="thisYear">ปีนี้</span>
+                <span class="chip" data-range="all">ทั้งหมด</span>
+              </div>
+              <div class="flt-title" style="margin-top:8px">ไม่ได้มา (Recency quick)</div>
+              <div class="chips">
+                <span class="chip" data-range="abs:0-30">0–30</span>
+                <span class="chip" data-range="abs:31-60">31–60</span>
+                <span class="chip" data-range="abs:61-90">61–90</span>
+                <span class="chip" data-range="abs:90-180">90–180</span>
+                <span class="chip" data-range="abs:181-365">181–365</span>
+                <span class="chip" data-range="abs:365+">1 ปี+</span>
+              </div>
+
+              <div style="margin-top:12px">
+                <label>ค้นหาในตาราง (ชื่อ/OPD)</label>
+                <input type="text" id="qSearch" class="ipt" placeholder="พิมพ์คำเพื่อกรองตารางที่แสดง">
+              </div>
+
+              <div id="appliedBanner" class="applied-banner"></div>
             </div>
-            <div class="full chips" style="margin-top:6px">
-              <span class="chip" data-range="abs:0-30">ไม่ได้มา 0–30</span>
-              <span class="chip" data-range="abs:31-60">31–60</span>
-              <span class="chip" data-range="abs:61-90">61–90</span>
-              <span class="chip" data-range="abs:90-180">90–180</span>
-              <span class="chip" data-range="abs:181-365">181–365</span>
-              <span class="chip" data-range="abs:365+">1 ปีขึ้นไป</span>
+
+            <div class="flt-block">
+              <div class="flt-title">ฟิลเตอร์ลูกค้า (ขั้นสูง)</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div>
+                  <label>ยอดรวมขั้นต่ำ (บาท)</label>
+                  <input type="number" id="minTotal" class="ipt" placeholder="ขั้นต่ำ">
+                </div>
+                <div>
+                  <label>ยอดรวมสูงสุด (บาท)</label>
+                  <input type="number" id="maxTotal" class="ipt" placeholder="สูงสุด">
+                </div>
+
+                <div>
+                  <label>จำนวนครั้งขั้นต่ำ</label>
+                  <input type="number" id="minVisits" class="ipt" placeholder="ขั้นต่ำ">
+                </div>
+                <div>
+                  <label>จำนวนครั้งสูงสุด</label>
+                  <input type="number" id="maxVisits" class="ipt" placeholder="สูงสุด">
+                </div>
+
+                <div>
+                  <label>ไม่ได้มาอย่างน้อย (วัน)</label>
+                  <input type="number" id="minAbsent" class="ipt" placeholder="ขั้นต่ำ">
+                </div>
+                <div>
+                  <label>ไม่ได้มาไม่เกิน (วัน)</label>
+                  <input type="number" id="maxAbsent" class="ipt" placeholder="สูงสุด">
+                </div>
+
+                <div>
+                  <label>เฉลี่ย/บิล ขั้นต่ำ (บาท)</label>
+                  <input type="number" id="minAvg" class="ipt" placeholder="ขั้นต่ำ">
+                </div>
+                <div>
+                  <label>เฉลี่ย/บิล สูงสุด (บาท)</label>
+                  <input type="number" id="maxAvg" class="ipt" placeholder="สูงสุด">
+                </div>
+              </div>
+
+              <div style="margin-top:10px">
+                <label>ชื่อลูกค้า</label>
+                <input type="text" id="customerName" class="ipt" placeholder="ระบุชื่อ (บางส่วน)">
+              </div>
+
+              <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap">
+                <button type="button" id="btnRunAdv" class="btn btn-primary">กรองลูกค้าตามเงื่อนไข</button>
+                <button type="button" id="btnResetAdv" class="btn">รีเซ็ตค่า</button>
+              </div>
+              <div id="filterResults" class="sub-muted" style="margin-top:8px;"></div>
             </div>
-            <div class="full">
-              <label>ค้นหาในตาราง (ชื่อ/OPD)</label>
-              <input type="text" id="qSearch" class="ipt" placeholder="พิมพ์คำเพื่อกรองตารางที่แสดง"/>
+
+            <div class="flt-block">
+              <div class="flt-title">ฟิลเตอร์สินค้า</div>
+              <div style="display:flex;justify-content:flex-end">
+                <button class="btn" id="btnAddProduct" type="button">เพิ่มสินค้า</button>
+              </div>
+              <div id="productListContainer" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
             </div>
-            <div class="full" style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
-              <button class="btn btn-primary" id="btnApply">ดูข้อมูล</button>
+
+          </div>
+        </details>
+      </div>
+
+      <!-- RIGHT: CONTENT -->
+      <div class="right">
+
+        <div class="split2">
+          <div class="card table-card">
+            <div class="hd">
+              <p class="h1">RFM Segments</p>
+              <div class="hint sub-muted">คลิก 👁 เพื่อดูรายชื่อ</div>
+            </div>
+            <div class="table-wrap">
+              <table id="rfmTable">
+                <thead>
+                  <tr>
+                    <th>กลุ่ม (ไทย)</th><th>จำนวน</th><th>%</th><th>เฉลี่ย/บิล</th><th>Recency เฉลี่ย</th><th>ยอดรวม</th><th style="width:64px"></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="hd">
+              <p class="h1">ABC / Pareto</p>
+              <div class="hint sub-muted">A = รายได้หลัก</div>
+            </div>
+            <div class="table-wrap">
+              <table id="abcTable">
+                <thead>
+                  <tr><th>ชั้น</th><th>จำนวนลูกค้า</th><th>% ลูกค้า</th><th>% รายได้</th><th>ยอดรวม</th><th style="width:64px"></th></tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+              <div id="abcWho" class="sub-muted" style="margin-top:10px"></div>
             </div>
           </div>
         </div>
 
-        <div class="filter-block span4">
-          <div class="title">เลือกตามลูกค้า</div>
-          <div class="filter-row">
-            <div class="span6">
-              <label>ยอดรวมขั้นต่ำ (บาท)</label>
-              <input type="number" id="minTotal" class="ipt" placeholder="ขั้นต่ำ">
+        <div class="split2">
+          <div class="card table-card">
+            <div class="hd">
+              <p class="h1">Recency Distribution</p>
+              <div class="hint sub-muted">ความห่างการมาล่าสุด</div>
             </div>
-            <div class="span6">
-              <label>ยอดรวมสูงสุด (บาท)</label>
-              <input type="number" id="maxTotal" class="ipt" placeholder="สูงสุด">
+            <div class="table-wrap">
+              <table id="recencyTable">
+                <thead>
+                  <tr>
+                    <th>ช่วง (วัน)</th><th>จำนวนลูกค้า</th><th>%</th><th>AOV เฉลี่ย</th><th>ยอดรวม</th><th style="width:64px"></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
             </div>
+          </div>
 
-            <div class="span6">
-              <label>จำนวนครั้งขั้นต่ำ</label>
-              <input type="number" id="minVisits" class="ipt" placeholder="ขั้นต่ำ">
+          <div class="card table-card">
+            <div class="hd">
+              <p class="h1">Spend Bands</p>
+              <div class="hint sub-muted">ช่วง AOV ต่อบิล</div>
             </div>
-            <div class="span6">
-              <label>จำนวนครั้งสูงสุด</label>
-              <input type="number" id="maxVisits" class="ipt" placeholder="สูงสุด">
+            <div class="table-wrap">
+              <table id="spendBandTable">
+                <thead>
+                  <tr>
+                    <th>ช่วง AOV</th><th>จำนวนลูกค้า</th><th>%</th><th>เฉลี่ย/คน</th><th>ยอดรวม</th><th style="width:64px"></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
             </div>
-
-            <div class="span6">
-              <label>ไม่ได้มาอย่างน้อย (วัน)</label>
-              <input type="number" id="minAbsent" class="ipt" placeholder="ขั้นต่ำ">
-            </div>
-            <div class="span6">
-              <label>ไม่ได้มาไม่เกิน (วัน)</label>
-              <input type="number" id="maxAbsent" class="ipt" placeholder="สูงสุด">
-            </div>
-
-            <div class="span6">
-              <label>เฉลี่ย/บิล ขั้นต่ำ (บาท)</label>
-              <input type="number" id="minAvg" class="ipt" placeholder="ขั้นต่ำ">
-            </div>
-            <div class="span6">
-              <label>เฉลี่ย/บิล สูงสุด (บาท)</label>
-              <input type="number" id="maxAvg" class="ipt" placeholder="สูงสุด">
-            </div>
-
-            <div class="full">
-              <label>ชื่อลูกค้า</label>
-              <input type="text" id="customerName" class="ipt" placeholder="ระบุชื่อ (บางส่วน)">
-            </div>
-
-            <div class="full" style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
-              <button type="button" id="btnRunAdv" class="btn btn-primary">กรองลูกค้าตามเงื่อนไข</button>
-              <button type="button" id="btnResetAdv" class="btn">รีเซ็ตค่า</button>
-            </div>
-            <div id="filterResults" class="full sub-muted" style="margin-top:4px;"></div>
           </div>
         </div>
 
-        <div class="filter-block span3">
-          <div class="title">เลือกตามสินค้า</div>
-          <div class="filter-row">
-            <div class="full">
-              <button class="btn" id="btnAddProduct" type="button">เพิ่มสินค้า</button>
-            </div>
-            <div id="productListContainer" class="full" style="display:flex;flex-direction:column;gap:6px"></div>
+        <div class="card table-card" id="finalSection">
+          <div class="hd">
+            <p class="h1">รายชื่อลูกค้า</p>
+            <div class="hint sub-muted">คลิกหัวตารางเพื่อจัดเรียง | คลิกชื่อเพื่อดูรายละเอียด</div>
+          </div>
+          <div class="table-wrap">
+            <table id="finalCustTable">
+              <thead>
+                <tr>
+                  <th data-sort="num">#</th>
+                  <th data-sort="str">OPD</th>
+                  <th data-sort="str">ชื่อ</th>
+                  <th data-sort="num">จำนวนครั้ง</th>
+                  <th data-sort="num">เฉลี่ย/บิล</th>
+                  <th data-sort="num">ยอดรวม</th>
+                  <th data-sort="num">บิลเดี่ยวสูงสุด</th>
+                  <th data-sort="num">ไม่ได้มา (วัน)</th>
+                  <th data-sort="str">RFM</th>
+                  <th data-sort="str">ABC</th>
+                  <th data-sort="num">Pitch ล่าสุด (วัน)</th>
+                  <th data-sort="str">Outcome ล่าสุด</th>
+                  <th data-sort="str">Profile</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
-      </div>
-    </div>
 
-    <div class="section" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div class="card">
-        <div class="headline">RFM Segments</div>
-        <div class="sub-muted" style="margin-bottom:6px">
-          RFM = Recency (ความสดใหม่), Frequency (ความถี่), Monetary (มูลค่า)
-        </div>
-        <table id="rfmTable">
-          <thead>
-            <tr>
-              <th>กลุ่ม (ไทย)</th><th>จำนวน</th><th>%</th><th>เฉลี่ย/บิล</th><th>Recency เฉลี่ย (วัน)</th><th>ยอดรวม (บาท)</th><th style="width:64px"></th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
       </div>
-      <div class="card">
-        <div class="headline">อัตราการสร้างยอดขาย (ABC / Pareto)</div>
-        <div class="sub-muted" style="margin-bottom:6px">
-          แบ่งลูกค้าตามสัดส่วนยอดขายรวม: ชั้น A สร้างส่วนใหญ่ของรายได้ ตามด้วย B และ C
-        </div>
-        <table id="abcTable">
-          <thead><tr><th>ชั้น</th><th>จำนวนลูกค้า</th><th>% ลูกค้า</th><th>% รายได้</th><th>ยอดรวม (บาท)</th><th style="width:64px"></th></tr></thead>
-          <tbody></tbody>
-        </table>
-        <div id="abcWho" class="sub-muted" style="margin-top:6px"></div>
-      </div>
-    </div>
-
-    <div class="section grid-2">
-      <div class="card">
-        <div class="headline">การกระจายช่วงวันที่ไม่ได้มา (Recency Distribution)</div>
-        <div class="sub-muted">สรุปภาพรวมความห่างของการมาใช้บริการล่าสุด (แสดงตามช่วงที่เลือก)</div>
-        <table id="recencyTable">
-          <thead>
-            <tr>
-              <th>ช่วง (วัน)</th><th>จำนวนลูกค้า</th><th>%</th><th>AOV เฉลี่ย (บาท/บิล)</th><th>ยอดรวม (บาท)</th><th style="width:64px"></th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-
-      <div class="card">
-        <div class="headline">Average Spend per Customer (Spend Bands)</div>
-        <div class="sub-muted">แจกแจงตาม AOV ต่อคน: 0–2,000 | 2,001–5,000 | 5,001–10,000 | 10,001–15,000 | 15,001–20,000 | ≥20,001</div>
-        <table id="spendBandTable">
-          <thead>
-            <tr>
-              <th>ช่วง AOV (บาท/บิล)</th><th>จำนวนลูกค้า</th><th>%</th><th>เฉลี่ย/คน (บาท)</th><th>ยอดรวม (บาท)</th><th style="width:64px"></th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="section card">
-      <div class="headline">รายชื่อลูกค้าตามฟิลเตอร์</div>
-      <div class="sub-muted">คลิกหัวตารางเพื่อจัดเรียง</div>
-      <div id="appliedBanner" class="applied-banner"></div>
-      <table id="finalCustTable">
-        <thead>
-          <tr>
-            <th data-sort="num">#</th>
-            <th data-sort="str">OPD</th>
-            <th data-sort="str">ชื่อ</th>
-            <th data-sort="num">จำนวนครั้ง</th>
-            <th data-sort="num">เฉลี่ย/บิล</th>
-            <th data-sort="num">ยอดรวม</th>
-            <th data-sort="num">บิลเดี่ยวสูงสุด</th>
-            <th data-sort="num">ไม่ได้มา (วัน)</th>
-            <th data-sort="str">RFM กลุ่ม</th>
-            <th data-sort="str">ชั้น (ABC)</th>
-            <th data-sort="num">Sale Pitch (วัน)</th>
-            <th data-sort="str">Outcome (ล่าสุด)</th>
-            <th data-sort="str">Profile</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
     </div>
 
   </div>
 
+  <!-- Loading -->
+  <div class="loading" id="loadingOverlay">
+    <div class="box">กำลังโหลดข้อมูล…</div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <!-- Customer modal -->
   <div id="customer-modal">
     <div class="box" onclick="event.stopPropagation();">
       <button class="close" onclick="closeCustomerModal()">✖</button>
@@ -347,14 +611,15 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
     </div>
   </div>
 
-  <div id="pitch-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:10000; align-items:center; justify-content:center">
-  <div class="box" style="background:#fff;border-radius:16px;max-width:92vw;max-height:90vh;overflow:auto;padding:18px;position:relative;box-shadow:0 8px 30px rgba(0,0,0,.2)">
-    <button class="close" onclick="closePitchModal()" style="position:absolute;right:10px;top:10px;width:36px;height:36px;border:none;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.15);cursor:pointer;background:#fff">✖</button>
-    <div id="pitch-modal-content"></div>
+  <!-- Pitch modal -->
+  <div id="pitch-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:10000; align-items:center; justify-content:center">
+    <div class="box" style="background:#fff;border-radius:16px;max-width:92vw;max-height:90vh;overflow:auto;padding:18px;position:relative;box-shadow:0 12px 34px rgba(0,0,0,.22)">
+      <button class="close" onclick="closePitchModal()" style="position:absolute;right:10px;top:10px;width:38px;height:38px;border:none;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.16);cursor:pointer;background:#fff">✖</button>
+      <div id="pitch-modal-content"></div>
+    </div>
   </div>
-</div>
 
-
+  <!-- Range modal -->
   <div id="rangeModal" class="range-modal" style="display:none;">
     <div class="range-modal__backdrop" onclick="closeRangeModal()"></div>
     <div class="range-modal__panel">
@@ -374,7 +639,100 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
   </div>
 
   <script>
-    /* ===== ตัวช่วยพื้นฐาน ===== */
+    /* ==========================
+       ✅ โค้ด Logic เดิม (ไม่แตะฟิลเตอร์)
+       + เพิ่ม updateKpis + KPI click actions
+       ========================== */
+
+    const state = {
+      allSales: [],
+      allCustomerRecords: [],
+      filtered: [],
+      endAnchorDate: null,
+      customersMap: new Map(),
+      selectedKeys: null,
+      appliedNote: '',
+      reconApplySpecial: null,
+
+      profileByOpd: new Map(),
+      pitchSummaryCache: new Map(),
+      pitchSummaryFetchedAt: 0,
+      pitchSummaryTTLms: 5 * 60 * 1000,
+
+      rfmByKey: new Map(),
+      abcByKey: new Map(),
+
+      finalRows: [],
+      finalSort: {col:6, dir:-1},
+      lastHydrateToken: 0,
+    };
+
+    function showLoading(on){
+      const el = document.getElementById('loadingOverlay');
+      if(!el) return;
+      el.style.display = on ? 'flex' : 'none';
+    }
+    function toast(msg, type='ok', ms=2200){
+      const wrap = document.getElementById('toastWrap');
+      if(!wrap) return;
+      const t = document.createElement('div');
+      t.className = 'toast ' + (type||'ok');
+      t.textContent = msg;
+      wrap.appendChild(t);
+      setTimeout(()=>{ t.style.opacity='0.1'; }, Math.max(0, ms-400));
+      setTimeout(()=>{ t.remove(); }, ms);
+    }
+
+    const pad4 = s => String(s||'').replace(/\D/g,'').padStart(4,'0');
+    const esc = v => (v==null?'':String(v)).replace(/[&<>\"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\'':'&#39;'}[m]));
+    const onlyDigits = s => String(s||'').replace(/\D/g,'');
+    const normPhone = s => { let d=onlyDigits(s); if(d.startsWith('66') && d.length>=11) d='0'+d.slice(-9); return d; };
+
+    function ymdLocal(d){
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,'0');
+      const dd = String(d.getDate()).padStart(2,'0');
+      return `${y}-${m}-${dd}`;
+    }
+    function parseYmdLocal(s){
+      const m = String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if(!m) return null;
+      const y = +m[1], mo = +m[2], d = +m[3];
+      const dt = new Date(y, mo-1, d);
+      return isNaN(dt) ? null : dt;
+    }
+    const formatDate = d => { if(!d) return ''; const [y,m,dd]=d.split('-'); return `${dd}/${m}/${y.slice(-2)}`; };
+
+    const quantile = (arr,q) => {
+      if(!arr.length) return 0;
+      const a=[...arr].sort((x,y)=>x-y);
+      const pos=(a.length-1)*q, b=Math.floor(pos), r=pos-b;
+      return a[b] + (a[b+1]!==undefined? r*(a[b+1]-a[b]) : 0);
+    };
+    const varGold = () => '#b8860b';
+
+    function parseItemNames(s){
+      const m = String(s).match(/^(.*?) ?(?:\((.*?)\))? - /);
+      if(!m) return {main:String(s).split(' - ')[0].trim(), sub:''};
+      return {main:(m[1]||'').trim(), sub:(m[2]||'').trim()};
+    }
+    function keyForCustomer(rec){
+      const opd = pad4(rec.opd||'');
+      if(/^\d{4}$/.test(opd) && opd!=='0000') return 'OPD:'+opd;
+      return 'NP:'+ (rec.name||'').trim().toLowerCase() + '|' + normPhone(rec.phone||'');
+    }
+    function keyNamePhone(v){ return `${v.name}|${v.phone||''}`; }
+
+    function recordAmount(r){
+      const a = parseFloat(r.amount);
+      if(!isNaN(a)) return a;
+      let sum=0; (r.items||[]).forEach(s=>{
+        const m = String(s).match(/ - (\d+(?:\.\d+)?) ชิ้น x (\d+(?:\.\d+)?) บาท$/);
+        if(m){ sum += parseFloat(m[1])*parseFloat(m[2]); }
+      });
+      return sum;
+    }
+
     const productCategories = {
       "โบทอค": ["Aestox 50 u", "Aestox 100 u", "Allergan 50 u", "Allergan 100 u", "เฉพาะจุด", "แบ่งไว้แล้ว", "Nabota"],
       "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q ระบุสีด้วย", "Restylane ระบุสีด้วย"],
@@ -394,112 +752,148 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
       "โปรโมชั่น/อีเว้นพิเศษ": []
     };
 
-    let allSales = [];
-    let allCustomerRecords = [];
-    let filtered = [];
-    let endAnchorDate = null;
-    let customersMap = new Map();
-    let selectedKeys = null;
-    let appliedNote = '';
-
-    // โปรไฟล์ทั้งหมดจาก customers
-    let profileByOpd = new Map();
-
-    const pad4 = s => String(s||'').replace(/\D/g,'').padStart(4,'0');
-    const esc = v => (v==null?'':String(v)).replace(/[&<>\"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\'':'&#39;'}[m]));
-    const onlyDigits = s => String(s||'').replace(/\D/g,'');
-    const normPhone = s => { let d=onlyDigits(s); if(d.startsWith('66') && d.length>=11) d='0'+d.slice(-9); return d; };
-    const ymd = d => (typeof d==='string'? d.slice(0,10): new Date(d).toISOString().slice(0,10));
-    const formatDate = d => { if(!d) return ''; const [y,m,dd]=d.split('-'); return `${dd}/${m}/${y.slice(-2)}`; }
-    const quantile = (arr,q) => { if(!arr.length) return 0; const a=[...arr].sort((x,y)=>x-y); const pos=(a.length-1)*q, b=Math.floor(pos), r=pos-b; return a[b] + (a[b+1]!==undefined? r*(a[b+1]-a[b]) : 0); };
-    const varGold = () => '#b8860b';
-
-    function parseItemNames(s){
-      const m = String(s).match(/^(.*?) ?(?:\((.*?)\))? - /);
-      if(!m) return {main:String(s).split(' - ')[0].trim(), sub:''};
-      return {main:(m[1]||'').trim(), sub:(m[2]||'').trim()};
-    }
-    function keyForCustomer(rec){
-      const opd = pad4(rec.opd||'');
-      if(/^\d{4}$/.test(opd) && opd!=='0000') return 'OPD:'+opd;
-      return 'NP:'+ (rec.name||'').trim().toLowerCase() + '|' + normPhone(rec.phone||'');
-    }
-    function keyNamePhone(v){ return `${v.name}|${v.phone||''}`; }
-    function recordAmount(r){
-      const a = parseFloat(r.amount);
-      if(!isNaN(a)) return a;
-      let sum=0; (r.items||[]).forEach(s=>{
-        const m = String(s).match(/ - (\d+(?:\.\d+)?) ชิ้น x (\d+(?:\.\d+)?) บาท$/);
-        if(m){ sum += parseFloat(m[1])*parseFloat(m[2]); }
-      });
-      return sum;
-    }
-
-    /* ===== โหลดข้อมูล ===== */
     async function loadAllSales(){
       const r = await fetch('/api/sales');
       if(!r.ok) throw new Error('โหลดข้อมูลไม่สำเร็จ');
-      allSales = await r.json() || [];
-      allSales.forEach(rec=>{
+      state.allSales = await r.json() || [];
+      state.allSales.forEach(rec=>{
         if(rec.item && !rec.items){
           try{ rec.items = JSON.parse(rec.item); }catch(e){ rec.items=[]; }
         }
       });
-      allCustomerRecords = allSales.slice();
+      state.allCustomerRecords = state.allSales.slice();
     }
     async function loadAllProfiles(){
       try{
         const r = await fetch('/api/customers');
         const arr = await r.json();
-        profileByOpd = new Map((arr||[]).map(c => [pad4(c.opd||''), c.profile || '']));
+        state.profileByOpd = new Map((arr||[]).map(c => [pad4(c.opd||''), c.profile || '']));
       }catch(e){
-        profileByOpd = new Map();
+        state.profileByOpd = new Map();
       }
     }
 
-    /* ===== คำนวณช่วงวันที่เลือก ===== */
+    function runWithConcurrency(items, worker, limit=8){
+      let i = 0, inFlight = 0;
+      return new Promise(resolve=>{
+        function next(){
+          while(inFlight < limit && i < items.length){
+            const idx = i++; inFlight++;
+            Promise.resolve(worker(items[idx], idx))
+              .finally(()=>{
+                inFlight--;
+                if(i < items.length) next();
+                else if(inFlight===0) resolve();
+              });
+          }
+        }
+        next();
+      });
+    }
+
+    async function fetchAllPitchesForOPD(opd){
+      try{
+        const r = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
+        if(!r.ok) return [];
+        const arr = await r.json();
+        return Array.isArray(arr) ? arr : [];
+      }catch{
+        return [];
+      }
+    }
+
+    async function fetchPitchSummaryBatch(opds){
+      const now = Date.now();
+      const fresh = (now - state.pitchSummaryFetchedAt) < state.pitchSummaryTTLms;
+      if(fresh){
+        const missing = opds.filter(opd => !state.pitchSummaryCache.has(opd));
+        if(missing.length === 0) return;
+      }
+
+      try{
+        const r = await fetch('/api/pitches/summary', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ opds })
+        });
+        if(r.ok){
+          const data = await r.json() || {};
+          for(const opd of opds){
+            const v = data[opd];
+            if(v && typeof v === 'object'){
+              state.pitchSummaryCache.set(opd, {
+                latest: v.latest || null,
+                count: Number.isFinite(v.count) ? v.count : 0
+              });
+            }else{
+              state.pitchSummaryCache.set(opd, { latest: null, count: 0 });
+            }
+          }
+          state.pitchSummaryFetchedAt = Date.now();
+          return;
+        }
+      }catch(e){}
+
+      await runWithConcurrency(opds, async (opd)=>{
+        const rows = await fetchAllPitchesForOPD(opd);
+        const count = rows.length;
+        rows.sort((a,b)=> String(b.created_at||'').localeCompare(String(a.created_at||'')));
+        const top = rows[0] || null;
+        const latest = top ? { created_at: top.created_at, content: top.content, outcome: top.outcome || '' } : null;
+        state.pitchSummaryCache.set(opd, { latest, count });
+      }, 8);
+      state.pitchSummaryFetchedAt = Date.now();
+    }
+
     function applyRange(){
       const s = document.getElementById('startDate').value || '2000-01-01';
-      const e = document.getElementById('endDate').value || new Date().toISOString().slice(0,10);
-      const sD = new Date(s), eD = new Date(e);
-      endAnchorDate = eD;
+      const e = document.getElementById('endDate').value || ymdLocal(new Date());
 
-      filtered = allSales.filter(r=>{
-        const d = new Date((r.date||'').slice(0,10));
+      const sD = parseYmdLocal(s) || new Date(2000,0,1);
+      const eD = parseYmdLocal(e) || new Date();
+      state.endAnchorDate = eD;
+
+      state.filtered = state.allSales.filter(r=>{
+        const ds = String(r.date||'').slice(0,10);
+        const d = parseYmdLocal(ds);
+        if(!d) return false;
         return d>=sD && d<=eD;
       });
 
-      customersMap = new Map();
-      for(const r of filtered){
+      state.customersMap = new Map();
+      for(const r of state.filtered){
         const k = keyForCustomer(r);
-        if(!customersMap.has(k)){
-          customersMap.set(k, { key:k, name:r.name||'-', phone:r.phone||'', opd:pad4(r.opd||''), bills:[] });
+        if(!state.customersMap.has(k)){
+          state.customersMap.set(k, { key:k, name:r.name||'-', phone:r.phone||'', opd:pad4(r.opd||''), bills:[] });
         }
-        customersMap.get(k).bills.push(r);
+        state.customersMap.get(k).bills.push(r);
       }
-      for(const v of customersMap.values()){
-        v.bills.sort((a,b)=> a.date.localeCompare(b.date));
+
+      for(const v of state.customersMap.values()){
+        v.bills.sort((a,b)=> String(a.date||'').localeCompare(String(b.date||'')));
         v.first = v.bills[0]?.date?.slice(0,10) || '';
         v.last  = v.bills[v.bills.length-1]?.date?.slice(0,10) || '';
         v.revenue = v.bills.reduce((s,x)=> s + recordAmount(x), 0);
         v.aov = v.bills.length ? v.revenue / v.bills.length : 0;
-        v.recency = v.last ? Math.floor((endAnchorDate - new Date(v.last))/(1000*60*60*24)) : 9999;
+
+        const lastDt = parseYmdLocal(v.last);
+        v.recency = lastDt ? Math.floor((state.endAnchorDate - lastDt)/(1000*60*60*24)) : 9999;
+
         v.maxBill = v.bills.reduce((m,x)=> Math.max(m, recordAmount(x)||0 ), 0);
       }
 
-      if(appliedNote && typeof reconApplySpecial === 'function'){
-        reconApplySpecial();
+      if(state.appliedNote && typeof state.reconApplySpecial === 'function'){
+        state.reconApplySpecial();
       }
 
       renderAll();
     }
 
-    /* ===== สินค้าในฟิลเตอร์ ===== */
     function addProductSelect(){
-      const wrap = document.createElement('div'); wrap.style.display='flex'; wrap.style.gap='6px'; wrap.style.alignItems='center';
-      const selCat = document.createElement('select'); selCat.className='ipt'; selCat.style.width='180px';
+      const wrap = document.createElement('div'); wrap.style.display='flex'; wrap.style.gap='8px'; wrap.style.alignItems='center'; wrap.style.flexWrap='wrap';
+      const selCat = document.createElement('select'); selCat.className='ipt'; selCat.style.width='160px';
       selCat.innerHTML = `<option value="">เลือกหมวด</option>` + Object.keys(productCategories).map(c=>`<option value="${c}">${c}</option>`).join('');
-      const selSub = document.createElement('select'); selSub.className='ipt'; selSub.style.width='240px';
+      const selSub = document.createElement('select'); selSub.className='ipt'; selSub.style.width='220px';
       selSub.innerHTML = `<option value="">เลือกรายการย่อย (ไม่บังคับ)</option>`;
       selCat.addEventListener('change', ()=>{
         const subs = productCategories[selCat.value] || [];
@@ -534,7 +928,7 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
       const nameQ = document.getElementById('customerName').value||'';
 
       const keys=[];
-      for(const [k,v] of customersMap){
+      for(const [k,v] of state.customersMap){
         if(!customerMatchesProducts(v)) continue;
         if(!nameLike(v,nameQ)) continue;
         const visits=v.bills.length;
@@ -548,44 +942,45 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
         if(!isNaN(maxAvg) && v.aov>maxAvg) continue;
         keys.push(k);
       }
-      selectedKeys = new Set(keys);
-      appliedNote = '— ฟิลเตอร์ขั้นสูง';
-      reconApplySpecial = ()=>{ filterGeneral(); };
+
+      state.selectedKeys = new Set(keys);
+      state.appliedNote = '— ฟิลเตอร์ขั้นสูง';
+      state.reconApplySpecial = ()=>{ filterGeneral(); };
       updateAppliedBanner();
-      document.getElementById('filterResults').textContent = `คัดได้ ${keys.length} ราย จากทั้งหมด ${customersMap.size} รายในช่วงที่เลือก`;
+      document.getElementById('filterResults').textContent = `คัดได้ ${keys.length} ราย จากทั้งหมด ${state.customersMap.size} รายในช่วงที่เลือก`;
       renderAll();
       scrollToFinal();
     }
     function resetFilters(){
       document.getElementById('productListContainer').innerHTML='';
       ['minTotal','maxTotal','minVisits','maxVisits','minAbsent','maxAbsent','minAvg','maxAvg','customerName'].forEach(id=> document.getElementById(id).value='');
-      selectedKeys=null; document.getElementById('filterResults').textContent='';
-      appliedNote='';
-      reconApplySpecial=null;
+      state.selectedKeys=null; document.getElementById('filterResults').textContent='';
+      state.appliedNote='';
+      state.reconApplySpecial=null;
       updateAppliedBanner();
       renderAll();
     }
 
-    function currentRecords(){ return selectedKeys? filtered.filter(r=> selectedKeys.has(keyForCustomer(r))) : filtered; }
     function currentCustomers(){
-      if(!selectedKeys) return customersMap;
-      const m=new Map(); for(const k of selectedKeys){ if(customersMap.has(k)) m.set(k, customersMap.get(k)); }
+      if(!state.selectedKeys) return state.customersMap;
+      const m=new Map();
+      for(const k of state.selectedKeys){ if(state.customersMap.has(k)) m.set(k, state.customersMap.get(k)); }
       return m;
     }
 
-    /* ===== RFM ===== */
-    let rfmByKey = new Map();
     function computeRFM(){
-      rfmByKey.clear();
+      state.rfmByKey.clear();
       const entries=[];
       for(const v of currentCustomers().values()){
         entries.push({v, R:v.recency, F:v.bills.length, M:v.revenue});
       }
       if(!entries.length) return {summary:[]};
+
       const cut = arr => [quantile(arr,.2),quantile(arr,.4),quantile(arr,.6),quantile(arr,.8)];
       const [r1,r2,r3,r4] = cut(entries.map(x=>x.R));
       const [f1,f2,f3,f4] = cut(entries.map(x=>x.F));
       const [m1,m2,m3,m4] = cut(entries.map(x=>x.M));
+
       const score=(v,b1,b2,b3,b4,rev=false)=>rev?(v<=b1?5:v<=b2?4:v<=b3?3:v<=b4?2:1):(v>b4?5:v>b3?4:v>b2?3:v>b1?2:1);
       const rename = seg => ({'Champions':'แชมป์ (ดีที่สุด)','Loyal':'ลูกค้าประจำ','Potential':'มีศักยภาพ','At Risk':'เสี่ยงหาย','Hibernating':'ไม่มีศักยภาพ'})[seg] || seg;
 
@@ -597,11 +992,14 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
         else if(Rs>=4 && (Fs>=3 || Ms>=3)) k='Loyal';
         else if(Rs>=3 && Fs>=3 && Ms>=2) k='Potential';
         else if(Rs<=2 && (Fs>=3 || Ms>=3)) k='At Risk';
+
         const th = rename(k);
-        rfmByKey.set(x.v.key, th);
+        state.rfmByKey.set(x.v.key, th);
+
         if(!segMap[k]) segMap[k]={n:0,aov:[],rec:[], revSum:0};
         segMap[k].n++; segMap[k].aov.push(x.v.aov||0); segMap[k].rec.push(x.R); segMap[k].revSum += x.v.revenue||0;
       }
+
       const total=entries.length;
       const summary = Object.entries(segMap).map(([k,g])=>({
         seg:k, segTH:rename(k), n:g.n, pct:g.n*100/total,
@@ -609,8 +1007,10 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
         rec:(g.rec.reduce((a,b)=>a+b,0)/g.rec.length)||0,
         rev:g.revSum||0
       })).sort((a,b)=> b.n-a.n);
+
       return {summary};
     }
+
     function renderRFM(){
       const {summary} = computeRFM();
       const tbody = document.querySelector('#rfmTable tbody');
@@ -627,20 +1027,20 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
       `).join('') || `<tr><td colspan="7" class="sub-muted">ไม่มีข้อมูล</td></tr>`;
     }
 
-    /* ===== ABC ===== */
-    let abcByKey = new Map();
     function computeABC(){
-      abcByKey.clear();
+      state.abcByKey.clear();
       const list = [...currentCustomers().values()].map(v=>({key:v.key, v, rev:v.revenue})).sort((a,b)=> b.rev-a.rev);
       const total = list.reduce((s,x)=> s+x.rev, 0) || 1;
       let cum = 0;
       const tagged = list.map(x=>{ cum += x.rev; return {...x, cumPct: cum/total}; });
+
       const A = tagged.filter(x=> x.cumPct<=0.8);
       const B = tagged.filter(x=> x.cumPct>0.8 && x.cumPct<=0.95);
       const C = tagged.filter(x=> x.cumPct>0.95);
-      A.forEach(x=> abcByKey.set(x.key,'A'));
-      B.forEach(x=> abcByKey.set(x.key,'B'));
-      C.forEach(x=> abcByKey.set(x.key,'C'));
+
+      A.forEach(x=> state.abcByKey.set(x.key,'A'));
+      B.forEach(x=> state.abcByKey.set(x.key,'B'));
+      C.forEach(x=> state.abcByKey.set(x.key,'C'));
 
       const pct = n => tagged.length? (n*100/tagged.length).toFixed(1)+'%':'-';
       const pctRev = v => total? (v*100/total).toFixed(1)+'%':'-';
@@ -657,9 +1057,10 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
         return `<a class="link" href="javascript:;" onclick="openCustomerModal('${esc(key)}');event.stopPropagation();">${esc(v.name)}</a>`;
       }).join(', ');
       document.getElementById('abcWho').innerHTML = topA ? `ตัวอย่างชั้น A: ${topA}` : '—';
+
+      return {A, B, C, totalRevenue: total, revA, revB, revC};
     }
 
-    /* ===== Recency Distribution ===== */
     const recencyBuckets = [
       {label:'0–30', min:0, max:30},
       {label:'31–60', min:31, max:60},
@@ -677,7 +1078,7 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
         const pct = (n*100/totalN).toFixed(1);
         const avgAOV = n? Math.round(inBucket.reduce((s,x)=>s+(x.aov||0),0)/n) : 0;
         const sumRev = Math.round(inBucket.reduce((s,x)=>s+(x.revenue||0),0));
-        return {b, n, pct, avgAOV, sumRev, inBucket};
+        return {b, n, pct, avgAOV, sumRev};
       });
 
       const tb = document.querySelector('#recencyTable tbody');
@@ -695,7 +1096,6 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
       `).join('') || `<tr><td colspan="6" class="sub-muted">ไม่มีข้อมูล</td></tr>`;
     }
 
-    /* ===== Spend Bands (AOV) ===== */
     const spendBands = [
       {label:'0–2,000', min:0, max:2000},
       {label:'2,001–5,000', min:2001, max:5000},
@@ -728,40 +1128,56 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
       `).join('') || `<tr><td colspan="6" class="sub-muted">ไม่มีข้อมูล</td></tr>`;
     }
 
-    /* ===== Pitch ล่าสุด + แถวสุดท้าย ===== */
-    let finalRows = [];
-    let finalSort = {col:6, dir:-1}; // เริ่มที่ "ยอดรวม" มาก -> น้อย
-    const pitchCache = new Map();    // opd -> {created_at, content, outcome}
+    const today = () => new Date();
+    const daysSince = (iso) => {
+      if(!iso) return Number.POSITIVE_INFINITY;
+      const d = new Date(iso);
+      const t = today();
+      return Math.floor((t - d)/(1000*60*60*24));
+    };
 
     function buildFinalRows(){
       const m=currentCustomers();
-      finalRows = [...m.values()].map(v=>{
+      state.finalRows = [...m.values()].map(v=>{
         const visits=v.bills.length, total=v.revenue, avg=visits? Math.round(total/visits):0;
-        let recColor='#6b7280'; if(v.recency<30) recColor='green'; else if(v.recency<=90) recColor='orange'; else recColor='crimson';
+
+        let recColor='#6b7280';
+        if(v.recency<30) recColor='green';
+        else if(v.recency<=90) recColor='orange';
+        else recColor='crimson';
+
         let totColor='#6b7280', totExtra='', totIcon='';
         if(total<50000) totColor='crimson';
         else if(total<=99999) totColor='green';
         else if(total<=200000) totColor='goldenrod';
         else { totColor='#8B6508'; totExtra='font-weight:bold;'; totIcon=' 💎'; }
-        let avgColor='#6b7280'; if(avg<3000) avgColor='crimson'; else if(avg<=9999) avgColor='green'; else avgColor=varGold();
 
-        const latest = pitchCache.get(v.opd);
+        let avgColor='#6b7280';
+        if(avg<3000) avgColor='crimson';
+        else if(avg<=9999) avgColor='green';
+        else avgColor=varGold();
+
+        const sum = state.pitchSummaryCache.get(v.opd) || { latest:null, count:0 };
+        const latest = sum.latest;
+        const pitchCount = sum.count || 0;
+
         const days = latest ? daysSince(latest.created_at) : Number.POSITIVE_INFINITY;
         const outcomeStr = latest ? `${latest.content||'-'}${latest.outcome? ' — '+latest.outcome : ''}` : '';
 
         return {
           v, visits, avg, total, maxBill:Math.round(v.maxBill||0),
           recency:v.recency, recColor, totColor, totExtra, totIcon, avgColor,
-          rfm: rfmByKey.get(v.key) || '-', abc: abcByKey.get(v.key) || '-',
+          rfm: state.rfmByKey.get(v.key) || '-', abc: state.abcByKey.get(v.key) || '-',
           lastPitchDays: isFinite(days)? days : null,
           lastOutcomeStr: outcomeStr,
-          profile: profileByOpd.get(v.opd) || ''
+          pitchCount,
+          profile: state.profileByOpd.get(v.opd) || ''
         };
       });
     }
 
     function renderFinalTable(){
-      const col = finalSort.col, dir = finalSort.dir;
+      const col = state.finalSort.col, dir = state.finalSort.dir;
       const val = (r,idx) => {
         switch(idx){
           case 1: return r.v.opd||'';
@@ -779,21 +1195,49 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
           default: return 0;
         }
       };
-      finalRows.sort((a,b)=>{
+
+      state.finalRows.sort((a,b)=>{
         const A=val(a,col), B=val(b,col);
-        if(typeof A==='number' && typeof B==='number') return (A-B)*dir;
-        return (A>B?1:A<B?-1:0)*dir;
+        let cmp = 0;
+        if(typeof A==='number' && typeof B==='number') cmp = (A-B);
+        else cmp = (A>B?1:A<B?-1:0);
+
+        if(cmp===0){
+          const ao = (a.v.opd||''); const bo = (b.v.opd||'');
+          if(ao!==bo) return (ao>bo?1:-1);
+          const an = (a.v.name||'').toLowerCase(); const bn = (b.v.name||'').toLowerCase();
+          if(an!==bn) return (an>bn?1:-1);
+          return 0;
+        }
+        return cmp*dir;
       });
 
       const tb = document.querySelector('#finalCustTable tbody');
-      tb.innerHTML = finalRows.map((r,i)=>{
+      tb.innerHTML = state.finalRows.map((r,i)=>{
         const key = keyNamePhone(r.v);
+
         const pitchText = (r.lastPitchDays==null) ? 'ไม่เคย' : `${r.lastPitchDays} วัน`;
-        const pitchTitle = (()=> {
-          const p = pitchCache.get(r.v.opd);
-          if(!p) return '—';
-          const d = String(p.created_at||'').slice(0,10);
-          return `Pitch ล่าสุด: ${formatDate(d)} • ${p.content||''}${p.outcome? ' — '+p.outcome : ''}`;
+        const latest = (state.pitchSummaryCache.get(r.v.opd)||{}).latest;
+        const dd = latest ? String(latest.created_at||'').slice(0,10) : '';
+        const pitchTitle = latest
+          ? `Pitch ล่าสุด: ${formatDate(dd)} • ${latest.content||''}${latest.outcome? ' — '+latest.outcome : ''} • รวม ${r.pitchCount||0} ครั้ง`
+          : `— • รวม ${r.pitchCount||0} ครั้ง`;
+
+        // UI badge สำหรับ RFM/ABC แบบไม่ยุ่งตรรกะ (แค่ display)
+        const rfmBadge = (() => {
+          const s = String(r.rfm||'');
+          if(s.includes('แชมป์')) return `<span class="badge b-ok">🏆 ${esc(s)}</span>`;
+          if(s.includes('ประจำ')) return `<span class="badge b-ok">💚 ${esc(s)}</span>`;
+          if(s.includes('เสี่ยง')) return `<span class="badge b-warn">⚠️ ${esc(s)}</span>`;
+          if(s.includes('ไม่มี')) return `<span class="badge b-gray">🪵 ${esc(s)}</span>`;
+          return `<span class="badge b-gray">${esc(s||'-')}</span>`;
+        })();
+        const abcBadge = (() => {
+          const s = String(r.abc||'-').toUpperCase();
+          if(s==='A') return `<span class="badge b-ok">A</span>`;
+          if(s==='B') return `<span class="badge b-warn">B</span>`;
+          if(s==='C') return `<span class="badge b-gray">C</span>`;
+          return `<span class="badge b-gray">-</span>`;
         })();
 
         return `<tr data-opd="${esc(r.v.opd)}">
@@ -805,8 +1249,8 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
           <td style="color:${r.totColor}; ${r.totExtra}">${Math.round(r.total).toLocaleString()}${r.totIcon}</td>
           <td>${r.maxBill.toLocaleString()}</td>
           <td style="color:${r.recColor}">${r.recency}</td>
-          <td>${esc(r.rfm)}</td>
-          <td>${esc(r.abc)}</td>
+          <td>${rfmBadge}</td>
+          <td>${abcBadge}</td>
           <td class="lp-cell" title="${esc(pitchTitle)}">${esc(pitchText)}</td>
           <td class="lp-outcome">${esc(r.lastOutcomeStr || '—')}</td>
           <td>
@@ -814,321 +1258,136 @@ th, td { font-size: 10px; }              /* ตัวเลข/ค่าที�
           </td>
         </tr>`;
       }).join('') || `<tr><td colspan="13" class="sub-muted">ไม่มีลูกค้าตามเงื่อนไข</td></tr>`;
-
-      hydrateLatestPitchesForVisibleRows();
     }
 
-    // คลิกหัวตารางเพื่อเรียง
-    document.addEventListener('click', (e)=>{
-      const th = e.target.closest('#finalCustTable thead th');
-      if(!th) return;
-      const idx = Array.from(th.parentNode.children).indexOf(th);
-      if(idx===0) return;
-      finalSort.dir = (finalSort.col===idx? -finalSort.dir : 1);
-      finalSort.col = idx;
+    /* KPI update (ใหม่ แค่แสดงผล ไม่แตะตรรกะฟิลเตอร์) */
+    function updateKpis(){
+      const cust = [...currentCustomers().values()];
+      const nCust = cust.length;
+      const rev = Math.round(cust.reduce((s,v)=> s+(v.revenue||0), 0));
+      const bills = cust.reduce((s,v)=> s+(v.bills?.length||0), 0);
+      const aov = bills ? Math.round(rev / bills) : 0;
+
+      const risk = cust.filter(v => (v.recency||0) >= 90).length;
+
+      // นับ A-class จาก abcByKey
+      let aCount = 0;
+      for(const v of cust){
+        if(state.abcByKey.get(v.key) === 'A') aCount++;
+      }
+
+      const setTxt = (id, val) => { const el=document.getElementById(id); if(el) el.textContent = val; };
+      setTxt('kpiCustomersV', nCust.toLocaleString());
+      setTxt('kpiRevenueV', rev.toLocaleString());
+      setTxt('kpiAovV', aov.toLocaleString());
+      setTxt('kpiRiskV', risk.toLocaleString());
+      setTxt('kpiAClassV', aCount.toLocaleString());
+    }
+
+    async function hydratePitchSummaryForCurrentRows(){
+      const token = ++state.lastHydrateToken;
+
+      const opds = [...new Set([...currentCustomers().values()].map(v=>v.opd).filter(Boolean))];
+      if(!opds.length) return;
+
+      buildFinalRows();
       renderFinalTable();
-    });
 
-    /* ===== Pitch ล่าสุด (ต่อ OPD) ===== */
-    const today = () => new Date();
-    const daysSince = (iso) => {
-      if(!iso) return Number.POSITIVE_INFINITY;
-      const d = new Date(iso);
-      const t = today();
-      return Math.floor((t - d)/(1000*60*60*24));
-    };
-// คลิกที่คอลัมน์ "Sale Pitch (วัน)" -> เปิด Pitch History
-document.addEventListener('click', (e)=>{
-  const cell = e.target.closest('#finalCustTable td.lp-cell');
-  if(!cell) return;
-  const tr = cell.closest('tr');
-  if(!tr) return;
-  const opd = tr.getAttribute('data-opd') || '';
-  const nameCell = tr.querySelector('td:nth-child(3)'); // คอลัมน์ชื่อ
-  const displayName = nameCell ? nameCell.textContent.trim() : opd;
-  if(!opd){ alert('ไม่พบ OPD ของลูกค้า'); return; }
-  openPitchModalForOPD(opd, displayName);
-});
+      await fetchPitchSummaryBatch(opds);
+      if(token !== state.lastHydrateToken) return;
 
-    async function fetchLatestPitch(opd){
-      try{
-        const r = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
-        if(!r.ok) return null;
-        const arr = await r.json();
-        const row = Array.isArray(arr) && arr.length ? arr[0] : null; // ล่าสุดเท่านั้น
-        return row ? {created_at: row.created_at, content: row.content, outcome: row.outcome || ''} : null;
-      }catch{ return null; }
-    }
-/* ===== [#4 FULL] รวมจำนวน Pitch ทั้งหมดลงใน tooltip ของ "Sale Pitch (วัน)" ===== */
-
-/** Cache จำนวนนับ pitch ต่อ OPD (ลดการยิง API ซ้ำ) */
-const pitchCountCache = new Map();
-
-/** ดึงจำนวน pitch ทั้งหมดของลูกค้าตาม OPD (ใช้ /api/pitches) */
-async function _fetchPitchCount(opd){
-  if(pitchCountCache.has(opd)) return pitchCountCache.get(opd);
-  try{
-    const r = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
-    if(!r.ok){ pitchCountCache.set(opd, 0); return 0; }
-    const arr = await r.json();
-    const count = Array.isArray(arr) ? arr.length : 0;
-    pitchCountCache.set(opd, count);
-    return count;
-  }catch{
-    pitchCountCache.set(opd, 0);
-    return 0;
-  }
-}
-
-/**
- * แทนที่เวอร์ชันเดิมทั้งหมด:
- * - เติมข้อมูล Pitch ล่าสุด (วันนับจากล่าสุด และสรุป Outcome ในคอลัมน์)
- * - เพิ่ม "รวม X ครั้ง" ลงใน tooltip ของคอลัมน์ Sale Pitch (วัน)
- */
-async function fetchAllPitchDataForOPD(opd){
-  try{
-    const r = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
-    if(!r.ok) return { latest:null, count:0 };
-    const arr = await r.json() || [];
-    const count = arr.length;
-    // ทำให้ชัด: sort หา latest เองเผื่อ backend ไม่ sort
-    arr.sort((a,b)=> String(b.created_at||'').localeCompare(String(a.created_at||'')));
-    const top = arr[0] || null;
-    const latest = top ? { created_at: top.created_at, content: top.content, outcome: top.outcome || '' } : null;
-    return { latest, count };
-  }catch{
-    return { latest:null, count:0 };
-  }
-}
-
-// concurrency runner
-function runWithConcurrency(items, worker, limit=8){
-  let i = 0, inFlight = 0, results = new Array(items.length);
-  return new Promise(resolve=>{
-    function next(){
-      while(inFlight < limit && i < items.length){
-        const idx = i++; inFlight++;
-        Promise.resolve(worker(items[idx], idx))
-          .then(res => results[idx]=res)
-          .finally(()=>{
-            inFlight--;
-            if(i < items.length) next();
-            else if(inFlight===0) resolve(results);
-          });
-      }
-    }
-    next();
-  });
-}
-
-let lastHydrateToken = 0;
-
-// ✅ โหลด “ทุก OPD” เป็นชิ้น ๆ (เช่น ชิ้นละ 100) แต่ในแต่ละชิ้นยังขนาน 8 คำขอ
-async function hydrateLatestPitchesForVisibleRows(){
-  const token = ++lastHydrateToken;
-
-  const rows = Array.from(document.querySelectorAll('#finalCustTable tbody tr[data-opd]'));
-  const allOpds = [...new Set(rows.map(tr => tr.getAttribute('data-opd')).filter(Boolean))];
-
-  // ข้ามตัวที่ cache แล้ว
-  const targets = allOpds.filter(opd => !pitchCache.has(opd));
-  if(!targets.length) return;
-
-  const CHUNK_SIZE = 100;   // ปรับตามสบาย
-  const CONCURRENCY = 8;    // 6–10 กำลังดี
-
-  for(let start=0; start<targets.length; start+=CHUNK_SIZE){
-    if(token !== lastHydrateToken) return; // มี render ใหม่แล้ว เลิกชุดเก่า
-    const chunk = targets.slice(start, start+CHUNK_SIZE);
-
-    await runWithConcurrency(chunk, async (opd)=>{
-      const { latest, count } = await fetchAllPitchDataForOPD(opd);
-      if(token !== lastHydrateToken) return;
-
-      pitchCache.set(opd, latest || null);
-      pitchCountCache.set(opd, count);
-
-      // sync object ในหน่วยความจำ
-      const rowObj = finalRows.find(r => r.v.opd === opd);
-      if(rowObj){
-        if(latest){
-          rowObj.lastPitchDays = daysSince(latest.created_at);
-          rowObj.lastOutcomeStr = `${latest.content||'-'}${latest.outcome? ' — '+latest.outcome : ''}`;
-        }else{
-          rowObj.lastPitchDays = null;
-          rowObj.lastOutcomeStr = '';
-        }
-      }
-
-      // อัปเดต DOM เฉพาะแถวนี้ (ลบ CSS.escape ออกแล้ว)
-      const tr = document.querySelector(`#finalCustTable tbody tr[data-opd="${opd}"]`);
-      if(tr){
-        const cellDays = tr.querySelector('.lp-cell');
-        const cellOutcome = tr.querySelector('.lp-outcome');
-        if(latest){
-          const dd = String(latest.created_at||'').slice(0,10);
-          cellDays.textContent = `${daysSince(latest.created_at)} วัน`;
-          cellDays.title = `Pitch ล่าสุด: ${formatDate(dd)} • ${latest.content||''}${latest.outcome? ' — '+latest.outcome : ''} • รวม ${count} ครั้ง`;
-          cellOutcome.textContent = `${latest.content||'-'}${latest.outcome? ' — '+latest.outcome : ''}`;
-        }else{
-          cellDays.textContent = 'ไม่เคย';
-          cellDays.title = `— • รวม ${count} ครั้ง`;
-          cellOutcome.textContent = '—';
-        }
-      }
-    }, CONCURRENCY);
-  }
-}
-
-    /* ===== แก้ไข Profile inline ===== */
-    async function saveProfile(opd, value){
-      try{
-        const r = await fetch('/api/update_customer', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({opd:String(opd), field:'profile', value})
-        });
-        const d = await r.json();
-        return !!d.message;
-      }catch{ return false; }
-    }
-    // บันทึกเมื่อ blur (จับด้วย capture เพื่อให้ blur bubble)
-    document.addEventListener('blur', async (e)=>{
-      const ta = e.target && e.target.classList && e.target.classList.contains('profile-editor') ? e.target : null;
-      if(!ta) return;
-      const opd = ta.getAttribute('data-opd');
-      const value = ta.value;
-      ta.classList.remove('saved','error');
-      ta.classList.add('saving');
-      const ok = await saveProfile(opd, value);
-      ta.classList.remove('saving');
-      if(ok){
-        ta.classList.add('saved');
-        profileByOpd.set(opd, value);
-        const rowObj = finalRows.find(r => r.v.opd === opd);
-        if(rowObj) rowObj.profile = value;
-        setTimeout(()=> ta.classList.remove('saved'), 1200);
-      }else{
-        ta.classList.add('error');
-        setTimeout(()=> ta.classList.remove('error'), 1500);
-      }
-    }, true);
-
-    /* ===== ค้นหาแบบทันที (กรองตาราง) ===== */
-    document.addEventListener('input', (e)=>{
-      if(e.target && e.target.id==='qSearch'){
-        const val = e.target.value.trim().toLowerCase();
-        ['finalCustTable','rfmTable','abcTable','recencyTable','spendBandTable'].forEach(id=>{
-          document.querySelectorAll(`#${id} tbody tr`).forEach(tr=>{
-            const txt = tr.textContent.toLowerCase(); tr.style.display = txt.includes(val)? '' : 'none';
-          });
-        });
-      }
-    });
-
-    /* ===== โมดัลลูกค้า (คงเดิม) ===== */
-    
-    function closeCustomerModal(){ document.getElementById('customer-modal').style.display='none'; }
-    document.getElementById('customer-modal').addEventListener('click', (e)=>{
-      const box = document.querySelector('#customer-modal .box');
-      if(box && !box.contains(e.target)) closeCustomerModal();
-    });
-
-    /* ===== ปุ่มดูรายชื่อตามตารางย่อย ===== */
-    function setSelectedByPredicate(pred){
-      const keys=[];
-      for(const [k,v] of customersMap){ if(pred(v)) keys.push(k); }
-      selectedKeys = new Set(keys);
-      renderAll();
-      scrollToFinal();
-    }
-    function scrollToFinal(){
-      const el = document.getElementById('finalCustTable');
-      if(el && el.scrollIntoView) el.scrollIntoView({behavior:'smooth', block:'start'});
-    }
-    function updateAppliedBanner(){
-      const b = document.getElementById('appliedBanner');
-      if(appliedNote){ b.textContent = appliedNote; b.style.display='block'; }
-      else { b.textContent=''; b.style.display='none'; }
-    }
-
-    function applyRecency(min,max,label){
-      appliedNote = `— แสดงตาม: Recency ${label} วัน`;
-      updateAppliedBanner();
-      selectedKeys = null;
-      const pred = v => v.recency>=min && v.recency<=max;
-      reconApplySpecial = ()=> setSelectedByPredicate(pred);
-      setSelectedByPredicate(pred);
-    }
-    function applyABC(cls){
-      appliedNote = `— แสดงตาม: ABC ชั้น ${cls}`;
-      updateAppliedBanner();
-      selectedKeys = null;
-      computeABC();
-      const pred = v => (abcByKey.get(v.key) === cls);
-      reconApplySpecial = ()=> { computeABC(); setSelectedByPredicate(pred); };
-      setSelectedByPredicate(pred);
-    }
-    function applyRFM(segTH){
-      appliedNote = `— แสดงตาม: RFM: ${segTH}`;
-      updateAppliedBanner();
-      selectedKeys = null;
-      computeRFM();
-      const pred = v => (rfmByKey.get(v.key) === segTH);
-      reconApplySpecial = ()=> { computeRFM(); setSelectedByPredicate(pred); };
-      setSelectedByPredicate(pred);
-    }
-    function applySpend(min,max,label){
-      appliedNote = `— แสดงตาม: AOV ${label}`;
-      updateAppliedBanner();
-      selectedKeys = null;
-      const pred = v => v.aov>=min && v.aov<=max;
-      reconApplySpecial = ()=> setSelectedByPredicate(pred);
-      setSelectedByPredicate(pred);
-    }
-
-    function renderAll(){
-      renderRFM();
-      computeABC();
-      renderRecencyDistribution();
-      renderSpendBands();
       buildFinalRows();
       renderFinalTable();
     }
 
+    function renderAll(){
+      renderRFM();
+      const abcRes = computeABC();
+      renderRecencyDistribution();
+      renderSpendBands();
+
+      updateAppliedBanner();
+      updateKpis();
+
+      hydratePitchSummaryForCurrentRows().catch(()=>{});
+    }
+
+    function setSelectedByPredicate(pred){
+      const keys=[];
+      for(const [k,v] of state.customersMap){ if(pred(v)) keys.push(k); }
+      state.selectedKeys = new Set(keys);
+      renderAll();
+      scrollToFinal();
+    }
+    function scrollToFinal(){
+      const el = document.getElementById('finalSection');
+      if(el && el.scrollIntoView) el.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+    function updateAppliedBanner(){
+      const b = document.getElementById('appliedBanner');
+      if(state.appliedNote){ b.textContent = state.appliedNote; b.style.display='block'; }
+      else { b.textContent=''; b.style.display='none'; }
+    }
+
+    function applyRecency(min,max,label){
+      state.appliedNote = `— แสดงตาม: Recency ${label} วัน`;
+      state.selectedKeys = null;
+      const pred = v => v.recency>=min && v.recency<=max;
+      state.reconApplySpecial = ()=> setSelectedByPredicate(pred);
+      setSelectedByPredicate(pred);
+    }
+    function applyABC(cls){
+      state.appliedNote = `— แสดงตาม: ABC ชั้น ${cls}`;
+      state.selectedKeys = null;
+      computeABC();
+      const pred = v => (state.abcByKey.get(v.key) === cls);
+      state.reconApplySpecial = ()=> { computeABC(); setSelectedByPredicate(pred); };
+      setSelectedByPredicate(pred);
+    }
+    function applyRFM(segTH){
+      state.appliedNote = `— แสดงตาม: RFM: ${segTH}`;
+      state.selectedKeys = null;
+      computeRFM();
+      const pred = v => (state.rfmByKey.get(v.key) === segTH);
+      state.reconApplySpecial = ()=> { computeRFM(); setSelectedByPredicate(pred); };
+      setSelectedByPredicate(pred);
+    }
+    function applySpend(min,max,label){
+      state.appliedNote = `— แสดงตาม: AOV ${label}`;
+      state.selectedKeys = null;
+      const pred = v => v.aov>=min && v.aov<=max;
+      state.reconApplySpecial = ()=> setSelectedByPredicate(pred);
+      setSelectedByPredicate(pred);
+    }
+
     function setQuickRange(preset){
       const end = new Date();
-      let start = new Date('2000-01-01');
+      let start = new Date(2000,0,1);
       if(preset==='thisMonth'){ start = new Date(end.getFullYear(), end.getMonth(), 1);
       }else if(preset==='2m'){ start = new Date(end.getFullYear(), end.getMonth()-1, 1);
       }else if(preset==='3m'){ start = new Date(end.getFullYear(), end.getMonth()-2, 1);
       }else if(preset==='6m'){ start = new Date(end.getFullYear(), end.getMonth()-5, 1);
       }else if(preset==='thisYear'){ start = new Date(end.getFullYear(), 0, 1);
-      }else if(preset==='all'){ start = new Date('2000-01-01'); }
-      document.getElementById('startDate').value = ymd(start);
-      document.getElementById('endDate').value   = ymd(end);
+      }else if(preset==='all'){ start = new Date(2000,0,1); }
+      document.getElementById('startDate').value = ymdLocal(start);
+      document.getElementById('endDate').value   = ymdLocal(end);
     }
-
-    let reconApplySpecial = null;
 
     function applyAbsentChip(range){
       let min=0, max=Infinity, label=range;
-      if(range.includes('+')){ 
-        min=parseInt(range); max=Infinity; 
-        label = (min===365? '1 ปีขึ้นไป' : `${min}+`); 
-      } else { 
-        const [a,b]=range.split('-'); 
-        min=parseInt(a); max=parseInt(b); 
-        label=`${a}–${b}`; 
+      if(range.includes('+')){
+        min=parseInt(range); max=Infinity;
+        label = (min===365? '1 ปีขึ้นไป' : `${min}+`);
+      } else {
+        const [a,b]=range.split('-');
+        min=parseInt(a); max=parseInt(b);
+        label=`${a}–${b}`;
       }
 
-      appliedNote = `— แสดงตาม: วันที่ไม่ได้มา ${label} วัน`;
-      updateAppliedBanner();
-
+      state.appliedNote = `— แสดงตาม: วันที่ไม่ได้มา ${label} วัน`;
       const pred = v => v.recency>=min && v.recency<=max;
-      reconApplySpecial = ()=> {
-        appliedNote = `— แสดงตาม: วันที่ไม่ได้มา ${label} วัน`;
-        updateAppliedBanner();
+      state.reconApplySpecial = ()=> {
+        state.appliedNote = `— แสดงตาม: วันที่ไม่ได้มา ${label} วัน`;
         setSelectedByPredicate(pred);
       };
 
@@ -1137,6 +1396,7 @@ async function hydrateLatestPitchesForVisibleRows(){
       setSelectedByPredicate(pred);
     }
 
+    /* Range modal hooks */
     function openRangeModal(){
       const s = document.getElementById('startDate').value;
       const e = document.getElementById('endDate').value;
@@ -1149,330 +1409,488 @@ async function hydrateLatestPitchesForVisibleRows(){
       const s = document.getElementById('rangeStartModal').value;
       const e = document.getElementById('rangeEndModal').value;
       if(!s || !e){ alert('กรุณาเลือกวันที่เริ่มและสิ้นสุด'); return; }
-      if(new Date(s) > new Date(e)){ alert('วันเริ่มต้องไม่เกินวันสิ้นสุด'); return; }
+      if(parseYmdLocal(s) > parseYmdLocal(e)){ alert('วันเริ่มต้องไม่เกินวันสิ้นสุด'); return; }
       document.getElementById('startDate').value = s;
       document.getElementById('endDate').value = e;
       closeRangeModal();
-      appliedNote=''; reconApplySpecial=null; updateAppliedBanner();
-      selectedKeys=null;
+      state.appliedNote=''; state.reconApplySpecial=null;
+      state.selectedKeys=null;
       applyRange();
     }
 
-    document.getElementById('btnApply').addEventListener('click', applyRange);
-    document.querySelectorAll('.chip[data-range]').forEach(chip=>{
-      chip.addEventListener('click', ()=>{
-        document.querySelectorAll('.chip[data-range]').forEach(c=>c.classList.remove('active'));
-        chip.classList.add('active');
-        const preset = chip.getAttribute('data-range');
-        appliedNote=''; reconApplySpecial=null; updateAppliedBanner();
-        selectedKeys=null;
-        if(preset.startsWith('abs:')){
-          applyAbsentChip(preset.replace('abs:',''));
-        }else{
-          setQuickRange(preset); applyRange();
-        }
-      });
+    /* Table sort click */
+    document.addEventListener('click', (e)=>{
+      const th = e.target.closest('#finalCustTable thead th');
+      if(!th) return;
+      const idx = Array.from(th.parentNode.children).indexOf(th);
+      if(idx===0) return;
+      state.finalSort.dir = (state.finalSort.col===idx? -state.finalSort.dir : 1);
+      state.finalSort.col = idx;
+      renderFinalTable();
+    });
+
+    /* Click pitch cell to open history */
+    document.addEventListener('click', (e)=>{
+      const cell = e.target.closest('#finalCustTable td.lp-cell');
+      if(!cell) return;
+      const tr = cell.closest('tr');
+      if(!tr) return;
+      const opd = tr.getAttribute('data-opd') || '';
+      const nameCell = tr.querySelector('td:nth-child(3)');
+      const displayName = nameCell ? nameCell.textContent.trim() : opd;
+      if(!opd){ alert('ไม่พบ OPD ของลูกค้า'); return; }
+      openPitchModalForOPD(opd, displayName);
+    });
+
+    /* Search */
+    document.addEventListener('input', (e)=>{
+      if(e.target && e.target.id==='qSearch'){
+        const val = e.target.value.trim().toLowerCase();
+        ['finalCustTable','rfmTable','abcTable','recencyTable','spendBandTable'].forEach(id=>{
+          document.querySelectorAll(`#${id} tbody tr`).forEach(tr=>{
+            const txt = tr.textContent.toLowerCase();
+            tr.style.display = txt.includes(val)? '' : 'none';
+          });
+        });
+      }
+    });
+
+    /* Profile autosave */
+    async function saveProfile(opd, value){
+      try{
+        const r = await fetch('/api/update_customer', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({opd:String(opd), field:'profile', value})
+        });
+        const d = await r.json();
+        return !!d.message;
+      }catch{ return false; }
+    }
+    const profileDebounce = new Map();
+    function scheduleProfileSave(opd, ta){
+      clearTimeout(profileDebounce.get(opd));
+      profileDebounce.set(opd, setTimeout(()=> doProfileSave(opd, ta), 800));
+    }
+    async function doProfileSave(opd, ta){
+      const value = ta.value;
+      ta.classList.remove('saved','error');
+      ta.classList.add('saving');
+      const ok = await saveProfile(opd, value);
+      ta.classList.remove('saving');
+      if(ok){
+        ta.classList.add('saved');
+        state.profileByOpd.set(opd, value);
+        const rowObj = state.finalRows.find(r => r.v.opd === opd);
+        if(rowObj) rowObj.profile = value;
+        toast('บันทึกโปรไฟล์แล้ว', 'ok');
+        setTimeout(()=> ta.classList.remove('saved'), 1200);
+      }else{
+        ta.classList.add('error');
+        toast('บันทึกไม่สำเร็จ', 'err');
+        setTimeout(()=> ta.classList.remove('error'), 1500);
+      }
+    }
+    document.addEventListener('input', (e)=>{
+      const ta = e.target && e.target.classList && e.target.classList.contains('profile-editor') ? e.target : null;
+      if(!ta) return;
+      const opd = ta.getAttribute('data-opd');
+      if(!opd) return;
+      scheduleProfileSave(opd, ta);
+    });
+    document.addEventListener('blur', async (e)=>{
+      const ta = e.target && e.target.classList && e.target.classList.contains('profile-editor') ? e.target : null;
+      if(!ta) return;
+      const opd = ta.getAttribute('data-opd');
+      if(!opd) return;
+      clearTimeout(profileDebounce.get(opd));
+      await doProfileSave(opd, ta);
+    }, true);
+
+    /* KPI click actions */
+    document.getElementById('kpiCustomers')?.addEventListener('click', ()=> scrollToFinal());
+    document.getElementById('kpiRisk')?.addEventListener('click', ()=> applyRecency(90, Infinity, '90+'));
+    document.getElementById('kpiAClass')?.addEventListener('click', ()=> applyABC('A'));
+
+    /* Buttons */
+    document.getElementById('btnApply').addEventListener('click', async ()=>{
+      showLoading(true);
+      try{ applyRange(); }
+      finally{ setTimeout(()=>showLoading(false), 150); }
     });
     document.getElementById('openCustomRange').addEventListener('click', openRangeModal);
     document.getElementById('btnAddProduct').addEventListener('click', addProductSelect);
     document.getElementById('btnRunAdv').addEventListener('click', filterGeneral);
     document.getElementById('btnResetAdv').addEventListener('click', resetFilters);
 
-    // โหลดแรก
+    /* Chips */
+    document.querySelectorAll('.chip[data-range]').forEach(chip=>{
+      chip.addEventListener('click', ()=>{
+        document.querySelectorAll('.chip[data-range]').forEach(c=>c.classList.remove('active'));
+        chip.classList.add('active');
+        const preset = chip.getAttribute('data-range');
+        state.appliedNote=''; state.reconApplySpecial=null;
+        state.selectedKeys=null;
+        if(preset.startsWith('abs:')){
+          applyAbsentChip(preset.replace('abs:',''));
+        }else{
+          setQuickRange(preset);
+          applyRange();
+        }
+      });
+    });
+
+    /* Export CSV */
+    function exportFinalCsv(){
+      if(!state.finalRows.length){
+        toast('ไม่มีข้อมูลให้ export', 'warn');
+        return;
+      }
+      const header = ['OPD','ชื่อ','จำนวนครั้ง','เฉลี่ย/บิล','ยอดรวม','บิลเดี่ยวสูงสุด','ไม่ได้มา(วัน)','RFM','ABC','Pitchล่าสุด(วัน)','Outcomeล่าสุด','Profile'];
+      const lines = [header];
+
+      for(const r of state.finalRows){
+        lines.push([
+          r.v.opd||'',
+          r.v.name||'',
+          r.visits||0,
+          r.avg||0,
+          Math.round(r.total||0),
+          r.maxBill||0,
+          r.recency||0,
+          r.rfm||'',
+          r.abc||'',
+          (r.lastPitchDays==null?'ไม่เคย':r.lastPitchDays),
+          r.lastOutcomeStr||'',
+          (r.profile||'').replace(/\r?\n/g,' ')
+        ]);
+      }
+
+      const csv = lines.map(row => row.map(cell=>{
+        const s = String(cell ?? '');
+        if(/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+        return s;
+      }).join(',')).join('\n');
+
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `customers_${ymdLocal(new Date())}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast('Export CSV แล้ว', 'ok');
+    }
+    document.getElementById('btnExportCsv').addEventListener('click', exportFinalCsv);
+
+    /* Modals */
+    function closeCustomerModal(){ document.getElementById('customer-modal').style.display='none'; }
+    document.getElementById('customer-modal').addEventListener('click', (e)=>{
+      const box = document.querySelector('#customer-modal .box');
+      if(box && !box.contains(e.target)) closeCustomerModal();
+    });
+
+    function closePitchModal(){
+      const m = document.getElementById('pitch-modal');
+      if(m) m.style.display='none';
+    }
+    document.getElementById('pitch-modal')?.addEventListener('click', (e)=>{
+      const box = e.target.closest('.box');
+      if(!box) closePitchModal();
+    });
+
+    function fmtDateTime(iso){
+      if(!iso) return '';
+      const d = new Date(iso);
+      if(isNaN(d)) return iso;
+      const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+      const hh=String(d.getHours()).padStart(2,'0'), mm=String(d.getMinutes()).padStart(2,'0');
+      return `${dd}/${m}/${String(y).slice(-2)} ${hh}:${mm}`;
+    }
+
+    async function openPitchModalForOPD(opd, displayName){
+      try{
+        const r = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
+        if(!r.ok){ alert('โหลดประวัติ Pitch ไม่สำเร็จ'); return; }
+        const rows = await r.json() || [];
+        const count = rows.length;
+
+        rows.sort((a,b)=> String(b.created_at||'').localeCompare(String(a.created_at||'')));
+
+        const table = rows.map((p,idx)=>`
+          <tr>
+            <td>${idx+1}</td>
+            <td>${fmtDateTime(p.created_at||'')}</td>
+            <td>${esc(p.channel||'-')}</td>
+            <td>${esc(p.promotion||'-')}</td>
+            <td>${esc(p.outcome||'-')}</td>
+            <td>${esc(p.content||'-')}</td>
+            <td>${esc(p.author||'-')}</td>
+          </tr>
+        `).join('') || `<tr><td colspan="7" class="sub-muted">ยังไม่มีประวัติการ Pitch</td></tr>`;
+
+        const html = `
+          <div style="margin-bottom:10px">
+            <div style="font-size:16px;font-weight:900;color:#064e3b">ประวัติการ Pitch — ${esc(displayName||opd)}</div>
+            <div class="sub-muted">รวมทั้งหมด <b>${count.toLocaleString()}</b> ครั้ง</div>
+          </div>
+          <table style="width:100%; border-collapse:collapse; background:#fff">
+            <thead>
+              <tr>
+                <th style="width:48px">#</th>
+                <th>วันที่</th>
+                <th>ช่องทาง</th>
+                <th>โปรโมชั่น</th>
+                <th>Outcome</th>
+                <th>Comment</th>
+                <th>ผู้บันทึก</th>
+              </tr>
+            </thead>
+            <tbody>${table}</tbody>
+          </table>
+        `;
+        document.getElementById('pitch-modal-content').innerHTML = html;
+        document.getElementById('pitch-modal').style.display='flex';
+      }catch(e){
+        console.error(e);
+        alert('เกิดข้อผิดพลาดในการโหลดข้อมูล Pitch');
+      }
+    }
+
+    /* Customer modal (ยกของเดิมมาแบบตรงๆ) */
+    async function openCustomerModal(key) {
+      let cust = state.customersMap.get(key);
+
+      if (!cust) {
+        const [name, phone = ''] = String(key).split('|');
+        const norm = s => (s || '').trim().toLowerCase();
+
+        const recs = state.allSales.filter(r =>
+          norm(r.name) === norm(name) &&
+          norm(r.phone || '') === norm(phone)
+        );
+
+        if (!recs.length) return;
+
+        cust = {
+          key,
+          name: recs[0].name,
+          phone: recs[0].phone || '',
+          opd: pad4(recs[0].opd || ''),
+          bills: recs.slice()
+        };
+      }
+
+      const records = cust.bills.slice().sort((a, b) => String(b.date||'').localeCompare(String(a.date||'')));
+
+      const customer = {
+        name: cust.name,
+        phone: cust.phone || '-',
+        opd: cust.opd || '-'
+      };
+
+      const latestRecord = records[0];
+      const lastDateStr = (latestRecord?.date || '').slice(0, 10);
+
+      const baseDate = state.endAnchorDate || new Date();
+      const lastDate = parseYmdLocal(lastDateStr);
+      const daysAbsent = !lastDate ? 0 : Math.floor((baseDate - lastDate) / (1000 * 60 * 60 * 24));
+
+      const totalVisits = records.length;
+
+      const paidRecords = records.filter(r => recordAmount(r) > 0);
+      const paidVisits = paidRecords.length;
+      const totalAmount = paidRecords.reduce((s, r) => s + recordAmount(r), 0);
+      const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
+
+      const allItems = {};
+      records.forEach(r => {
+        (r.items || []).forEach(item => {
+          let name = item;
+          const m = item.match(/\((.*?)\)/);
+          name = m ? m[1] : item.split(" - ")[0];
+
+          const q = item.match(/- (\d+) ชิ้น/);
+          const qty = q ? parseInt(q[1]) : 1;
+
+          allItems[name] = (allItems[name] || 0) + qty;
+        });
+      });
+
+      const categoryMap = {
+        "โบทอค": ["Aestox 50 u","Aestox 100 u","Allergan 50 u","Allergan 100 u","เฉพาะจุด","แบ่งไว้แล้ว","Nabota"],
+        "ฟิลเลอร์": ["Neuramis สีดำ","Neuramis สีทอง","E.P.T.Q ระบุสีด้วย","Restylane ระบุสีด้วย"],
+        "Fat/Hifu": ["Bromi","Sisi","HIFU","HIFU แถม"],
+        "งานผิว": [
+          "Meso Chanel","P - Cell","Aquatic","Hestina","Exosome","Rejuran",
+          "Belotero Revive","Sculptra","Juvelook","Aesthefill","PRP","Mesowink",
+          "สะกิดหน้าใส","Alphaarbutin","Transamine","Biocollagen"
+        ],
+        "ดริปผิว": ["Snow White","Super Aurawhite","Vitamin Mix","Brain Booster","Energy Booster"],
+        "ทรีทเม้นท์": [
+          "ทรีทเมนต์หน้าใส","ทรีทเมนต์สิว","ทรีทเมนต์ฝ้า",
+          "ผลักวิตามิน","ปั่น RF","กดสิว","subcisionสิว"
+        ],
+        "อื่นๆ": [
+          "ยาฉีดสลายฝ้า","ครีมทาฝ้า","ยาทานฝ้า",
+          "ไหมลิฟท์กรอบหน้า","ไหม PDO","ไหม Collagen",
+          "จ่ายเงิน/จองสินค้า","สลายฟิลเลอร์","PRPผม","จี้ไฝ"
+        ],
+        "โปรโมชั่น/อีเว้นพิเศษ": []
+      };
+
+      const categorizedItems = {};
+      for (const [cat, names] of Object.entries(categoryMap)) {
+        names.forEach(n => {
+          if (allItems[n]) {
+            (categorizedItems[cat] ||= []).push(`${n} : ${allItems[n]}`);
+            delete allItems[n];
+          }
+        });
+      }
+      if (Object.keys(allItems).length) {
+        (categorizedItems["อื่นๆ"] ||= []).push(
+          ...Object.entries(allItems).map(([n, q]) => `${n} : ${q}`)
+        );
+      }
+
+      const itemSummary = Object.entries(categorizedItems)
+        .map(([cat, items]) => `
+          <div style="margin-bottom:6px;">
+            <strong>${cat}</strong>: ${items.join(" | ")}
+          </div>
+        `).join("");
+
+      const historyHtml = records.map(r => {
+        const items = (r.items || []).map(item => {
+          const m = item.match(/\((.*?)\)/);
+          const name = m ? m[1] : item.split(" - ")[0];
+          const q = item.match(/- (\d+) ชิ้น/);
+          const qty = q ? parseInt(q[1]) : 1;
+          return `<li>${esc(name)} : ${qty}</li>`;
+        }).join("");
+
+        const noteText = r.note
+          ? `<div style="font-size:11px; margin-top:2px; font-style:italic; color:#444;">
+               📝 หมายเหตุ: ${esc(r.note)}
+             </div>`
+          : "";
+
+        return `
+          <div style="margin-bottom:14px;">
+            <div style="font-weight:900; font-size:12px;color:#064e3b">
+              📅 ${formatDate((r.date || '').slice(0,10))}
+            </div>
+            <ul style="padding-left:16px; margin:6px 0 0; font-size:11px;">${items}</ul>
+            <div style="margin-top:6px; color:#0a645a; font-size:11px;font-weight:900">
+              💵 ${Math.round(recordAmount(r)).toLocaleString()} บาท
+            </div>
+            ${noteText}
+            <hr style="margin:10px auto; border:0; border-top:1px dashed #ddd; width:70%;">
+          </div>
+        `;
+      }).join("");
+
+      let pitchSectionHtml = '';
+      try {
+        const opd = customer.opd && customer.opd !== '-' ? customer.opd : '';
+        if (opd) {
+          const res = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
+          if (res.ok) {
+            const pitches = await res.json() || [];
+            if (pitches.length) {
+              pitches.sort((a,b)=> String(b.created_at||'').localeCompare(String(a.created_at||'')));
+              pitchSectionHtml = pitches.map(p=>{
+                const d = fmtDateTime(p.created_at).split(" ")[0];
+                return `
+                  <div style="padding:4px 0; font-size:11px; color:#374151;">
+                    ${d} • ${esc(p.promotion || '-')} • <b>${esc(p.outcome || '-')}</b>
+                  </div>`;
+              }).join("");
+            } else {
+              pitchSectionHtml = `<div class="sub-muted" style="font-size:11px;">ยังไม่มีข้อมูล Sale Pitch</div>`;
+            }
+          } else {
+            pitchSectionHtml = `<div class="sub-muted" style="font-size:11px;">โหลด Sale Pitch ไม่สำเร็จ</div>`;
+          }
+        }
+      } catch(e){
+        pitchSectionHtml = `<div class="sub-muted" style="font-size:11px;">เกิดข้อผิดพลาด</div>`;
+      }
+
+      const daysAbsentText = `<span style="color:#ef4444;font-weight:900;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
+
+      document.getElementById("modal-content").innerHTML = `
+        <h3 style="font-size:16px; margin:0 0 6px;color:#064e3b;font-weight:900;">📇 ${esc(customer.name)}</h3>
+        <div style="font-size:12px;">🆔 OPD: <b>${esc(customer.opd)}</b></div>
+        <div style="font-size:12px;">📞 เบอร์: ${esc(customer.phone)}</div>
+        <div style="font-size:12px;">📅 วันล่าสุด: ${formatDate(lastDateStr)} ${daysAbsentText}</div>
+        <div style="font-size:12px; color:#00796b;font-weight:900;margin-top:6px;">
+          💰 ยอดรวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท
+        </div>
+        <div style="font-size:12px;">🔁 จำนวนครั้ง: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
+        <div style="font-size:12px;">💳 เฉลี่ยต่อครั้ง: ${average.toLocaleString()} บาท</div>
+
+        <hr style="margin:14px 0; border:0; border-top:1px solid #e5e7eb;">
+
+        <div style="font-weight:900; font-size:13px; margin-bottom:8px;color:#064e3b;">📦 สรุปรายการซื้อทั้งหมด</div>
+        <div style="font-size:11px;">${itemSummary || '-'}</div>
+
+        <hr style="margin:14px 0; border:0; border-top:1px solid #e5e7eb;">
+
+        <div style="font-weight:900; font-size:13px; margin-bottom:6px;color:#064e3b;">🗣️ Sale Pitch (แบบสั้น)</div>
+        ${pitchSectionHtml}
+
+        <hr style="margin:14px 0; border:0; border-top:1px solid #e5e7eb;">
+
+        <div style="font-weight:900; font-size:13px; margin-bottom:8px;color:#064e3b;">🧾 ประวัติการซื้อย้อนหลัง</div>
+        ${historyHtml}
+      `;
+
+      document.getElementById("customer-modal").style.display = 'flex';
+    }
+
+    /* Range chip UI uses same data-range hooks */
+    document.getElementById('openCustomRange')?.addEventListener('click', openRangeModal);
+
+    /* Init */
     (async function init(){
+      showLoading(true);
       try{
         await Promise.all([loadAllSales(), loadAllProfiles()]);
-        document.querySelector('.chip[data-range="all"]').classList.add('active');
+        // default active "all"
+        document.querySelectorAll('.chip[data-range]').forEach(c=>c.classList.remove('active'));
+        const allChip = document.querySelector('.chip[data-range="all"]');
+        if(allChip) allChip.classList.add('active');
         setQuickRange('all');
         applyRange();
+        toast('โหลดข้อมูลเรียบร้อย', 'ok');
       }catch(e){
-        console.error(e); alert('โหลดข้อมูลไม่สำเร็จ');
+        console.error(e);
+        alert('โหลดข้อมูลไม่สำเร็จ');
+      }finally{
+        showLoading(false);
       }
     })();
 
-    /* ===== Pitch History Modal ===== */
-function closePitchModal(){
-  const m = document.getElementById('pitch-modal');
-  if(m) m.style.display='none';
-}
-document.getElementById('pitch-modal')?.addEventListener('click', (e)=>{
-  const box = e.target.closest('.box');
-  if(!box) closePitchModal();
-});
-
-function fmtDateTime(iso){
-  if(!iso) return '';
-  const d = new Date(iso);
-  if(isNaN(d)) return iso;
-  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
-  const hh=String(d.getHours()).padStart(2,'0'), mm=String(d.getMinutes()).padStart(2,'0');
-  return `${dd}/${m}/${String(y).slice(-2)} ${hh}:${mm}`;
-}
-
-async function openPitchModalForOPD(opd, displayName){
-  try{
-    const r = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
-    if(!r.ok){ alert('โหลดประวัติ Pitch ไม่สำเร็จ'); return; }
-    const rows = await r.json() || [];
-
-    // สรุปจำนวนครั้ง
-    const count = rows.length;
-
-    // สร้างตาราง: วันที่, ช่องทาง, โปรโมชั่น, Outcome, Comment, ผู้บันทึก
-    const table = rows.map((p,idx)=>`
-      <tr>
-        <td>${idx+1}</td>
-        <td>${fmtDateTime(p.created_at||'')}</td>
-        <td>${esc(p.channel||'-')}</td>
-        <td>${esc(p.promotion||'-')}</td>
-        <td>${esc(p.outcome||'-')}</td>
-        <td>${esc(p.content||'-')}</td>
-        <td>${esc(p.author||'-')}</td>
-      </tr>
-    `).join('') || `<tr><td colspan="7" class="sub-muted">ยังไม่มีประวัติการ Pitch</td></tr>`;
-
-    const html = `
-      <div style="margin-bottom:8px">
-        <div class="headline" style="font-size:18px; margin:0 0 4px">ประวัติการ Pitch — ${esc(displayName||opd)}</div>
-        <div class="sub-muted">รวมทั้งหมด <b>${count.toLocaleString()}</b> ครั้ง</div>
-      </div>
-      <table style="width:100%; border-collapse:collapse; background:#fff">
-        <thead>
-          <tr>
-            <th style="width:48px">#</th>
-            <th>วันที่</th>
-            <th>ช่องทาง</th>
-            <th>โปรโมชั่น</th>
-            <th>Outcome</th>
-            <th>Comment</th>
-            <th>ผู้บันทึก</th>
-          </tr>
-        </thead>
-        <tbody>${table}</tbody>
-      </table>
-    `;
-    document.getElementById('pitch-modal-content').innerHTML = html;
-    document.getElementById('pitch-modal').style.display='flex';
-  }catch(e){
-    console.error(e);
-    alert('เกิดข้อผิดพลาดในการโหลดข้อมูล Pitch');
-  }
-}
-async function openCustomerModal(key) {
-  // 1) พยายามดึงจาก customersMap ก่อน (ชุดข้อมูลที่ผ่านฟิลเตอร์แล้ว)
-  let cust = customersMap.get(key);
-
-  // ถ้าไม่เจอ (กรณีใช้ key = name|phone)
-  if (!cust) {
-    const [name, phone = ''] = String(key).split('|');
-    const norm = s => (s || '').trim().toLowerCase();
-
-    const recs = allSales.filter(r =>
-      norm(r.name) === norm(name) &&
-      norm(r.phone || '') === norm(phone)
-    );
-
-    if (!recs.length) return;
-
-    cust = {
-      key,
-      name: recs[0].name,
-      phone: recs[0].phone || '',
-      opd: pad4(recs[0].opd || ''),
-      bills: recs.slice()
-    };
-  }
-
-  // จัดเรียงบิลใหม่ล่าสุดก่อน
-  const records = cust.bills.slice().sort((a, b) => b.date.localeCompare(a.date));
-
-  const customer = {
-    name: cust.name,
-    phone: cust.phone || '-',
-    opd: cust.opd || '-'
-  };
-
-  const latestRecord = records[0];
-  const lastDateStr = (latestRecord?.date || '').slice(0, 10);
-
-  // คำนวณ days absent
-  const baseDate = endAnchorDate || new Date();
-  const lastDate = new Date(lastDateStr);
-  const daysAbsent = isNaN(lastDate)
-    ? 0
-    : Math.floor((baseDate - lastDate) / (1000 * 60 * 60 * 24));
-
-  const totalVisits = records.length;
-
-  // คิดเงิน
-  const paidRecords = records.filter(r => recordAmount(r) > 0);
-  const paidVisits = paidRecords.length;
-  const totalAmount = paidRecords.reduce((s, r) => s + recordAmount(r), 0);
-  const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
-
-  // รวมจำนวนสินค้าตามหมวด
-  const allItems = {};
-  records.forEach(r => {
-    (r.items || []).forEach(item => {
-      let name = item;
-      const m = item.match(/\((.*?)\)/);
-      name = m ? m[1] : item.split(" - ")[0];
-
-      const q = item.match(/- (\d+) ชิ้น/);
-      const qty = q ? parseInt(q[1]) : 1;
-
-      allItems[name] = (allItems[name] || 0) + qty;
-    });
-  });
-
-  const categoryMap = {
-    "โบทอค": ["Aestox 50 u","Aestox 100 u","Allergan 50 u","Allergan 100 u","เฉพาะจุด","แบ่งไว้แล้ว","Nabota"],
-    "ฟิลเลอร์": ["Neuramis สีดำ","Neuramis สีทอง","E.P.T.Q ระบุสีด้วย","Restylane ระบุสีด้วย"],
-    "Fat/Hifu": ["Bromi","Sisi","HIFU","HIFU แถม"],
-    "งานผิว": [
-      "Meso Chanel","P - Cell","Aquatic","Hestina","Exosome","Rejuran",
-      "Belotero Revive","Sculptra","Juvelook","Aesthefill","PRP","Mesowink",
-      "สะกิดหน้าใส","Alphaarbutin","Transamine","Biocollagen"
-    ],
-    "ดริปผิว": ["Snow White","Super Aurawhite","Vitamin Mix","Brain Booster","Energy Booster"],
-    "ทรีทเม้นท์": [
-      "ทรีทเมนต์หน้าใส","ทรีทเมนต์สิว","ทรีทเมนต์ฝ้า",
-      "ผลักวิตามิน","ปั่น RF","กดสิว","subcisionสิว"
-    ],
-    "อื่นๆ": [
-      "ยาฉีดสลายฝ้า","ครีมทาฝ้า","ยาทานฝ้า",
-      "ไหมลิฟท์กรอบหน้า","ไหม PDO","ไหม Collagen",
-      "จ่ายเงิน/จองสินค้า","สลายฟิลเลอร์","PRPผม","จี้ไฝ"
-    ],
-    "โปรโมชั่น/อีเว้นพิเศษ": []
-  };
-
-  const categorizedItems = {};
-  for (const [cat, names] of Object.entries(categoryMap)) {
-    names.forEach(n => {
-      if (allItems[n]) {
-        (categorizedItems[cat] ||= []).push(`${n} : ${allItems[n]}`);
-        delete allItems[n];
-      }
-    });
-  }
-  if (Object.keys(allItems).length) {
-    (categorizedItems["อื่นๆ"] ||= []).push(
-      ...Object.entries(allItems).map(([n, q]) => `${n} : ${q}`)
-    );
-  }
-
-  const itemSummary = Object.entries(categorizedItems)
-    .map(([cat, items]) => `
-      <div style="margin-bottom:4px;">
-        <strong>${cat}</strong>: ${items.join(" | ")}
-      </div>
-    `).join("");
-
-  // ประวัติการซื้อแบบละเอียด
-  const historyHtml = records.map(r => {
-    const items = (r.items || []).map(item => {
-      const m = item.match(/\((.*?)\)/);
-      const name = m ? m[1] : item.split(" - ")[0];
-      const q = item.match(/- (\d+) ชิ้น/);
-      const qty = q ? parseInt(q[1]) : 1;
-      return `<li>${esc(name)} : ${qty}</li>`;
-    }).join("");
-
-    const noteText = r.note
-      ? `<div style="font-size:11px; margin-top:2px; font-style:italic; color:#444;">
-           📝 หมายเหตุ: ${esc(r.note)}
-         </div>`
-      : "";
-
-    return `
-      <div style="margin-bottom:14px;">
-        <div style="font-weight:600; font-size:12px;">
-          📅 ${formatDate((r.date || '').slice(0,10))}
-        </div>
-        <ul style="padding-left:16px; margin:0; font-size:11px;">${items}</ul>
-        <div style="margin-top:4px; color:#0a645a; font-size:11px;">
-          💵 ${Math.round(recordAmount(r)).toLocaleString()} บาท
-        </div>
-        ${noteText}
-        <hr style="margin:8px auto; border:0; border-top:1px dashed #ddd; width:60%;">
-      </div>
-    `;
-  }).join("");
-
-  /* ============================================================
-       🎯 เพิ่มส่วน Sale Pitch แบบสั้น เรียงบนลงล่าง
-     ============================================================ */
-
-  let pitchSectionHtml = '';
-
-  try {
-    const opd = customer.opd && customer.opd !== '-' ? customer.opd : '';
-    if (opd) {
-      const res = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
-      if (res.ok) {
-        const pitches = await res.json() || [];
-
-        if (pitches.length) {
-          pitches.sort((a,b)=> String(b.created_at||'').localeCompare(String(a.created_at||'')));
-
-          pitchSectionHtml = pitches.map(p=>{
-            const d = fmtDateTime(p.created_at).split(" ")[0]; // dd/mm/yy
-            return `
-              <div style="padding:2px 0; font-size:11px; color:#374151;">
-                ${d} — ${esc(p.promotion || '-')} — ${esc(p.outcome || '-')}
-              </div>`;
-          }).join("");
-
-        } else {
-          pitchSectionHtml = `<div class="sub-muted" style="font-size:11px;">ยังไม่มีข้อมูล Sale Pitch</div>`;
-        }
-
-      } else {
-        pitchSectionHtml = `<div class="sub-muted" style="font-size:11px;">โหลด Sale Pitch ไม่สำเร็จ</div>`;
-      }
-    }
-  } catch(e){
-    pitchSectionHtml = `<div class="sub-muted" style="font-size:11px;">เกิดข้อผิดพลาด</div>`;
-  }
-
-  /* ====================================================== */
-
-  const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
-
-  // ใส่ HTML ลงโมดัล
-  document.getElementById("modal-content").innerHTML = `
-    <h3 style="font-size:16px; margin-bottom:4px;">📇 ${esc(customer.name)}</h3>
-    <div style="font-size:12px;">🆔 OPD: ${esc(customer.opd)}</div>
-    <div style="font-size:12px;">📞 เบอร์: ${esc(customer.phone)}</div>
-    <div style="font-size:12px;">📅 วันล่าสุด: ${formatDate(lastDateStr)} ${daysAbsentText}</div>
-    <div style="font-size:12px; color:#00796b;">
-      💰 ยอดรวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท
-    </div>
-    <div style="font-size:12px;">🔁 จำนวนครั้ง: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
-    <div style="font-size:12px;">💳 เฉลี่ยต่อครั้ง: ${average.toLocaleString()} บาท</div>
-
-    <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
-
-    <div style="font-weight:600; font-size:13px; margin-bottom:6px;">📦 สรุปรายการซื้อทั้งหมด:</div>
-    <div style="font-size:11px;">${itemSummary || '-'}</div>
-
-    <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
-
-    <div style="font-weight:600; font-size:13px; margin-bottom:4px;">🗣️ Sale Pitch (แบบสั้น):</div>
-    ${pitchSectionHtml}
-
-    <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
-
-    <div style="font-weight:600; font-size:13px; margin-bottom:6px;">🧾 ประวัติการซื้อย้อนหลัง:</div>
-    ${historyHtml}
-  `;
-
-  document.getElementById("customer-modal").style.display = 'flex';
-}
-
-
+    /* ==========================
+       NOTE: ฟังก์ชัน global ที่ถูกเรียกจาก HTML
+       ========================== */
+    window.openCustomerModal = openCustomerModal;
+    window.closeCustomerModal = closeCustomerModal;
+    window.openPitchModalForOPD = openPitchModalForOPD;
+    window.closePitchModal = closePitchModal;
+    window.openRangeModal = openRangeModal;
+    window.closeRangeModal = closeRangeModal;
+    window.applyRangeFromModal = applyRangeFromModal;
+    window.applyRecency = applyRecency;
+    window.applyABC = applyABC;
+    window.applyRFM = applyRFM;
+    window.applySpend = applySpend;
   </script>
+
   {% include "floating_menu.html" %}
 </body>
 </html>
