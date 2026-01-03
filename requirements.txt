@@ -51,4 +51,5 @@ gunicorn
 python-dotenv==1.0.1
 requests==2.32.3
 cloudinary==1.41.0
-openai==1.59.3
+Pillow
+google-generativeai

@@ -11,6 +11,9 @@
       --primary:#0f766e; --primary-600:#0d9488; --ring:#ccfbf1;
       --line:#e2e8f0; --danger:#ef4444; --warn:#f59e0b; --success:#22c55e;
       --radius:14px;
+      --muted:#64748b;
+      --soft:#f1f5f9;
+      --shadow: 0 18px 45px rgba(2, 6, 23, 0.08);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -20,6 +23,7 @@
       font-size: 12px; margin:0;
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
+      font-weight: 400;
     }
 
     .container{ max-width:1200px; margin: 16px auto 120px; padding: 0 12px; }
@@ -33,11 +37,11 @@
       max-width:1200px; margin:0 auto; padding: 12px 12px;
       display:flex; align-items:center; gap:10px;
     }
-    .title{ font-weight:900; font-size: 18px; color: var(--primary); display:flex; align-items:center; gap:8px; }
+    .title{ font-weight:600; font-size: 18px; color: var(--primary); display:flex; align-items:center; gap:8px; letter-spacing:.2px; }
     .grow{flex:1}
 
     .btn{
-      appearance:none; border:none; border-radius:10px; padding:9px 14px; cursor:pointer; font-weight:800;
+      appearance:none; border:none; border-radius:10px; padding:9px 14px; cursor:pointer; font-weight:500;
       display:inline-flex; align-items:center; gap:6px; transition: all .15s;
       font-family:inherit; font-size:12px;
       touch-action: manipulation;
@@ -74,16 +78,16 @@
       border:1px solid var(--line); border-radius:12px; padding:9px 10px; background:#fff;
       font-size:12px; cursor:pointer;
     }
-    .chip{ display:inline-flex; align-items:center; padding:5px 10px; border-radius:99px; font-size:11px; background:#e0f2f1; color:#0f766e; font-weight:900; }
+    .chip{ display:inline-flex; align-items:center; padding:5px 10px; border-radius:99px; font-size:11px; background:#e0f2f1; color:#0f766e; font-weight:600; }
     .chip.vip{ background:#fef3c7; color:#92400e; }
-    .chip.mini{ padding:3px 8px; font-weight:900; }
-    .muted{ color:#64748b; font-weight:800; font-size:11px; }
+    .chip.mini{ padding:3px 8px; font-weight:600; }
+    .muted{ color:#64748b; font-weight:500; font-size:11px; }
 
     .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling: touch; }
-    table{ width:100%; border-collapse:collapse; font-size: 12px; min-width: 980px; }
+    table{ width:100%; border-collapse:collapse; font-size: 12px; min-width: 900px; }
     thead th{
       position:sticky; top:0; z-index:1; background:#f1f5f9; color:#475569;
-      font-weight:900; text-align:left; padding:10px 12px; border-bottom:1px solid var(--line);
+      font-weight:600; text-align:left; padding:10px 12px; border-bottom:1px solid var(--line);
       white-space: nowrap; cursor:pointer; user-select:none;
     }
     thead th:hover{ background:#e2e8f0; }
@@ -103,13 +107,16 @@
     }
 
     th.sel-col, td.sel-col{ width: 42px; text-align:center; padding-left:6px; padding-right:6px;}
-    th[data-key="opd"], td[data-col="opd"]{ width: 90px; font-weight:900; color: var(--primary); }
+    th[data-key="opd"], td[data-col="opd"]{ width: 90px; font-weight:600; color: var(--primary); }
     td[data-col="opd"]{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    th[data-key="full_name"], td[data-col="full_name"]{ width: 240px; font-weight:900; }
-    th[data-key="vip"], td[data-col="vip"]{ width: 95px; text-align:center; }
-    th[data-key="birthMonth"], td[data-col="birthMonth"]{ width: 90px; text-align:center; }
 
+    th[data-key="name"], td[data-col="name"]{ width: 240px; font-weight:500; }
+    th[data-key="vip"], td[data-col="vip"]{ width: 120px; text-align:center; }
+    th[data-key="birthMonth"], td[data-col="birthMonth"]{ width: 90px; text-align:center; }
+    th[data-key="age"], td[data-col="age"]{ width: 70px; text-align:center; }
+    th[data-key="birth_th_ddmmyyyy"], td[data-col="birth_th_ddmmyyyy"]{ width: 140px; }
     th:last-child, td:last-child{ width: 200px; text-align:center; }
+
     .actions{ display:flex; justify-content:center; gap:6px; opacity:0.85; transition:opacity .2s; }
     tr:hover .actions{ opacity:1; }
 
@@ -119,7 +126,7 @@
     .toast-wrap{ position:fixed; right:16px; bottom:16px; z-index:100; display:flex; flex-direction:column; gap:10px; }
     .toast{
       background:#fff; border-left:4px solid var(--success); padding:12px 14px; border-radius:12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1); font-weight:900; display:flex; align-items:center; gap:10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1); font-weight:600; display:flex; align-items:center; gap:10px;
       transform:translateY(20px); opacity:0; transition:all .28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       max-width: min(360px, calc(100vw - 32px));
     }
@@ -127,12 +134,11 @@
     .toast.error{ border-left-color:var(--danger); }
     .toast.warn{ border-left-color:var(--warn); }
 
-    /* ✅ Modal Center Fix */
     .modal {
       position: fixed; inset: 0; z-index: 60;
       display: none;
-      align-items: center; /* จัดกึ่งกลางแนวตั้ง */
-      justify-content: center; /* จัดกึ่งกลางแนวนอน */
+      align-items: center;
+      justify-content: center;
       padding: 20px;
     }
     .modal.open{ display:flex; }
@@ -143,7 +149,7 @@
     .modal-box {
       position: relative; width: 100%; max-width: 760px;
       background: #fff;
-      border-radius: 18px; /* ขอบมนรอบด้าน */
+      border-radius: 18px;
       box-shadow: 0 30px 70px rgba(0,0,0,0.25);
       padding: 16px 14px;
       max-height: 90vh;
@@ -153,8 +159,8 @@
     @keyframes slideUp{ from{transform:translateY(10px); opacity:0} to{transform:translateY(0); opacity:1} }
 
     .modal-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; gap:12px; }
-    .modal-title{ font-size:16px; font-weight:1000; color:var(--primary); display:flex; align-items:center; gap:8px; }
-    .modal-sub{ font-size:11px; color:#64748b; font-weight:900; }
+    .modal-title{ font-size:16px; font-weight:600; color:var(--primary); display:flex; align-items:center; gap:8px; }
+    .modal-sub{ font-size:11px; color:#64748b; font-weight:500; }
 
     .grid{ display:grid; gap:10px; grid-template-columns: repeat(12, 1fr); }
     .col-12{ grid-column: span 12; }
@@ -162,7 +168,7 @@
     .col-4{ grid-column: span 4; }
     .col-3{ grid-column: span 3; }
 
-    .field-group label{ display:block; margin-bottom:4px; font-weight:1000; font-size:11px; color:#64748b; }
+    .field-group label{ display:block; margin-bottom:4px; font-weight:600; font-size:11px; color:#64748b; }
     .field-group input, .field-group textarea, .field-group select{
       width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:12px;
       font-family:inherit; font-size:13px; outline:none;
@@ -174,7 +180,6 @@
 
     .modal-footer{ display:flex; justify-content:space-between; gap:8px; margin-top:14px; align-items:center; flex-wrap:wrap; }
 
-    /* Scroll Top */
     #scrollTop{
       position:fixed; right:16px; bottom:16px; width:44px; height:44px; border-radius:50%;
       background:var(--primary); color:white; border:none; cursor:pointer;
@@ -204,24 +209,26 @@
       cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
-    /* ✅ Popup (View) */
+    /* ✅ View modern */
     .view-card{
       border:1px solid var(--line);
-      border-radius:16px;
-      background: linear-gradient(180deg, #f8fafc, #ffffff 55%);
-      padding:12px;
+      border-radius:18px;
+      background: radial-gradient(1200px 280px at 10% 0%, #ecfeff 0%, #ffffff 55%),
+                  linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      padding:14px;
+      box-shadow: var(--shadow);
     }
     .view-top{
-      display:flex; align-items:flex-start; gap:10px;
-      padding:8px 10px;
-      border-radius:14px;
-      background:#ffffff;
+      display:flex; align-items:flex-start; gap:12px;
+      padding:12px;
+      border-radius:16px;
+      background: rgba(255,255,255,.9);
       border:1px solid var(--line);
       box-shadow: 0 8px 16px rgba(0,0,0,0.04);
     }
     .badge-opd{
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-weight:1000;
+      font-weight:600;
       color:#0f766e;
       background:#ecfeff;
       border:1px solid #a5f3fc;
@@ -230,12 +237,19 @@
       white-space:nowrap;
     }
     .view-name{
-      font-weight:1000; font-size:15px; color:#0f172a; line-height:1.25;
+      font-weight:600; font-size:15px; color:#0f172a; line-height:1.25;
     }
     .view-subline{
-      margin-top:4px;
+      margin-top:6px;
       display:flex; gap:8px; flex-wrap:wrap;
-      font-weight:900; color:#475569; font-size:11px;
+      font-weight:500; color:#475569; font-size:11px;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:6px 10px; border-radius:999px;
+      font-weight:500; font-size:11px;
+      background:#f1f5f9; color:#334155;
+      border:1px solid #e2e8f0;
     }
     .kv{
       display:grid;
@@ -244,23 +258,81 @@
       margin-top:12px;
     }
     .k{
-      color:#64748b; font-weight:1000; font-size:11px;
+      color:var(--muted); font-weight:500; font-size:11px;
       display:flex; align-items:center; gap:6px;
     }
     .v{
-      color:#0f172a; font-weight:900; font-size:12px;
+      color:#0f172a; font-weight:400; font-size:12px;
       word-break: break-word;
     }
     .v.mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    .divider{
-      height:1px; background:var(--line); margin:12px 0;
+    .divider{ height:1px; background:var(--line); margin:12px 0; }
+
+    .avatar{
+      width:64px; height:64px; border-radius:18px;
+      overflow:hidden;
+      border:1px solid var(--line);
+      background: var(--soft);
+      flex-shrink:0;
+      box-shadow: 0 10px 24px rgba(2,6,23,.08);
     }
-    .pill{
-      display:inline-flex; align-items:center; gap:6px;
-      padding:6px 10px; border-radius:999px;
-      font-weight:1000; font-size:11px;
-      background:#f1f5f9; color:#334155;
-      border:1px solid #e2e8f0;
+    .avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .avatar-fallback{
+      width:100%; height:100%;
+      display:flex; align-items:center; justify-content:center;
+      color:#94a3b8; font-size:22px;
+    }
+
+    .view-gallery{
+      margin-top:12px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.9);
+      border-radius:16px;
+      padding:10px;
+    }
+    .view-gallery-head{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      margin-bottom:8px;
+    }
+    .view-gallery-title{
+      color:#334155; font-size:12px; font-weight:500;
+      display:flex; align-items:center; gap:8px;
+    }
+    .view-gallery-strip{
+      display:flex; gap:10px;
+      overflow:auto; -webkit-overflow-scrolling:touch;
+      padding-bottom:2px;
+    }
+    .thumb{
+      width:86px; height:86px;
+      border-radius:14px;
+      overflow:hidden;
+      border:1px solid var(--line);
+      background: #f1f5f9;
+      flex:0 0 auto;
+      cursor:pointer;
+      position:relative;
+      transition: transform .15s;
+    }
+    .thumb:hover{ transform: translateY(-1px); }
+    .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .thumb .tag{
+      position:absolute; left:8px; bottom:8px;
+      font-size:10px;
+      padding:4px 8px;
+      border-radius:999px;
+      background: rgba(255,255,255,.85);
+      border:1px solid rgba(226,232,240,.9);
+      color:#334155;
+    }
+    .empty-gallery{
+      width:100%;
+      padding:18px;
+      border-radius:14px;
+      border:2px dashed #e2e8f0;
+      color:#94a3b8;
+      text-align:center;
+      background:#ffffff;
     }
 
     @media (max-width: 768px){
@@ -269,7 +341,6 @@
       .search{ min-width:100%; order:2; }
       .btn{ padding:8px 10px; font-size:11px; }
       table{ min-width: 680px; }
-      th[data-key="phone"], td[data-col="phone"]{ display:none; }
       th[data-key="birth_th_ddmmyyyy"], td[data-col="birth_th_ddmmyyyy"]{ display:none; }
       th[data-key="profile"], td[data-col="profile"]{ display:none; }
       th[data-key="note"], td[data-col="note"]{ display:none; }
@@ -277,6 +348,8 @@
       .modal-box{ border-radius:18px; padding:14px 12px; }
       .col-6,.col-4,.col-3{ grid-column: span 12; }
       .kv{ grid-template-columns: 96px 1fr; }
+      .thumb{ width:78px; height:78px; }
+      .avatar{ width:58px; height:58px; border-radius:16px; }
     }
   </style>
 </head>
@@ -296,7 +369,7 @@
       <div class="toolbar">
         <div class="search">
           <span class="icon">🔎</span>
-          <input id="searchInput" type="text" placeholder="ค้นหา: OPD, ชื่อ, เบอร์, บัตร, FB, ที่อยู่, โปรไฟล์, หมายเหตุ...">
+          <input id="searchInput" type="text" placeholder="ค้นหา: OPD, ชื่อ, บัตร, FB, ที่อยู่, โปรไฟล์, หมายเหตุ...">
           <span id="clearSearch" class="clear" style="display:none;">✖</span>
         </div>
 
@@ -320,10 +393,10 @@
             <tr>
               <th class="sel-col"><input type="checkbox" id="selectAll"></th>
               <th data-key="opd">OPD ↕</th>
-              <th data-key="full_name">ชื่อ-สกุล ↕</th>
-              <th data-key="phone">โทร ↕</th>
+              <th data-key="name">ชื่อเล่น ↕</th>
               <th data-key="vip">VIP ↕</th>
               <th data-key="birthMonth">เดือน ↕</th>
+              <th data-key="age">อายุ ↕</th>
               <th data-key="birth_th_ddmmyyyy">วันเกิด(ไทย) ↕</th>
               <th data-key="facebook_name">Facebook ↕</th>
               <th data-key="profile">📝 โปรไฟล์ ↕</th>
@@ -351,12 +424,12 @@
           <div class="modal-sub" id="formModalSub">บันทึกเข้าฐาน (ตาราง customers)</div>
 
           <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
-             
-             <div style="position:relative; width:80px; height:80px; flex-shrink:0;">
-              <img id="previewProfile" 
-                   src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2cbdjVlIj48cGF0aCBkPSZNMTIgMTJjMi4yMSAwIDQtMS43OSA0LTRzLTEuNzktNC00LTQtNCAxLjc5LTQgNCAxLjc5IDQgNCA0em0wIDJjLTIuNjcgMC04IDEuMzQtOCA0djJoMTZ2LTJjMC0yLjY2LTUuMzMtNC04LTR6Ii8+PC9zdmc+" 
+
+            <div style="position:relative; width:80px; height:80px; flex-shrink:0;">
+              <img id="previewProfile"
+                   src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2cbdjVlIj48cGF0aCBkPSZNMTIgMTJjMi4yMSAwIDQtMS43OSA0LTRzLTEuNzktNC00LTQtNCAxLjc5LTQgNCAxLjc5IDQgNCA0em0wIDJjLTIuNjcgMC04IDEuMzQtOCA0djJoMTZ2LTJjMC0yLjY2LTUuMzMtNC04LTR6Ii8+PC9zdmc+"
                    style="width:100%; height:100%; object-fit:cover; border-radius:50%; border:2px solid #e2e8f0; background:#f1f5f9;">
-              
+
               <button onclick="$('#profileInput').click()" title="อัปรูปใหม่"
                       style="position:absolute; bottom:-5px; right:-5px; background:var(--primary); color:#fff; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.2); z-index:2;">
                 📷
@@ -374,7 +447,7 @@
             <div style="flex:1; padding:8px 12px; background:#f0f9ff; border-radius:12px; border:1px dashed #0ea5e9; display:flex; align-items:center; gap:10px;">
               <span style="font-size:20px;">🪪</span>
               <div style="flex:1;">
-                <div style="font-weight:1000; color:#0369a1; font-size:13px;">สแกนบัตร (AI)</div>
+                <div style="font-weight:600; color:#0369a1; font-size:13px;">สแกนบัตร (AI)</div>
                 <div style="font-size:10px; color:#64748b;">อ่านชื่ออัตโนมัติ</div>
               </div>
               <input type="file" id="idCardInput" accept="image/*" style="display:none" onchange="processIDCard(this)">
@@ -470,15 +543,14 @@
         </div>
         <button class="btn btn-ghost btn-icon" onclick="closeModal('galleryModal')">✕</button>
       </div>
-      
+
       <div style="padding:10px; background:#f8fafc; border-radius:12px; display:flex; align-items:center; justify-content:space-between; border:1px solid #e2e8f0;">
         <span class="muted" style="font-size:11px;">เลือกรูปแล้วกดอัปโหลด (รองรับหลายรูป)</span>
         <button class="btn btn-primary" onclick="$('#galleryInput').click()">☁️ อัปโหลดรูปเพิ่ม</button>
         <input type="file" id="galleryInput" multiple accept="image/*" style="display:none" onchange="uploadGalleryImages(this)">
       </div>
 
-      <div class="gallery-grid" id="galleryGrid">
-        </div>
+      <div class="gallery-grid" id="galleryGrid"></div>
 
       <div class="modal-footer">
         <div class="muted">แตะที่รูปเพื่อดูขยาย (หรือเลือกใช้เป็นโปรไฟล์)</div>
@@ -487,6 +559,7 @@
     </div>
   </div>
 
+  <!-- ✅ VIEW MODAL: รูปโปรไฟล์ + รูปที่อัปโหลด + อายุ -->
   <div id="viewModal" class="modal">
     <div class="modal-backdrop" onclick="closeModal('viewModal')"></div>
     <div class="modal-box">
@@ -500,14 +573,34 @@
 
       <div class="view-card">
         <div class="view-top">
-          <div class="badge-opd" id="v_opd">OPD 0000</div>
+          <div class="avatar" title="รูปโปรไฟล์">
+            <img id="v_avatar" alt="profile" style="display:none;">
+            <div id="v_avatar_fallback" class="avatar-fallback">👤</div>
+          </div>
+
           <div style="flex:1; min-width:0;">
-            <div class="view-name" id="v_full_name">-</div>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <div class="badge-opd" id="v_opd">OPD 0000</div>
+              <div class="view-name" id="v_full_name">-</div>
+            </div>
+
             <div class="view-subline">
               <span class="pill" id="v_vip">VIP: -</span>
               <span class="pill" id="v_birth_month">เดือนเกิด: -</span>
+              <span class="pill" id="v_age">อายุ: -</span>
             </div>
           </div>
+        </div>
+
+        <div class="view-gallery">
+          <div class="view-gallery-head">
+            <div class="view-gallery-title">🖼️ รูปที่อัปโหลดไว้</div>
+            <button class="btn btn-ghost btn-icon" id="v_openGalleryBtn" title="เปิดคลังรูป">📂</button>
+          </div>
+          <div id="v_gallery_strip" class="view-gallery-strip">
+            <div class="empty-gallery">กำลังโหลดรูป...</div>
+          </div>
+          <div class="muted" style="margin-top:8px;">แตะที่รูปเพื่อเปิดดูเต็มจอ (หรือกด 📂 เพื่อจัดการรูป)</div>
         </div>
 
         <div class="divider"></div>
@@ -518,6 +611,9 @@
 
           <div class="k">🎂 วันเกิด (ไทย)</div>
           <div class="v" id="v_birth_th">-</div>
+
+          <div class="k">⏳ อายุ</div>
+          <div class="v" id="v_age_kv">-</div>
 
           <div class="k">📞 โทร</div>
           <div class="v mono" id="v_phone">-</div>
@@ -568,6 +664,8 @@
     const esc = (s) => (s ?? '').toString()
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
+    const DEFAULT_AVATAR_SVG = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2cbdjVlIj48cGF0aCBkPSZNMTIgMTJjMi4yMSAwIDQtMS43OSA0LTRzLTEuNzktNC00LTQtNCAxLjc5LTQgNCAxLjc5IDQgNCA0em0wIDJjLTIuNjcgMC04IDEuMzQtOCA0djJoMTZ2LTJjMC0yLjY2LTUuMzMtNC04LTR6Ii8+PC9zdmc+';
+
     const showToast = (msg, type='ok') => {
       const el = document.createElement('div');
       el.className = `toast ${type==='error'?'error':type==='warn'?'warn':''} show`;
@@ -586,10 +684,9 @@
     let viewData = [];
     let selected = new Set();
     let sortConfig = { key: 'opd', asc: true };
-    let currentGalleryOpd = null; 
-    let isPickingMode = false; // ✅ โหมดเลือกรูป
+    let currentGalleryOpd = null;
+    let isPickingMode = false;
 
-    // Elements
     const tbody = $('#tbody');
     const searchInput = $('#searchInput');
     const monthFilter = $('#monthFilter');
@@ -606,11 +703,10 @@
     }
 
     async function apiAddCustomerFull(payload){
-      // v2 รองรับ FormData
       const r = await fetch('/api/add_customer_v2', {
         method:'POST',
         credentials:'same-origin',
-        body: payload 
+        body: payload
       });
       const j = await r.json().catch(()=> ({}));
       if (!r.ok) throw new Error(j.error || 'add_failed');
@@ -644,7 +740,6 @@
     // =========================
     // ✅ Gallery Functions
     // =========================
-    // 1. ปุ่มเปิด Gallery ปกติ (ไว้ดู/ลบ)
     function openGallery(opd) {
       isPickingMode = false;
       currentGalleryOpd = opd;
@@ -654,17 +749,14 @@
       loadGalleryImages(opd);
     }
 
-    // 2. ปุ่ม Picker (เลือกรูปโปรไฟล์)
     function openPickerGallery() {
       const opd = $('#f_opd').value.trim();
       if (!opd || opd.length !== 4) return alert('กรุณากรอก OPD ก่อนเพื่อดึงรูป');
-      
-      isPickingMode = true; // เปิดโหมดเลือก
+
+      isPickingMode = true;
       currentGalleryOpd = opd;
-      
       $('#g_opd_chip').textContent = `เลือกรูปให้ OPD ${opd}`;
       $('#galleryGrid').innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">กำลังโหลด...</div>';
-      
       openModal('galleryModal');
       loadGalleryImages(opd);
     }
@@ -697,35 +789,32 @@
 
     function onGalleryItemClick(url) {
       if (isPickingMode) {
-        // ✅ โหมดเลือก: เอารูปไปแปะหน้า Modal หลัก
         $('#previewProfile').src = url;
         $('#selectedGalleryUrl').value = url;
-        $('#profileInput').value = ''; // ล้างค่า input file ทิ้ง
-        
+        $('#profileInput').value = '';
         closeModal('galleryModal');
         isPickingMode = false;
       } else {
-        // โหมดดู: เปิดรูปใหญ่
         window.open(url, '_blank');
       }
     }
 
     async function uploadGalleryImages(input) {
       if (!input.files || input.files.length === 0) return;
-      
+
       showToast('กำลังอัปโหลด...', 'warn');
       const fd = new FormData();
       fd.append('opd', currentGalleryOpd);
       for (const file of input.files) {
-        fd.append('images', file); 
+        fd.append('images', file);
       }
 
       try {
         const r = await fetch('/api/upload_gallery', { method:'POST', body: fd });
         if(!r.ok) throw new Error('Upload failed');
-        
+
         showToast('อัปโหลดเรียบร้อย');
-        input.value = ''; 
+        input.value = '';
         loadGalleryImages(currentGalleryOpd);
       } catch (err) {
         showToast('อัปโหลดไม่สำเร็จ', 'error');
@@ -741,7 +830,7 @@
             body: JSON.stringify({id: id})
         });
         showToast('ลบรูปแล้ว');
-        loadGalleryImages(currentGalleryOpd); 
+        loadGalleryImages(currentGalleryOpd);
       } catch(err) {
         showToast('ลบไม่สำเร็จ', 'error');
       }
@@ -753,9 +842,9 @@
     function previewImage(input) {
       if (input.files && input.files[0]) {
         const reader = new FileReader();
-        reader.onload = function(e) { 
-            $('#previewProfile').src = e.target.result; 
-            $('#selectedGalleryUrl').value = ''; // ถ้าเลือกไฟล์ใหม่ ให้ล้าง url gallery ทิ้ง
+        reader.onload = function(e) {
+            $('#previewProfile').src = e.target.result;
+            $('#selectedGalleryUrl').value = '';
         }
         reader.readAsDataURL(input.files[0]);
       }
@@ -766,8 +855,7 @@
         if (i.id === 'formMode') return;
         i.value = '';
       });
-      // Reset รูปเป็น Base64 Icon
-      $('#previewProfile').src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2cbdjVlIj48cGF0aCBkPSZNMTIgMTJjMi4yMSAwIDQtMS43OSA0LTRzLTEuNzktNC00LTQtNCAxLjc5LTQgNCAxLjc5IDQgNCA0em0wIDJjLTIuNjcgMC04IDEuMzQtOCA0djJoMTZ2LTJjMC0yLjY2LTUuMzMtNC04LTR6Ii8+PC9zdmc+';
+      $('#previewProfile').src = DEFAULT_AVATAR_SVG;
       $('#profileInput').value = '';
       $('#selectedGalleryUrl').value = '';
     }
@@ -813,19 +901,89 @@
       $('#f_address').value = r.address || '';
       $('#f_profile').value = r.profile || '';
       $('#f_note').value = r.note || '';
-      
-      // ✅ ถ้ามีรูปเดิม ให้โชว์
+
       if (r.profile_pic_url) {
-          $('#previewProfile').src = r.profile_pic_url;
+        $('#previewProfile').src = r.profile_pic_url;
       }
 
       openModal('addModal');
     }
 
     // =========================
-    // ✅ Popup View helpers
+    // ✅ View helpers (Age + Profile + Gallery strip)
     // =========================
     function safeDash(v){ return (v===null || v===undefined || String(v).trim()==='') ? '-' : String(v); }
+
+    // ✅ คำนวณอายุจากวันเกิดไทย dd/mm/yyyy (รองรับ พ.ศ./ค.ศ.)
+    function calcAgeFromThaiDate(birthTh){
+      if (!birthTh) return null;
+      const s = String(birthTh).trim();
+      const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (!m) return null;
+
+      let dd = parseInt(m[1], 10);
+      let mm = parseInt(m[2], 10);
+      let yy = parseInt(m[3], 10);
+
+      if (!dd || !mm || !yy) return null;
+
+      // ถ้าเป็น พ.ศ. ให้แปลงเป็น ค.ศ.
+      if (yy >= 2400) yy -= 543;
+
+      const nowY = new Date().getFullYear();
+      if (yy < 1900 || yy > nowY + 1) return null;
+
+      const today = new Date();
+      let age = today.getFullYear() - yy;
+
+      const thisYearsBirthday = new Date(today.getFullYear(), mm - 1, dd);
+      if (today < thisYearsBirthday) age -= 1;
+
+      if (age < 0 || age > 130) return null;
+      return age;
+    }
+
+    function setViewAvatar(url){
+      const img = $('#v_avatar');
+      const fb = $('#v_avatar_fallback');
+      if (url && String(url).trim() !== '') {
+        img.src = url;
+        img.style.display = 'block';
+        fb.style.display = 'none';
+        img.onerror = () => {
+          img.style.display = 'none';
+          fb.style.display = 'flex';
+        };
+      } else {
+        img.style.display = 'none';
+        fb.style.display = 'flex';
+      }
+    }
+
+    async function loadViewGalleryStrip(opd){
+      const strip = $('#v_gallery_strip');
+      strip.innerHTML = '<div class="empty-gallery">กำลังโหลดรูป...</div>';
+      try{
+        const r = await fetch(`/api/get_gallery?opd=${opd}`);
+        const images = await r.json();
+
+        if (!images || images.length === 0){
+          strip.innerHTML = '<div class="empty-gallery">ยังไม่มีรูปที่อัปโหลดไว้</div>';
+          return;
+        }
+
+        strip.innerHTML = images.slice(0, 12).map((it, idx) => `
+          <div class="thumb" onclick="window.open('${it.image_url}','_blank')" title="แตะเพื่อดูรูปเต็ม">
+            <img src="${it.image_url}" loading="lazy" alt="img-${idx+1}">
+            <div class="tag">${idx+1}/${images.length}</div>
+          </div>
+        `).join('');
+
+      }catch(err){
+        console.error(err);
+        strip.innerHTML = '<div class="empty-gallery" style="color:crimson;">โหลดรูปไม่สำเร็จ</div>';
+      }
+    }
 
     function openViewPopup(opd){
       const r = rawData.find(x => x.opd === opd);
@@ -844,6 +1002,15 @@
       $('#v_profile').textContent = safeDash(r.profile);
       $('#v_note').textContent = safeDash(r.note);
 
+      const age = calcAgeFromThaiDate(r.birth_th_ddmmyyyy);
+      const ageText = (age === null) ? '-' : `${age} ปี`;
+      $('#v_age').textContent = `อายุ: ${ageText}`;
+      $('#v_age_kv').textContent = ageText;
+
+      setViewAvatar(r.profile_pic_url);
+      loadViewGalleryStrip(opd);
+
+      $('#v_openGalleryBtn').onclick = () => openGallery(opd);
       $('#v_editBtn').onclick = () => { closeModal('viewModal'); openEditForm(opd); };
       $('#v_deleteBtn').onclick = () => deleteRow(opd, true);
 
@@ -854,7 +1021,7 @@
     // Load + Render
     // =========================
     async function loadData() {
-      tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:40px; color:#94a3b8; font-weight:900;">กำลังโหลดข้อมูล...</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:40px; color:#94a3b8; font-weight:600;">กำลังโหลดข้อมูล...</td></tr>`;
 
       try{
         const data = await apiGetCustomers();
@@ -885,11 +1052,17 @@
         return matchMonth && text.includes(q);
       });
 
-      // Sort
       const { key, asc } = sortConfig;
       viewData.sort((a, b) => {
-        let valA = a[key] ?? ''; let valB = b[key] ?? '';
+        let valA = a[key] ?? '';
+        let valB = b[key] ?? '';
+
         if (key === 'opd') { valA = parseInt(valA)||0; valB = parseInt(valB)||0; }
+        if (key === 'age') {
+          valA = calcAgeFromThaiDate(a.birth_th_ddmmyyyy) ?? -1;
+          valB = calcAgeFromThaiDate(b.birth_th_ddmmyyyy) ?? -1;
+        }
+
         return (valA < valB ? -1 : 1) * (asc ? 1 : -1);
       });
 
@@ -901,7 +1074,10 @@
 
       tbody.innerHTML = viewData.map(r => {
         const vipChip = r.vip ? `<span class="chip mini vip">${esc(r.vip)}</span>` : `<span class="muted">-</span>`;
-        const displayName = r.full_name || r.name || '-';
+        const displayName = r.name || r.full_name || '-';
+
+        const age = calcAgeFromThaiDate(r.birth_th_ddmmyyyy);
+        const ageText = (age === null) ? '' : String(age);
 
         return `
         <tr data-opd="${esc(r.opd)}" class="row-tap">
@@ -912,14 +1088,10 @@
 
           <td data-col="opd">${esc(r.opd)}</td>
 
-          <td data-col="full_name">
+          <td data-col="name">
             <div class="cell">
-              <input data-key="full_name" value="${esc(displayName)}" readonly ondblclick="editRow(this); event.stopPropagation();">
+              <input data-key="name" value="${esc(displayName)}" readonly ondblclick="editRow(this); event.stopPropagation();">
             </div>
-          </td>
-
-          <td data-col="phone">
-            <div class="cell"><input data-key="phone" value="${esc(r.phone)}" readonly ondblclick="editRow(this); event.stopPropagation();"></div>
           </td>
 
           <td data-col="vip" style="text-align:center">
@@ -930,7 +1102,17 @@
           </td>
 
           <td data-col="birthMonth">
-            <div class="cell"><input data-key="birthMonth" value="${esc(r.birthMonth)}" readonly style="text-align:center" ondblclick="editRow(this); event.stopPropagation();"></div>
+            <div class="cell">
+              <input data-key="birthMonth" value="${esc(r.birthMonth)}" readonly style="text-align:center"
+                ondblclick="editRow(this); event.stopPropagation();">
+            </div>
+          </td>
+
+          <td data-col="age">
+            <div class="cell" style="justify-content:center;">
+              <input data-key="age" value="${esc(ageText)}" readonly style="text-align:center; max-width:60px; opacity:.95;"
+                onclick="event.stopPropagation();">
+            </div>
           </td>
 
           <td data-col="birth_th_ddmmyyyy">
@@ -1039,6 +1221,7 @@
 
       const patch = {};
       $$('[data-key]', tr).forEach(inp => {
+        if (inp.dataset.key === 'age') return; // ✅ age เป็นคำนวณ ไม่ส่งไป backend
         patch[inp.dataset.key] = (inp.value ?? '').trim();
       });
 
@@ -1114,7 +1297,7 @@
       fd.append('birth_th_ddmmyyyy', $('#f_birth_th').value.trim());
       fd.append('name', $('#f_name').value.trim());
       fd.append('full_name', $('#f_full_name').value.trim());
-      fd.append('phone', $('#f_phone').value.trim());
+      fd.append('phone', $('#f_phone').value.trim()); // ✅ เก็บเบอร์ไว้ในรายละเอียด
       fd.append('facebook_name', $('#f_facebook_name').value.trim());
       fd.append('national_id', $('#f_national_id').value.trim());
       fd.append('vip', $('#f_vip').value);
@@ -1122,13 +1305,11 @@
       fd.append('profile', $('#f_profile').value.trim());
       fd.append('note', $('#f_note').value.trim());
 
-      // ✅ 1. ส่งไฟล์ใหม่ (ถ้ามี)
       const fileInput = $('#profileInput');
       if (fileInput.files[0]) {
         fd.append('profile_pic', fileInput.files[0]);
       }
-      
-      // ✅ 2. ส่งลิงก์จาก Gallery (ถ้ามี และไม่ได้เลือกไฟล์ใหม่)
+
       const galleryUrl = $('#selectedGalleryUrl').value;
       if (galleryUrl && !fileInput.files[0]) {
         fd.append('existing_profile_url', galleryUrl);
@@ -1140,10 +1321,9 @@
           await apiAddCustomerFull(fd);
           showToast('เพิ่มลูกค้าสำเร็จ');
         } else {
-          // ใช้ API ใหม่ที่รองรับการอัปเดตรูป
-           const r = await fetch('/api/update_customer_with_image', { 
-             method: 'POST', 
-             body: fd 
+          const r = await fetch('/api/update_customer_with_image', {
+             method: 'POST',
+             body: fd
            });
            if (!r.ok) throw new Error('Update failed');
            showToast('บันทึกการแก้ไขสำเร็จ');
@@ -1166,7 +1346,7 @@
 
     $('#exportBtn').onclick = () => {
       const rows = (viewData.length ? viewData : rawData);
-      const headers = ['opd','name','full_name','phone','national_id','address','facebook_name','birthMonth','birth_th_ddmmyyyy','vip','profile','note'];
+      const headers = ['opd','name','full_name','phone','national_id','address','facebook_name','birthMonth','birth_th_ddmmyyyy','vip','profile','note','profile_pic_url'];
       const csv = [
         headers.join(','),
         ...rows.map(r => headers.map(h => `"${String(r[h] ?? '').replace(/"/g,'""')}"`).join(','))
@@ -1189,23 +1369,50 @@
     loadData();
 
     // =========================
-    // 🪪 OCR Function
+    // ✅ 🪪 OCR Function (แบบใหม่อัปโหลดก่อน)
     // =========================
     async function processIDCard(input) {
       const file = input.files[0];
       if (!file) return;
 
-      showToast('กำลังอ่านข้อมูลจากบัตร...', 'warn');
+      const opd = $('#f_opd').value.trim();
+      if (!opd || opd.length !== 4) {
+        alert('⚠️ กรุณากรอกเลข OPD 4 หลักก่อนสแกน\n(ระบบต้องใช้ OPD เพื่อสร้างอัลบั้มรูป)');
+        input.value = '';
+        return;
+      }
+
+      showToast('1/2 กำลังอัปโหลดรูปบัตร...', 'warn');
       const btn = input.nextElementSibling;
       const oldText = btn ? btn.innerText : '';
-      if (btn) { btn.innerText = '⏳ อ่าน...'; btn.disabled = true; }
+      if (btn) { btn.innerText = '⏳ กำลังอัป...'; btn.disabled = true; }
 
       try {
         const fd = new FormData();
-        fd.append('image', file);
-        const res = await fetch('/api/idcard_extract', { method: 'POST', body: fd });
-        const out = await res.json();
-        if (!res.ok) throw new Error();
+        fd.append('opd', opd);
+        fd.append('images', file);
+
+        const upRes = await fetch('/api/upload_gallery', { method: 'POST', body: fd });
+        const upData = await upRes.json();
+
+        if (!upRes.ok || !upData.urls || upData.urls.length === 0) {
+            throw new Error('Upload failed');
+        }
+
+        const cloudUrl = upData.urls[0];
+        console.log("Uploaded ID Card:", cloudUrl);
+
+        showToast('2/2 AI กำลังอ่านข้อมูล...', 'warn');
+        if (btn) btn.innerText = '🤖 AI อ่าน...';
+
+        const ocrRes = await fetch('/api/idcard_extract', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ image_url: cloudUrl })
+        });
+
+        const out = await ocrRes.json();
+        if (!ocrRes.ok) throw new Error(out.error || 'OCR failed');
 
         const title = (out.title_th || '').trim();
         const first = (out.first_name_th || '').trim();
@@ -1217,7 +1424,7 @@
         if (birth) {
           $('#f_birth_th').value = birth;
           const parts = birth.split('/');
-          if (/^\d{2}$/.test(parts[1])) $('#f_birthMonth').value = parts[1];
+          if (parts.length > 1 && /^\d{2}$/.test(parts[1])) $('#f_birthMonth').value = parts[1];
         }
 
         const idNo = (out.id_number || '').trim();
@@ -1226,9 +1433,11 @@
         const addr = (out.address || '').trim();
         if (addr) $('#f_address').value = addr;
 
-        showToast('อ่านบัตรสำเร็จ', 'ok');
+        showToast('✅ อ่านบัตรสำเร็จ + เก็บรูปเข้าคลังแล้ว', 'ok');
+
       } catch (err) {
-        showToast('อ่านบัตรไม่สำเร็จ', 'error');
+        console.error(err);
+        showToast('เกิดข้อผิดพลาด ลองใหม่อีกครั้ง', 'error');
       } finally {
         input.value = '';
         if (btn) { btn.innerText = oldText; btn.disabled = false; }
