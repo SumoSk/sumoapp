@@ -2740,9 +2740,9 @@ import cloudinary.uploader
 
 # 1. ตั้งค่า (เอาค่ามาจากหน้า Dashboard ของ Cloudinary)
 cloudinary.config(
-  cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"),
-  api_key = os.getenv("CLOUDINARY_API_KEY"),
-  api_secret = os.getenv("CLOUDINARY_API_SECRET")
+  cloud_name = "du2xzjfiy", 
+  api_key = "353329988494927", 
+  api_secret = "NqLAwesdc65RApjH-RCPBj3cu1c" 
 )
 
 # 2. ฟังก์ชันสำหรับอัพโหลด (เรียกใช้ตัวนี้ได้เลย)
@@ -2945,7 +2945,7 @@ from flask import jsonify, request # (อันนี้ปกติน่าจ
 # 2. ตั้งค่า API Key (Gemini)
 # =============================================================
 # ใส่บรรทัดนี้ไว้ช่วงต้นๆ ไฟล์ หลังประกาศ app = Flask(...) ก็ได้ครับ
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+genai.configure(api_key="AIzaSyB5uUYdn-wVJGZi08pducpaWtQ3WUjYJBI") 
 
 # =============================================================
 # 3. ฟังก์ชัน AI อ่านบัตร (Gemini 1.5 Flash)
@@ -2978,7 +2978,7 @@ def api_idcard_extract():
 
         # 3. ตั้งค่า AI (ใช้ Key จากรูปภาพของคุณ)
         # ✅ API Key นี้ถูกต้องแล้วครับ
-        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+        genai.configure(api_key="AIzaSyB5uUYdn-wVJGZi08pducpaWtQ3WUjYJBI") 
         
         # 4. คำสั่ง Prompt (ปรับให้แม่นยำขึ้น)
         prompt = """
