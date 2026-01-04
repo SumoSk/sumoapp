@@ -5,20 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>ตารางนัด & ตารางเวร</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- ใช้เฉพาะน้ำหนักบาง/ปกติ/กึ่งหนา (ตัดตัวหนาออก) -->
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500&display=swap" rel="stylesheet">
 
   <style>
     :root{
       --teal:#0f766e; --teal-600:#0d9488;
-      --bg:#f7faf9; --card:#ffffff; --line:#e5e7eb;
-      --text:#0f172a; --muted:#6b7280;
-      --shadow:0 8px 24px rgba(2,8,23,.06);
-      --radius:16px;
+      --bg:#f7faf9; --card:#ffffff;
 
-      /* ตารางแบบสบายตา */
-      --grid:#e5e7eb;
-      --grid-soft:#f1f5f9;
+      /* เส้นบางๆ โทนอ่อน */
+      --line:#eef2f7;
+      --grid:#eef2f7;
+      --grid-soft:#f6f8fb;
       --hover:#f8fafc;
+
+      --text:#0f172a; --muted:#6b7280;
+
+      /* เงาเบาลง */
+      --shadow:0 6px 16px rgba(2,8,23,.05);
+      --radius:16px;
     }
 
     *{box-sizing:border-box}
@@ -29,25 +34,34 @@
       color:var(--text);
       padding:10px 10px 120px;
       font-size:12px;
+      font-weight:400;
+      -webkit-text-size-adjust:100%;
+      text-size-adjust:100%;
     }
+    strong,b{font-weight:500}
+
+    /* ให้ “เต็มจอมือถือ” จริง */
     .container{
-      max-width:1280px;
-      margin:12px auto;
+      width:100%;
+      max-width:980px;       /* เดสก์ท็อปยังไม่แผ่เกินไป */
+      margin:10px auto;
       background:#fff;
       border-radius:var(--radius);
       box-shadow:var(--shadow);
       padding:14px;
+      overflow:hidden;
     }
 
-    .headline{font-size:18px;font-weight:800;color:#0b7660;margin:0 0 6px}
+    .headline{font-size:18px;font-weight:500;color:#0b7660;margin:0 0 6px}
     .sub-muted{color:var(--muted);font-size:12px;margin-top:-2px;line-height:1.35}
 
     .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
     .chip{
-      padding:8px 12px;border:1px solid #a7e1da;border-radius:999px;
-      background:#fff;color:#0b7660;font-size:12px;cursor:pointer;font-weight:800;user-select:none;
+      padding:8px 12px;border:1px solid #cfeeea;border-radius:999px;
+      background:#fff;color:#0b7660;font-size:12px;cursor:pointer;
+      font-weight:400;user-select:none;
     }
-    .chip.active{background:#0b7660;color:#fff}
+    .chip.active{background:#0b7660;color:#fff;border-color:#0b7660}
 
     .panel{display:none}
     .panel.active{display:block}
@@ -57,19 +71,27 @@
 
     .btn{
       display:inline-flex; align-items:center; justify-content:center; gap:6px;
-      padding:10px 12px;border-radius:10px;border:1px solid #a7e1da;background:#fff;color:#0b7660;
-      cursor:pointer;font-weight:800;font-size:12px;
+      padding:10px 12px;border-radius:10px;border:1px solid #cfeeea;background:#fff;color:#0b7660;
+      cursor:pointer;font-weight:500;font-size:12px;
+      -webkit-tap-highlight-color:transparent;
     }
     .btn-primary{border-color:transparent;background:var(--teal-600);color:#fff}
-    .btn-ghost{background:#f1f5f9;border-color:#e5e7eb;color:#0f172a}
+    .btn-ghost{background:#f5f7fb;border-color:var(--line);color:#0f172a}
 
     .ipt{
-      width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff;
-      font-size:13px;font-family:inherit;-webkit-appearance:none;appearance:none;
+      width:100%;
+      padding:10px 12px;
+      border:1px solid #dde3ea;
+      border-radius:10px;
+      background:#fff;
+      font-size:13px;
+      font-family:inherit;
+      font-weight:400;
+      -webkit-appearance:none;appearance:none;
     }
 
     /* =========================
-       DAILY: สไตล์ “คลีน” ไม่ขอบดำ
+       DAILY: คลีน เส้นบาง
        ========================= */
     .paperWrap{
       border:1px solid var(--grid);
@@ -85,20 +107,21 @@
     }
     .paperHeader .left{
       display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;
-      font-weight:800;color:#0f172a;
+      font-weight:500;color:#0f172a;
     }
     .paperTitle{
-      font-weight:900;font-size:13px;color:#0b3d35;margin-right:4px;
+      font-weight:500;font-size:13px;color:#0b3d35;margin-right:4px;
     }
     .lineField{
-      display:inline-flex;align-items:flex-end;gap:6px;white-space:nowrap;font-size:12px;color:#0f172a;
+      display:inline-flex;align-items:flex-end;gap:6px;white-space:nowrap;
+      font-size:12px;color:#0f172a;font-weight:400;
     }
     .line{
       display:inline-block;
       min-width:86px;
-      border-bottom:1px dotted #94a3b8;
+      border-bottom:1px dotted #aab6c5;
       padding:0 6px 2px;
-      font-weight:900;
+      font-weight:500;
       text-align:center;
       color:#0f172a;
     }
@@ -113,10 +136,14 @@
       display:flex;gap:8px;flex-wrap:wrap;align-items:center;
     }
 
-    .tableScroll{overflow:auto;-webkit-overflow-scrolling:touch}
+    .tableScroll{
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+      overscroll-behavior:contain;
+    }
     table.clean{
       width:100%;
-      min-width:820px;
+      min-width:820px; /* เดสก์ท็อป */
       border-collapse:separate;
       border-spacing:0;
       background:#fff;
@@ -126,7 +153,7 @@
       background:#f8fafc;
       z-index:1;
       text-align:center;
-      font-weight:900;
+      font-weight:500;
       font-size:12px;
       padding:10px 8px;
       border-bottom:1px solid var(--grid);
@@ -149,15 +176,15 @@
     .timeCell{
       width:90px;
       text-align:center;
-      font-weight:900;
+      font-weight:500;
       color:#0f172a;
       background:#fbfffe !important;
     }
 
-    /* ช่องว่าง: ไม่มี + แล้ว แต่ทั้งช่องคลิกได้ */
+    /* ช่องว่าง: ทั้งช่องคลิกได้ */
     .slotEmpty{
       width:100%;
-      min-height:38px;
+      min-height:34px;
       border:1px solid transparent;
       border-radius:12px;
       padding:8px;
@@ -166,13 +193,13 @@
       align-items:center;
       justify-content:center;
       color:#94a3b8;
-      font-weight:900;
+      font-weight:400;
       font-size:11px;
       user-select:none;
     }
     .slotEmpty:hover{
       background:var(--hover);
-      border-color:#e2e8f0;
+      border-color:#e6edf5;
       color:#64748b;
     }
     .slotEmpty.noText{color:transparent}
@@ -180,7 +207,7 @@
       content:'';
       display:block;
       width:100%;
-      height:22px;
+      height:18px;
     }
 
     /* การ์ดนัด */
@@ -188,16 +215,16 @@
       border-radius:14px;
       padding:8px 10px;
       border:1px solid rgba(15,23,42,.10);
-      box-shadow:0 10px 24px rgba(2,8,23,.08);
+      box-shadow:0 10px 20px rgba(2,8,23,.06);
       display:grid; gap:2px;
       cursor:pointer;
     }
-    .apptCard .name{font-weight:900;font-size:13px}
-    .apptCard .meta{font-size:11px;color:#334155;opacity:.85}
+    .apptCard .name{font-weight:500;font-size:13px}
+    .apptCard .meta{font-size:11px;color:#334155;opacity:.85;font-weight:400}
     .apptCard .foot{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
     .tag{
       display:inline-flex;align-items:center;gap:6px;
-      padding:4px 8px;border-radius:999px;font-size:10px;font-weight:900;
+      padding:4px 8px;border-radius:999px;font-size:10px;font-weight:500;
       border:1px solid rgba(0,0,0,.06);
       background:rgba(255,255,255,.7);
     }
@@ -208,20 +235,20 @@
     .guest .dot{background:#f59e0b}
 
     /* =========================
-       MONTHLY (คง iOS-style)
+       MONTHLY (iOS-style) ลดตัวหนา + เส้นบาง
        ========================= */
     .iosMonthHeader{
       display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap;
       padding:6px 2px 10px;
     }
-    .iosMonthHeader .monthTitle{font-size:28px;font-weight:900;letter-spacing:.2px}
-    .iosMonthHeader .todayBtn{font-weight:900;color:#ef4444;cursor:pointer;user-select:none}
+    .iosMonthHeader .monthTitle{font-size:28px;font-weight:500;letter-spacing:.2px}
+    .iosMonthHeader .todayBtn{font-weight:500;color:#ef4444;cursor:pointer;user-select:none}
 
     .iosWeekHead{
       display:grid;grid-template-columns:repeat(7,1fr);
       border-top:1px solid var(--grid);border-bottom:1px solid var(--grid);
       padding:8px 0;margin-top:6px;
-      color:#94a3b8;font-weight:900;font-size:12px;text-align:center;
+      color:#94a3b8;font-weight:500;font-size:12px;text-align:center;
     }
     .iosGrid{
       display:grid;
@@ -237,14 +264,14 @@
       overflow:hidden;
     }
     .iosDay:nth-child(7n){border-right:none}
-    .iosDay .num{font-weight:900;font-size:16px;color:#0f172a}
+    .iosDay .num{font-weight:500;font-size:16px;color:#0f172a}
     .iosDay.muted .num{color:#cbd5e1}
     .iosDay .events{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 
     .eventPill{
       display:flex;align-items:center;gap:6px;
       padding:6px 8px;border-radius:8px;
-      font-weight:900;font-size:12px;
+      font-weight:500;font-size:12px;
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     }
     .ev-green{background:#d9f2cc;color:#1f5e2b}
@@ -258,7 +285,7 @@
     }
 
     /* =========================
-       MODAL: เพิ่มนัดหมาย
+       MODAL
        ========================= */
     .modal{
       display:none;
@@ -275,7 +302,7 @@
       background:#fff;
       border-radius:16px;
       overflow:hidden;
-      box-shadow:0 12px 30px rgba(0,0,0,.18);
+      box-shadow:0 12px 26px rgba(0,0,0,.16);
       border:1px solid rgba(255,255,255,.25);
     }
     .modal .hdr{
@@ -283,23 +310,61 @@
       color:#004d40;
       display:flex;align-items:center;justify-content:space-between;
       padding:12px 14px;
-      font-weight:900;
+      font-weight:500;
       font-size:13px;
     }
     .modal .close{background:transparent;border:none;font-size:18px;cursor:pointer;color:#004d40}
     .modal .body{padding:14px; display:grid; gap:10px}
     .modal .ftr{
       padding:12px 14px;
-      border-top:1px solid #eee;
+      border-top:1px solid var(--line);
       display:flex; justify-content:flex-end; gap:8px;
     }
 
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
+    /* =========================
+       MOBILE: ทำให้ "ไม่ใหญ่ไป" + เต็มจอ + ตารางเลื่อนง่าย
+       ========================= */
     @media (max-width:640px){
-      .iosMonthHeader .monthTitle{font-size:26px}
-      .line{min-width:80px}
-      .line.medium{min-width:96px}
+      body{
+        padding:8px 8px 110px;
+        font-size:11.5px;
+      }
+      .container{
+        max-width:100%;
+        margin:8px auto;
+        padding:10px;
+        border-radius:14px;
+      }
+
+      .headline{font-size:16px}
+      .sub-muted{font-size:11px}
+
+      .btn{padding:9px 10px;font-size:11.5px;border-radius:10px}
+      .ipt{padding:9px 10px;font-size:12.5px}
+
+      /* ลดความกว้างขั้นต่ำของตารางบนมือถือให้ไม่ดู “ใหญ่” */
+      table.clean{min-width:680px}
+      table.clean thead th{padding:9px 6px;font-size:11.5px}
+      table.clean tbody td{padding:7px}
+
+      .timeCell{width:72px}
+
+      .apptCard{padding:7px 9px}
+      .apptCard .name{font-size:12.5px}
+      .apptCard .meta{font-size:10.5px}
+      .tag{font-size:9.5px}
+
+      .slotEmpty{min-height:30px;font-size:10.5px}
+
+      .iosMonthHeader .monthTitle{font-size:24px}
+      .iosDay{min-height:96px;padding:7px 7px 9px}
+      .iosDay .num{font-size:15px}
+      .eventPill{font-size:11.5px;padding:6px 7px}
+
+      .line{min-width:74px}
+      .line.medium{min-width:92px}
       .grid2{grid-template-columns:1fr}
     }
   </style>
@@ -325,7 +390,7 @@
 
         <div class="paperControls">
           <div class="group">
-            <div style="font-weight:900;color:#0b3d35">Daily Schedule</div>
+            <div style="font-weight:500;color:#0b3d35">Daily Schedule</div>
             <button class="btn btn-ghost" type="button" onclick="UI.dailyToday()">วันนี้</button>
           </div>
           <div class="group" style="min-width:240px;flex:1;justify-content:flex-end">
@@ -354,8 +419,8 @@
                   <th style="width:90px">เวลา</th>
                   <th>เคสแพทย์</th>
                   <th>เคสแพทย์</th>
-                  <th>เคสพยาบาล<br><span style="font-weight:700;font-size:11px;color:#64748b">Treatment</span></th>
-                  <th>เคสพยาบาล<br><span style="font-weight:700;font-size:11px;color:#64748b">IV, PRP</span></th>
+                  <th>เคสพยาบาล<br><span style="font-weight:400;font-size:11px;color:#64748b">Treatment</span></th>
+                  <th>เคสพยาบาล<br><span style="font-weight:400;font-size:11px;color:#64748b">IV, PRP</span></th>
                 </tr>
               </thead>
               <tbody id="dailyBody"></tbody>
@@ -393,7 +458,7 @@
     <!-- ================= TAB: SETTINGS ================= -->
     <div class="panel" id="panel-settings">
       <div class="section card">
-        <div style="font-weight:900;color:#0b3d35;margin-bottom:8px">ตั้งค่า (placeholder)</div>
+        <div style="font-weight:500;color:#0b3d35;margin-bottom:8px">ตั้งค่า (placeholder)</div>
         <div class="sub-muted">เดี๋ยวผูกกับฐานข้อมูลภายหลัง</div>
       </div>
     </div>
@@ -414,7 +479,7 @@
         </div>
 
         <div>
-          <label style="font-weight:800;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ประเภทลูกค้า</label>
+          <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ประเภทลูกค้า</label>
           <select class="ipt" id="apptType">
             <option value="existing">ลูกค้าเก่า (Existing)</option>
             <option value="guest">ลูกค้าใหม่ (Guest / Walk-in)</option>
@@ -422,32 +487,32 @@
         </div>
 
         <div id="existingBox">
-          <label style="font-weight:800;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ค้นหาลูกค้า (ชื่อ/เบอร์)</label>
+          <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ค้นหาลูกค้า (ชื่อ/เบอร์)</label>
           <input class="ipt" id="custSearch" placeholder="พิมพ์ชื่อเพื่อใช้เป็นชื่อในตาราง (ยังไม่ผูกค้นหา)">
           <div class="sub-muted" style="font-size:11px">ถ้าจะผูกค้นหา จะยิงไป /api/customers แล้วทำ autocomplete ได้</div>
         </div>
 
         <div id="guestBox" style="display:none">
-          <label style="font-weight:800;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ชื่อลูกค้าใหม่</label>
+          <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ชื่อลูกค้าใหม่</label>
           <input class="ipt" id="guestName" placeholder="กรอกชื่อ">
-          <label style="font-weight:800;color:#334155;font-size:12px;margin:10px 0 4px;display:block">เบอร์โทร (ไม่บังคับ)</label>
+          <label style="font-weight:500;color:#334155;font-size:12px;margin:10px 0 4px;display:block">เบอร์โทร (ไม่บังคับ)</label>
           <input class="ipt" id="guestPhone" placeholder="กรอกเบอร์">
         </div>
 
         <div class="grid2">
           <div>
-            <label style="font-weight:800;color:#334155;font-size:12px;margin:2px 0 4px;display:block">วันที่นัด</label>
+            <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">วันที่นัด</label>
             <input type="date" class="ipt" id="apptDate">
           </div>
           <div>
-            <label style="font-weight:800;color:#334155;font-size:12px;margin:2px 0 4px;display:block">เวลาเริ่ม</label>
+            <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">เวลาเริ่ม</label>
             <input type="time" class="ipt" id="apptTime" value="11:00">
           </div>
         </div>
 
         <div class="grid2">
           <div>
-            <label style="font-weight:800;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ลงช่อง</label>
+            <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ลงช่อง</label>
             <select class="ipt" id="apptCol">
               <option value="1">เคสแพทย์ (1)</option>
               <option value="2">เคสแพทย์ (2)</option>
@@ -456,13 +521,13 @@
             </select>
           </div>
           <div>
-            <label style="font-weight:800;color:#334155;font-size:12px;margin:2px 0 4px;display:block">หัตถการ/บริการ</label>
+            <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">หัตถการ/บริการ</label>
             <input class="ipt" id="apptService" placeholder="เช่น Botox / IV / Consult">
           </div>
         </div>
 
         <div>
-          <label style="font-weight:800;color:#334155;font-size:12px;margin:2px 0 4px;display:block">หมายเหตุ</label>
+          <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">หมายเหตุ</label>
           <textarea class="ipt" id="apptNote" rows="3" placeholder="เพิ่มโน้ต..."></textarea>
         </div>
       </div>
@@ -493,7 +558,6 @@
       try{
         if (crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
       }catch(_){}
-      // fallback
       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
@@ -592,7 +656,6 @@
         renderDailyTable();
       },
 
-      // เปิด modal เพิ่ม/แก้นัด
       openApptModal(prefill={}){
         UI._editingApptId = prefill.id || null;
 
@@ -602,12 +665,10 @@
         document.getElementById('apptTime').value = prefill.time || document.getElementById('apptTime').value || '11:00';
         document.getElementById('apptCol').value  = String(prefill.col || document.getElementById('apptCol').value || '1');
 
-        // type
         document.getElementById('apptType').value = prefill.type || 'existing';
         document.getElementById('existingBox').style.display = (document.getElementById('apptType').value==='existing') ? '' : 'none';
         document.getElementById('guestBox').style.display = (document.getElementById('apptType').value==='guest') ? '' : 'none';
 
-        // fill
         document.getElementById('custSearch').value = (prefill.type === 'existing') ? (prefill.name || '') : '';
         document.getElementById('guestName').value  = (prefill.type === 'guest') ? (prefill.name || '') : '';
         document.getElementById('guestPhone').value = (prefill.type === 'guest') ? (prefill.phone || '') : '';
@@ -619,7 +680,6 @@
         UI._syncModalFooterButtons();
       },
 
-      // บันทึกจริงลง LocalStorage
       saveApptMock(){
         try{
           const type = document.getElementById('apptType').value;
@@ -658,8 +718,6 @@
           ApptStore.upsert(appt);
 
           UI.closeModal('apptModal');
-
-          // รีเฟรชตารางของวันที่เลือก
           renderDailyTable();
         }catch(e){
           console.error(e);
@@ -697,7 +755,7 @@
       UI._syncModalFooterButtons();
     });
 
-    // ---------------- Daily Table (ไม่มี + แต่คลิกได้ และโชว์นัดจริง) ----------------
+    // ---------------- Daily Table ----------------
     function renderDailyTable(){
       const tbody = document.getElementById('dailyBody');
       tbody.innerHTML='';
@@ -729,7 +787,7 @@
                 <div class="meta">${escapeHtml(found.service || '—')} • ${escapeHtml(found.status || 'PENDING')}</div>
                 <div class="foot">
                   <span class="tag ${apptClass(found.type)}"><span class="dot"></span>${apptTypeLabel(found.type)}</span>
-                  <span style="font-size:11px;font-weight:900;opacity:.85">${escapeHtml(found.phone || '')}</span>
+                  <span style="font-size:11px;font-weight:400;opacity:.85">${escapeHtml(found.phone || '')}</span>
                 </div>
               </div>
             `;
@@ -755,9 +813,6 @@
         tbody.appendChild(tr);
       }
     }
-
-    // ถ้าอยากให้ “ช่องว่างโล่งๆไม่มีคำว่าว่าง” ให้เปิดบรรทัดนี้:
-    // document.addEventListener('DOMContentLoaded', ()=>document.querySelectorAll('.slotEmpty').forEach(x=>x.classList.add('noText')));
 
     // ---------------- Daily header ----------------
     const TH_DAYS = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
@@ -789,7 +844,7 @@
 
       document.getElementById('monthTitle').textContent = `${TH_MONTHS[M-1]} ${thYear(Y)}`;
 
-      const firstDow = first.getDay(); // 0=อาทิตย์
+      const firstDow = first.getDay();
       for(let i=0;i<firstDow;i++){
         const b=document.createElement('div');
         b.className='iosDay muted';

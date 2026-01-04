@@ -2825,7 +2825,8 @@ def get_gallery():
     except Exception as e:
         return jsonify([])
 
-# อัปโหลดรูปลง Cloudinary และบันทึกลง Supabase
+# ค้นหาบรรทัด def upload_gallery(): แล้วแก้เป็นตามนี้ครับ
+
 @app.route('/api/upload_gallery', methods=['POST'])
 @login_required
 def upload_gallery():
@@ -2837,18 +2838,26 @@ def upload_gallery():
             return jsonify({"error": "No images"}), 400
 
         saved_rows = []
+        uploaded_urls = [] # ✅ 1. สร้างตัวแปรมารอเก็บ URL
+
         for img in images:
-            # 1. ส่งไป Cloudinary
-            # (พลอยใช้ config เดิมที่คุณตั้งไว้ด้านบนไฟล์แล้ว)
+            # ส่งไป Cloudinary
             res = cloudinary.uploader.upload(img, folder=f"clinic_gallery/{opd}")
             url = res['secure_url']
             
-            # 2. บันทึกลง Supabase (ตาราง customer_gallery)
+            # บันทึกลง Supabase
             data = {"opd": opd, "image_url": url}
             supabase.table("customer_gallery").insert(data).execute()
+            
             saved_rows.append(data)
+            uploaded_urls.append(url) # ✅ 2. เก็บ URL ที่ได้มาไว้ในลิสต์
 
-        return jsonify({"status": "success", "count": len(saved_rows)})
+        # ✅ 3. สำคัญมาก! ต้องส่ง urls กลับไปให้หน้าบ้านใช้ต่อ
+        return jsonify({
+            "status": "success", 
+            "count": len(saved_rows), 
+            "urls": uploaded_urls 
+        })
 
     except Exception as e:
         print(f"Gallery upload error: {e}")
@@ -2923,6 +2932,86 @@ def update_customer_with_image():
         print(f"Update Image Error: {e}")
         return jsonify({"error": str(e)}), 500
     
+    # =============================================================
+# 1. ส่วนหัวไฟล์ (Imports) - ต้องมีบรรทัดเหล่านี้ที่บนสุดของไฟล์
+# =============================================================
+import google.generativeai as genai
+import requests
+from PIL import Image
+from io import BytesIO
+from flask import jsonify, request # (อันนี้ปกติน่าจะมีอยู่แล้ว)
+
+# =============================================================
+# 2. ตั้งค่า API Key (Gemini)
+# =============================================================
+# ใส่บรรทัดนี้ไว้ช่วงต้นๆ ไฟล์ หลังประกาศ app = Flask(...) ก็ได้ครับ
+genai.configure(api_key="AIzaSyB5uUYdn-wVJGZi08pducpaWtQ3WUjYJBI") 
+
+# =============================================================
+# 3. ฟังก์ชัน AI อ่านบัตร (Gemini 1.5 Flash)
+# =============================================================
+# ค้นหาบรรทัด def api_idcard_extract(): แล้วแก้เป็นตามนี้ครับ
+
+@app.route('/api/idcard_extract', methods=['POST'])
+@login_required
+def api_idcard_extract():
+    # ✅ ย้าย Import มาไว้ในนี้ เพื่อป้องกัน Error ว่าหาไม่เจอ
+    import google.generativeai as genai
+    import requests
+    from PIL import Image
+    from io import BytesIO
+    import json
+
+    try:
+        # 1. รับลิงก์รูปภาพ
+        data = request.get_json(silent=True) or {}
+        image_url = data.get('image_url')
+
+        if not image_url:
+            return jsonify({"error": "No image URL provided. (Check upload_gallery return)"}), 400
+
+        # 2. โหลดรูปจาก URL
+        print(f"🤖 Gemini reading form: {image_url}")
+        response = requests.get(image_url)
+        img_bytes = BytesIO(response.content)
+        img = Image.open(img_bytes)
+
+        # 3. ตั้งค่า AI (ใช้ Key จากรูปภาพของคุณ)
+        # ✅ API Key นี้ถูกต้องแล้วครับ
+        genai.configure(api_key="AIzaSyB5uUYdn-wVJGZi08pducpaWtQ3WUjYJBI") 
+        
+        # 4. คำสั่ง Prompt (ปรับให้แม่นยำขึ้น)
+        prompt = """
+        Task: Extract Thai National ID Card data into JSON.
+        Output MUST be pure JSON only. No markdown formatting.
+        
+        Fields:
+        - id_number (string, 13 digits only)
+        - title_th (string, e.g., นาย, นาง, นางสาว)
+        - first_name_th (string)
+        - last_name_th (string)
+        - birth_date (string, format: dd/mm/yyyy in Thai Year BE 25xx)
+        - address (string, full address in Thai)
+        
+        If a field is unclear or missing, use null.
+        """
+
+        model = genai.GenerativeModel('models/gemini-2.5-flash')
+        result = model.generate_content([prompt, img])
+        
+        # 5. แกะผลลัพธ์
+        text_response = result.text.strip()
+        # ล้าง Markdown ออก (เผื่อ AI เผลอใส่มา)
+        if text_response.startswith("```"):
+            text_response = text_response.replace("```json", "").replace("```", "").strip()
+        
+        print("Gemini Output:", text_response)
+        
+        return jsonify(json.loads(text_response))
+
+    except Exception as e:
+        print(f"Gemini Error: {e}")
+        return jsonify({"error": str(e)}), 500
 # =============================================================
 # Main
 # =============================================================
