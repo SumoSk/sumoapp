@@ -38,395 +38,450 @@
     .seg { display:flex; gap:.4rem; padding:.25rem; border:1px solid #e2e8f0; border-radius:999px; background:#f8fafc; }
     .seg button{ padding:.45rem .75rem; border-radius:999px; font-size:.875rem; }
     .seg button[aria-pressed="true"]{ background:#2563eb; color:#fff; box-shadow: 0 10px 20px rgba(2, 6, 23, 0.06); }
+    
+    /* Login Overlay Transition */
+    #loginOverlay { transition: opacity 0.3s ease-out; }
+    #loginOverlay.fade-out { opacity: 0; pointer-events: none; }
+    /* Blurring content when locked */
+    #appContent.locked { filter: blur(5px); pointer-events: none; user-select: none; }
   </style>
 </head>
 
-<body class="min-h-full bg-slate-50 text-slate-800">
+<body class="min-h-full bg-slate-50 text-slate-800 relative overflow-hidden">
 
-  <!-- Topbar (clean / no nav topics) -->
-  <header class="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-slate-200">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
-      <a href="/dashboard" class="flex items-center gap-3">
-        <div class="h-9 w-9 rounded-xl bg-brand-600 grid place-items-center shadow-soft">
-          <span class="text-white font-bold">Σ</span>
-        </div>
-        <div class="leading-tight">
-          <div class="font-semibold">Sales & Tax</div>
-          <div class="text-xs text-slate-500">What-if + โหมดยอดโอน</div>
-        </div>
-      </a>
-
-      <div class="flex items-center gap-2">
-        <button id="exportBtn" class="hidden sm:inline-flex px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-sm">Export CSV</button>
-        <a href="/logout" class="text-sm px-3 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800">ออกจากระบบ</a>
+  <div id="loginOverlay" class="fixed inset-0 z-[100] bg-slate-100/95 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-sm w-full border border-slate-200 text-center space-y-6 animate-in fade-in zoom-in duration-300">
+      
+      <div class="h-16 w-16 bg-brand-600 rounded-2xl mx-auto grid place-items-center shadow-lg shadow-brand-500/40">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-white">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+        </svg>        
       </div>
+
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800 tracking-tight">ระบบจำกัดสิทธิ์</h2>
+        <p class="text-sm text-slate-500 mt-2">กรุณายืนยันรหัสผ่านเพื่อเข้าถึงข้อมูล</p>
+      </div>
+      
+      <div class="space-y-3">
+        <div class="relative">
+          <input type="password" id="passInput" inputmode="numeric" placeholder="●●●●" maxlength="4"
+            class="w-full px-4 py-3 rounded-xl border border-slate-300 text-center text-2xl font-bold tracking-[0.5em] text-slate-700 focus:ring-4 focus:ring-brand-100 focus:border-brand-500 outline-none transition-all placeholder:tracking-widest placeholder:text-slate-300 bg-slate-50 focus:bg-white">
+        </div>
+        <div id="passError" class="text-bad-600 text-xs font-medium h-4 opacity-0 transition-opacity">รหัสผ่านไม่ถูกต้อง</div>
+      </div>
+
+      <button id="loginBtn" class="w-full py-3.5 rounded-xl bg-brand-600 text-white font-semibold text-lg hover:bg-brand-700 active:scale-[0.98] transition-all shadow-xl shadow-brand-500/20">
+        เข้าใช้งาน
+      </button>
     </div>
-  </header>
+  </div>
 
-  <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-
-    <!-- Controls -->
-    <section class="bg-white rounded-2xl border border-slate-200 shadow-soft p-4">
-      <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-        <div>
-          <h1 class="text-xl sm:text-2xl font-semibold tracking-tight">คำนวณภาษีจากยอดขาย (What-if)</h1>
-          <p id="heroDesc" class="text-slate-500 text-sm mt-1">
-            เลือกปี/ฐานคำนวณ ปรับยอดรายเดือน แล้วระบบคำนวณให้ทันที
-          </p>
-        </div>
-
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 w-full lg:w-auto">
-          <div>
-            <label class="text-xs text-slate-600">ปีภาษี</label>
-            <select id="yearInput" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-brand-500"></select>
+  <div id="appContent" class="locked h-full overflow-auto">
+    
+    <header class="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-slate-200">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+        <a href="/dashboard" class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-brand-600 grid place-items-center shadow-soft">
+            <span class="text-white font-bold">Σ</span>
           </div>
-
-          <div>
-            <label class="text-xs text-slate-600">ฐานคำนวณ</label>
-            <select id="baseMode" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-brand-500">
-              <option value="all">ยอดขายทั้งหมด</option>
-              <option value="transfer">เฉพาะยอดโอน (ตัด “สด”)</option>
-            </select>
+          <div class="leading-tight">
+            <div class="font-semibold">Sales & Tax</div>
+            <div class="text-xs text-slate-500">What-if + โหมดยอดโอน</div>
           </div>
+        </a>
 
-          <div class="col-span-2 sm:col-span-2">
-            <label class="text-xs text-slate-600">ผู้เสียภาษี</label>
-            <div class="seg">
-              <button id="btnPIT" type="button" aria-pressed="true">บุคคลธรรมดา</button>
-              <button id="btnCIT" type="button" aria-pressed="false">นิติบุคคล</button>
-            </div>
-          </div>
-
-          <div class="col-span-2 sm:col-span-1 flex items-end gap-2">
-            <button id="resetBtn" class="flex-1 px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-sm">Reset what-if</button>
-          </div>
+        <div class="flex items-center gap-2">
+          <button id="exportBtn" class="hidden sm:inline-flex px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-sm">Export CSV</button>
+          <a href="/logout" class="text-sm px-3 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800">ออกจากระบบ</a>
         </div>
       </div>
+    </header>
 
-      <div class="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-3">
+    <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-6 pb-20">
 
-        <!-- Income type / Expense -->
-        <div class="rounded-2xl border border-slate-200 p-3">
-          <div class="flex items-center justify-between">
-            <div class="font-medium">โครงสร้างรายได้ & ค่าใช้จ่าย</div>
-            <span id="modeChip" class="chip bg-warn-50 text-warn-600 border border-orange-200">โหมด PIT</span>
+      <section class="bg-white rounded-2xl border border-slate-200 shadow-soft p-4">
+        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+          <div>
+            <h1 class="text-xl sm:text-2xl font-semibold tracking-tight">คำนวณภาษีจากยอดขาย (What-if)</h1>
+            <p id="heroDesc" class="text-slate-500 text-sm mt-1">
+              เลือกปี/ฐานคำนวณ ปรับยอดรายเดือน แล้วระบบคำนวณให้ทันที
+            </p>
           </div>
 
-          <!-- PIT preset -->
-          <div id="pitPresetBox" class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <div class="sm:col-span-2">
-              <label class="text-xs text-slate-600">Preset (เฉพาะ PIT)</label>
-              <select id="incomePreset" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-brand-500">
-                <option value="clinic40_6" selected>วิชาชีพอิสระ: ประกอบโรคศิลปะ (40(6)) เหมา 60%</option>
-                <option value="salary40_1">เงินเดือน (40(1)) เหมา 50% แต่ไม่เกิน 100,000</option>
-                <option value="biz40_8_60">ธุรกิจ/พาณิชย์ (40(8)) เหมา 60% (เฉพาะบางกรณี)</option>
-                <option value="biz40_8_40">ธุรกิจ/พาณิชย์ (40(8)) เหมา 40%</option>
-                <option value="custom">กำหนดเอง</option>
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 w-full lg:w-auto">
+            <div>
+              <label class="text-xs text-slate-600">ปีภาษี</label>
+              <select id="yearInput" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-brand-500"></select>
+            </div>
+
+            <div>
+              <label class="text-xs text-slate-600">ฐานคำนวณ</label>
+              <select id="baseMode" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-brand-500">
+                <option value="all">ยอดขายทั้งหมด</option>
+                <option value="transfer">เฉพาะยอดโอน (ตัด “สด”)</option>
               </select>
             </div>
-          </div>
 
-          <!-- CIT options -->
-          <div id="citBox" class="hidden mt-3 space-y-2">
-            <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 text-sm">
-              <div class="font-medium">โหมดนิติบุคคล (CIT)</div>
-              <div class="text-xs text-slate-600 mt-1">
-                คิดจาก “กำไรสุทธิ” (รายได้ − ค่าใช้จ่าย) ไม่ใช้ค่าลดหย่อนแบบบุคคลธรรมดา
+            <div class="col-span-2 sm:col-span-2">
+              <label class="text-xs text-slate-600">ผู้เสียภาษี</label>
+              <div class="seg">
+                <button id="btnPIT" type="button" aria-pressed="true">บุคคลธรรมดา</button>
+                <button id="btnCIT" type="button" aria-pressed="false">นิติบุคคล</button>
               </div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-              <div>
-                <label class="text-xs text-slate-600">ประเภทอัตรา CIT</label>
-                <select id="citType" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white">
-                  <option value="general" selected>ทั่วไป 20% (ตั้งแต่บาทแรก)</option>
-                  <option value="sme">SME แบบขั้นบันได (0% / 15% / 20%)</option>
+
+            <div class="col-span-2 sm:col-span-1 flex items-end gap-2">
+              <button id="resetBtn" class="flex-1 px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-sm">Reset what-if</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-3">
+
+          <div class="rounded-2xl border border-slate-200 p-3">
+            <div class="flex items-center justify-between">
+              <div class="font-medium">โครงสร้างรายได้ & ค่าใช้จ่าย</div>
+              <span id="modeChip" class="chip bg-warn-50 text-warn-600 border border-orange-200">โหมด PIT</span>
+            </div>
+
+            <div id="pitPresetBox" class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div class="sm:col-span-2">
+                <label class="text-xs text-slate-600">Preset (เฉพาะ PIT)</label>
+                <select id="incomePreset" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-brand-500">
+                  <option value="clinic40_6" selected>วิชาชีพอิสระ: ประกอบโรคศิลปะ (40(6)) เหมา 60%</option>
+                  <option value="salary40_1">เงินเดือน (40(1)) เหมา 50% แต่ไม่เกิน 100,000</option>
+                  <option value="biz40_8_60">ธุรกิจ/พาณิชย์ (40(8)) เหมา 60% (เฉพาะบางกรณี)</option>
+                  <option value="biz40_8_40">ธุรกิจ/พาณิชย์ (40(8)) เหมา 40%</option>
+                  <option value="custom">กำหนดเอง</option>
                 </select>
               </div>
-              <div class="rounded-xl border border-slate-200 p-3">
-                <div class="text-xs text-slate-600">เงื่อนไข SME (ให้ติ๊กเอง)</div>
-                <label class="mt-2 flex items-center justify-between gap-2 text-sm">
-                  เข้าเกณฑ์ SME
-                  <input id="citSMEEligible" type="checkbox" class="h-5 w-5">
-                </label>
-                <div class="text-[11px] text-slate-500 mt-2 leading-relaxed">
-                  โดยทั่วไป: ทุนชำระแล้ว ≤ 5 ล้าน และรายได้ ≤ 30 ล้าน (ตามแนวทางสรรพากร)
+            </div>
+
+            <div id="citBox" class="hidden mt-3 space-y-2">
+              <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 text-sm">
+                <div class="font-medium">โหมดนิติบุคคล (CIT)</div>
+                <div class="text-xs text-slate-600 mt-1">
+                  คิดจาก “กำไรสุทธิ” (รายได้ − ค่าใช้จ่าย) ไม่ใช้ค่าลดหย่อนแบบบุคคลธรรมดา
                 </div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                <div>
+                  <label class="text-xs text-slate-600">ประเภทอัตรา CIT</label>
+                  <select id="citType" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white">
+                    <option value="general" selected>ทั่วไป 20% (ตั้งแต่บาทแรก)</option>
+                    <option value="sme">SME แบบขั้นบันได (0% / 15% / 20%)</option>
+                  </select>
+                </div>
+                <div class="rounded-xl border border-slate-200 p-3">
+                  <div class="text-xs text-slate-600">เงื่อนไข SME (ให้ติ๊กเอง)</div>
+                  <label class="mt-2 flex items-center justify-between gap-2 text-sm">
+                    เข้าเกณฑ์ SME
+                    <input id="citSMEEligible" type="checkbox" class="h-5 w-5">
+                  </label>
+                  <div class="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                    โดยทั่วไป: ทุนชำระแล้ว ≤ 5 ล้าน และรายได้ ≤ 30 ล้าน (ตามแนวทางสรรพากร)
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label class="text-xs text-slate-600">วิธีหักค่าใช้จ่าย</label>
+                <select id="expenseMode" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white">
+                  <option value="percent" selected>เหมาเป็น %</option>
+                  <option value="actual">ตามจริง (ใส่ตัวเลข)</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs text-slate-600">ค่าใช้จ่ายตามจริง (ทั้งปี)</label>
+                <input id="expenseActual" type="number" min="0" step="1" class="w-full px-3 py-2 rounded-xl border border-slate-300" placeholder="0" disabled>
+              </div>
+              <div>
+                <label class="text-xs text-slate-600">อัตราเหมา (%)</label>
+                <input id="expensePct" type="number" min="0" max="100" step="1" class="w-full px-3 py-2 rounded-xl border border-slate-300" value="60">
+              </div>
+              <div>
+                <label class="text-xs text-slate-600">เพดานค่าใช้จ่าย (0=ไม่จำกัด)</label>
+                <input id="expenseCap" type="number" min="0" step="1" class="w-full px-3 py-2 rounded-xl border border-slate-300" value="0">
+              </div>
+            </div>
+
+            <div id="tipBox" class="mt-2 text-xs text-slate-500 leading-relaxed">
+              ทิป: ถ้าคุณมี “ค่าใช้จ่ายจริง” สูงกว่าเหมา ให้เลือก “ตามจริง” เพื่อให้ฐานภาษีใกล้เคียงของจริงมากขึ้น
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 p-3 lg:col-span-2">
+            <div class="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <div class="font-medium">สรุปผล (คำนวณอัตโนมัติ)</div>
+                <div id="metaLabel" class="text-xs text-slate-500 mt-0.5"></div>
+              </div>
+              <div class="flex gap-2">
+                <button id="openDetailsTab" class="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-sm">ดูรายละเอียด</button>
+                <button id="exportBtn2" class="sm:hidden px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-sm">Export</button>
+              </div>
+            </div>
+
+            <div id="kpi" class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2"></div>
+
+            <div id="badgeRow" class="mt-3 flex flex-wrap items-center gap-2 text-xs"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="flex flex-wrap gap-2">
+        <button class="tabbtn px-3 py-2 rounded-xl border border-slate-300 text-sm" data-tab="tab-month" aria-selected="true">รายเดือน</button>
+        <button id="tabDeductBtn" class="tabbtn px-3 py-2 rounded-xl border border-slate-300 text-sm" data-tab="tab-deduct" aria-selected="false">ลดหย่อน</button>
+        <button class="tabbtn px-3 py-2 rounded-xl border border-slate-300 text-sm" data-tab="tab-detail" aria-selected="false">รายละเอียด</button>
+      </section>
+
+      <section id="tab-month" class="space-y-4">
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-soft overflow-hidden">
+          <div class="px-5 py-4 border-b border-slate-200 flex items-start justify-between gap-3">
+            <div>
+              <div class="font-medium">ยอดรายเดือน (แก้ what-if ได้)</div>
+              <div class="text-xs text-slate-500 mt-1">
+                เดือนที่แก้จะแสดงป้าย “แก้แล้ว” และกด “ใช้ยอดระบบ” เพื่อย้อนกลับได้
+              </div>
+            </div>
+            <div class="text-right">
+              <div id="yearLabel" class="text-slate-600 text-sm font-medium"></div>
+              <div id="monthHint" class="text-xs text-slate-400">ค่าเฉลี่ย/เดือน = ภาษีทั้งปี ÷ 12 (เพื่อวางแผน)</div>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-slate-50 text-slate-600">
+                <tr>
+                  <th class="text-left px-4 py-3">เดือน</th>
+                  <th class="text-right px-4 py-3">ยอดจากระบบ (ตามโหมด)</th>
+                  <th class="text-right px-4 py-3">ยอดที่ใช้คำนวณ (what-if)</th>
+                  <th class="text-right px-4 py-3">ภาษีเฉลี่ย/เดือน</th>
+                </tr>
+              </thead>
+              <tbody id="monthRows" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="text-xs text-slate-500 space-y-1">
+          <p id="noteBox" class="text-warn-600 bg-warn-50 px-3 py-2 rounded-xl inline-block">
+            หมายเหตุ: หน้านี้คำนวณ “ภาษีเงินได้บุคคลธรรมดา (PIT)” ไม่ใช่ VAT
+          </p>
+        </div>
+      </section>
+
+      <section id="tab-deduct" class="hidden space-y-4">
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-soft overflow-hidden">
+          <div class="p-5 border-b border-slate-200">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h2 class="text-lg font-semibold">ค่าลดหย่อน</h2>
+                <p class="text-xs text-slate-500 mt-1">ใส่เฉพาะสิทธิที่มีหลักฐานจริง ระบบจะจำกัดเพดานให้เอง</p>
+              </div>
+              <div class="flex gap-2">
+                <button id="saveDeductBtn" class="px-3 py-2 rounded-xl bg-brand-600 text-white hover:bg-brand-700 text-sm">บันทึกค่าลดหย่อน</button>
+                <button id="loadDeductBtn" class="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-sm">โหลดค่าลดหย่อน</button>
+                <button id="resetAllBtn" class="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-sm">ล้างค่าลดหย่อน</button>
               </div>
             </div>
           </div>
 
-          <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <div>
-              <label class="text-xs text-slate-600">วิธีหักค่าใช้จ่าย</label>
-              <select id="expenseMode" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white">
-                <option value="percent" selected>เหมาเป็น %</option>
-                <option value="actual">ตามจริง (ใส่ตัวเลข)</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-xs text-slate-600">ค่าใช้จ่ายตามจริง (ทั้งปี)</label>
-              <input id="expenseActual" type="number" min="0" step="1" class="w-full px-3 py-2 rounded-xl border border-slate-300" placeholder="0" disabled>
-            </div>
-            <div>
-              <label class="text-xs text-slate-600">อัตราเหมา (%)</label>
-              <input id="expensePct" type="number" min="0" max="100" step="1" class="w-full px-3 py-2 rounded-xl border border-slate-300" value="60">
-            </div>
-            <div>
-              <label class="text-xs text-slate-600">เพดานค่าใช้จ่าย (0=ไม่จำกัด)</label>
-              <input id="expenseCap" type="number" min="0" step="1" class="w-full px-3 py-2 rounded-xl border border-slate-300" value="0">
+          <div class="p-5 space-y-6">
+            <section class="space-y-2">
+              <h3 class="font-medium">ประกันสังคม</h3>
+              <div class="flex flex-wrap items-center gap-3 text-sm">
+                <select id="d_ssoType" class="px-3 py-2 rounded-xl border border-slate-300">
+                  <option value="33">ม.33 — เพดาน 9,000</option>
+                  <option value="39">ม.39 — เพดาน 5,184</option>
+                  <option value="40" selected>ม.40 — เพดาน 3,600</option>
+                </select>
+                <input id="d_ssoPaid" type="number" min="0" step="1" placeholder="ยอดที่จ่ายทั้งปี" class="w-48 px-3 py-2 rounded-xl border border-slate-300">
+                <span id="ssoHint" class="text-xs text-slate-500"></span>
+              </div>
+            </section>
+
+            <section class="space-y-2">
+              <h3 class="font-medium">ครอบครัว</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                <label class="flex items-center justify-between gap-2 p-3 rounded-xl border border-slate-200">
+                  คู่สมรสไม่มีรายได้ (60,000)
+                  <input id="d_spouseNoIncome" type="checkbox" class="h-5 w-5">
+                </label>
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                  จำนวนบุตร (x 30,000)
+                  <input id="d_childrenCount" type="number" min="0" step="1" class="w-28 px-2 py-1 rounded-lg border border-slate-300">
+                </label>
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                  บุตรเกิดตั้งแต่ 2018 (คนที่ 2+ ) x 30,000
+                  <input id="d_children2018plus" type="number" min="0" step="1" class="w-28 px-2 py-1 rounded-lg border border-slate-300">
+                </label>
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                  บิดามารดา (x 30,000)
+                  <input id="d_parentsCount" type="number" min="0" max="4" step="1" class="w-28 px-2 py-1 rounded-lg border border-slate-300">
+                </label>
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                  ผู้พิการที่อุปการะ (x 60,000)
+                  <input id="d_disabledCount" type="number" min="0" step="1" class="w-28 px-2 py-1 rounded-lg border border-slate-300">
+                </label>
+              </div>
+            </section>
+
+            <section class="space-y-2">
+              <h3 class="font-medium">ประกัน/สุขภาพ</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                  เบี้ยชีวิตตนเอง (≤100,000)
+                  <input id="d_lifeSelf" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
+                </label>
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                  สุขภาพตนเอง (≤25,000; รวมชีวิต ≤100,000)
+                  <input id="d_healthSelf" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
+                </label>
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                  ชีวิตคู่สมรสไม่มีรายได้ (≤10,000)
+                  <input id="d_lifeSpouse" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
+                </label>
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2 sm:col-span-2">
+                  สุขภาพพ่อแม่ (≤15,000/คน) รวมยอด
+                  <div class="flex items-center gap-2">
+                    <input id="d_healthParentsAmount" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300" placeholder="ยอดรวม">
+                    <span class="text-xs text-slate-500">คน</span>
+                    <input id="d_healthParentsCount" type="number" min="0" max="4" step="1" value="0" class="w-20 px-2 py-1 rounded-lg border border-slate-300">
+                  </div>
+                </label>
+              </div>
+            </section>
+
+            <section class="space-y-2">
+              <h3 class="font-medium">ออมเพื่อเกษียณ</h3>
+              <p class="text-xs text-slate-500">คำนวณเพดานจาก “เงินได้หลังหักค่าใช้จ่าย” และจำกัดเพดานรวม 500,000</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                  RMF (≤30% ฐาน)
+                  <input id="d_rmf" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
+                </label>
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                  PVD/กบข./ครูเอกชน (≤15% ฐาน)
+                  <input id="d_pvd_gpf_ptf" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
+                </label>
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                  ประกันบำนาญ (≤15% ฐาน, เพดาน 200k)
+                  <input id="d_annuityLife" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
+                </label>
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                  กอช./NSF (รวมเพดาน 500k)
+                  <input id="d_nsf" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
+                </label>
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                  SSF (≤30% ฐาน, เพดาน 200k)
+                  <input id="d_ssf" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
+                </label>
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                  Thai ESG (≤30% ฐาน, เพดาน 300k)
+                  <input id="d_thaiESG" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
+                </label>
+              </div>
+            </section>
+
+            <section class="space-y-2">
+              <h3 class="font-medium">ที่อยู่อาศัย & แคมเปญ</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                  ดอกเบี้ยกู้บ้าน (≤100,000)
+                  <input id="d_mortgage" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
+                </label>
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                  Easy e-Receipt (ถ้ามีประกาศปีนั้น)
+                  <input id="d_easyReceipt" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
+                </label>
+              </div>
+            </section>
+
+            <section class="space-y-2">
+              <h3 class="font-medium">เงินบริจาค</h3>
+              <p class="text-xs text-slate-500">รวมกันแล้วหักได้ไม่เกิน 10% ของฐานหลังหักลดหย่อนอื่น ๆ (ก่อนหักบริจาค)</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                  บริจาคทั่วไป
+                  <input id="d_donateGeneral" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
+                </label>
+                <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                  บริจาคพิเศษ (คูณ 2)
+                  <input id="d_donateDouble" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
+                </label>
+              </div>
+            </section>
+
+            <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 text-xs text-slate-600 leading-relaxed">
+              ระบบจะ “คำนวณเพดานให้เอง” เช่น: ประกันสังคมตาม ม.33/39/40, บริจาคไม่เกิน 10%, ออมเกษียณเพดานรวม 500k, Thai ESG เพดาน 300k และไม่เกิน 30% ของฐาน
             </div>
           </div>
+        </div>
+      </section>
 
-          <div id="tipBox" class="mt-2 text-xs text-slate-500 leading-relaxed">
-            ทิป: ถ้าคุณมี “ค่าใช้จ่ายจริง” สูงกว่าเหมา ให้เลือก “ตามจริง” เพื่อให้ฐานภาษีใกล้เคียงของจริงมากขึ้น
+      <section id="tab-detail" class="hidden space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-soft p-5">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <h2 class="text-lg font-semibold">รายละเอียดการคำนวณ</h2>
+            <button id="copyBreakdownBtn" class="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-sm">คัดลอกสรุป</button>
           </div>
+          <div id="detailContent" class="mt-4 space-y-4 text-sm"></div>
         </div>
+      </section>
 
-        <!-- Summary -->
-        <div class="rounded-2xl border border-slate-200 p-3 lg:col-span-2">
-          <div class="flex items-center justify-between gap-3 flex-wrap">
-            <div>
-              <div class="font-medium">สรุปผล (คำนวณอัตโนมัติ)</div>
-              <div id="metaLabel" class="text-xs text-slate-500 mt-0.5"></div>
-            </div>
-            <div class="flex gap-2">
-              <button id="openDetailsTab" class="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-sm">ดูรายละเอียด</button>
-              <button id="exportBtn2" class="sm:hidden px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-sm">Export</button>
-            </div>
-          </div>
-
-          <div id="kpi" class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2"></div>
-
-          <div id="badgeRow" class="mt-3 flex flex-wrap items-center gap-2 text-xs"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Tabs -->
-    <section class="flex flex-wrap gap-2">
-      <button class="tabbtn px-3 py-2 rounded-xl border border-slate-300 text-sm" data-tab="tab-month" aria-selected="true">รายเดือน</button>
-      <button id="tabDeductBtn" class="tabbtn px-3 py-2 rounded-xl border border-slate-300 text-sm" data-tab="tab-deduct" aria-selected="false">ลดหย่อน</button>
-      <button class="tabbtn px-3 py-2 rounded-xl border border-slate-300 text-sm" data-tab="tab-detail" aria-selected="false">รายละเอียด</button>
-    </section>
-
-    <!-- Tab: Months -->
-    <section id="tab-month" class="space-y-4">
-
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-soft overflow-hidden">
-        <div class="px-5 py-4 border-b border-slate-200 flex items-start justify-between gap-3">
-          <div>
-            <div class="font-medium">ยอดรายเดือน (แก้ what-if ได้)</div>
-            <div class="text-xs text-slate-500 mt-1">
-              เดือนที่แก้จะแสดงป้าย “แก้แล้ว” และกด “ใช้ยอดระบบ” เพื่อย้อนกลับได้
-            </div>
-          </div>
-          <div class="text-right">
-            <div id="yearLabel" class="text-slate-600 text-sm font-medium"></div>
-            <div id="monthHint" class="text-xs text-slate-400">ค่าเฉลี่ย/เดือน = ภาษีทั้งปี ÷ 12 (เพื่อวางแผน)</div>
-          </div>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="min-w-full text-sm">
-            <thead class="bg-slate-50 text-slate-600">
-              <tr>
-                <th class="text-left px-4 py-3">เดือน</th>
-                <th class="text-right px-4 py-3">ยอดจากระบบ (ตามโหมด)</th>
-                <th class="text-right px-4 py-3">ยอดที่ใช้คำนวณ (what-if)</th>
-                <th class="text-right px-4 py-3">ภาษีเฉลี่ย/เดือน</th>
-              </tr>
-            </thead>
-            <tbody id="monthRows" class="divide-y divide-slate-100"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="text-xs text-slate-500 space-y-1">
-        <p id="noteBox" class="text-warn-600 bg-warn-50 px-3 py-2 rounded-xl inline-block">
-          หมายเหตุ: หน้านี้คำนวณ “ภาษีเงินได้บุคคลธรรมดา (PIT)” ไม่ใช่ VAT
-        </p>
-      </div>
-    </section>
-
-    <!-- Tab: Deductions (PIT only) -->
-    <section id="tab-deduct" class="hidden space-y-4">
-
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-soft overflow-hidden">
-        <div class="p-5 border-b border-slate-200">
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            <div>
-              <h2 class="text-lg font-semibold">ค่าลดหย่อน</h2>
-              <p class="text-xs text-slate-500 mt-1">ใส่เฉพาะสิทธิที่มีหลักฐานจริง ระบบจะจำกัดเพดานให้เอง</p>
-            </div>
-            <div class="flex gap-2">
-              <button id="saveDeductBtn" class="px-3 py-2 rounded-xl bg-brand-600 text-white hover:bg-brand-700 text-sm">บันทึกค่าลดหย่อน</button>
-              <button id="loadDeductBtn" class="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-sm">โหลดค่าลดหย่อน</button>
-              <button id="resetAllBtn" class="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-sm">ล้างค่าลดหย่อน</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- (เนื้อหา deductions เหมือนเดิมทั้งหมด) -->
-        <div class="p-5 space-y-6">
-          <!-- Social Security -->
-          <section class="space-y-2">
-            <h3 class="font-medium">ประกันสังคม</h3>
-            <div class="flex flex-wrap items-center gap-3 text-sm">
-              <select id="d_ssoType" class="px-3 py-2 rounded-xl border border-slate-300">
-                <option value="33">ม.33 — เพดาน 9,000</option>
-                <option value="39">ม.39 — เพดาน 5,184</option>
-                <option value="40" selected>ม.40 — เพดาน 3,600</option>
-              </select>
-              <input id="d_ssoPaid" type="number" min="0" step="1" placeholder="ยอดที่จ่ายทั้งปี" class="w-48 px-3 py-2 rounded-xl border border-slate-300">
-              <span id="ssoHint" class="text-xs text-slate-500"></span>
-            </div>
-          </section>
-
-          <!-- Family -->
-          <section class="space-y-2">
-            <h3 class="font-medium">ครอบครัว</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
-              <label class="flex items-center justify-between gap-2 p-3 rounded-xl border border-slate-200">
-                คู่สมรสไม่มีรายได้ (60,000)
-                <input id="d_spouseNoIncome" type="checkbox" class="h-5 w-5">
-              </label>
-
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                จำนวนบุตร (x 30,000)
-                <input id="d_childrenCount" type="number" min="0" step="1" class="w-28 px-2 py-1 rounded-lg border border-slate-300">
-              </label>
-
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                บุตรเกิดตั้งแต่ 2018 (คนที่ 2+ ) x 30,000
-                <input id="d_children2018plus" type="number" min="0" step="1" class="w-28 px-2 py-1 rounded-lg border border-slate-300">
-              </label>
-
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                บิดามารดา (x 30,000)
-                <input id="d_parentsCount" type="number" min="0" max="4" step="1" class="w-28 px-2 py-1 rounded-lg border border-slate-300">
-              </label>
-
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                ผู้พิการที่อุปการะ (x 60,000)
-                <input id="d_disabledCount" type="number" min="0" step="1" class="w-28 px-2 py-1 rounded-lg border border-slate-300">
-              </label>
-            </div>
-          </section>
-
-          <!-- Insurance -->
-          <section class="space-y-2">
-            <h3 class="font-medium">ประกัน/สุขภาพ</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                เบี้ยชีวิตตนเอง (≤100,000)
-                <input id="d_lifeSelf" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
-              </label>
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                สุขภาพตนเอง (≤25,000; รวมชีวิต ≤100,000)
-                <input id="d_healthSelf" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
-              </label>
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                ชีวิตคู่สมรสไม่มีรายได้ (≤10,000)
-                <input id="d_lifeSpouse" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
-              </label>
-
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2 sm:col-span-2">
-                สุขภาพพ่อแม่ (≤15,000/คน) รวมยอด
-                <div class="flex items-center gap-2">
-                  <input id="d_healthParentsAmount" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300" placeholder="ยอดรวม">
-                  <span class="text-xs text-slate-500">คน</span>
-                  <input id="d_healthParentsCount" type="number" min="0" max="4" step="1" value="0" class="w-20 px-2 py-1 rounded-lg border border-slate-300">
-                </div>
-              </label>
-            </div>
-          </section>
-
-          <!-- Retirement & Savings -->
-          <section class="space-y-2">
-            <h3 class="font-medium">ออมเพื่อเกษียณ</h3>
-            <p class="text-xs text-slate-500">คำนวณเพดานจาก “เงินได้หลังหักค่าใช้จ่าย” และจำกัดเพดานรวม 500,000</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                RMF (≤30% ฐาน)
-                <input id="d_rmf" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
-              </label>
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                PVD/กบข./ครูเอกชน (≤15% ฐาน)
-                <input id="d_pvd_gpf_ptf" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
-              </label>
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                ประกันบำนาญ (≤15% ฐาน, เพดาน 200k)
-                <input id="d_annuityLife" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
-              </label>
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                กอช./NSF (รวมเพดาน 500k)
-                <input id="d_nsf" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
-              </label>
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                SSF (≤30% ฐาน, เพดาน 200k)
-                <input id="d_ssf" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
-              </label>
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                Thai ESG (≤30% ฐาน, เพดาน 300k)
-                <input id="d_thaiESG" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
-              </label>
-            </div>
-          </section>
-
-          <!-- Housing / Campaigns -->
-          <section class="space-y-2">
-            <h3 class="font-medium">ที่อยู่อาศัย & แคมเปญ</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                ดอกเบี้ยกู้บ้าน (≤100,000)
-                <input id="d_mortgage" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
-              </label>
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                Easy e-Receipt (ถ้ามีประกาศปีนั้น)
-                <input id="d_easyReceipt" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
-              </label>
-            </div>
-          </section>
-
-          <!-- Donations -->
-          <section class="space-y-2">
-            <h3 class="font-medium">เงินบริจาค</h3>
-            <p class="text-xs text-slate-500">รวมกันแล้วหักได้ไม่เกิน 10% ของฐานหลังหักลดหย่อนอื่น ๆ (ก่อนหักบริจาค)</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                บริจาคทั่วไป
-                <input id="d_donateGeneral" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
-              </label>
-              <label class="p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                บริจาคพิเศษ (คูณ 2)
-                <input id="d_donateDouble" type="number" min="0" step="1" class="w-36 px-2 py-1 rounded-lg border border-slate-300">
-              </label>
-            </div>
-          </section>
-
-          <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 text-xs text-slate-600 leading-relaxed">
-            ระบบจะ “คำนวณเพดานให้เอง” เช่น: ประกันสังคมตาม ม.33/39/40, บริจาคไม่เกิน 10%, ออมเกษียณเพดานรวม 500k, Thai ESG เพดาน 300k และไม่เกิน 30% ของฐาน
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Tab: Detail -->
-    <section id="tab-detail" class="hidden space-y-4">
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-soft p-5">
-        <div class="flex items-center justify-between gap-2 flex-wrap">
-          <h2 class="text-lg font-semibold">รายละเอียดการคำนวณ</h2>
-          <button id="copyBreakdownBtn" class="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-sm">คัดลอกสรุป</button>
-        </div>
-
-        <div id="detailContent" class="mt-4 space-y-4 text-sm"></div>
-      </div>
-    </section>
-
-  </main>
+    </main>
+  </div>
 
   <script>
-    // ===================== Helpers =====================
+    // ================= AUTH SYSTEM (NO PERSISTENCE) =================
+    const CORRECT_PASS = "1234";
+    const loginOverlay = document.getElementById('loginOverlay');
+    const appContent = document.getElementById('appContent');
+    const passInput = document.getElementById('passInput');
+    const loginBtn = document.getElementById('loginBtn');
+    const passError = document.getElementById('passError');
+
+    // พลอยเอาส่วนเช็ค sessionStorage ออกแล้วนะจ๊ะ
+    // ทำให้ทุกครั้งที่โหลดหน้านี้ จะต้องใส่รหัสใหม่เสมอ
+
+    function doLogin() {
+      if (passInput.value === CORRECT_PASS) {
+        // Success
+        passError.style.opacity = '0';
+        
+        // Unlock UI
+        loginOverlay.classList.add('fade-out');
+        setTimeout(() => {
+          loginOverlay.classList.add('hidden');
+          appContent.classList.remove('locked'); // ปลดล็อก
+          document.body.classList.remove('overflow-hidden'); // ให้เลื่อนหน้าจอได้
+        }, 300);
+      } else {
+        // Fail
+        passError.style.opacity = '1';
+        passInput.classList.add('ring-2', 'ring-bad-600', 'border-bad-600');
+        setTimeout(() => passInput.classList.remove('ring-2', 'ring-bad-600', 'border-bad-600'), 500);
+        passInput.value = ''; // Clear for security
+      }
+    }
+
+    loginBtn.addEventListener('click', doLogin);
+    passInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') doLogin();
+    });
+    
+    // Auto focus input
+    setTimeout(()=> passInput.focus(), 100);
+
+
+    // ================= TAX APP LOGIC =================
     const MONTH_TH = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
     const fmt2 = (n) => (n ?? 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const fmt0 = (n) => (n ?? 0).toLocaleString('th-TH');
@@ -445,7 +500,7 @@
       if (s === 'โอน') return 'transfer';
       if (s === 'สด') return 'cash';
       const transferSet = new Set(['transfer','promptpay','qr','ppt','บัญชี','บัตร','credit','debit','linepay','truewallet','wallet','ธนาคาร']);
-      const cashSet     = new Set(['เงินสด','cash','cs']);
+      const cashSet       = new Set(['เงินสด','cash','cs']);
       if (transferSet.has(s)) return 'transfer';
       if (cashSet.has(s)) return 'cash';
       return 'unknown';
@@ -575,7 +630,7 @@
       noteBox.textContent = isPIT
         ? 'หมายเหตุ: หน้านี้คำนวณ “ภาษีเงินได้บุคคลธรรมดา (PIT)” ไม่ใช่ VAT'
         : 'หมายเหตุ: โหมดนี้คำนวณ “ภาษีเงินได้นิติบุคคล (CIT)” ไม่ใช่ VAT';
-
+      
       // If currently on deduct tab but switched to CIT -> jump to month
       if (!isPIT) switchTab('tab-month');
 
@@ -634,11 +689,11 @@
     async function fetchAllMonthsTransferOnly(year){
       const since = `${year}-01-01`, until = `${year}-12-31`;
       const url = `/api/record_sale?since=${since}&until=${until}&limit=20000`;
-
+      
       const res = await fetch(url, { credentials: 'same-origin' });
       const rows = await res.json();
       if (!res.ok) throw new Error(rows.error || 'โหลดข้อมูล (ยอดโอน) ไม่สำเร็จ');
-
+      
       const months = Array.from({length:12}, (_,i)=>({month:i+1, gross:0}));
       let sumTransfer = 0, sumCash = 0, sumUnknown = 0;
       const seenKinds = new Set();
@@ -827,7 +882,7 @@
       const lifeSpouse = deductions.spouseNoIncome ? Math.min(clamp(parseFloat(deductions.lifeSpouse||0)), 10000) : 0;
       lifeSelf = Math.min(lifeSelf, 100000);
       healthSelf = Math.min(healthSelf, 25000, Math.max(0, 100000 - lifeSelf));
-
+      
       const hpCount = Math.min(4, Math.max(0, deductions.healthParentsCount|0));
       const hpAmount = clamp(parseFloat(deductions.healthParentsAmount||0));
       const healthParents = Math.min(hpAmount, hpCount * 15000);
@@ -856,7 +911,7 @@
       }
 
       const ssf = Math.min(clamp(parseFloat(deductions.ssf||0)), Math.min(basePct*0.30, 200000));
-
+      
       // Thai ESG: 2024–2026
       const thaiESGCap = (yearSelected>=2024 && yearSelected<=2026) ? Math.min(basePct*0.30, 300000) : 0;
       const thaiESG = Math.min(clamp(parseFloat(deductions.thaiESG||0)), thaiESGCap);
@@ -866,8 +921,8 @@
       const easyReceipt = clamp(parseFloat(deductions.easyReceipt||0));
 
       // Donation cap 10% of base before donations
-      const preDonationBase =
-        netAfterExpense
+      const preDonationBase = 
+        netAfterExpense 
         - allowancePersonal - ssoAllowed
         - spouseAllowance - childrenAllowance - childrenExtra2018 - parentsAllowance - disabledAllowance
         - lifeSelf - healthSelf - lifeSpouse - healthParents
@@ -880,7 +935,7 @@
       const donationAllowed = Math.min(donateCap, donateGeneral + donateDouble);
 
       // Total deductions
-      const totalDeductions =
+      const totalDeductions = 
         allowancePersonal + ssoAllowed
         + spouseAllowance + childrenAllowance + childrenExtra2018 + parentsAllowance + disabledAllowance
         + lifeSelf + healthSelf + lifeSpouse + healthParents
@@ -923,7 +978,7 @@
     // ===================== Engine: CIT compute =====================
     function computeCIT(monthsUsed, yearSelected, incomeCfg, corpCfg){
       const revenueYear = Math.round(monthsUsed.reduce((a,b)=>a+(b.gross||0),0)*100)/100;
-
+      
       // Expense (estimate allowed)
       let expense = 0;
       if (incomeCfg.expenseMode === 'actual') {
@@ -938,7 +993,7 @@
       }
 
       const netProfit = Math.max(0, Math.round((revenueYear - expense)*100)/100);
-
+      
       const cit = calcCIT(netProfit, corpCfg.citType, corpCfg.eligibleSME);
       const taxYear = cit.tax;
       const taxMonth = taxYear>0 ? Math.round((taxYear/12)*100)/100 : 0;
@@ -981,7 +1036,7 @@
     function renderKPIs(summary, mode){
       kpi.innerHTML = '';
       const badge = `<span class="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-good-50 text-good-600 border border-green-200 align-middle">What-if (${mode==='transfer'?'เฉพาะยอดโอน':'ยอดทั้งหมด'})</span>`;
-
+      
       const isPIT = taxPayer === 'pit';
       const items = isPIT ? [
         { label: 'ยอดทั้งปีที่ใช้คำนวณ', value: `${THB(summary.gross_year)} ${badge}` },
@@ -1017,7 +1072,7 @@
 
       if (mode === 'transfer') {
         const distinct = (meta.distinctPayments||[]).filter(Boolean);
-        metaLabel.innerHTML =
+        metaLabel.innerHTML = 
           `นับรวมโอน: <b>${THB(meta.total_included||0)}</b> • ตัด “สด”: <b>${THB(meta.cash_excluded||0)}</b> • ไม่ทราบ: <b>${THB(meta.unknown_excluded||0)}</b>` +
           (distinct.length ? ` • พบชนิด payment: <span class="text-slate-600">${distinct.join(', ')}</span>` : '');
       } else {
@@ -1029,8 +1084,8 @@
         : 'ภาษีเฉลี่ย/เดือน = CIT ทั้งปี ÷ 12 (เพื่อวางแผน)';
 
       for (let i=0;i<12;i++){
-        const baseRow = monthsBase[i] || {month:i+1,gross:0};
-        const usedRow = monthsUsed[i] || baseRow;
+        const baseRow = monthsBase[i];
+        const usedRow = monthsUsed[i];
         const edited = (projObj && projObj[baseRow.month] !== undefined);
         const tr = document.createElement('tr');
 
@@ -1045,11 +1100,11 @@
           <td class="px-4 py-2 text-right">
             <div class="flex items-center justify-end gap-2">
               <input type="number" inputmode="decimal" min="0" step="0.01"
-                data-month="${i+1}"
+                data-month="${baseRow.month}"
                 class="whatif-input w-36 md:w-44 text-right px-2 py-1 border rounded-xl border-slate-300 focus:ring-2 focus:ring-brand-500 ${edited?'bg-brand-50/60':'bg-slate-50'}"
-                value="${(edited ? (usedRow.gross ?? '') : (usedRow.gross || ''))}">
+                value="${(edited ? (usedRow.gross) : (usedRow.gross || ''))}"> 
               <button class="use-base-btn px-2 py-1 rounded-lg border border-slate-300 hover:bg-slate-100 text-xs ${edited?'':'opacity-40 pointer-events-none'}"
-                data-month="${i+1}">ใช้ยอดระบบ</button>
+                data-month="${baseRow.month}">ใช้ยอดระบบ</button>
             </div>
           </td>
           <td class="px-4 py-2 text-right text-slate-700">฿ ${fmt2(taxMonthAvg)}</td>
@@ -1064,17 +1119,25 @@
           if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
           if (parts.length === 2) v = parts[0] + '.' + parts[1].slice(0, 2);
           inp.value = v;
-          scheduleRun();
         }, {passive:true});
 
         inp.addEventListener('change', ()=>{
           const y = parseInt(yearSel.value, 10);
           const m = baseMode.value;
           const month = parseInt(inp.dataset.month, 10);
-          const val = clamp(parseFloat(inp.value || '0'));
+          
+          const rawVal = parseFloat(inp.value); 
           const obj = loadJSON(keyProj(y, m), {});
-          if (!val) { delete obj[month]; inp.value=''; }
-          else { obj[month]=val; inp.value=val; }
+
+          if (isNaN(rawVal)) { 
+            delete obj[month]; 
+            inp.value = ''; 
+          } else { 
+            const val = clamp(rawVal);
+            obj[month] = val; 
+            inp.value = val; 
+          }
+          
           saveJSON(keyProj(y, m), obj);
           scheduleRun();
         });
@@ -1312,14 +1375,23 @@
         ssoHint.textContent = `เพดานปีนี้: ${THB(cap)}`;
       }
 
-      // 1) base months
+      // 1) base months (FIX: Ensure 1-12 range always)
       const basePack = await fetchMonths(y, mode);
-      const monthsBase = basePack.months;
+      const rawMonths = basePack.months || [];
+      const monthsBase = [];
+      for(let m=1; m<=12; m++){
+        const found = rawMonths.find(r => r.month == m);
+        monthsBase.push(found || { month: m, gross: 0 });
+      }
+
       const meta = basePack.meta || {};
 
-      // 2) what-if projection
+      // 2) what-if projection (FIX: allow 0)
       const proj = loadJSON(keyProj(y, mode), {});
-      const monthsUsed = monthsBase.map(m => ({ month: m.month, gross: (proj[m.month]!==undefined ? clamp(parseFloat(proj[m.month])) : m.gross) }));
+      const monthsUsed = monthsBase.map(m => ({ 
+        month: m.month, 
+        gross: (proj[m.month] !== undefined ? clamp(parseFloat(proj[m.month])) : m.gross) 
+      }));
 
       // 3) configs
       const incomeCfg = readIncomeCfg();
@@ -1425,7 +1497,7 @@
       if (!latestState) return;
       const s = latestState.result.summary;
       const label = (taxPayer==='pit') ? 'PIT' : 'CIT';
-      const txt =
+      const txt = 
 `สรุปภาษีปี ${latestState.y} (${latestState.mode}) • ${label}
 ยอดทั้งปี: ${s.gross_year}
 ค่าใช้จ่าย: ${s.expense}
@@ -1447,7 +1519,7 @@ ${taxPayer==='pit'?'เงินได้สุทธิ':'กำไรที่
       syncExpenseModeUI();
 
       const y = parseInt(yearSel.value,10), m = baseMode.value;
-
+      
       // PIT: restore
       applyDeductions(loadJSON(keyDeduct(y,m), {}));
       const inc = loadJSON(keyIncome(y,m), null);
