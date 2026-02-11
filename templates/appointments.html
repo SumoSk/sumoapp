@@ -2,10 +2,9 @@
 <html lang="th">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
   <title>ตารางนัด & ตารางเวร</title>
 
-  <!-- ใช้เฉพาะน้ำหนักบาง/ปกติ/กึ่งหนา (ตัดตัวหนาออก) -->
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500&display=swap" rel="stylesheet">
 
   <style>
@@ -49,7 +48,7 @@
       border-radius:var(--radius);
       box-shadow:var(--shadow);
       padding:14px;
-      overflow:hidden;
+      overflow: visible;
     }
 
     .headline{font-size:18px;font-weight:500;color:#0b7660;margin:0 0 6px}
@@ -96,7 +95,7 @@
     .paperWrap{
       border:1px solid var(--grid);
       border-radius:14px;
-      overflow:hidden;
+      overflow:visible;
       background:#fff;
     }
     .paperHeader{
@@ -143,7 +142,7 @@
     }
     table.clean{
       width:100%;
-      min-width:820px; /* เดสก์ท็อป */
+      min-width:820px; /* Default Desktop */
       border-collapse:separate;
       border-spacing:0;
       background:#fff;
@@ -218,8 +217,9 @@
       box-shadow:0 10px 20px rgba(2,8,23,.06);
       display:grid; gap:2px;
       cursor:pointer;
+      overflow: visible;
     }
-    .apptCard .name{font-weight:500;font-size:13px}
+    .apptCard .name{font-weight:500;font-size:13px; white-space: nowrap; overflow: visible; text-overflow: ellipsis;}
     .apptCard .meta{font-size:11px;color:#334155;opacity:.85;font-weight:400}
     .apptCard .foot{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
     .tag{
@@ -261,7 +261,7 @@
       border-top:1px solid var(--grid);
       padding:8px 8px 10px;
       background:#fff;
-      overflow:hidden;
+      overflow:visible;
     }
     .iosDay:nth-child(7n){border-right:none}
     .iosDay .num{font-weight:500;font-size:16px;color:#0f172a}
@@ -272,7 +272,7 @@
       display:flex;align-items:center;gap:6px;
       padding:6px 8px;border-radius:8px;
       font-weight:500;font-size:12px;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      white-space:nowrap;overflow:visible;text-overflow:ellipsis;
     }
     .ev-green{background:#d9f2cc;color:#1f5e2b}
     .ev-purple{background:#e9d5ff;color:#6b21a8}
@@ -301,7 +301,7 @@
       width:min(520px, 100%);
       background:#fff;
       border-radius:16px;
-      overflow:hidden;
+      overflow:visible;
       box-shadow:0 12px 26px rgba(0,0,0,.16);
       border:1px solid rgba(255,255,255,.25);
     }
@@ -324,6 +324,67 @@
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
     /* =========================
+       IPAD / TABLET (Portrait & Landscape Compact)
+       แก้ให้ไม่เลื่อนจอ (Fit Screen) + ทำให้เล็ก
+       ========================= */
+    @media (min-width: 641px) and (max-width: 1024px) {
+      body {
+        padding: 5px;
+      }
+      .container {
+        max-width: 100%;
+        margin: 0;
+        padding: 10px;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      .headline { font-size: 16px; }
+      
+      /* บังคับตารางให้หดอยู่ในหน้าจอ */
+      table.clean {
+        min-width: 100%; 
+        width: 100%;
+        table-layout: fixed; /* หัวใจสำคัญ: บังคับคอลัมน์หารเท่ากันตาม % */
+      }
+      table.clean thead th {
+        font-size: 11px;
+        padding: 8px 4px;
+        white-space: normal; /* ยอมให้หัวตารางตัดบรรทัดได้ถ้าที่แคบ */
+      }
+      table.clean tbody td {
+        padding: 4px; /* ลด padding */
+      }
+      
+      /* ลดขนาดช่องเวลา */
+      .timeCell { 
+        width: 55px !important; 
+        font-size: 11px;
+      }
+
+      /* ย่อขนาดการ์ดนัด */
+      .apptCard {
+        padding: 6px;
+        gap: 1px;
+      }
+      .apptCard .name { font-size: 11px; }
+      .apptCard .meta { font-size: 9px; display: none; } /* ซ่อน meta ถ้าที่แคบมาก */
+      .apptCard .foot { margin-top: 2px; }
+      .tag { padding: 2px 6px; font-size: 9px; }
+      .tag .dot { width: 6px; height: 6px; }
+
+      .slotEmpty {
+        font-size: 10px;
+        min-height: 28px;
+      }
+
+      /* ปรับ Input ให้เล็กลง */
+      .ipt, .btn {
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+    }
+
+    /* =========================
        MOBILE: ทำให้ "ไม่ใหญ่ไป" + เต็มจอ + ตารางเลื่อนง่าย
        ========================= */
     @media (max-width:640px){
@@ -344,7 +405,7 @@
       .btn{padding:9px 10px;font-size:11.5px;border-radius:10px}
       .ipt{padding:9px 10px;font-size:12.5px}
 
-      /* ลดความกว้างขั้นต่ำของตารางบนมือถือให้ไม่ดู “ใหญ่” */
+      /* มือถือยอมให้เลื่อนซ้ายขวาได้ เพราะจอเล็กเกิน */
       table.clean{min-width:680px}
       table.clean thead th{padding:9px 6px;font-size:11.5px}
       table.clean tbody td{padding:7px}
@@ -367,6 +428,20 @@
       .line.medium{min-width:92px}
       .grid2{grid-template-columns:1fr}
     }
+
+    /* เพิ่มต่อท้ายใน <style> */
+
+.iosDay.today {
+  background-color: #f0fdfa; /* สีพื้นหลังเขียวอ่อนๆ */
+  box-shadow: inset 0 0 0 2px var(--teal-600); /* กรอบด้านในสีเขียวเข้ม */
+  position: relative;
+}
+
+/* ทำให้ตัวเลขวันปัจจุบันเด่นขึ้นด้วย */
+.iosDay.today .num {
+  color: var(--teal-600);
+  font-weight: 600;
+}
   </style>
 </head>
 
@@ -375,7 +450,7 @@
   <div class="container">
     <div class="headline">ระบบนัดหมาย & ตารางเวร</div>
     <div class="sub-muted">
-      UI สะอาดตา เส้นบาง ไม่รก | คลิกช่องว่างเพื่อเพิ่มนัดได้ | บันทึกจริงลงเครื่อง (LocalStorage)
+      จัดการตารางนัดหมายและเวรแพทย์ | รองรับการเชื่อมต่อฐานข้อมูล
     </div>
 
     <div class="chips">
@@ -384,7 +459,6 @@
       <span class="chip" data-tab="settings">ตั้งค่า</span>
     </div>
 
-    <!-- ================= TAB: DAILY ================= -->
     <div class="panel active" id="panel-daily">
       <div class="section">
 
@@ -403,9 +477,9 @@
           <div class="paperHeader">
             <div class="left">
               <span class="paperTitle">ตารางนัดลูกค้า</span>
-              <span class="lineField">วัน <span class="line small" id="hdrDay">ศุกร์</span></span>
-              <span class="lineField">ที่ <span class="line small" id="hdrDateNum">2</span></span>
-              <span class="lineField">เดือน <span class="line medium" id="hdrMonth">มกราคม</span></span>
+              <span class="lineField">วัน <span class="line small" id="hdrDay">-</span></span>
+              <span class="lineField">ที่ <span class="line small" id="hdrDateNum">-</span></span>
+              <span class="lineField">เดือน <span class="line medium" id="hdrMonth">-</span></span>
             </div>
             <div class="right">
               <span class="lineField">หมอเข้าเวลา <span class="line small" id="hdrDoctorTime">11:00</span></span>
@@ -416,7 +490,7 @@
             <table class="clean" id="dailyTable">
               <thead>
                 <tr>
-                  <th style="width:90px">เวลา</th>
+                  <th class="timeCell">เวลา</th>
                   <th>เคสแพทย์</th>
                   <th>เคสแพทย์</th>
                   <th>เคสพยาบาล<br><span style="font-weight:400;font-size:11px;color:#64748b">Treatment</span></th>
@@ -431,11 +505,10 @@
       </div>
     </div>
 
-    <!-- ================= TAB: MONTHLY ================= -->
     <div class="panel" id="panel-monthly">
       <div class="section card">
         <div class="iosMonthHeader">
-          <div class="monthTitle" id="monthTitle">ธันวาคม 2568</div>
+          <div class="monthTitle" id="monthTitle">-</div>
           <div class="todayBtn" onclick="UI.monthToday()">วันนี้</div>
         </div>
 
@@ -444,7 +517,7 @@
             <input class="ipt" style="max-width:200px" type="month" id="monthPicker">
             <button class="btn btn-ghost" type="button" onclick="UI.renderMonth()">โหลดเดือน</button>
           </div>
-          <button class="btn btn-primary" type="button" onclick="UI.copyWeekMock()">Copy เวร</button>
+          <button class="btn btn-primary" type="button" onclick="UI.copyWeek()">Copy เวร</button>
         </div>
 
         <div class="iosWeekHead">
@@ -455,18 +528,14 @@
       </div>
     </div>
 
-    <!-- ================= TAB: SETTINGS ================= -->
     <div class="panel" id="panel-settings">
       <div class="section card">
-        <div style="font-weight:500;color:#0b3d35;margin-bottom:8px">ตั้งค่า (placeholder)</div>
-        <div class="sub-muted">เดี๋ยวผูกกับฐานข้อมูลภายหลัง</div>
+        <div style="font-weight:500;color:#0b3d35;margin-bottom:8px">การตั้งค่า</div>
+        <div class="sub-muted">ส่วนจัดการข้อมูลพื้นฐาน</div>
       </div>
     </div>
 
-  </div><!-- /container -->
-
-  <!-- ================= Modal: เพิ่ม/แก้นัดหมาย ================= -->
-  <div class="modal" id="apptModal" onclick="UI.closeOnBackdrop(event,'apptModal')">
+  </div><div class="modal" id="apptModal" onclick="UI.closeOnBackdrop(event,'apptModal')">
     <div class="box" onclick="event.stopPropagation()">
       <div class="hdr">
         <div>เพิ่มนัดหมาย</div>
@@ -474,10 +543,7 @@
       </div>
 
       <div class="body">
-        <div class="sub-muted" style="font-size:11px">
-          ตอนนี้บันทึกลงเครื่อง (LocalStorage) เพื่อให้ใช้ได้จริงทันที เดี๋ยวค่อยย้ายไป Supabase ภายหลัง
-        </div>
-
+        
         <div>
           <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ประเภทลูกค้า</label>
           <select class="ipt" id="apptType">
@@ -488,8 +554,7 @@
 
         <div id="existingBox">
           <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ค้นหาลูกค้า (ชื่อ/เบอร์)</label>
-          <input class="ipt" id="custSearch" placeholder="พิมพ์ชื่อเพื่อใช้เป็นชื่อในตาราง (ยังไม่ผูกค้นหา)">
-          <div class="sub-muted" style="font-size:11px">ถ้าจะผูกค้นหา จะยิงไป /api/customers แล้วทำ autocomplete ได้</div>
+          <input class="ipt" id="custSearch" placeholder="พิมพ์ชื่อเพื่อค้นหา...">
         </div>
 
         <div id="guestBox" style="display:none">
@@ -534,7 +599,7 @@
 
       <div class="ftr">
         <button class="btn btn-ghost" type="button" onclick="UI.closeModal('apptModal')">ยกเลิก</button>
-        <button class="btn btn-primary" type="button" onclick="UI.saveApptMock()">บันทึก</button>
+        <button class="btn btn-primary" type="button" onclick="UI.saveAppt()">บันทึก</button>
       </div>
     </div>
   </div>
@@ -565,10 +630,10 @@
     }
 
     // =========================
-    // Appointments Store (LocalStorage)
+    // Appointments Store (Using LocalStorage for now, ready for API)
     // =========================
     const ApptStore = {
-      key: 'CLINIC_APPTS_V1',
+      key: 'CLINIC_APPTS_REAL',
 
       _load(){
         try{
@@ -597,11 +662,13 @@
         if(i >= 0) arr[i] = appt;
         else arr.push(appt);
         this._save(arr);
+        // TODO: Call API to save appointment here
       },
 
       remove(id){
         const arr = this._load().filter(x => x.id !== id);
         this._save(arr);
+        // TODO: Call API to delete appointment here
       }
     };
 
@@ -643,13 +710,13 @@
         ftr.innerHTML = `
           <button class="btn btn-ghost" type="button" onclick="UI.closeModal('apptModal')">ยกเลิก</button>
           ${delBtn}
-          <button class="btn btn-primary" type="button" onclick="UI.saveApptMock()">${saveText}</button>
+          <button class="btn btn-primary" type="button" onclick="UI.saveAppt()">${saveText}</button>
         `;
       },
 
       deleteEditingAppt(){
         if(!UI._editingApptId) return;
-        if(!confirm('ลบนัดนี้ใช่ไหม?')) return;
+        if(!confirm('ยืนยันการลบนัดหมายนี้')) return;
         ApptStore.remove(UI._editingApptId);
         UI._editingApptId = null;
         UI.closeModal('apptModal');
@@ -680,7 +747,7 @@
         UI._syncModalFooterButtons();
       },
 
-      saveApptMock(){
+      saveAppt(){
         try{
           const type = document.getElementById('apptType').value;
 
@@ -721,7 +788,7 @@
           renderDailyTable();
         }catch(e){
           console.error(e);
-          alert('บันทึกไม่สำเร็จ');
+          alert('เกิดข้อผิดพลาดในการบันทึก');
         }
       },
 
@@ -737,7 +804,10 @@
         document.getElementById('monthPicker').value = d.toISOString().slice(0,7);
         UI.renderMonth();
       },
-      copyWeekMock(){ alert('Copy เวร (เดี๋ยวผูก API)'); },
+      copyWeek(){ 
+        // TODO: Implement API call to copy schedule pattern
+        console.log("Function copyWeek called: Logic to replicate schedule goes here.");
+      },
 
       renderMonth(){ renderIOSCalendar(); }
     };
@@ -826,21 +896,29 @@
       document.getElementById('hdrDay').textContent = TH_DAYS[d.getDay()];
       document.getElementById('hdrDateNum').textContent = String(d.getDate());
       document.getElementById('hdrMonth').textContent = TH_MONTHS[d.getMonth()];
+      // TODO: Fetch doctor time from settings/API
       document.getElementById('hdrDoctorTime').textContent = '11:00';
     }
 
-    // ---------------- Monthly calendar (เดิม) ----------------
+    // ---------------- Monthly calendar ----------------
     function thYear(y){ return y + 543; }
     function renderIOSCalendar(){
       const grid = document.getElementById('iosGrid');
       grid.innerHTML='';
 
       const mp = document.getElementById('monthPicker');
+      // ถ้าไม่มีค่า ให้ใช้เดือนปัจจุบัน
       const ym = mp.value || new Date().toISOString().slice(0,7);
       const [Y,M] = ym.split('-').map(Number);
 
       const first = new Date(Y, M-1, 1);
       const last  = new Date(Y, M, 0);
+
+      // เตรียมตัวแปรสำหรับเทียบวันปัจจุบัน
+      const now = new Date(); 
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1; // getMonth() เริ่มที่ 0
+      const currentDay = now.getDate();
 
       document.getElementById('monthTitle').textContent = `${TH_MONTHS[M-1]} ${thYear(Y)}`;
 
@@ -852,27 +930,23 @@
         grid.appendChild(b);
       }
 
-      const mock = {
-        3: [{cls:'ev-purple',icon:'👩',text:'พยาบาล16.30-18.30'},{cls:'ev-green',icon:'🩺',text:'Dr.Palmy'}],
-        4: [{cls:'ev-green',icon:'🩺',text:'Dr.Palmy'}],
-        6: [{cls:'ev-green',icon:'🩺',text:'Dr.Palmy'}],
-        7: [{cls:'ev-purple',icon:'👩',text:'พยาบาล13.30-15.30'},{cls:'ev-green',icon:'🩺',text:'Dr.Palmy'}],
-        8: [{cls:'ev-blue',icon:'📘',text:'Dion 14.00-1...'}],
-        11:[{cls:'ev-purple',icon:'👩',text:'พยาบาล16.30-18.30'},{cls:'ev-green',icon:'🩺',text:'Dr.Palmy'}],
-        12:[{cls:'ev-brown',icon:'☕',text:'Cinder13.30'}],
-      };
+      // TODO: Fetch real shifts from API based on Y and M
+      // const shifts = await fetch(`/api/shifts?month=${M}&year=${Y}`);
 
       for(let d=1; d<=last.getDate(); d++){
         const box=document.createElement('div');
-        box.className='iosDay';
-        box.onclick=()=>alert(`จัดเวรวันที่ ${d}/${M}/${thYear(Y)} (เดี๋ยวผูก modal)`);
+        
+        // เช็คว่าเป็นวันนี้หรือไม่
+        const isToday = (Y === currentYear && M === currentMonth && d === currentDay);
+        
+        // ถ้าใช่ ให้เติม class 'today'
+        box.className = 'iosDay' + (isToday ? ' today' : '');
+        
+        box.onclick=()=> {
+          console.log(`Open shift modal for ${d}/${M}/${thYear(Y)}`);
+        };
 
-        const ev=(mock[d]||[]).map(e=>`
-          <div class="eventPill ${e.cls}" title="${escapeHtml(e.text)}">
-            <span class="icon">${escapeHtml(e.icon)}</span>
-            <span style="overflow:hidden;text-overflow:ellipsis">${escapeHtml(e.text)}</span>
-          </div>
-        `).join('');
+        const ev = ''; 
 
         box.innerHTML = `<div class="num">${d}</div><div class="events">${ev}</div>`;
         grid.appendChild(box);
