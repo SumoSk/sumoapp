@@ -5,453 +5,139 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
   <title>ตารางนัด & ตารางเวร</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
 
   <style>
     :root{
       --teal:#0f766e; --teal-600:#0d9488;
       --bg:#f7faf9; --card:#ffffff;
-
-      /* เส้นบางๆ โทนอ่อน */
-      --line:#eef2f7;
-      --grid:#eef2f7;
-      --grid-soft:#f6f8fb;
-      --hover:#f8fafc;
-
+      --line:#eef2f7; --grid:#eef2f7; --hover:#f8fafc;
       --text:#0f172a; --muted:#6b7280;
-
-      /* เงาเบาลง */
       --shadow:0 6px 16px rgba(2,8,23,.05);
       --radius:16px;
+      --danger: #ef4444; --warning: #f59e0b;
     }
 
     *{box-sizing:border-box}
     body{
-      font-family:'Prompt','Segoe UI',sans-serif;
-      margin:0;
-      background:var(--bg);
-      color:var(--text);
-      padding:10px 10px 120px;
-      font-size:12px;
-      font-weight:400;
-      -webkit-text-size-adjust:100%;
-      text-size-adjust:100%;
+      font-family:'Prompt',sans-serif; margin:0; background:var(--bg); color:var(--text);
+      padding:10px 10px 120px; font-size:12px; -webkit-text-size-adjust:100%;
     }
-    strong,b{font-weight:500}
+    
+    /* --- Layout --- */
+    .container{ width:100%; max-width:980px; margin:10px auto; background:#fff; border-radius:var(--radius); box-shadow:var(--shadow); padding:14px; }
+    .headline{ font-size:18px; font-weight:600; color:#0b7660; margin:0 0 6px; }
+    .sub-muted{ color:var(--muted); font-size:12px; line-height:1.4; }
 
-    /* ให้ “เต็มจอมือถือ” จริง */
-    .container{
-      width:100%;
-      max-width:980px;       /* เดสก์ท็อปยังไม่แผ่เกินไป */
-      margin:10px auto;
-      background:#fff;
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:14px;
-      overflow: visible;
-    }
+    /* --- Tabs --- */
+    .chips{ display:flex; gap:8px; margin-top:10px; }
+    .chip{ padding:8px 12px; border:1px solid #cfeeea; border-radius:20px; background:#fff; color:#0b7660; cursor:pointer; user-select:none; transition:0.2s; }
+    .chip.active{ background:#0b7660; color:#fff; border-color:#0b7660; }
+    .panel{ display:none; animation: fadeIn 0.3s; }
+    .panel.active{ display:block; }
+    @keyframes fadeIn { from{opacity:0; transform:translateY(5px);} to{opacity:1; transform:translateY(0);} }
 
-    .headline{font-size:18px;font-weight:500;color:#0b7660;margin:0 0 6px}
-    .sub-muted{color:var(--muted);font-size:12px;margin-top:-2px;line-height:1.35}
-
-    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-    .chip{
-      padding:8px 12px;border:1px solid #cfeeea;border-radius:999px;
-      background:#fff;color:#0b7660;font-size:12px;cursor:pointer;
-      font-weight:400;user-select:none;
-    }
-    .chip.active{background:#0b7660;color:#fff;border-color:#0b7660}
-
-    .panel{display:none}
-    .panel.active{display:block}
-
-    .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px}
-    .section{margin:12px 0 16px}
-
+    /* --- Buttons & Inputs --- */
     .btn{
       display:inline-flex; align-items:center; justify-content:center; gap:6px;
-      padding:10px 12px;border-radius:10px;border:1px solid #cfeeea;background:#fff;color:#0b7660;
-      cursor:pointer;font-weight:500;font-size:12px;
-      -webkit-tap-highlight-color:transparent;
+      padding:10px 14px; border-radius:10px; border:none; cursor:pointer; font-weight:500; font-size:12px; transition:0.2s;
     }
-    .btn-primary{border-color:transparent;background:var(--teal-600);color:#fff}
-    .btn-ghost{background:#f5f7fb;border-color:var(--line);color:#0f172a}
+    .btn-primary{ background:var(--teal-600); color:#fff; }
+    .btn-primary:active{ opacity:0.9; transform:scale(0.98); }
+    .btn-ghost{ background:#f1f5f9; color:#334155; }
+    .btn-danger{ background:#fee2e2; color:#b91c1c; }
+    
+    .ipt{ width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:10px; font-family:inherit; font-size:13px; outline:none; }
+    .ipt:focus{ border-color:var(--teal-600); ring:2px var(--teal-600); }
 
-    .ipt{
-      width:100%;
-      padding:10px 12px;
-      border:1px solid #dde3ea;
-      border-radius:10px;
-      background:#fff;
-      font-size:13px;
-      font-family:inherit;
-      font-weight:400;
-      -webkit-appearance:none;appearance:none;
-    }
-
-    /* =========================
-       DAILY: คลีน เส้นบาง
-       ========================= */
-    .paperWrap{
-      border:1px solid var(--grid);
-      border-radius:14px;
-      overflow:visible;
-      background:#fff;
-    }
-    .paperHeader{
-      display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;
-      padding:12px 12px 10px;
-      border-bottom:1px solid var(--grid);
-      background:linear-gradient(180deg, #ffffff 0%, #fbfffe 100%);
-    }
-    .paperHeader .left{
-      display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;
-      font-weight:500;color:#0f172a;
-    }
-    .paperTitle{
-      font-weight:500;font-size:13px;color:#0b3d35;margin-right:4px;
-    }
-    .lineField{
-      display:inline-flex;align-items:flex-end;gap:6px;white-space:nowrap;
-      font-size:12px;color:#0f172a;font-weight:400;
-    }
-    .line{
-      display:inline-block;
-      min-width:86px;
-      border-bottom:1px dotted #aab6c5;
-      padding:0 6px 2px;
-      font-weight:500;
-      text-align:center;
-      color:#0f172a;
-    }
-    .line.small{min-width:60px}
-    .line.medium{min-width:110px}
-
-    .paperControls{
-      display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;
-      margin-top:10px;
-    }
-    .paperControls .group{
-      display:flex;gap:8px;flex-wrap:wrap;align-items:center;
-    }
-
-    .tableScroll{
-      overflow:auto;
-      -webkit-overflow-scrolling:touch;
-      overscroll-behavior:contain;
-    }
-    table.clean{
-      width:100%;
-      min-width:820px; /* Default Desktop */
-      border-collapse:separate;
-      border-spacing:0;
-      background:#fff;
-    }
-    table.clean thead th{
-      position:sticky; top:0;
-      background:#f8fafc;
-      z-index:1;
-      text-align:center;
-      font-weight:500;
-      font-size:12px;
-      padding:10px 8px;
-      border-bottom:1px solid var(--grid);
-    }
-    table.clean th, table.clean td{
-      border-right:1px solid var(--grid);
-    }
-    table.clean thead th:last-child,
-    table.clean tbody td:last-child{border-right:none}
-
-    table.clean tbody td{
-      border-bottom:1px solid var(--grid);
-      padding:8px;
-      vertical-align:top;
-      background:#fff;
-    }
-    table.clean tbody tr:nth-child(even) td{
-      background:#fcfcfd;
-    }
-    .timeCell{
-      width:90px;
-      text-align:center;
-      font-weight:500;
-      color:#0f172a;
-      background:#fbfffe !important;
-    }
-
-    /* ช่องว่าง: ทั้งช่องคลิกได้ */
-    .slotEmpty{
-      width:100%;
-      min-height:34px;
-      border:1px solid transparent;
-      border-radius:12px;
-      padding:8px;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      color:#94a3b8;
-      font-weight:400;
-      font-size:11px;
-      user-select:none;
-    }
-    .slotEmpty:hover{
-      background:var(--hover);
-      border-color:#e6edf5;
-      color:#64748b;
-    }
-    .slotEmpty.noText{color:transparent}
-    .slotEmpty.noText::after{
-      content:'';
-      display:block;
-      width:100%;
-      height:18px;
-    }
-
-    /* การ์ดนัด */
+    /* --- Daily Table --- */
+    .paperWrap{ border:1px solid var(--grid); border-radius:14px; overflow:hidden; background:#fff; margin-top:10px; }
+    .paperHeader{ padding:12px; background:#f8fafc; border-bottom:1px solid var(--grid); display:flex; justify-content:space-between; align-items:center; }
+    .paperTitle{ font-weight:600; color:#0f172a; font-size:14px; }
+    
+    .tableScroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    table.clean{ width:100%; min-width:800px; border-collapse:collapse; }
+    table.clean th{ position:sticky; top:0; background:#f1f5f9; color:#475569; font-weight:500; padding:10px; border-bottom:1px solid #e2e8f0; text-align:left; }
+    table.clean td{ border-bottom:1px solid #f1f5f9; padding:8px; vertical-align:top; height:50px; }
+    table.clean td.timeCell{ width:70px; background:#f8fafc; text-align:center; font-weight:600; color:#64748b; border-right:1px solid #e2e8f0; }
+    
+    /* --- Appointment Card --- */
     .apptCard{
-      border-radius:14px;
-      padding:8px 10px;
-      border:1px solid rgba(15,23,42,.10);
-      box-shadow:0 10px 20px rgba(2,8,23,.06);
-      display:grid; gap:2px;
-      cursor:pointer;
-      overflow: visible;
+      background:#fff; border:1px solid #e2e8f0; border-left:4px solid var(--teal-600);
+      border-radius:8px; padding:8px; box-shadow:0 2px 4px rgba(0,0,0,0.03);
+      cursor:pointer; transition:0.2s; position:relative; overflow:hidden;
     }
-    .apptCard .name{font-weight:500;font-size:13px; white-space: nowrap; overflow: visible; text-overflow: ellipsis;}
-    .apptCard .meta{font-size:11px;color:#334155;opacity:.85;font-weight:400}
-    .apptCard .foot{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
-    .tag{
-      display:inline-flex;align-items:center;gap:6px;
-      padding:4px 8px;border-radius:999px;font-size:10px;font-weight:500;
-      border:1px solid rgba(0,0,0,.06);
-      background:rgba(255,255,255,.7);
-    }
-    .dot{width:8px;height:8px;border-radius:999px}
-    .old{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
-    .old .dot{background:#22c55e}
-    .guest{background:#fffbeb;border-color:#fde68a;color:#92400e}
-    .guest .dot{background:#f59e0b}
+    .apptCard:hover{ transform:translateY(-1px); box-shadow:0 4px 6px rgba(0,0,0,0.06); }
+    .apptCard.guest{ border-left-color:var(--warning); background:#fffbeb; }
+    .apptCard .name{ font-weight:600; font-size:13px; color:#1e293b; margin-bottom:2px; }
+    .apptCard .sub{ font-size:11px; color:#64748b; display:flex; justify-content:space-between; }
+    
+    .slotEmpty{ height:100%; border-radius:6px; border:1px dashed transparent; display:flex; align-items:center; justify-content:center; color:transparent; cursor:pointer; }
+    .slotEmpty:hover{ border-color:#cbd5e1; background:#f8fafc; color:#94a3b8; font-size:11px; }
+    .slotEmpty::after{ content:'+ ลงนัด'; }
 
-    /* =========================
-       MONTHLY (iOS-style) ลดตัวหนา + เส้นบาง
-       ========================= */
-    .iosMonthHeader{
-      display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap;
-      padding:6px 2px 10px;
-    }
-    .iosMonthHeader .monthTitle{font-size:28px;font-weight:500;letter-spacing:.2px}
-    .iosMonthHeader .todayBtn{font-weight:500;color:#ef4444;cursor:pointer;user-select:none}
+    /* --- Monthly Calendar (iOS Style) --- */
+    .iosMonthHeader{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; }
+    .iosWeekHead{ display:grid; grid-template-columns:repeat(7,1fr); text-align:center; font-weight:600; color:#64748b; padding:10px 0; border-bottom:1px solid #e2e8f0; border-top:1px solid #e2e8f0; background:#fcfcfd; }
+    .iosGrid{ display:grid; grid-template-columns:repeat(7,1fr); border-left:1px solid #e2e8f0; border-top:1px solid #e2e8f0; }
+    .iosDay{ min-height:100px; border-right:1px solid #e2e8f0; border-bottom:1px solid #e2e8f0; padding:6px; position:relative; background:#fff; cursor:pointer; }
+    .iosDay .num{ font-weight:600; color:#334155; margin-bottom:4px; font-size:13px; }
+    .iosDay.today{ background:#f0fdfa; }
+    .iosDay.today .num{ color:var(--teal-600); font-size:15px; }
+    
+    .eventPill{ font-size:10px; padding:3px 6px; border-radius:4px; margin-bottom:2px; background:#e2e8f0; color:#334155; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .eventPill.shift{ background:#ccfbf1; color:#0f766e; }
 
-    .iosWeekHead{
-      display:grid;grid-template-columns:repeat(7,1fr);
-      border-top:1px solid var(--grid);border-bottom:1px solid var(--grid);
-      padding:8px 0;margin-top:6px;
-      color:#94a3b8;font-weight:500;font-size:12px;text-align:center;
-    }
-    .iosGrid{
-      display:grid;
-      grid-template-columns:repeat(7,1fr);
-      border-bottom:1px solid var(--grid);
-    }
-    .iosDay{
-      min-height:110px;
-      border-right:1px solid var(--grid);
-      border-top:1px solid var(--grid);
-      padding:8px 8px 10px;
-      background:#fff;
-      overflow:visible;
-    }
-    .iosDay:nth-child(7n){border-right:none}
-    .iosDay .num{font-weight:500;font-size:16px;color:#0f172a}
-    .iosDay.muted .num{color:#cbd5e1}
-    .iosDay .events{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+    /* --- Modals --- */
+    .modal{ position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; display:none; align-items:center; justify-content:center; padding:20px; opacity:0; transition: opacity 0.2s; }
+    .modal.show{ display:flex; opacity:1; }
+    .modal-box{ width:100%; max-width:480px; background:#fff; border-radius:16px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); overflow:hidden; transform:scale(0.95); transition:transform 0.2s; }
+    .modal.show .modal-box{ transform:scale(1); }
+    .modal-hdr{ padding:15px 20px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; font-weight:600; font-size:16px; background:#f8fafc; color:#0f172a; }
+    .modal-body{ padding:20px; max-height:70vh; overflow-y:auto; }
+    .modal-ftr{ padding:15px 20px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:10px; background:#f8fafc; }
+    
+    /* --- Search Dropdown --- */
+    .search-wrapper{ position:relative; }
+    .search-dropdown{ position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #cbd5e1; border-radius:0 0 10px 10px; max-height:200px; overflow-y:auto; z-index:50; display:none; box-shadow:0 10px 15px rgba(0,0,0,0.1); }
+    .search-item{ padding:10px; border-bottom:1px solid #f1f5f9; cursor:pointer; }
+    .search-item:hover{ background:#f8fafc; }
+    .search-item strong{ display:block; color:#0f172a; font-size:13px; }
+    .search-item small{ color:#64748b; font-size:11px; }
 
-    .eventPill{
-      display:flex;align-items:center;gap:6px;
-      padding:6px 8px;border-radius:8px;
-      font-weight:500;font-size:12px;
-      white-space:nowrap;overflow:visible;text-overflow:ellipsis;
-    }
-    .ev-green{background:#d9f2cc;color:#1f5e2b}
-    .ev-purple{background:#e9d5ff;color:#6b21a8}
-    .ev-blue{background:#cfe8ff;color:#0b4b7a}
-    .ev-brown{background:#ead8c5;color:#5a3a1a}
-    .eventPill .icon{
-      width:14px;height:14px;border-radius:4px;
-      display:inline-flex;align-items:center;justify-content:center;
-      font-size:10px;background:rgba(0,0,0,.12);flex:0 0 auto;
-    }
+    /* --- Toast Notification --- */
+    #toast-container{ position:fixed; top:20px; right:20px; z-index:10000; display:flex; flex-direction:column; gap:10px; }
+    .toast{ min-width:250px; padding:12px 16px; background:#fff; border-left:4px solid #333; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); border-radius:8px; font-size:13px; display:flex; align-items:center; justify-content:space-between; animation: slideIn 0.3s; }
+    .toast.success{ border-left-color: #10b981; }
+    .toast.error{ border-left-color: #ef4444; }
+    @keyframes slideIn { from{transform:translateX(100%); opacity:0;} to{transform:translateX(0); opacity:1;} }
 
-    /* =========================
-       MODAL
-       ========================= */
-    .modal{
-      display:none;
-      position:fixed; inset:0;
-      background:rgba(0,0,0,.45);
-      z-index:9999;
-      align-items:flex-end;
-      justify-content:center;
-      padding:10px;
-    }
-    .modal.show{display:flex}
-    .modal .box{
-      width:min(520px, 100%);
-      background:#fff;
-      border-radius:16px;
-      overflow:visible;
-      box-shadow:0 12px 26px rgba(0,0,0,.16);
-      border:1px solid rgba(255,255,255,.25);
-    }
-    .modal .hdr{
-      background:#e0f2f1;
-      color:#004d40;
-      display:flex;align-items:center;justify-content:space-between;
-      padding:12px 14px;
-      font-weight:500;
-      font-size:13px;
-    }
-    .modal .close{background:transparent;border:none;font-size:18px;cursor:pointer;color:#004d40}
-    .modal .body{padding:14px; display:grid; gap:10px}
-    .modal .ftr{
-      padding:12px 14px;
-      border-top:1px solid var(--line);
-      display:flex; justify-content:flex-end; gap:8px;
-    }
-
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-
-    /* =========================
-       IPAD / TABLET (Portrait & Landscape Compact)
-       แก้ให้ไม่เลื่อนจอ (Fit Screen) + ทำให้เล็ก
-       ========================= */
-    @media (min-width: 641px) and (max-width: 1024px) {
-      body {
-        padding: 5px;
-      }
-      .container {
-        max-width: 100%;
-        margin: 0;
-        padding: 10px;
-        border-radius: 0;
-        box-shadow: none;
-      }
-      .headline { font-size: 16px; }
-      
-      /* บังคับตารางให้หดอยู่ในหน้าจอ */
-      table.clean {
-        min-width: 100%; 
-        width: 100%;
-        table-layout: fixed; /* หัวใจสำคัญ: บังคับคอลัมน์หารเท่ากันตาม % */
-      }
-      table.clean thead th {
-        font-size: 11px;
-        padding: 8px 4px;
-        white-space: normal; /* ยอมให้หัวตารางตัดบรรทัดได้ถ้าที่แคบ */
-      }
-      table.clean tbody td {
-        padding: 4px; /* ลด padding */
-      }
-      
-      /* ลดขนาดช่องเวลา */
-      .timeCell { 
-        width: 55px !important; 
-        font-size: 11px;
-      }
-
-      /* ย่อขนาดการ์ดนัด */
-      .apptCard {
-        padding: 6px;
-        gap: 1px;
-      }
-      .apptCard .name { font-size: 11px; }
-      .apptCard .meta { font-size: 9px; display: none; } /* ซ่อน meta ถ้าที่แคบมาก */
-      .apptCard .foot { margin-top: 2px; }
-      .tag { padding: 2px 6px; font-size: 9px; }
-      .tag .dot { width: 6px; height: 6px; }
-
-      .slotEmpty {
-        font-size: 10px;
-        min-height: 28px;
-      }
-
-      /* ปรับ Input ให้เล็กลง */
-      .ipt, .btn {
-        padding: 8px 10px;
-        font-size: 12px;
-      }
-    }
-
-    /* =========================
-       MOBILE: ทำให้ "ไม่ใหญ่ไป" + เต็มจอ + ตารางเลื่อนง่าย
-       ========================= */
+    /* --- Responsive --- */
     @media (max-width:640px){
-      body{
-        padding:8px 8px 110px;
-        font-size:11.5px;
-      }
-      .container{
-        max-width:100%;
-        margin:8px auto;
-        padding:10px;
-        border-radius:14px;
-      }
-
-      .headline{font-size:16px}
-      .sub-muted{font-size:11px}
-
-      .btn{padding:9px 10px;font-size:11.5px;border-radius:10px}
-      .ipt{padding:9px 10px;font-size:12.5px}
-
-      /* มือถือยอมให้เลื่อนซ้ายขวาได้ เพราะจอเล็กเกิน */
-      table.clean{min-width:680px}
-      table.clean thead th{padding:9px 6px;font-size:11.5px}
-      table.clean tbody td{padding:7px}
-
-      .timeCell{width:72px}
-
-      .apptCard{padding:7px 9px}
-      .apptCard .name{font-size:12.5px}
-      .apptCard .meta{font-size:10.5px}
-      .tag{font-size:9.5px}
-
-      .slotEmpty{min-height:30px;font-size:10.5px}
-
-      .iosMonthHeader .monthTitle{font-size:24px}
-      .iosDay{min-height:96px;padding:7px 7px 9px}
-      .iosDay .num{font-size:15px}
-      .eventPill{font-size:11.5px;padding:6px 7px}
-
-      .line{min-width:74px}
-      .line.medium{min-width:92px}
-      .grid2{grid-template-columns:1fr}
+      .modal{ align-items:flex-end; padding:0; }
+      .modal-box{ max-width:100%; border-radius:16px 16px 0 0; }
+      .paperTitle{ display:none; }
+      .timeCell{ width:50px; font-size:11px; }
+      .iosWeekHead{ font-size:11px; }
+      .iosDay{ min-height:80px; padding:4px; }
+      .iosDay .num{ font-size:12px; }
     }
 
-    /* เพิ่มต่อท้ายใน <style> */
+    /* --- สิ่งที่ต้องเพิ่มใน CSS --- */
+    .shift-row { display:flex; justify-content:space-between; align-items:center; padding:10px; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:8px; }
+    .shift-row.leave { background:#fef2f2; border-color:#fecaca; } /* สีแดงสำหรับวันลา */
+    .shift-row.work { background:#f0fdfa; border-color:#ccfbf1; }  /* สีเขียวสำหรับวันทำงาน */
+    .btn-sm { padding:4px 8px; font-size:11px; }
 
-.iosDay.today {
-  background-color: #f0fdfa; /* สีพื้นหลังเขียวอ่อนๆ */
-  box-shadow: inset 0 0 0 2px var(--teal-600); /* กรอบด้านในสีเขียวเข้ม */
-  position: relative;
-}
-
-/* ทำให้ตัวเลขวันปัจจุบันเด่นขึ้นด้วย */
-.iosDay.today .num {
-  color: var(--teal-600);
-  font-weight: 600;
-}
   </style>
 </head>
-
 <body>
+
+  <div id="toast-container"></div>
 
   <div class="container">
     <div class="headline">ระบบนัดหมาย & ตารางเวร</div>
-    <div class="sub-muted">
-      จัดการตารางนัดหมายและเวรแพทย์ | รองรับการเชื่อมต่อฐานข้อมูล
-    </div>
+    <div class="sub-muted">จัดการตารางนัดหมายและเวรแพทย์ (เชื่อมต่อฐานข้อมูล)</div>
 
     <div class="chips">
       <span class="chip active" data-tab="daily">ตารางนัดรายวัน</span>
@@ -460,519 +146,725 @@
     </div>
 
     <div class="panel active" id="panel-daily">
-      <div class="section">
-
-        <div class="paperControls">
-          <div class="group">
-            <div style="font-weight:500;color:#0b3d35">Daily Schedule</div>
-            <button class="btn btn-ghost" type="button" onclick="UI.dailyToday()">วันนี้</button>
-          </div>
-          <div class="group" style="min-width:240px;flex:1;justify-content:flex-end">
-            <input class="ipt" style="max-width:220px" type="date" id="dailyDate">
-            <button class="btn btn-primary" type="button" onclick="UI.openApptModal()">เพิ่มนัด</button>
-          </div>
+      <div style="margin-top:15px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; align-items:center;">
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-ghost" onclick="Daily.goToday()">วันนี้</button>
+          <input type="date" class="ipt" style="width:auto;" id="dailyDatepicker">
         </div>
+        <button class="btn btn-primary" onclick="Modal.openAppt()">+ เพิ่มนัด</button>
+      </div>
 
-        <div class="paperWrap" style="margin-top:10px;">
-          <div class="paperHeader">
-            <div class="left">
-              <span class="paperTitle">ตารางนัดลูกค้า</span>
-              <span class="lineField">วัน <span class="line small" id="hdrDay">-</span></span>
-              <span class="lineField">ที่ <span class="line small" id="hdrDateNum">-</span></span>
-              <span class="lineField">เดือน <span class="line medium" id="hdrMonth">-</span></span>
-            </div>
-            <div class="right">
-              <span class="lineField">หมอเข้าเวลา <span class="line small" id="hdrDoctorTime">11:00</span></span>
-            </div>
-          </div>
-
-          <div class="tableScroll">
-            <table class="clean" id="dailyTable">
-              <thead>
-                <tr>
-                  <th class="timeCell">เวลา</th>
-                  <th>เคสแพทย์</th>
-                  <th>เคสแพทย์</th>
-                  <th>เคสพยาบาล<br><span style="font-weight:400;font-size:11px;color:#64748b">Treatment</span></th>
-                  <th>เคสพยาบาล<br><span style="font-weight:400;font-size:11px;color:#64748b">IV, PRP</span></th>
-                </tr>
-              </thead>
-              <tbody id="dailyBody"></tbody>
-            </table>
-          </div>
+      <div class="paperWrap">
+        <div class="paperHeader">
+          <div id="dailyHeaderTitle" style="font-weight:600; color:#0f766e;">กำลังโหลด...</div>
+          <div style="font-size:12px; color:#64748b;">*คลิกช่องว่างเพื่อลงนัด</div>
         </div>
-
+        <div class="tableScroll">
+          <table class="clean">
+            <thead>
+              <tr>
+                <th class="timeCell">เวลา</th>
+                <th>เคสแพทย์ (1)</th>
+                <th>เคสแพทย์ (2)</th>
+                <th>Treatment (3)</th>
+                <th>IV/Drip (4)</th>
+              </tr>
+            </thead>
+            <tbody id="dailyTableBody">
+              </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
     <div class="panel" id="panel-monthly">
-      <div class="section card">
-        <div class="iosMonthHeader">
-          <div class="monthTitle" id="monthTitle">-</div>
-          <div class="todayBtn" onclick="UI.monthToday()">วันนี้</div>
-        </div>
-
-        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;align-items:center">
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <input class="ipt" style="max-width:200px" type="month" id="monthPicker">
-            <button class="btn btn-ghost" type="button" onclick="UI.renderMonth()">โหลดเดือน</button>
+      <div style="margin-top:15px; border:1px solid #e2e8f0; border-radius:12px; padding:0; background:#fff; overflow:hidden;">
+        
+        <div class="iosMonthHeader" style="padding:15px;">
+          <div id="monthTitle" style="font-size:18px; font-weight:600; color:#0f172a;">-</div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-ghost" onclick="Roster.goToday()">เดือนนี้</button>
+            <input type="month" class="ipt" id="monthPicker" style="width:auto; padding:6px;">
           </div>
-          <button class="btn btn-primary" type="button" onclick="UI.copyWeek()">Copy เวร</button>
         </div>
 
         <div class="iosWeekHead">
           <div>อา.</div><div>จ.</div><div>อ.</div><div>พ.</div><div>พฤ.</div><div>ศ.</div><div>ส.</div>
         </div>
 
-        <div class="iosGrid" id="iosGrid"></div>
+        <div class="iosGrid" id="monthGrid">
+          </div>
+
       </div>
     </div>
 
     <div class="panel" id="panel-settings">
-      <div class="section card">
-        <div style="font-weight:500;color:#0b3d35;margin-bottom:8px">การตั้งค่า</div>
-        <div class="sub-muted">ส่วนจัดการข้อมูลพื้นฐาน</div>
+      <div style="padding:10px;">
+        <div style="font-weight:600; color:#0f766e; margin-bottom:15px; font-size:16px;">จัดการพนักงาน</div>
+        
+        <div style="background:#fff; padding:15px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:20px;">
+           <div style="display:grid; grid-template-columns: 2fr 1.5fr 0.5fr auto; gap:10px; align-items:end;">
+              <div>
+                <label style="display:block; margin-bottom:4px; font-weight:500;">ชื่อพนักงาน</label>
+                <input class="ipt" id="newStaffName" placeholder="ชื่อ-สกุล">
+              </div>
+              <div>
+                <label style="display:block; margin-bottom:4px; font-weight:500;">ตำแหน่ง</label>
+                <select class="ipt" id="newStaffRole">
+                  <option value="doctor">แพทย์ (Doctor)</option>
+                  <option value="nurse">พยาบาล (Nurse)</option>
+                  <option value="staff">จนท.ทั่วไป</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block; margin-bottom:4px; font-weight:500;">สี</label>
+                <input type="color" class="ipt" id="newStaffColor" style="padding:2px; height:42px;" value="#0ea5e9">
+              </div>
+              <button class="btn btn-primary" onclick="Settings.addStaff()">+ เพิ่ม</button>
+           </div>
+        </div>
+
+        <div style="font-weight:500; margin-bottom:10px; color:#64748b;">รายชื่อพนักงานทั้งหมด</div>
+        <div id="staffListContainer" style="background:#fff; border-radius:12px; border:1px solid #e2e8f0; overflow:hidden;">
+           </div>
       </div>
     </div>
+  </div>
 
-  </div><div class="modal" id="apptModal" onclick="UI.closeOnBackdrop(event,'apptModal')">
-    <div class="box" onclick="event.stopPropagation()">
-      <div class="hdr">
-        <div>เพิ่มนัดหมาย</div>
-        <button class="close" onclick="UI.closeModal('apptModal')">✕</button>
+  <div class="modal" id="apptModal" onclick="Modal.closeBackdrop(event, 'apptModal')">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-hdr">
+        <span id="apptModalTitle">ลงนัดหมายใหม่</span>
+        <button onclick="Modal.close('apptModal')" style="background:none; border:none; font-size:18px; cursor:pointer;">&times;</button>
       </div>
+      <div class="modal-body">
+        <input type="hidden" id="apptId">
+        <input type="hidden" id="apptCustId">
 
-      <div class="body">
-        
-        <div>
-          <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ประเภทลูกค้า</label>
-          <select class="ipt" id="apptType">
-            <option value="existing">ลูกค้าเก่า (Existing)</option>
-            <option value="guest">ลูกค้าใหม่ (Guest / Walk-in)</option>
-          </select>
+        <label style="font-weight:500; display:block; margin-bottom:5px;">ประเภทลูกค้า</label>
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+          <label><input type="radio" name="custType" value="existing" checked onchange="Modal.toggleCustType()"> ลูกค้าเก่า</label>
+          <label><input type="radio" name="custType" value="guest" onchange="Modal.toggleCustType()"> ลูกค้าใหม่ (Walk-in)</label>
         </div>
 
-        <div id="existingBox">
-          <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ค้นหาลูกค้า (ชื่อ/เบอร์)</label>
-          <input class="ipt" id="custSearch" placeholder="พิมพ์ชื่อเพื่อค้นหา...">
+        <div id="boxExisting">
+          <label style="font-weight:500; display:block; margin-bottom:5px;">ค้นหาลูกค้า (ชื่อ/เบอร์)</label>
+          <div class="search-wrapper">
+            <input type="text" class="ipt" id="searchCustInput" placeholder="พิมพ์เพื่อค้นหา..." onkeyup="Search.debounce(this.value)">
+            <div class="search-dropdown" id="searchDropdown"></div>
+          </div>
         </div>
 
-        <div id="guestBox" style="display:none">
-          <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ชื่อลูกค้าใหม่</label>
-          <input class="ipt" id="guestName" placeholder="กรอกชื่อ">
-          <label style="font-weight:500;color:#334155;font-size:12px;margin:10px 0 4px;display:block">เบอร์โทร (ไม่บังคับ)</label>
-          <input class="ipt" id="guestPhone" placeholder="กรอกเบอร์">
+        <div id="boxGuest" style="display:none;">
+          <label style="font-weight:500; display:block; margin-bottom:5px;">ชื่อลูกค้า</label>
+          <input type="text" class="ipt" id="guestName" placeholder="ระบุชื่อ">
+          <label style="font-weight:500; display:block; margin-top:10px; margin-bottom:5px;">เบอร์โทร</label>
+          <input type="text" class="ipt" id="guestPhone" placeholder="ระบุเบอร์โทร">
         </div>
 
-        <div class="grid2">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:15px;">
           <div>
-            <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">วันที่นัด</label>
+            <label style="font-weight:500; display:block; margin-bottom:5px;">วันที่</label>
             <input type="date" class="ipt" id="apptDate">
           </div>
           <div>
-            <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">เวลาเริ่ม</label>
-            <input type="time" class="ipt" id="apptTime" value="11:00">
+            <label style="font-weight:500; display:block; margin-bottom:5px;">เวลา</label>
+            <input type="time" class="ipt" id="apptTime">
           </div>
         </div>
 
-        <div class="grid2">
-          <div>
-            <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">ลงช่อง</label>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:15px;">
+           <div>
+            <label style="font-weight:500; display:block; margin-bottom:5px;">ลงช่อง</label>
             <select class="ipt" id="apptCol">
-              <option value="1">เคสแพทย์ (1)</option>
-              <option value="2">เคสแพทย์ (2)</option>
-              <option value="3">เคสพยาบาล (Treatment)</option>
-              <option value="4">เคสพยาบาล (IV, PRP)</option>
+              <option value="1">แพทย์ 1</option>
+              <option value="2">แพทย์ 2</option>
+              <option value="3">Treatment</option>
+              <option value="4">IV/Drip</option>
             </select>
-          </div>
-          <div>
-            <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">หัตถการ/บริการ</label>
-            <input class="ipt" id="apptService" placeholder="เช่น Botox / IV / Consult">
-          </div>
+           </div>
+           <div>
+            <label style="font-weight:500; display:block; margin-bottom:5px;">หัตถการ</label>
+            <input type="text" class="ipt" id="apptProc" placeholder="เช่น Botox">
+           </div>
         </div>
 
-        <div>
-          <label style="font-weight:500;color:#334155;font-size:12px;margin:2px 0 4px;display:block">หมายเหตุ</label>
-          <textarea class="ipt" id="apptNote" rows="3" placeholder="เพิ่มโน้ต..."></textarea>
+        <div style="margin-top:15px;">
+           <label style="font-weight:500; display:block; margin-bottom:5px;">หมายเหตุ</label>
+           <textarea class="ipt" id="apptNote" rows="2"></textarea>
         </div>
       </div>
+      <div class="modal-ftr" id="apptModalFtr">
+        </div>
+    </div>
+  </div>
+<div class="modal" id="rosterModal" onclick="Modal.closeBackdrop(event, 'rosterModal')">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-hdr">
+        <span id="rosterDateTitle">จัดการเวร</span>
+        <button onclick="Modal.close('rosterModal')" style="background:none; border:none; font-size:18px; cursor:pointer;">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="rosterSelectedDate">
+        
+        <div style="font-weight:500; color:#64748b; margin-bottom:5px; font-size:11px;">รายการที่มีอยู่</div>
+        <div id="rosterList" style="margin-bottom:15px; min-height:30px;"></div>
 
-      <div class="ftr">
-        <button class="btn btn-ghost" type="button" onclick="UI.closeModal('apptModal')">ยกเลิก</button>
-        <button class="btn btn-primary" type="button" onclick="UI.saveAppt()">บันทึก</button>
+        <hr style="border:0; border-top:1px solid #e2e8f0; margin-bottom:15px;">
+
+        <div style="font-weight:600; color:#0f766e; margin-bottom:10px;">+ เพิ่มรายการใหม่</div>
+        
+        <label style="font-weight:500; display:block; margin-bottom:5px;">เลือกพนักงาน</label>
+        <select class="ipt" id="rosterStaffId">
+            <option value="">-- กำลังโหลด --</option>
+        </select>
+
+        <label style="font-weight:500; display:block; margin-top:10px; margin-bottom:5px;">ประเภท</label>
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+           <label><input type="radio" name="workType" value="work" checked onchange="Roster.toggleLeave()"> เข้างาน</label>
+           <label><input type="radio" name="workType" value="leave" onchange="Roster.toggleLeave()"> ลาหยุด/Off</label>
+        </div>
+
+        <div id="workTimeBox">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div>
+                    <label style="font-weight:500; display:block; margin-bottom:5px;">เริ่ม</label>
+                    <input type="time" class="ipt" id="rosterStart" value="11:00">
+                </div>
+                <div>
+                    <label style="font-weight:500; display:block; margin-bottom:5px;">เลิก</label>
+                    <input type="time" class="ipt" id="rosterEnd" value="20:00">
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top:10px;">
+            <label style="font-weight:500; display:block; margin-bottom:5px;">โน้ตเพิ่มเติม</label>
+            <input type="text" class="ipt" id="rosterNote" placeholder="เช่น เวรเช้า / ลากิจ">
+        </div>
+
+        <button class="btn btn-primary" style="width:100%; margin-top:15px;" onclick="Roster.save()">บันทึกรายการ</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal" id="confirmModal">
+    <div class="modal-box" style="max-width:350px;">
+      <div class="modal-body" style="text-align:center; padding-top:30px;">
+        <div style="font-size:16px; font-weight:600; margin-bottom:8px;">ยืนยันการทำรายการ</div>
+        <div style="color:#64748b; margin-bottom:20px;">ต้องการลบรายการนี้ใช่หรือไม่?</div>
+        <div style="display:flex; justify-content:center; gap:10px; margin-top:20px;">
+          <button class="btn btn-ghost" onclick="Modal.close('confirmModal')">ยกเลิก</button>
+          <button class="btn btn-danger" id="confirmYesBtn">ยืนยัน</button>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
-    // ---------------- Helpers ----------------
-    function pad2(n){ return String(n).padStart(2,'0'); }
-    function toHHMM(mins){
-      const h=Math.floor(mins/60), m=mins%60;
-      return `${pad2(h)}:${pad2(m)}`;
-    }
-    function escapeHtml(s){
-      return String(s ?? '')
-        .replaceAll('&','&amp;')
-        .replaceAll('<','&lt;')
-        .replaceAll('>','&gt;')
-        .replaceAll('"','&quot;')
-        .replaceAll("'","&#039;");
-    }
-    function uuid(){
-      try{
-        if (crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
-      }catch(_){}
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-      });
-    }
-
-    // =========================
-    // Appointments Store (Using LocalStorage for now, ready for API)
-    // =========================
-    const ApptStore = {
-      key: 'CLINIC_APPTS_REAL',
-
-      _load(){
-        try{
-          const raw = localStorage.getItem(this.key);
-          const arr = raw ? JSON.parse(raw) : [];
-          return Array.isArray(arr) ? arr : [];
-        }catch(_){
-          return [];
-        }
-      },
-
-      _save(arr){
-        localStorage.setItem(this.key, JSON.stringify(arr));
-      },
-
-      listByDate(date){
-        const arr = this._load();
-        return arr
-          .filter(a => a && a.date === date)
-          .sort((a,b) => (a.time||'').localeCompare(b.time||''));
-      },
-
-      upsert(appt){
-        const arr = this._load();
-        const i = arr.findIndex(x => x.id === appt.id);
-        if(i >= 0) arr[i] = appt;
-        else arr.push(appt);
-        this._save(arr);
-        // TODO: Call API to save appointment here
-      },
-
-      remove(id){
-        const arr = this._load().filter(x => x.id !== id);
-        this._save(arr);
-        // TODO: Call API to delete appointment here
+    // --- Utilities ---
+    const $ = id => document.getElementById(id);
+    const api = async (url, method='GET', body=null) => {
+      try {
+        const opts = { method, headers: {'Content-Type': 'application/json'} };
+        if(body) opts.body = JSON.stringify(body);
+        const res = await fetch(url, opts);
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      } catch(e) {
+        console.warn('API Fetch Error:', e);
+        // Fallback for demo if backend is offline
+        if(url.includes('get_appointments')) return []; 
+        if(url.includes('get_roster')) return [];
+        
+        Toast.show('Connection Error', 'error');
+        return null;
+      }
+    };
+    
+    // --- Toast Notification ---
+    const Toast = {
+      show(msg, type='success') {
+        const c = $('toast-container');
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.innerHTML = `<span>${msg}</span> <span style="cursor:pointer" onclick="this.parentElement.remove()">×</span>`;
+        c.appendChild(el);
+        setTimeout(() => { el.style.opacity='0'; setTimeout(()=>el.remove(), 300); }, 3000);
       }
     };
 
-    function apptClass(type){
-      return type === 'guest' ? 'guest' : 'old';
-    }
-    function apptTypeLabel(type){
-      return type === 'guest' ? 'ลูกค้าใหม่' : 'ลูกค้าเก่า';
-    }
-
-    // ---------------- Tabs + UI ----------------
-    const UI = {
-      _editingApptId: null,
-
-      goto(tab){
-        document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
-        document.querySelector(`.chip[data-tab="${tab}"]`)?.classList.add('active');
-
-        document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-        document.getElementById(`panel-${tab}`)?.classList.add('active');
+    // --- Search Logic ---
+    const Search = {
+      timer: null,
+      debounce(kw) {
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => this.exec(kw), 400);
       },
-      openModal(id){ document.getElementById(id)?.classList.add('show'); },
-      closeModal(id){
-        document.getElementById(id)?.classList.remove('show');
-        if(id === 'apptModal') UI._editingApptId = null;
-      },
-      closeOnBackdrop(e,id){ if(e.target && e.target.id===id) UI.closeModal(id); },
-
-      _syncModalFooterButtons(){
-        const ftr = document.querySelector('#apptModal .ftr');
-        if(!ftr) return;
-
-        const delBtn = UI._editingApptId
-          ? `<button class="btn" type="button" style="border-color:#fecaca;color:#b91c1c;background:#fff" onclick="UI.deleteEditingAppt()">ลบ</button>`
-          : ``;
-
-        const saveText = UI._editingApptId ? 'บันทึกการแก้ไข' : 'บันทึก';
-
-        ftr.innerHTML = `
-          <button class="btn btn-ghost" type="button" onclick="UI.closeModal('apptModal')">ยกเลิก</button>
-          ${delBtn}
-          <button class="btn btn-primary" type="button" onclick="UI.saveAppt()">${saveText}</button>
-        `;
-      },
-
-      deleteEditingAppt(){
-        if(!UI._editingApptId) return;
-        if(!confirm('ยืนยันการลบนัดหมายนี้')) return;
-        ApptStore.remove(UI._editingApptId);
-        UI._editingApptId = null;
-        UI.closeModal('apptModal');
-        renderDailyTable();
-      },
-
-      openApptModal(prefill={}){
-        UI._editingApptId = prefill.id || null;
-
-        const d = prefill.date || document.getElementById('dailyDate')?.value || new Date().toISOString().slice(0,10);
-        document.getElementById('apptDate').value = d;
-
-        document.getElementById('apptTime').value = prefill.time || document.getElementById('apptTime').value || '11:00';
-        document.getElementById('apptCol').value  = String(prefill.col || document.getElementById('apptCol').value || '1');
-
-        document.getElementById('apptType').value = prefill.type || 'existing';
-        document.getElementById('existingBox').style.display = (document.getElementById('apptType').value==='existing') ? '' : 'none';
-        document.getElementById('guestBox').style.display = (document.getElementById('apptType').value==='guest') ? '' : 'none';
-
-        document.getElementById('custSearch').value = (prefill.type === 'existing') ? (prefill.name || '') : '';
-        document.getElementById('guestName').value  = (prefill.type === 'guest') ? (prefill.name || '') : '';
-        document.getElementById('guestPhone').value = (prefill.type === 'guest') ? (prefill.phone || '') : '';
-
-        document.getElementById('apptService').value = prefill.service || '';
-        document.getElementById('apptNote').value    = prefill.note || '';
-
-        UI.openModal('apptModal');
-        UI._syncModalFooterButtons();
-      },
-
-      saveAppt(){
-        try{
-          const type = document.getElementById('apptType').value;
-
-          const date = (document.getElementById('apptDate').value || '').trim();
-          const time = (document.getElementById('apptTime').value || '').trim();
-          const col  = parseInt(document.getElementById('apptCol').value || '1', 10);
-
-          const service = (document.getElementById('apptService').value || '').trim();
-          const note    = (document.getElementById('apptNote').value || '').trim();
-
-          let name = '';
-          let phone = '';
-
-          if(type === 'guest'){
-            name  = (document.getElementById('guestName').value || '').trim();
-            phone = (document.getElementById('guestPhone').value || '').trim();
-          }else{
-            name = (document.getElementById('custSearch').value || '').trim();
-            phone = '';
-          }
-
-          if(!date) return alert('กรุณาเลือกวันที่นัด');
-          if(!time) return alert('กรุณาเลือกเวลา');
-          if(!name) return alert('กรุณากรอกชื่อ/ค้นหาลูกค้า');
-
-          const appt = {
-            id: UI._editingApptId || uuid(),
-            date, time, col,
-            type, name, phone,
-            service, note,
-            status: 'PENDING',
-            updatedAt: new Date().toISOString()
-          };
-
-          ApptStore.upsert(appt);
-
-          UI.closeModal('apptModal');
-          renderDailyTable();
-        }catch(e){
-          console.error(e);
-          alert('เกิดข้อผิดพลาดในการบันทึก');
+      async exec(kw) {
+        if(!kw || kw.length < 2) { $('searchDropdown').style.display='none'; return; }
+        const res = await api(`/api/search_customer?q=${kw}`);
+        const box = $('searchDropdown');
+        box.innerHTML = '';
+        if(res && res.length > 0) {
+          res.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'search-item';
+            div.innerHTML = `<strong>${c.name}</strong><small>${c.phone || '-'} | OPD: ${c.opd}</small>`;
+            div.onclick = () => {
+              $('searchCustInput').value = c.name;
+              $('apptCustId').value = c.id || ''; 
+              box.style.display = 'none';
+            };
+            box.appendChild(div);
+          });
+          box.style.display = 'block';
+        } else {
+          box.innerHTML = '<div class="search-item" style="color:#ef4444">ไม่พบข้อมูล</div>';
+          box.style.display = 'block';
         }
-      },
-
-      dailyToday(){
-        const d = new Date();
-        const ymd = d.toISOString().slice(0,10);
-        document.getElementById('dailyDate').value = ymd;
-        applyDailyHeaderFromDate(ymd);
-        renderDailyTable();
-      },
-      monthToday(){
-        const d = new Date();
-        document.getElementById('monthPicker').value = d.toISOString().slice(0,7);
-        UI.renderMonth();
-      },
-      copyWeek(){ 
-        // TODO: Implement API call to copy schedule pattern
-        console.log("Function copyWeek called: Logic to replicate schedule goes here.");
-      },
-
-      renderMonth(){ renderIOSCalendar(); }
+      }
     };
 
-    document.querySelectorAll('.chip[data-tab]').forEach(ch=>{
-      ch.addEventListener('click', ()=>UI.goto(ch.getAttribute('data-tab')));
-    });
+    // --- Modal Logic ---
+    const Modal = {
+      open(id) { $(id).classList.add('show'); },
+      close(id) { $(id).classList.remove('show'); },
+      closeBackdrop(e, id) { if(e.target.id === id) this.close(id); },
+      
+      toggleCustType() {
+        const type = document.querySelector('input[name="custType"]:checked').value;
+        $('boxExisting').style.display = type === 'existing' ? 'block' : 'none';
+        $('boxGuest').style.display = type === 'guest' ? 'block' : 'none';
+      },
 
-    // ---------------- Modal type switch ----------------
-    const apptType = document.getElementById('apptType');
-    apptType.addEventListener('change', ()=>{
-      const v = apptType.value;
-      document.getElementById('existingBox').style.display = (v==='existing') ? '' : 'none';
-      document.getElementById('guestBox').style.display = (v==='guest') ? '' : 'none';
-      UI._syncModalFooterButtons();
-    });
+      openAppt(data = null) {
+        // Reset Form
+        $('apptId').value = '';
+        $('apptCustId').value = '';
+        $('searchCustInput').value = '';
+        $('guestName').value = '';
+        $('guestPhone').value = '';
+        $('apptProc').value = '';
+        $('apptNote').value = '';
+        $('searchDropdown').style.display = 'none';
+        
+        // Default Date/Time
+        $('apptDate').value = $('dailyDatepicker').value;
+        $('apptTime').value = '11:00';
+        $('apptCol').value = '1';
 
-    // ---------------- Daily Table ----------------
-    function renderDailyTable(){
-      const tbody = document.getElementById('dailyBody');
-      tbody.innerHTML='';
+        // Pre-fill if editing or clicking slot
+        if(data) {
+            if(data.id) { // Editing existing
+                $('apptModalTitle').innerText = 'แก้ไขนัดหมาย';
+                $('apptId').value = data.id;
+                $('apptDate').value = data.appt_date;
+                // Cut seconds if present
+                $('apptTime').value = data.start_time.substring(0,5);
+                $('apptCol').value = data.column_id;
+                $('apptProc').value = data.procedure || '';
+                $('apptNote').value = data.note || '';
+                
+                if(data.customer_id || data.opd) { // Existing Cust
+                    document.querySelector('input[name="custType"][value="existing"]').checked = true;
+                    $('searchCustInput').value = data.customer_name || data.opd; // Mock display
+                    $('apptCustId').value = data.customer_id;
+                } else { // Guest
+                    document.querySelector('input[name="custType"][value="guest"]').checked = true;
+                    $('guestName').value = data.guest_name;
+                    $('guestPhone').value = data.guest_phone;
+                }
+            } else { // New from slot click
+                $('apptModalTitle').innerText = 'ลงนัดหมายใหม่';
+                if(data.time) $('apptTime').value = data.time;
+                if(data.col) $('apptCol').value = data.col;
+            }
+        } else {
+             $('apptModalTitle').innerText = 'ลงนัดหมายใหม่';
+        }
+        
+        this.toggleCustType();
+        this.renderButtons();
+        this.open('apptModal');
+      },
 
-      const dateSel = document.getElementById('dailyDate')?.value || new Date().toISOString().slice(0,10);
-      const appts = ApptStore.listByDate(dateSel);
+      renderButtons() {
+        const isEdit = !!$('apptId').value;
+        const btnSave = `<button class="btn btn-primary" onclick="Daily.save()">บันทึก</button>`;
+        const btnDel = isEdit ? `<button class="btn btn-danger" onclick="Daily.confirmDelete()">ลบ</button>` : '';
+        const btnCancel = `<button class="btn btn-ghost" onclick="Modal.close('apptModal')">ยกเลิก</button>`;
+        $('apptModalFtr').innerHTML = `${btnDel} ${btnCancel} ${btnSave}`;
+      }
+    };
 
-      const start = 11*60;
-      const end   = 19*60;
-      const step  = 30;
+    // --- Daily Schedule Logic ---
+    const Daily = {
+      init() {
+        const today = new Date().toISOString().split('T')[0];
+        $('dailyDatepicker').value = today;
+        $('dailyDatepicker').addEventListener('change', () => this.load());
+        this.load();
+      },
+      goToday() {
+        $('dailyDatepicker').value = new Date().toISOString().split('T')[0];
+        this.load();
+      },
+      async load() {
+        const date = $('dailyDatepicker').value;
+        $('dailyHeaderTitle').innerText = `ตารางนัดวันที่ ${this.formatDateTH(date)}`;
+        
+        const tbody = $('dailyTableBody');
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:20px;">กำลังโหลด...</td></tr>';
 
-      for(let t=start; t<=end; t+=step){
-        const tr=document.createElement('tr');
-
-        const tdTime=document.createElement('td');
-        tdTime.className='timeCell';
-        tdTime.textContent = toHHMM(t).replace(':','.');
-        tr.appendChild(tdTime);
-
-        for(let col=1; col<=4; col++){
-          const td=document.createElement('td');
-
-          const found = appts.find(a => (a.time === toHHMM(t)) && (Number(a.col) === Number(col)));
-
-          if(found){
-            td.innerHTML = `
-              <div class="apptCard ${apptClass(found.type)}">
-                <div class="name">${escapeHtml(found.name || '')}</div>
-                <div class="meta">${escapeHtml(found.service || '—')} • ${escapeHtml(found.status || 'PENDING')}</div>
-                <div class="foot">
-                  <span class="tag ${apptClass(found.type)}"><span class="dot"></span>${apptTypeLabel(found.type)}</span>
-                  <span style="font-size:11px;font-weight:400;opacity:.85">${escapeHtml(found.phone || '')}</span>
-                </div>
-              </div>
-            `;
-            td.querySelector('.apptCard')?.addEventListener('click', (e)=>{
-              e.stopPropagation();
-              UI.openApptModal(found);
-            });
-          }else{
-            const empty=document.createElement('div');
-            empty.className='slotEmpty';
-            empty.textContent='';
-            empty.onclick=()=>UI.openApptModal({
-              time: toHHMM(t),
-              col,
-              date: document.getElementById('dailyDate').value
-            });
-            td.appendChild(empty);
-          }
-
-          tr.appendChild(td);
+        const appts = await api(`/api/get_appointments?date=${date}`);
+        this.renderTable(appts || []);
+      },
+      renderTable(appts) {
+        const tbody = $('dailyTableBody');
+        tbody.innerHTML = '';
+        
+        // Time slots 11:00 - 19:30 (interval 30 mins)
+        const times = [];
+        for(let h=11; h<20; h++) {
+            times.push(`${h.toString().padStart(2,'0')}:00`);
+            if(h<20) times.push(`${h.toString().padStart(2,'0')}:30`);
         }
 
-        tbody.appendChild(tr);
-      }
-    }
+        times.forEach(t => {
+            const tr = document.createElement('tr');
+            
+            // Time Column
+            const tdTime = document.createElement('td');
+            tdTime.className = 'timeCell';
+            tdTime.innerText = t;
+            tr.appendChild(tdTime);
 
-    // ---------------- Daily header ----------------
-    const TH_DAYS = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
-    const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+            // Columns 1-4
+            for(let c=1; c<=4; c++) {
+                const td = document.createElement('td');
+                // Find appt matching time & col
+                const found = appts.find(a => a.start_time.startsWith(t) && a.column_id == c);
 
-    function applyDailyHeaderFromDate(ymd){
-      if(!ymd) return;
-      const d = new Date(ymd + 'T00:00:00');
-      if(isNaN(d)) return;
-
-      document.getElementById('hdrDay').textContent = TH_DAYS[d.getDay()];
-      document.getElementById('hdrDateNum').textContent = String(d.getDate());
-      document.getElementById('hdrMonth').textContent = TH_MONTHS[d.getMonth()];
-      // TODO: Fetch doctor time from settings/API
-      document.getElementById('hdrDoctorTime').textContent = '11:00';
-    }
-
-    // ---------------- Monthly calendar ----------------
-    function thYear(y){ return y + 543; }
-    function renderIOSCalendar(){
-      const grid = document.getElementById('iosGrid');
-      grid.innerHTML='';
-
-      const mp = document.getElementById('monthPicker');
-      // ถ้าไม่มีค่า ให้ใช้เดือนปัจจุบัน
-      const ym = mp.value || new Date().toISOString().slice(0,7);
-      const [Y,M] = ym.split('-').map(Number);
-
-      const first = new Date(Y, M-1, 1);
-      const last  = new Date(Y, M, 0);
-
-      // เตรียมตัวแปรสำหรับเทียบวันปัจจุบัน
-      const now = new Date(); 
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth() + 1; // getMonth() เริ่มที่ 0
-      const currentDay = now.getDate();
-
-      document.getElementById('monthTitle').textContent = `${TH_MONTHS[M-1]} ${thYear(Y)}`;
-
-      const firstDow = first.getDay();
-      for(let i=0;i<firstDow;i++){
-        const b=document.createElement('div');
-        b.className='iosDay muted';
-        b.innerHTML=`<div class="num"></div>`;
-        grid.appendChild(b);
-      }
-
-      // TODO: Fetch real shifts from API based on Y and M
-      // const shifts = await fetch(`/api/shifts?month=${M}&year=${Y}`);
-
-      for(let d=1; d<=last.getDate(); d++){
-        const box=document.createElement('div');
-        
-        // เช็คว่าเป็นวันนี้หรือไม่
-        const isToday = (Y === currentYear && M === currentMonth && d === currentDay);
-        
-        // ถ้าใช่ ให้เติม class 'today'
-        box.className = 'iosDay' + (isToday ? ' today' : '');
-        
-        box.onclick=()=> {
-          console.log(`Open shift modal for ${d}/${M}/${thYear(Y)}`);
+                if(found) {
+                    const isGuest = !found.customer_id && !found.opd;
+                    const nameDisplay = isGuest ? (found.guest_name || 'Guest') : (found.opd ? `คุณ ${found.guest_name || 'ลูกค้า'} (${found.opd})` : 'ลูกค้าเก่า'); 
+                    
+                    const div = document.createElement('div');
+                    div.className = `apptCard ${isGuest ? 'guest' : ''}`;
+                    div.innerHTML = `
+    <div class="name">${nameDisplay}</div>
+    <div style="font-size:10px; color:#64748b; margin-bottom:2px;">
+        ${found.guest_phone || ''}
+    </div>
+    
+    <div class="sub">
+        <span>${found.service || '-'}</span> 
+        <span>${found.status}</span>
+    </div>
+`;
+                    div.onclick = () => Modal.openAppt(found);
+                    td.appendChild(div);
+                } else {
+                    const div = document.createElement('div');
+                    div.className = 'slotEmpty';
+                    div.onclick = () => Modal.openAppt({ time: t, col: c });
+                    td.appendChild(div);
+                }
+                tr.appendChild(td);
+            }
+            tbody.appendChild(tr);
+        });
+      },
+      async save() {
+        const id = $('apptId').value;
+        const type = document.querySelector('input[name="custType"]:checked').value;
+        const payload = {
+            appt_date: $('apptDate').value,
+            start_time: $('apptTime').value,
+            column_id: $('apptCol').value,
+            service: $('apptProc').value,
+            note: $('apptNote').value,
+            status: 'pending' // Default
         };
 
-        const ev = ''; 
+        if(type === 'existing') {
+            const custId = $('apptCustId').value;
+            if(custId) payload.customer_id = custId; 
+            else payload.guest_name = $('searchCustInput').value; 
+        } else {
+            payload.guest_name = $('guestName').value;
+            payload.guest_phone = $('guestPhone').value;
+        }
 
-        box.innerHTML = `<div class="num">${d}</div><div class="events">${ev}</div>`;
-        grid.appendChild(box);
+        // Logic check: If editing, delete first (Simple approach for now)
+        if(id) {
+            await api('/api/delete_appointment', 'POST', {id: id});
+        }
+
+        const res = await api('/api/save_appointment', 'POST', payload);
+        if(res && res.success) {
+            Toast.show('บันทึกสำเร็จ');
+            Modal.close('apptModal');
+            this.load();
+        } else {
+            Toast.show('เกิดข้อผิดพลาด', 'error');
+        }
+      },
+      confirmDelete() {
+        const id = $('apptId').value;
+        if(!id) return;
+        $('confirmYesBtn').onclick = () => this.doDelete(id);
+        Modal.open('confirmModal');
+      },
+      async doDelete(id) {
+        const res = await api('/api/delete_appointment', 'POST', {id: id});
+        if(res && res.success) {
+            Toast.show('ลบรายการสำเร็จ');
+            Modal.close('confirmModal');
+            Modal.close('apptModal');
+            this.load();
+        } else {
+            Toast.show('ลบไม่สำเร็จ', 'error');
+        }
+      },
+      formatDateTH(dateStr) {
+        if(!dateStr) return '';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
       }
-    }
+    };
 
-    // ---------------- Init ----------------
-    (function init(){
-      const today = new Date();
-      const ymd = today.toISOString().slice(0,10);
+    // --- 4.1 ROSTER LOGIC (แบบใหม่ รองรับ Staff/Leave) ---
+    const Roster = {
+        staffs: [],
+        currentShifts: [],
+        
+        init() {
+            const d = new Date();
+            // ตั้งค่า input month เป็นเดือนปัจจุบัน
+            $('monthPicker').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+            $('monthPicker').addEventListener('change', ()=>this.load());
+            
+            // โหลดรายชื่อพนักงานเตรียมไว้สำหรับ Dropdown
+            this.loadStaffs();
+        },
+        goToday() { this.init(); this.load(); },
+        
+        async loadStaffs() {
+            this.staffs = await api('/api/staffs'); // เรียก API Staffs
+            const sel = $('rosterStaffId'); 
+            sel.innerHTML = '<option value="">-- เลือกพนักงาน --</option>';
+            if(this.staffs) {
+                this.staffs.forEach(s => {
+                    sel.innerHTML += `<option value="${s.id}">${s.name} (${s.role})</option>`;
+                });
+            }
+        },
+        
+        async load() {
+            const ym = $('monthPicker').value;
+            const [y, m] = ym.split('-');
+            $('monthTitle').innerText = new Date(y, m-1, 1).toLocaleDateString('th-TH', {month:'long', year:'numeric'});
+            $('monthGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;">โหลดตารางเวร...</div>';
+            
+            const shifts = await api(`/api/get_roster?month=${ym}`);
+            this.renderCalendar(y, m, shifts||[]);
+        },
+        
+        renderCalendar(y, m, shifts) {
+            const grid = $('monthGrid'); grid.innerHTML='';
+            const firstDay = new Date(y, m-1, 1).getDay();
+            const daysInMonth = new Date(y, m, 0).getDate();
+            
+            // ช่องว่างก่อนวันที่ 1
+            for(let i=0; i<firstDay; i++) grid.innerHTML+=`<div class="iosDay" style="background:#f8fafc;"></div>`;
+            
+            const today = new Date().toISOString().split('T')[0];
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const dayShifts = shifts.filter(s => s.date === dateStr);
+                
+                let html = `<div class="iosDay ${today===dateStr?'today':''}" onclick="Roster.openModal('${dateStr}')">
+                              <div class="num">${d}</div>`;
+                
+                dayShifts.forEach(s => {
+                    const isLeave = s.work_type === 'leave';
+                    // แยกสี: ลา=แดง, ทำงาน=เขียว (หรือสีประจำตัวถ้ามี)
+                    const style = isLeave ? 'background:#fee2e2; color:#b91c1c;' : 
+                                  (s.staff_color ? `background:${s.staff_color}20; color:${s.staff_color}; border-left:2px solid ${s.staff_color};` : 'background:#ccfbf1; color:#0f766e;');
+                    
+                    const txt = isLeave ? `ลาหยุด (${s.staff_name})` : `${s.staff_name}`;
+                    const tm = isLeave ? '' : `<span style="opacity:0.7; font-size:9px;">${s.start_time.slice(0,5)}</span>`;
+                    
+                    html += `<div class="eventPill" style="${style}">${txt} ${tm}</div>`;
+                });
+                
+                grid.innerHTML += html + `</div>`;
+            }
+            this.currentShifts = shifts; // เก็บไว้ใช้ตอนกดเปิด Modal
+        },
+        
+        openModal(date) {
+            $('rosterSelectedDate').value = date;
+            $('rosterDateTitle').innerText = `จัดการเวรวันที่ ${new Date(date).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}`;
+            
+            // แสดงรายการที่มีอยู่
+            const list = $('rosterList'); list.innerHTML = '';
+            const existing = this.currentShifts.filter(s => s.date === date);
+            
+            if(existing.length === 0) list.innerHTML = '<div style="color:#ccc;text-align:center;padding:10px;">- ยังไม่มีรายการ -</div>';
+            else existing.forEach(s => {
+                const isLeave = s.work_type === 'leave';
+                const div = document.createElement('div');
+                div.className = `shift-row ${isLeave?'leave':'work'}`;
+                
+                const timeInfo = isLeave ? '<b>ลาหยุด/Off</b>' : `${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)}`;
+                
+                div.innerHTML = `
+                    <div>
+                        <strong>${s.staff_name}</strong> <small>(${s.staff_role})</small><br>
+                        <span style="font-size:11px;">${timeInfo} ${s.note?`(${s.note})`:''}</span>
+                    </div>
+                    <button class="btn btn-sm btn-danger" onclick="Roster.deleteShift('${s.id}')">ลบ</button>
+                `;
+                list.appendChild(div);
+            });
+            
+            // รีเซ็ตฟอร์ม
+            $('rosterStaffId').value = '';
+            document.querySelector('input[name="workType"][value="work"]').checked = true; 
+            this.toggleLeave();
+            $('rosterStart').value='11:00'; $('rosterEnd').value='20:00'; $('rosterNote').value='';
+            
+            Modal.open('rosterModal');
+        },
+        
+        toggleLeave() {
+            const t = document.querySelector('input[name="workType"]:checked').value;
+            $('workTimeBox').style.display = t==='leave' ? 'none' : 'block';
+        },
+        
+        async save() {
+            const staffId = $('rosterStaffId').value;
+            if(!staffId) return Toast.show('กรุณาเลือกพนักงาน', 'error');
+            
+            const payload = {
+                staff_id: staffId,
+                date: $('rosterSelectedDate').value,
+                work_type: document.querySelector('input[name="workType"]:checked').value,
+                start_time: $('rosterStart').value,
+                end_time: $('rosterEnd').value,
+                note: $('rosterNote').value
+            };
+            
+            const res = await api('/api/save_roster', 'POST', payload);
+            if(res && res.success) {
+                Toast.show('บันทึกสำเร็จ');
+                Modal.close('rosterModal');
+                this.load(); // โหลดปฏิทินใหม่
+            } else {
+                Toast.show('เกิดข้อผิดพลาด', 'error');
+            }
+        },
+        
+        async deleteShift(id) {
+            if(!confirm('ยืนยันลบรายการนี้?')) return;
+            const res = await api('/api/delete_roster', 'POST', {id});
+            if(res && res.success) {
+                // Refresh แบบง่าย: โหลดใหม่แล้วปิด Modal
+                this.load();
+                Modal.close('rosterModal');
+                Toast.show('ลบแล้ว');
+            }
+        }
+    };
 
-      document.getElementById('dailyDate').value = ymd;
-      applyDailyHeaderFromDate(ymd);
-      renderDailyTable();
+    // --- 4.2 SETTINGS LOGIC (จัดการพนักงาน) ---
+    const Settings = {
+        async load() {
+            const box = $('staffListContainer');
+            box.innerHTML = '<div style="padding:20px; text-align:center;">กำลังโหลด...</div>';
+            
+            const staffs = await api('/api/staffs');
+            box.innerHTML = '';
+            
+            if(!staffs || staffs.length === 0) {
+                box.innerHTML = '<div style="padding:20px; text-align:center; color:#ccc;">ยังไม่มีพนักงาน</div>';
+                return;
+            }
+            
+            staffs.forEach(s => {
+                const div = document.createElement('div');
+                div.style.cssText = "padding:10px 15px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;";
+                div.innerHTML = `
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <div style="width:30px; height:30px; border-radius:50%; background:${s.color_code||'#ccc'}; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold;">${s.name.charAt(0)}</div>
+                        <div>
+                            <div style="font-weight:500;">${s.name}</div>
+                            <div style="font-size:11px; color:#64748b;">${s.role}</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-ghost" style="color:#ef4444;" onclick="Settings.del(${s.id})">ลบ</button>
+                `;
+                box.appendChild(div);
+            });
+        },
+        
+        async addStaff() {
+            const name = $('newStaffName').value;
+            const role = $('newStaffRole').value;
+            const color = $('newStaffColor').value;
+            if(!name) return Toast.show('กรุณากรอกชื่อ', 'error');
+            
+            const res = await api('/api/staffs', 'POST', {name, role, color_code: color});
+            if(res && res.success) {
+                Toast.show('เพิ่มพนักงานแล้ว');
+                $('newStaffName').value = '';
+                this.load(); // รีเฟรชลิสต์
+                Roster.loadStaffs(); // อัปเดต dropdown ในหน้าเวรด้วย
+            } else {
+                Toast.show('เกิดข้อผิดพลาด', 'error');
+            }
+        },
+        
+        async del(id) {
+            if(!confirm('ลบพนักงานคนนี้?')) return;
+            const res = await api('/api/staffs', 'DELETE', {id}); // ต้องแก้ api.delete ให้รองรับ body หรือส่ง query param
+            // หมายเหตุ: โค้ด api helper เดิมรองรับ POST เป็นหลัก ถ้า DELETE อาจต้องปรับนิดหน่อย
+            // หรือใช้ POST ไปที่ endpoint ลบก็ได้ตาม app.py ที่ให้ไป
+            
+            // เพื่อความชัวร์ ใช้ fetch ตรงๆ สำหรับ delete ตามที่ app.py เขียนไว้ (method DELETE + query param id)
+            try {
+                await fetch(`/api/staffs?id=${id}`, { method: 'DELETE' });
+                Toast.show('ลบสำเร็จ');
+                this.load();
+                Roster.loadStaffs();
+            } catch(e) { Toast.show('ลบไม่สำเร็จ', 'error'); }
+        }
+    };
 
-      document.getElementById('monthPicker').value = today.toISOString().slice(0,7);
-      renderIOSCalendar();
+    // เพิ่มการเรียก Settings.load() เมื่อกด Tab Settings
+    document.querySelector('.chip[data-tab="settings"]').addEventListener('click', () => Settings.load());
 
-      document.getElementById('dailyDate').addEventListener('change', (e)=>{
-        applyDailyHeaderFromDate(e.target.value);
-        renderDailyTable();
+    // --- Tab Navigation ---
+    document.querySelectorAll('.chip').forEach(el => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        const tab = el.dataset.tab;
+        $(`panel-${tab}`).classList.add('active');
+
+        if(tab === 'monthly') Roster.load();
       });
-      document.getElementById('monthPicker').addEventListener('change', ()=>renderIOSCalendar());
-    })();
-  </script>
+    });
 
+    // --- Init ---
+    Daily.init();
+    Roster.init();
+
+  </script>
   {% include "floating_menu.html" %}
 </body>
 </html>

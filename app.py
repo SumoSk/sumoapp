@@ -2347,7 +2347,6 @@ def api_get_appointments():
     except Exception as e:
         app.logger.error(f"/api/get_appointments error: {e}")
         return jsonify({"error": str(e)}), 500
-
 @app.route("/api/save_appointment", methods=["POST"])
 @login_required
 def api_save_appointment():
@@ -2355,204 +2354,87 @@ def api_save_appointment():
         data = request.get_json(silent=True) or {}
 
         appt_date = safe_date_str(data.get("appt_date"))
-        start_time = (data.get("start_time") or "").strip()
-        end_time = (data.get("end_time") or "").strip()
+        start_time = data.get("start_time")
+        
+        # --- แก้ไข 1: รองรับ end_time ถ้าไม่มีให้ Default เป็น start_time ---
+        # (หรือคุณจะเขียนโค้ดบวกเวลาเพิ่มตรงนี้ก็ได้)
+        end_time = data.get("end_time") 
+        if not end_time and start_time:
+             # ตัวอย่าง: ถ้าไม่ได้ส่งเวลาจบมา ให้ใส่เวลาเดียวกับเวลาเริ่มไปก่อน เพื่อกัน Database Error
+             end_time = start_time 
+
         column_id = data.get("column_id")
-
-        if not appt_date or not start_time or not column_id:
-            return jsonify({"error": "missing_required"}), 400
-
-        try:
-            column_id = int(column_id)
-        except Exception:
-            return jsonify({"error": "invalid_column_id"}), 400
-
+        guest_name = data.get("guest_name")
+        guest_phone = data.get("guest_phone")
+        
+        # --- แก้ไข 2: รองรับทั้งชื่อ service และ procedure (กันเหนียว) ---
+        service = data.get("service") or data.get("procedure") 
+        
+        status = data.get("status") or "pending"
+        note = data.get("note")
         customer_id = data.get("customer_id")
-        opd = normalize_opd(data.get("opd")) if data.get("opd") else ""
 
-        guest_name = (data.get("guest_name") or "").strip()
-        guest_phone = (data.get("guest_phone") or "").strip()
+        # Validation
+        if not appt_date or not start_time or not column_id or not service:
+            return jsonify({"error": "missing_required_fields", "detail": "Date, Time, Column, Service are required"}), 400
 
-        if not customer_id and not opd and not guest_name:
-            return jsonify({"error": "missing_customer_or_guest"}), 400
-
+        # ... (code ส่วนจัดการ guest_name เหมือนเดิม) ...
+        if not guest_name: guest_name = None
+        if not guest_phone: guest_phone = None
+        
+        # Payload เข้า DB
         payload = {
             "appt_date": appt_date,
             "start_time": start_time,
-            "end_time": end_time or None,
-            "column_id": column_id,
-            "status": (data.get("status") or "pending").strip(),
-            "procedure": (data.get("procedure") or "").strip() or None,
-            "note": (data.get("note") or "").strip() or None,
-            "created_by": session.get("username"),
+            "end_time": end_time,  # ต้องมีค่าส่งไป DB
+            "column_id": int(column_id), # แปลงเป็น int ให้ชัวร์
+            "guest_name": guest_name,
+            "guest_phone": guest_phone,
+            "service": service,
+            "status": status,
+            "note": note,
+            "created_at": datetime.now(timezone.utc).isoformat(),
         }
 
         if customer_id:
             payload["customer_id"] = customer_id
-        elif opd:
-            try:
-                c = supabase.table("customers").select("id").eq("opd", opd).single().execute().data
-                if c and c.get("id"):
-                    payload["customer_id"] = c["id"]
-                    payload["opd"] = opd
-                else:
-                    payload["opd"] = opd
-            except Exception:
-                payload["opd"] = opd
 
-        if guest_name:
-            payload["guest_name"] = guest_name
-            payload["guest_phone"] = guest_phone or None
+        res = supabase.table("appointments").insert(payload).execute()
 
-        ins = supabase.table("appointments").insert(payload).execute()
-        row = (ins.data or [{}])[0]
-        return jsonify({"success": True, "row": row})
+        return jsonify({"success": True, "message": "Saved."}), 200
 
     except Exception as e:
-        app.logger.error(f"/api/save_appointment error: {e}")
+        app.logger.error(f"Save Appt Error: {e}")
         return jsonify({"error": str(e)}), 500
+
+
 
 
 @app.route("/api/delete_appointment", methods=["POST"])
 @login_required
 def api_delete_appointment():
     try:
+        # รับค่า ID ที่ส่งมาจากหน้าเว็บ
         data = request.get_json(silent=True) or {}
         appt_id = data.get("id")
+        
+        # ถ้าไม่มี ID ส่งมา ให้แจ้ง Error กลับไป
         if not appt_id:
             return jsonify({"error": "missing_id"}), 400
+
+        # สั่งลบข้อมูลในตาราง appointments ที่มี id ตรงกัน
         supabase.table("appointments").delete().eq("id", appt_id).execute()
+
         return jsonify({"success": True})
+
     except Exception as e:
-        app.logger.error(f"/api/delete_appointment error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-# =============================================================
-# Clinic Time Module — Roster (Monthly)
-# =============================================================
-@app.route("/api/get_roster")
-@login_required
-def api_get_roster():
-    try:
-        month = (request.args.get("month") or "").strip()
-        if not re.match(r"^\d{4}-\d{2}$", month):
-            return jsonify({"error": "invalid_month"}), 400
-
-        start_date = f"{month}-01"
-        y, m = month.split("-")
-        y = int(y); m = int(m)
-        if m == 12:
-            next_month = f"{y+1}-01-01"
-        else:
-            next_month = f"{y}-{str(m+1).zfill(2)}-01"
-
-        res = (
-            supabase.table("work_schedules")
-            .select("*")
-            .gte("date", start_date)
-            .lt("date", next_month)
-            .order("date", desc=False)
-            .order("start_time", desc=False)
-            .execute()
-        )
-        return jsonify(res.data or [])
-    except Exception as e:
-        app.logger.error(f"/api/get_roster error: {e}")
+        app.logger.error(f"Delete Appt Error: {e}")
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/api/save_roster", methods=["POST"])
-@login_required
-def api_save_roster():
-    try:
-        data = request.get_json(silent=True) or {}
-        staff_id = data.get("staff_id")
-        date_s = safe_date_str(data.get("date"))
-        st = (data.get("start_time") or "").strip()
-        et = (data.get("end_time") or "").strip()
-
-        if not staff_id or not date_s:
-            return jsonify({"error": "missing_required"}), 400
-
-        payload = {
-            "staff_id": staff_id,
-            "date": date_s,
-            "start_time": st or None,
-            "end_time": et or None,
-            "role": (data.get("role") or "").strip() or None,
-            "note": (data.get("note") or "").strip() or None,
-            "special_type": (data.get("special_type") or "").strip() or None,
-            "created_by": session.get("username"),
-        }
-
-        ins = supabase.table("work_schedules").insert(payload).execute()
-        row = (ins.data or [{}])[0]
-        return jsonify({"success": True, "row": row})
-    except Exception as e:
-        app.logger.error(f"/api/save_roster error: {e}")
-        return jsonify({"error": str(e)}), 500
 
 
-@app.route("/api/delete_roster", methods=["POST"])
-@login_required
-def api_delete_roster():
-    try:
-        data = request.get_json(silent=True) or {}
-        rid = data.get("id")
-        if not rid:
-            return jsonify({"error": "missing_id"}), 400
-        supabase.table("work_schedules").delete().eq("id", rid).execute()
-        return jsonify({"success": True})
-    except Exception as e:
-        app.logger.error(f"/api/delete_roster error: {e}")
-        return jsonify({"error": str(e)}), 500
 
-
-# =============================================================
-# Clinic Time Module — Staffs (Settings)
-# =============================================================
-@app.route("/api/staffs", methods=["GET", "POST", "DELETE"])
-@login_required
-def api_staffs():
-    try:
-        if request.method == "GET":
-            res = supabase.table("staffs").select("*").order("role", desc=False).order("name", desc=False).execute()
-            return jsonify(res.data or [])
-
-        data = request.get_json(silent=True) or {}
-
-        if request.method == "POST":
-            name = (data.get("name") or "").strip()
-            role = (data.get("role") or "").strip()
-            color_code = (data.get("color_code") or "").strip() or None
-
-            if not name or not role:
-                return jsonify({"error": "missing_required"}), 400
-
-            payload = {"name": name, "role": role, "color_code": color_code, "is_active": True}
-            ins = supabase.table("staffs").insert(payload).execute()
-            row = (ins.data or [{}])[0]
-            return jsonify({"success": True, "row": row})
-
-        if request.method == "DELETE":
-            sid = data.get("id")
-            if not sid:
-                return jsonify({"error": "missing_id"}), 400
-            supabase.table("staffs").delete().eq("id", sid).execute()
-            return jsonify({"success": True})
-
-    except Exception as e:
-        app.logger.error(f"/api/staffs error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
-def save_image_to_cloud(image_file):
-    try:
-        upload_result = cloudinary.uploader.upload(image_file, folder="clinic_customers")
-        return upload_result['secure_url']
-    except Exception as e:
-        print(f"Upload failed: {e}")
-        return None
 
 
 @app.route('/api/add_customer_v2', methods=['POST'])
@@ -2765,3 +2647,172 @@ def api_idcard_extract():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+
+# =============================================================
+# 🚀 STAFF MANAGEMENT API (จัดการพนักงาน: เพิ่ม/ลบ/แก้ไข)
+# =============================================================
+@app.route("/api/staffs", methods=["GET", "POST", "DELETE"])
+@login_required
+def api_staffs_mgmt():
+    try:
+        # 1. GET: ดึงรายชื่อพนักงานทั้งหมด
+        if request.method == "GET":
+            # ดึงข้อมูลเรียงตาม ID
+            res = supabase.table("staffs").select("*").order("id").execute()
+            return jsonify(res.data or [])
+
+        # 2. POST: เพิ่ม หรือ แก้ไข พนักงาน
+        if request.method == "POST":
+            data = request.get_json(silent=True) or {}
+            
+            payload = {
+                "name": data.get("name"),
+                "role": data.get("role"),         # doctor, nurse, etc.
+                "color_code": data.get("color_code"), # เช่น #ff0000
+                "is_active": True
+            }
+
+            # ตรวจสอบว่าเป็นการ "แก้ไข" (มี ID) หรือ "เพิ่มใหม่" (ไม่มี ID)
+            if data.get("id"):
+                staff_id = data.get("id")
+                supabase.table("staffs").update(payload).eq("id", staff_id).execute()
+            else:
+                supabase.table("staffs").insert(payload).execute()
+            
+            return jsonify({"success": True})
+
+        # 3. DELETE: ลบพนักงาน
+        if request.method == "DELETE":
+            # รับ ID จาก Query String (?id=1) หรือ Body
+            staff_id = request.args.get("id")
+            if not staff_id:
+                data = request.get_json(silent=True) or {}
+                staff_id = data.get("id")
+            
+            if not staff_id:
+                return jsonify({"error": "Missing ID"}), 400
+
+            supabase.table("staffs").delete().eq("id", staff_id).execute()
+            return jsonify({"success": True})
+
+    except Exception as e:
+        print(f"Staff API Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# =============================================================
+# 📅 ROSTER API (จัดการตารางเวร: เพิ่ม/ลบ/แก้ไข + แยกสี)
+# =============================================================
+
+# 1. ดึงตารางเวรตามเดือน (Join ข้อมูลพนักงานให้ด้วย)
+@app.route("/api/get_roster")
+@login_required
+def api_get_roster():
+    try:
+        month = request.args.get("month") # รูปแบบ YYYY-MM
+        if not month: return jsonify([])
+        
+        # คำนวณวันเริ่มต้น-สิ้นสุดเดือน
+        start_date = f"{month}-01"
+        year, mnth = map(int, month.split('-'))
+        if mnth == 12:
+            next_month = f"{year+1}-01-01"
+        else:
+            next_month = f"{year}-{mnth+1:02d}-01"
+
+        # 1. ดึงข้อมูลเวร (Roster)
+        roster_res = (
+            supabase.table("work_schedules")
+            .select("*")
+            .gte("date", start_date)
+            .lt("date", next_month)
+            .execute()
+        )
+        rosters = roster_res.data or []
+
+        # 2. ดึงข้อมูลพนักงาน (Staffs) มาทำ Map (เพื่อความชัวร์และเร็ว)
+        staff_res = supabase.table("staffs").select("id,name,role,color_code").execute()
+        staff_map = {s['id']: s for s in staff_res.data or []}
+
+        # 3. ผสมข้อมูล (เอาชื่อและสีพนักงานใส่เข้าไปใน object เวร)
+        for r in rosters:
+            sid = r.get('staff_id')
+            if sid in staff_map:
+                r['staff_name'] = staff_map[sid]['name']
+                r['staff_role'] = staff_map[sid]['role']
+                r['staff_color'] = staff_map[sid]['color_code']
+            else:
+                r['staff_name'] = 'Unknown'
+                r['staff_role'] = '-'
+                r['staff_color'] = '#cbd5e1' # สีเทาถ้าไม่เจอ
+
+        return jsonify(rosters)
+    except Exception as e:
+        print(f"Get Roster Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# 2. บันทึกเวร (รองรับทั้ง เพิ่มใหม่ และ แก้ไข)
+@app.route("/api/save_roster", methods=["POST"])
+@login_required
+def api_save_roster():
+    try:
+        data = request.get_json(silent=True) or {}
+        
+        # เตรียมข้อมูลลงฐานข้อมูล
+        payload = {
+            "staff_id": data.get("staff_id"),
+            "date": data.get("date"),
+            "work_type": data.get("work_type", "work"), # work หรือ leave
+            "start_time": data.get("start_time"),
+            "end_time": data.get("end_time"),
+            "note": data.get("note", ""),
+            
+        }
+
+        # ถ้าเป็น "วันลา" (leave) ให้เคลียร์เวลาออก เพื่อไม่ให้สับสน
+        if payload["work_type"] == "leave":
+            payload["start_time"] = None
+            payload["end_time"] = None
+        else:
+            # ถ้าเป็นงาน ต้องมีเวลา ถ้าไม่มีให้ใส่ค่า Default หรือปล่อย Null ตามดีไซน์
+            if not payload["start_time"]: payload["start_time"] = "11:00"
+            if not payload["end_time"]: payload["end_time"] = "20:00"
+
+        # ตรวจสอบว่ามี ID ส่งมาไหม?
+        if data.get("id"):
+            # --- CASE UPDATE (แก้ไขรายการเดิม) ---
+            roster_id = data.get("id")
+            supabase.table("work_schedules").update(payload).eq("id", roster_id).execute()
+        else:
+            # --- CASE INSERT (เพิ่มรายการใหม่) ---
+            supabase.table("work_schedules").insert(payload).execute()
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print(f"Save Roster Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# 3. ลบเวร
+@app.route("/api/delete_roster", methods=["POST"])
+@login_required
+def api_delete_roster():
+    try:
+        data = request.get_json(silent=True) or {}
+        rid = data.get("id")
+        
+        # ตรวจสอบว่าส่ง ID มาไหม
+        if not rid:
+            return jsonify({"error": "Missing ID"}), 400
+
+        # สั่งลบข้อมูลใน Supabase
+        supabase.table("work_schedules").delete().eq("id", rid).execute()
+        
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print(f"Delete Error: {e}") # ปริ้นท์ Error ลง Terminal เผื่อดู
+        return jsonify({"error": str(e)}), 500    
