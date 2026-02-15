@@ -240,22 +240,6 @@
   .table-mini th:first-child, .table-mini td:first-child { text-align:left; }
   .badge { display:inline-block; padding:2px 8px; border-radius:999px; background:#e0f2f1; color:#004d40; font-size:12px; }
 
-  /* === กล่องลูกค้าที่ควรโทรก่อน (Lead Score) === */
-  .lead-score-box { max-width:1200px; margin:0 auto 20px; background:#fff; padding:15px 20px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.06); }
-  .lead-score-box h3 { margin-top:0; color:teal; font-size:18px; text-align:center; }
-  .lead-score-sub { text-align:center; font-size:12px; color:#64748b; margin-top:4px; margin-bottom:10px; }
-  #leadScoreList { list-style:none; padding-left:0; margin:0; }
-  #leadScoreList li { padding:6px 0; border-bottom:1px dashed #e5e7eb; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
-  .lead-name { font-weight:600; color:#00695c; cursor:pointer; }
-  .lead-score-badge { background:#e0f2f1; color:#004d40; border-radius:999px; padding:2px 10px; font-size:12px; font-weight:600; }
-  .lead-score-meta { font-size:12px; color:#4b5563; flex:1 1 auto; white-space:normal; }
-  .lead-absent { color:#dc2626; font-weight:600; }
-  .lead-money { font-weight:600; color:#009688; margin-left:auto; font-variant-numeric:tabular-nums; }
-  @media (max-width: 768px) {
-    .lead-score-box h3 { font-size:14px; }
-    .lead-score-sub, .lead-score-meta, .lead-score-badge, #leadScoreList li { font-size:10px; }
-  }
-
   /* ===== CSS สำหรับ Followup Summary ===== */
   .summary-box { max-width:1200px; margin:0 auto 20px; background:#fff; padding:0; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.06); overflow:hidden; }
   .tabs-wrap { display:flex; background:#f1f5f9; border-bottom:1px solid #e2e8f0; overflow-x:auto; }
@@ -280,7 +264,7 @@
 
   /* RESET THEME */
   body { background-color:white !important; color:black !important; font-family:'Prompt','Segoe UI',sans-serif !important; }
-  .menu-bar, .top10-box, .chart-container, .summary-list, .lead-score-box, .summary-box, .filter-section,
+  .menu-bar, .top10-box, .chart-container, .summary-list, .summary-box, .filter-section,
   #mainTitle, #customer-modal-box, .range-modal__panel { background:#fff !important; border-radius:12px !important; box-shadow:0 4px 12px rgba(0,0,0,0.06) !important; border:none !important; }
   h3, .group-header, #mainTitle .month { color:teal !important; font-weight:bold !important; }
   #mainTitle { background-color:#e0f2f1 !important; border:none !important; }
@@ -291,13 +275,15 @@
   #clearRangeBtn { background-color:#607d8b !important; color:white !important; border:none !important; }
   input, select { border:1px solid #ccc !important; background-color:#fff !important; border-radius:8px !important; padding:6px 8px !important; color:black !important; box-shadow:none !important; }
   input:focus, select:focus { border-color:teal !important; }
-  .top10-box li span.amount, .lead-money { color:#009688 !important; }
-  .badge, .lead-score-badge { background:#e0f2f1 !important; color:#004d40 !important; border:none !important; box-shadow:none !important; }
+  .top10-box li span.amount { color:#009688 !important; }
+  .badge { background:#e0f2f1 !important; color:#004d40 !important; border:none !important; box-shadow:none !important; }
   #customer-modal, #group-modal, #group-modal-legacy, .range-modal { backdrop-filter:none !important; background-color:rgba(0,0,0,0.5) !important; }
-  .top10-box li, #leadScoreList li, .summary-table th, .summary-table td { border-bottom:1px dashed #ddd !important; }
+  .top10-box li, .summary-table th, .summary-table td { border-bottom:1px dashed #ddd !important; }
   .tab-btn.active { color:#0f766e !important; border-bottom-color:#0f766e !important; background:#fff !important; }
   .tab-count { background:#cbd5e1 !important; color:#334155 !important; }
   .tab-btn.active .tab-count { background:#ccfbf1 !important; color:#0f766e !important; }
+
+  
 </style>
 </head>
 
@@ -373,18 +359,6 @@
 </div>
 <div id="filter-placeholder"></div>
 
-
-
-<div class="lead-score-box">
-  <h3>📞 ลูกค้าที่ควรตามในเดือนนี้</h3>
-  <div class="lead-score-sub">
-    ระบบจะดูจาก <b>= มูลค่าลูกค้า (ยอดรวม + จำนวนครั้ง + บิลเฉลี่ย) + คะแนนหายไปนาน (ดีที่สุดช่วง 46–120 วัน) และตัดคนที่มา 45 วัน</b><br>
-  </div>
-  <ul id="leadScoreList">
-    <li style="text-align:center; color:#999; padding:10px;">กำลังวิเคราะห์ข้อมูล...</li>
-  </ul>
-</div>
-
 <div id="group-modal" style="display:none;position:fixed;inset:0;background-color:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
   <div id="group-modal-content" style="background:white;padding:20px;border-radius:16px;width:95%;max-width:700px;max-height:90vh;overflow:auto;position:relative; font-size:13px;">
     <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
@@ -412,12 +386,6 @@
   let allCustomerRecords = [];
   let fullCustomerList = [];
 
-  const leadPitchCache = new Map();
-
-  
-
-  
-
   // โหมดช่วงเดือน
   const monthRange = { enabled:false, startYM:null, endYM:null };
 
@@ -441,7 +409,6 @@
       .then(res => res.json())
       .then(records => {
         allCustomerRecords = records;
-        if(records.length > 0) buildLeadScoreList();
       })
       .catch(err => { console.error("❌ โหลดข้อมูลทั้งหมดไม่สำเร็จ:", err); });
   }
@@ -466,6 +433,7 @@
     const compareEl = document.querySelector('#mainTitle .compare');
     compareEl.innerHTML = '';
 
+    // --- ส่วนที่ 1: คำนวณยอดขายรวมและเปรียบเทียบเดือน ---
     if (monthRange.enabled){
       const [sy, sm] = monthRange.startYM.split('-').map(Number);
       const [ey, em] = monthRange.endYM.split('-').map(Number);
@@ -522,6 +490,7 @@
           : `<span style="color: gray;">📆 รวมเฉพาะ ${todayDate} วัน: ยอดเท่าเดิมกับเดือนก่อน</span>`;
       compareEl.innerHTML = `${text}<br>${text2}`;
 
+      // Logic คำนวณค่าเฉลี่ยย้อนหลัง (ถ้ามีข้อมูล)
       const allDates = records.map(r => r.date).filter(Boolean);
       const latestDate = allDates.sort().reverse()[0];
       if (latestDate){
@@ -556,14 +525,17 @@
         const compareAvgDiv = document.createElement('div');
         compareAvgDiv.style.marginTop = '4px';
         compareAvgDiv.style.color = diffFromAvg > 0 ? 'green' : diffFromAvg < 0 ? 'crimson' : 'gray';
-        compareAvgDiv.innerHTML =
+        if(averagePast > 0) {
+             compareAvgDiv.innerHTML =
           `📊 รวมเฉพาะ ${targetRangeEnd} วัน คือ: ${currentMonthN.toLocaleString()} บาท ${
             diffFromAvg > 0 ? `✅ มากกว่าค่าเฉลี่ย +${diffFromAvg.toLocaleString()} บาท (${averagePast.toLocaleString()})` :
             diffFromAvg < 0 ? `⚠️ น้อยกว่าค่าเฉลี่ย ${Math.abs(diffFromAvg).toLocaleString()} บาท (${averagePast.toLocaleString()})` :
             `😐 เท่ากับค่าเฉลี่ย (${averagePast.toLocaleString()} บาท)`}`;
-        compareEl.appendChild(compareAvgDiv);
+             compareEl.appendChild(compareAvgDiv);
+        }
       }
 
+      // Logic ยอดวันนี้/สัปดาห์นี้
       let todaySales = 0, weekSales = 0;
       const todayObj = new Date();
       const dow = todayObj.getDay();
@@ -588,28 +560,45 @@
       compareEl.appendChild(extraInfo);
     }
 
+    // --- ส่วนที่ 2: นับจำนวนสินค้า (จุดที่แก้ให้ซูโม่) ---
     const categoryCounts = {}, categoryDetails = {}, customerMap = {};
+    
     records.filter(activeFilter).forEach(r => {
+      // เก็บข้อมูลลูกค้า (Customer Map)
       const key = `${r.name}|${r.phone}`;
       if (!customerMap[key]) customerMap[key] = { name:r.name, phone:r.phone, opd:r.opd||'-', date:r.date, amount:0 };
       customerMap[key].amount += parseFloat(r.amount||0);
       if (r.date > customerMap[key].date) customerMap[key].date = r.date;
 
+      // วนลูป items เพื่อแยกประเภทสินค้า
       (r.items || []).forEach(item => {
+        // 1. หาชื่อสินค้า (SubItem)
         const match = item.match(/\((.*?)\)/);
-        const subItem = match ? match[1] : item;
-        const qtyMatch = item.match(/- (\d+) ชิ้น x (\d+)/);
-        const qty = qtyMatch ? parseInt(qtyMatch[1]) : 0;
+        const subItem = match ? match[1] : item.split(" - ")[0].trim();
+
+        // 2. หาจำนวน (Qty) ** แก้ไข Regex ให้ยืดหยุ่นขึ้น **
+        // หาแพทเทิร์น "- เลข ชิ้น" โดยอนุญาตให้มีวรรคหรือไม่มีก็ได้
+        const qtyMatch = item.match(/- (\d+)\s*ชิ้น/);
+        const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1; // ถ้าหาไม่เจอจริงๆ ให้ default เป็น 1
+
+        // 3. หาหมวดหมู่ (Category) จากชื่อหน้าวงเล็บ
         const categoryMatch = item.match(/^(.+?) ?\(/);
         const category = categoryMatch ? categoryMatch[1].trim() : "อื่นๆ";
 
+        // 4. รวมยอด
         if (!categoryCounts[category]) categoryCounts[category] = 0;
         if (!categoryDetails[category]) categoryDetails[category] = {};
+        
         categoryCounts[category] += qty;
-        (categoryDetails[category][subItem] ||= { qty:0, total:0 }).qty += qty;
+        
+        if (!categoryDetails[category][subItem]) {
+             categoryDetails[category][subItem] = { qty:0, total:0 };
+        }
+        categoryDetails[category][subItem].qty += qty;
       });
     });
 
+    // --- ส่วนที่ 3: แสดงผล Summary List (สินค้าแยกหมวด) ---
     const sortedEntries = Object.entries(categoryCounts).sort((a,b)=>b[1]-a[1]);
     document.getElementById('summaryList').innerHTML = sortedEntries.map(([cat]) => {
       const items = Object.entries(categoryDetails[cat] || {}).map(([sub, d]) => `• ${sub} ${d.qty}`).join('<br>');
@@ -621,8 +610,7 @@
         </div>`;
     }).join('');
 
-    if (typeof buildLeadScoreList === 'function') buildLeadScoreList();
-
+    // --- ส่วนที่ 4: แสดงผล Top 10 Customers ---
     const top10 = Object.values(customerMap).sort((a,b)=>b.amount-a.amount).slice(0,10);
     document.getElementById('top10List').innerHTML = top10.map((c) => {
       const key = `${c.name}|${c.phone}`;
@@ -683,20 +671,24 @@
     const summary = {};
     const totalQty = { count: 0 };
 
-    const catElement = Array.from(document.querySelectorAll(".summary-group"))
-      .find(group => group.querySelector("strong")?.textContent === cat);
-    const catText = catElement?.innerText || "";
-
+    // พลอยแก้ตรงนี้: ไม่ต้องไปดึง text จากหน้าจอแล้ว เช็คจาก data โดยตรงเลย
     allSalesRecords.filter(activeFilter).forEach(r => {
       (r.items || []).forEach(item => {
+        
+        // 1. แยกชื่อสินค้าและจำนวนเหมือนเดิม
         const match = item.match(/\((.*?)\)/);
         const subItem = match ? match[1] : item.split(" - ")[0].trim();
-
         const qtyMatch = item.match(/- (\d+) ชิ้น/);
         const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
 
-        if (!catText.includes(subItem) && !catText.includes(item)) return;
+        // 2. ดึงชื่อหมวดหมู่จาก item เพื่อเช็คว่าตรงกับ cat ที่กดเข้ามาไหม
+        const categoryMatch = item.match(/^(.+?) ?\(/);
+        const itemCategory = categoryMatch ? categoryMatch[1].trim() : "อื่นๆ";
 
+        // 3. ถ้าหมวดหมู่ไม่ตรง ก็ข้ามไปเลย
+        if (itemCategory !== cat) return;
+
+        // เก็บข้อมูลลงตัวแปร summary
         if (!summary[subItem]) summary[subItem] = {};
         const key = `${r.name}|${r.phone}`;
         if (!summary[subItem][key]) summary[subItem][key] = { name: r.name, dates: {} };
@@ -835,8 +827,6 @@
   function closeCustomerModal(){ document.getElementById("customer-modal").style.display = "none"; }
   function formatDate(d){ if(!d) return ''; const [y,m,day]=d.split('-'); return `${day}/${m}/${y.slice(-2)}`; }
 
-  
-
   function openCustomerModal(key) {
     const [name, phone = ''] = String(key).split('|');
     const norm = s => (s || '').trim().toLowerCase();
@@ -952,19 +942,11 @@
 
       <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
 
-      <div style="font-weight:600; font-size:13px; margin-bottom:4px;">🗣️ Sale Pitch (แบบสั้น):</div>
-      <div id="modal-pitch-container" style="min-height:30px;">
-         <span style="color:#666; font-size:11px;">⏳ กำลังโหลดข้อมูล...</span>
-      </div>
-
-      <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
-
       <div style="font-weight:600; font-size:13px; margin-bottom:6px;">🧾 ประวัติการซื้อย้อนหลัง:</div>
       ${historyHtml}
     `;
 
     document.getElementById("customer-modal").style.display = 'flex';
-    loadPitchDataIntoModal(customer.opd);
   }
 
   function saveModalAsImage() {
@@ -1355,166 +1337,6 @@
     if(container) container.innerHTML = '';
     const results = document.getElementById("filterResults");
     if(results) results.innerHTML = '';
-  }
-
-  // ===== Lead Score (โค้ดเดิมของคุณยังอยู่ต่อจากนี้ได้เลย) =====
-  function recencyScore(absentDays) {
-    if (absentDays <= 45) return 0;
-    if (absentDays <= 90)  return 20 + (absentDays - 46) * (20 / (90 - 46));
-    if (absentDays <= 180) return 40 - (absentDays - 90) * (15 / (180 - 90));
-    if (absentDays <= 365) return 25 - (absentDays - 180) * (15 / (365 - 180));
-    if (absentDays <= 730) return 10 - (absentDays - 365) * (7 / (730 - 365));
-    if (absentDays <= 1460) return 3 - (absentDays - 730) * (2 / (1460 - 730));
-    return 0.5;
-  }
-  function valueScore(totalAmount) {
-    if (totalAmount >= 200000) return 45;
-    if (totalAmount >= 100000) return 40;
-    if (totalAmount >= 50000)  return 32;
-    if (totalAmount >= 20000)  return 24;
-    if (totalAmount >= 10000)  return 16;
-    if (totalAmount >= 5000)   return 10;
-    if (totalAmount >= 3000)   return 6;
-    if (totalAmount >= 1000)   return 3;
-    return 0;
-  }
-  function visitScore(totalVisits) {
-    if (totalVisits >= 12) return 18;
-    if (totalVisits >= 8)  return 14;
-    if (totalVisits >= 5)  return 10;
-    if (totalVisits >= 3)  return 6;
-    if (totalVisits >= 2)  return 3;
-    return 0;
-  }
-  function avgScore(averageBill) {
-    if (averageBill >= 20000) return 18;
-    if (averageBill >= 12000) return 14;
-    if (averageBill >= 8000)  return 10;
-    if (averageBill >= 5000)  return 7;
-    if (averageBill >= 3000)  return 4;
-    if (averageBill >= 1500)  return 2;
-    return 0;
-  }
-  function computeLeadScoreForCustomer(core) {
-    const totalAmount  = core.totalAmount || 0;
-    const totalVisits  = core.totalVisits || 0;
-    const averageBill  = core.averageBill || 0;
-    const absentDays   = core.absentDays || 0;
-
-    if (totalAmount < 2000 && totalVisits <= 1) return 0;
-
-    const r = recencyScore(absentDays);
-    const v = valueScore(totalAmount);
-    const f = visitScore(totalVisits);
-    const a = avgScore(averageBill);
-
-    let vipBoost = 0;
-    const isVIP = (totalAmount >= 100000) || (averageBill >= 10000);
-    if (isVIP) {
-      if (absentDays >= 60 && absentDays <= 210) vipBoost = 10;
-      else if (absentDays <= 365) vipBoost = 5;
-    }
-    return Math.round(r + v + f + a + vipBoost);
-  }
-
-  let topLeadCandidates = [];
-
-  async function buildLeadScoreList() {
-    const ul = document.getElementById('leadScoreList');
-    if (!ul || !allCustomerRecords.length) return;
-
-    const grouped = {};
-    const today = new Date();
-
-    allCustomerRecords.forEach(r => {
-      const key = `${r.name}|${r.phone}`;
-      if (!grouped[key]) {
-        grouped[key] = { key, name: r.name, phone: r.phone || '-', opd: r.opd || '-', records: [] };
-      }
-      grouped[key].records.push(r);
-    });
-
-    let scored = Object.values(grouped).map(c => {
-      const recs = c.records;
-      const totalVisits = recs.length;
-      const paid = recs.filter(r => parseFloat(r.amount || 0) > 0);
-      const paidVisits = paid.length;
-      const totalAmount = paid.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
-      const averageBill = paidVisits > 0 ? totalAmount / paidVisits : 0;
-
-      const latest = recs.reduce((last, r) => new Date(r.date) > new Date(last.date) ? r : last, recs[0]);
-      const lastDate = new Date(latest.date);
-      const absentDays = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
-
-      const core = { key: c.key, name: c.name, phone: c.phone, opd: c.opd, totalVisits, totalAmount, averageBill, absentDays, lastDate: latest.date };
-      const score = computeLeadScoreForCustomer(core);
-      return { ...core, score };
-    });
-
-    topLeadCandidates = scored
-      .filter(c => c.absentDays > 45)
-      .filter(c => c.score >= 20)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 45);
-
-    if (!topLeadCandidates.length) {
-      ul.innerHTML = `<li class="lead-score-meta" style="text-align:center; padding:20px;">
-        ยังไม่มีลูกค้าที่เข้าเกณฑ์ (เช่น หายเกิน 45 วัน และมีมูลค่าพอสมควร)
-      </li>`;
-      return;
-    }
-
-    const loadButtonHTML = `
-      <li style="text-align:center; padding:10px; background:#f0fdfa; border-bottom:1px dashed #ccc;">
-        <button onclick="loadLeadPitches()" id="btnLoadLeadPitches" style="background:teal; color:white; border:none; padding:6px 16px; border-radius:20px; font-size:12px; cursor:pointer;">
-          🔄 กดเพื่อโหลดประวัติการโทรล่าสุด (${topLeadCandidates.length} คน)
-        </button>
-      </li>`;
-
-    const listHTML = topLeadCandidates.map(c => {
-      const total = Math.round(c.totalAmount || 0).toLocaleString();
-      const last  = new Date(c.lastDate).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
-      const pitchId = `pitch-info-${c.opd}`;
-      return `
-        <li>
-          <span class="lead-name" onclick="openCustomerModal('${c.key}')">${escapeHTML(c.name || '-')}</span>
-          <span class="lead-score-badge">คะแนน: ${c.score}</span>
-          <span class="lead-score-meta">
-            ⏳ ไม่มา <span class="lead-absent">${c.absentDays} วัน</span>
-            • 💰 รวม ${total} บ.
-            • 📅 มาล่าสุด: ${last}
-            <div id="${pitchId}" style="margin-top:2px; color:#666; font-style:italic;">
-              📞 ประวัติโทร: (กดปุ่มด้านบนเพื่อดู)
-            </div>
-          </span>
-        </li>`;
-    }).join('');
-
-    ul.innerHTML = loadButtonHTML + listHTML;
-  }
-
-  async function loadLeadPitches() {
-    const btn = document.getElementById('btnLoadLeadPitches');
-    if(btn) { btn.innerHTML = '⏳ กำลังโหลดข้อมูล...'; btn.disabled = true; btn.style.opacity = 0.7; }
-
-    await Promise.all(topLeadCandidates.map(async c => {
-      const pitch = await fetchLatestPitchForOPD(c.opd);
-      const el = document.getElementById(`pitch-info-${c.opd}`);
-      if(el) {
-        let text = 'ยังไม่เคยโทร';
-        let color = '#9ca3af';
-        if (pitch && pitch.date) {
-          const d = formatDate(String(pitch.date).slice(0, 10));
-          const raw = pitch.outcome || pitch.content || '—';
-          text = `${d}: ${raw}`;
-          color = '#059669';
-        }
-        el.innerHTML = `📞 <span style="color:${color}; font-weight:500;">${escapeHTML(text)}</span>`;
-        el.style.fontStyle = 'normal';
-      }
-    }));
-
-    if(btn) btn.style.display = 'none';
   }
 
   // เริ่มโหลด

@@ -4,617 +4,300 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta charset="UTF-8" />
 <title>แดชบอร์ด</title>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  /* =========================
-     MODERN UI (clean + fast)
-     ========================= */
-
-  :root{
-    --bg: #0b1220;
-    --bg2:#0a1020;
-    --card: rgba(255,255,255,.06);
-    --card2: rgba(255,255,255,.08);
-    --line: rgba(255,255,255,.10);
-
-    --text:#eaf2ff;
-    --muted: rgba(234,242,255,.68);
-
-    --brand:#14b8a6;
-    --brand2:#22c55e;
-    --danger:#fb7185;
-    --warn:#fbbf24;
-
-    --shadow: 0 14px 40px rgba(0,0,0,.35);
-    --shadow2: 0 10px 24px rgba(0,0,0,.28);
-
-    --r14: 14px;
-    --r18: 18px;
-    --r22: 22px;
-
-    --pad: 16px;
-    --pad2: 18px;
-  }
-
-  *{ box-sizing:border-box; }
-  html, body{ height:100%; }
-  body{
-    font-family:'Prompt', system-ui, -apple-system, Segoe UI, sans-serif;
-    margin:0;
-    padding: 14px;
-    padding-bottom: 130px;
-    color: var(--text);
-    background:
-      radial-gradient(900px 450px at 10% 10%, rgba(20,184,166,.22), transparent 60%),
-      radial-gradient(700px 360px at 92% 0%, rgba(34,197,94,.18), transparent 55%),
-      radial-gradient(650px 380px at 75% 95%, rgba(59,130,246,.12), transparent 60%),
-      linear-gradient(180deg, var(--bg), var(--bg2));
-    -webkit-font-smoothing:antialiased;
-    text-rendering:optimizeLegibility;
+  /* CSS เดิมทั้งหมด พลอยคงไว้ให้เหมือนเดิมนะ */
+  body {
+    font-family: 'Prompt', 'Segoe UI', sans-serif;
+    margin: 0;
+    background-color: white;
+    padding: 10px;
+    padding-bottom: 120px;
     font-size: 14px;
   }
 
-  a{ color: inherit; }
-
-  /* ---- Top Menu ---- */
-  .menu-bar{
-    display:flex;
-    justify-content:space-around;
-    gap:10px;
-    background: rgba(255,255,255,.06);
-    border:1px solid var(--line);
-    padding: 12px 12px;
-    border-radius: var(--r18);
-    margin: 6px auto 16px;
-    box-shadow: var(--shadow2);
-    max-width: 1200px;
-    backdrop-filter: blur(10px);
-  }
-  .menu-bar a{
-    text-decoration:none;
-    font-weight:700;
-    color: rgba(234,242,255,.86);
-    padding: 10px 12px;
-    border-radius: 999px;
-    transition: background .15s ease, transform .12s ease;
-  }
-  .menu-bar a:hover{
-    background: rgba(20,184,166,.14);
-    transform: translateY(-1px);
-  }
-
-  /* ---- Month nav ---- */
-  .month-nav{
-    max-width:1200px;
-    margin: 0 auto 14px;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    gap:10px;
-    flex-wrap:wrap;
-  }
-  .month-nav button{
-    border:none;
-    color:#07101e;
-    font-weight:800;
-    background: linear-gradient(135deg, var(--brand), rgba(20,184,166,.65));
-    padding: 10px 16px;
-    border-radius: 999px;
-    cursor:pointer;
-    box-shadow: 0 14px 24px rgba(20,184,166,.18);
-    transition: transform .12s ease, filter .18s ease, box-shadow .18s ease;
-    white-space:nowrap;
-  }
-  .month-nav button:hover{
-    filter: brightness(1.06);
-    transform: translateY(-1px);
-    box-shadow: 0 18px 30px rgba(20,184,166,.22);
-  }
-  .month-nav button:active{ transform: translateY(0px) scale(.99); }
-
-  #openRangeBtn{
-    background: linear-gradient(135deg, rgba(59,130,246,.9), rgba(147,197,253,.85));
-    box-shadow: 0 14px 24px rgba(59,130,246,.18);
-  }
-  #clearRangeBtn{
-    background: linear-gradient(135deg, rgba(251,113,133,.95), rgba(244,63,94,.8));
-    box-shadow: 0 14px 24px rgba(244,63,94,.18);
-  }
-
-  /* ---- Hero ---- */
-  #mainTitle{
-    max-width:1200px;
-    margin: 0 auto 16px;
-    padding: 18px 18px;
-    border-radius: var(--r22);
-    border:1px solid rgba(255,255,255,.10);
-    background:
-      radial-gradient(700px 220px at 15% 20%, rgba(20,184,166,.18), transparent 60%),
-      radial-gradient(550px 200px at 90% 15%, rgba(34,197,94,.16), transparent 55%),
-      rgba(255,255,255,.06);
-    box-shadow: var(--shadow);
-    backdrop-filter: blur(12px);
-    cursor:pointer;
-
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-    align-items:flex-start;
-  }
-  #mainTitle .month{
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing:.3px;
-  }
-  #mainTitle .total{
-    font-size: 16px;
-    color: rgba(234,242,255,.92);
-  }
-  #mainTitle .compare{
-    font-size: 12px;
-    color: var(--muted);
-    line-height: 1.35;
-  }
-
-  /* ---- Cards ---- */
-  .card{
-    max-width:1200px;
-    margin: 0 auto 16px;
-    background: rgba(255,255,255,.06);
-    border: 1px solid var(--line);
-    border-radius: var(--r18);
-    box-shadow: var(--shadow2);
-    backdrop-filter: blur(12px);
-    overflow:hidden;
-  }
-  .card-header{
-    padding: 14px 16px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    border-bottom: 1px solid rgba(255,255,255,.08);
-    background: rgba(255,255,255,.04);
-  }
-  .card-header h3{
-    margin:0;
-    font-size: 14px;
-    font-weight: 800;
-    color: rgba(234,242,255,.92);
-    letter-spacing:.2px;
-    display:flex;
-    align-items:center;
-    gap:8px;
-  }
-  .card-body{ padding: 14px 16px; }
-
-  /* ---- Top10 ---- */
-  .top10-box{ padding:0; }
-  .top10-box ul{ list-style:none; padding:0; margin:0; }
-  .top10-box li{
-    padding: 10px 0;
-    border-bottom: 1px dashed rgba(255,255,255,.14);
-    display:flex;
-    gap:8px;
-    align-items:flex-start;
-    flex-wrap:wrap;
-  }
-  .top10-box li:last-child{ border-bottom:none; }
-  .top10-box .name{
-    font-weight:800;
-    color: rgba(234,242,255,.92);
-  }
-  .top10-box .date{
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .top10-box .amount{
-    margin-left:auto;
-    font-weight:900;
-    font-variant-numeric: tabular-nums;
-    color: #7dd3fc;
-    white-space:nowrap;
-  }
-
-  #totalCustomer{
-    margin: 10px 0 0;
-    padding: 10px 12px;
+  .menu-bar {
+    display: flex;
+    justify-content: space-around;
+    background-color: white;
+    padding: 10px;
     border-radius: 12px;
-    background: rgba(255,255,255,.05);
-    border: 1px solid rgba(255,255,255,.10);
-    text-align:center;
-    cursor:pointer;
-    color: rgba(234,242,255,.86);
-    font-weight:700;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
   }
-  #totalCustomer:hover{
-    background: rgba(20,184,166,.10);
-    border-color: rgba(20,184,166,.20);
-  }
+  .menu-bar a { text-decoration: none; font-weight: bold; color: teal; }
 
-  /* ---- Summary grid ---- */
-  .chart-summary-row{
-    max-width:1200px;
-    margin: 0 auto 16px;
-    display:flex;
-    gap:14px;
-    flex-wrap:wrap;
-  }
-  .summary-list{
-    flex: 1;
-    min-width: 320px;
-    background: rgba(255,255,255,.06);
-    border: 1px solid var(--line);
-    border-radius: var(--r18);
-    box-shadow: var(--shadow2);
-    backdrop-filter: blur(12px);
-    padding: 14px;
-    display:grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-  }
-
-  .summary-group{
-    border: 1px solid rgba(255,255,255,.12);
-    background: rgba(255,255,255,.05);
-    border-radius: 14px;
-    padding: 12px;
-    transition: transform .12s ease, background .18s ease, border-color .18s ease;
-    cursor:pointer;
-    min-height: 92px;
-  }
-  .summary-group:hover{
-    transform: translateY(-1px);
-    background: rgba(20,184,166,.09);
-    border-color: rgba(20,184,166,.22);
-  }
-  .summary-group strong{
-    display:block;
-    font-size: 12px;
-    font-weight: 900;
-    color: rgba(234,242,255,.92);
-    margin-bottom: 6px;
-  }
-  .summary-group ul{
-    list-style:none;
-    padding:0;
-    margin: 8px 0 0;
-    color: rgba(234,242,255,.80);
-    font-size: 11px;
-    line-height: 1.35;
-  }
-
-  /* ---- Filter Section ---- */
-  .filter-section{
-    max-width:1200px;
-    margin: 0 auto 16px;
-    background: rgba(255,255,255,.06);
-    border: 1px solid var(--line);
-    border-radius: var(--r18);
-    box-shadow: var(--shadow2);
-    backdrop-filter: blur(12px);
-    padding: 14px 16px;
-  }
-
-  .filter-section h3{
-    margin:0 0 10px;
-    font-size: 14px;
-    font-weight: 900;
-  }
-
-  .inline-field{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    flex-wrap:wrap;
-    margin-bottom: 10px;
-  }
-  .inline-field label{
-    min-width: 170px;
-    font-weight: 800;
-    color: rgba(234,242,255,.88);
-  }
-
-  .input-pair{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-
-  input, select{
-    border: 1px solid rgba(255,255,255,.14);
-    background: rgba(10,16,32,.55);
-    color: rgba(234,242,255,.92);
-    padding: 9px 10px;
-    border-radius: 12px;
-    font-size: 13px;
-    outline:none;
-    transition: box-shadow .15s ease, border-color .15s ease;
-  }
-  input:focus, select:focus{
-    border-color: rgba(20,184,166,.45);
-    box-shadow: 0 0 0 4px rgba(20,184,166,.18);
-  }
-
-  .search-button{
-    border:none;
-    color:#07101e;
-    font-weight: 900;
-    background: linear-gradient(135deg, var(--brand2), rgba(34,197,94,.65));
-    padding: 10px 16px;
-    border-radius: 999px;
-    cursor:pointer;
-    box-shadow: 0 14px 24px rgba(34,197,94,.18);
-    transition: transform .12s ease, filter .18s ease, box-shadow .18s ease;
-  }
-  .search-button:hover{
-    filter: brightness(1.06);
-    transform: translateY(-1px);
-    box-shadow: 0 18px 30px rgba(34,197,94,.22);
-  }
-
-  .add-product-button{
-    border: 1px solid rgba(255,255,255,.16);
-    background: rgba(255,255,255,.06);
-    color: rgba(234,242,255,.92);
-    padding: 10px 14px;
-    border-radius: 999px;
-    cursor:pointer;
-    font-weight: 800;
-    transition: transform .12s ease, background .18s ease, border-color .18s ease;
-  }
-  .add-product-button:hover{
-    transform: translateY(-1px);
-    background: rgba(255,255,255,.10);
-    border-color: rgba(20,184,166,.25);
-  }
-
-  /* ---- Lead Score ---- */
-  .lead-score-box{
-    max-width:1200px;
-    margin: 0 auto 16px;
-    background: rgba(255,255,255,.06);
-    border: 1px solid var(--line);
-    border-radius: var(--r18);
-    box-shadow: var(--shadow2);
-    backdrop-filter: blur(12px);
-    overflow:hidden;
-  }
-  .lead-score-box .head{
-    padding: 14px 16px;
-    border-bottom: 1px solid rgba(255,255,255,.08);
-    background: rgba(255,255,255,.04);
-  }
-  .lead-score-box h3{
-    margin:0;
-    font-size:14px;
-    font-weight:900;
-    display:flex;
-    align-items:center;
-    gap:8px;
-  }
-  .lead-score-sub{
-    margin-top:6px;
-    font-size: 11px;
-    color: var(--muted);
-    line-height:1.45;
-  }
-  #leadScoreList{ list-style:none; padding: 0 16px 12px; margin:0; }
-  #leadScoreList li{
-    padding: 12px 0;
-    border-bottom: 1px dashed rgba(255,255,255,.14);
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    align-items:center;
-  }
-  #leadScoreList li:last-child{ border-bottom:none; }
-
-  .lead-name{
-    font-weight: 900;
-    color: rgba(234,242,255,.92);
-    cursor:pointer;
-  }
-  .lead-score-badge{
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 900;
-    border: 1px solid rgba(20,184,166,.22);
-    background: rgba(20,184,166,.10);
-    color: rgba(234,242,255,.92);
-  }
-  .lead-score-meta{
-    flex: 1 1 auto;
-    font-size: 11px;
-    color: rgba(234,242,255,.78);
-  }
-  .lead-absent{ color: var(--danger); font-weight: 900; }
-  .lead-money{ margin-left:auto; font-variant-numeric: tabular-nums; font-weight: 900; color: #7dd3fc; }
-
-  /* ---- Modals ---- */
-  #customer-modal, #group-modal, #group-modal-legacy, .range-modal{
-    display:none;
-    position:fixed;
-    inset:0;
-    background: rgba(0,0,0,.65);
-    backdrop-filter: blur(8px);
-    z-index: 9999;
-    justify-content:center;
-    align-items:center;
-    padding: 14px;
-  }
-  #customer-modal-box, .range-modal__panel, #group-modal-content, #group-modal-content-legacy{
-    background: rgba(10,16,32,.92) !important;
-    border: 1px solid rgba(255,255,255,.12) !important;
-    border-radius: var(--r22) !important;
-    box-shadow: var(--shadow) !important;
-    color: rgba(234,242,255,.92);
-    backdrop-filter: blur(14px);
-  }
-  #customer-modal-box{
-    width: min(900px, 92vw);
-    max-height: 90vh;
-    overflow:auto;
-    padding: 16px;
-    position: relative;
-  }
-  #customer-modal-box button{
-    border:none;
-    background: rgba(255,255,255,.06);
-    color: rgba(234,242,255,.92);
-    width: 38px;
-    height: 38px;
-    border-radius: 999px;
-    cursor:pointer;
-    transition: transform .12s ease, background .18s ease;
-  }
-  #customer-modal-box button:hover{
-    transform: translateY(-1px);
-    background: rgba(255,255,255,.10);
-  }
-
-  /* Range modal */
-  .range-modal{ z-index: 1200; }
-  .range-modal__backdrop{ position:absolute; inset:0; }
-  .range-modal__panel{
-    position:relative;
-    width:min(420px, 92vw);
-    overflow:hidden;
-  }
-  .range-modal__header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding: 12px 14px;
-    background: rgba(255,255,255,.05);
-    border-bottom: 1px solid rgba(255,255,255,.10);
-    font-weight: 900;
-  }
-  .range-modal__close{
-    width:auto !important;
-    height:auto !important;
-    padding: 6px 10px !important;
-    border-radius: 999px !important;
-    background: rgba(255,255,255,.06) !important;
-  }
-  .range-modal__body{
-    padding: 14px;
-    display:grid;
-    gap: 12px;
-  }
-  .range-modal__body label{ display:grid; gap:6px; font-size: 12px; color: rgba(234,242,255,.78); }
-  .range-modal__footer{
-    display:flex;
-    justify-content:flex-end;
+  .month-nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     gap: 10px;
-    padding: 12px 14px;
-    border-top: 1px solid rgba(255,255,255,.10);
+    margin-bottom: 20px;
+    flex-wrap: wrap;
   }
-  .btn-primary, .btn-secondary{
-    border:none;
-    padding: 10px 14px;
-    border-radius: 999px;
-    cursor:pointer;
-    font-weight: 900;
+  .month-nav button {
+    background-color: #009688; color: white; border: none;
+    padding: 8px 16px; font-size: 14px; border-radius: 8px;
+    cursor: pointer; transition: background-color 0.2s ease;
   }
-  .btn-primary{
-    background: linear-gradient(135deg, var(--brand), rgba(20,184,166,.65));
-    color:#07101e;
+  .month-nav button:hover { background-color: #00796b; }
+  .month-nav input[type="month"]{
+    padding: 6px 8px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px;
   }
-  .btn-secondary{
-    background: rgba(255,255,255,.06);
-    color: rgba(234,242,255,.92);
-    border:1px solid rgba(255,255,255,.12);
+  .month-nav .sep{opacity:.7}
+
+  #mainTitle {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background-color: #e0f2f1; border-radius: 16px; padding: 20px 30px;
+    margin: 0 auto 30px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    max-width: fit-content; text-align: center;
+    cursor: pointer;
+  }
+  #mainTitle .month { font-size: 26px; font-weight: 600; color: #004d40; }
+  #mainTitle .total { font-size: 18px; color: #009688; margin-top: 6px; }
+
+  .top10-box {
+    max-width: 1200px; margin: 0 auto 20px; background: #fff; padding: 15px 20px;
+    border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+  .top10-box h3 { margin-top: 0; color: teal; font-size: 18px; text-align: center; }
+  .top10-box ul { list-style: none; padding-left: 0; }
+  .top10-box li { margin-bottom: 6px; padding: 4px 0; border-bottom: 1px dashed #ddd; white-space: nowrap; }
+  .top10-box li span.name { font-weight: 600; color: #333; }
+  .top10-box li span.date { font-size: 13px; color: #999; margin-left: 6px; }
+  .top10-box li span.amount { float: right; color: #009688; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 768px) {
+    .top10-box li span.date { font-size: 8px !important; }
   }
 
-  /* Popup table (mini) */
-  .table-mini{
-    width:100%;
-    border-collapse: collapse;
-    font-size: 12px;
-    overflow:hidden;
-    border-radius: 14px;
-    border: 1px solid rgba(255,255,255,.12);
+  .chart-summary-row {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 20px; max-width: 1200px; margin: 0 auto 20px; flex-wrap: wrap;
   }
-  .table-mini th{
-    text-align:left;
-    padding: 10px 10px;
-    background: rgba(255,255,255,.06);
-    color: rgba(234,242,255,.88);
-    border-bottom: 1px solid rgba(255,255,255,.10);
-    white-space:nowrap;
+  .chart-container {
+    flex: 1; background: #fff; padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06);
   }
-  .table-mini td{
-    padding: 10px 10px;
-    border-bottom: 1px dashed rgba(255,255,255,.12);
-    color: rgba(234,242,255,.82);
-    vertical-align:top;
-  }
-  .table-mini tr:last-child td{ border-bottom:none; }
+  canvas { width: 100% !important; height: 300px !important; }
 
-  .badge{
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: rgba(20,184,166,.12);
-    border: 1px solid rgba(20,184,166,.20);
-    color: rgba(234,242,255,.90);
-    font-size: 11px;
-    font-weight: 900;
-    margin: 4px 6px 0 0;
-    white-space:nowrap;
+  .summary-list {
+    flex: 1; background: #fff; padding: 15px 20px; border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06); font-size: 14px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
   }
+  .summary-group ul { list-style: none; padding-left: 0px; margin: 5px 0 10px; }
+  .summary-group li { margin-bottom: 4px; }
+  .summary-group strong { color: #00796b; display: block; margin-bottom: 6px; font-size: 15px; }
 
-  /* Group modal UI */
-  .group-header{
-    font-size: 14px;
-    font-weight: 900;
-    color: rgba(234,242,255,.92);
-    margin-bottom: 12px;
-    padding: 12px;
-    border-radius: 14px;
-    border: 1px solid rgba(255,255,255,.12);
-    background: rgba(255,255,255,.05);
+  .floating-dock {
+    position: fixed; bottom: env(safe-area-inset-bottom, 16px); left: 50%; transform: translateX(-50%);
+    background: white; border-radius: 16px; padding: 6px 6px env(safe-area-inset-bottom, 16px);
+    display: flex; gap: 6px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); z-index: 1000; max-width: 95vw;
   }
-  .customer-entry{
-    padding: 12px;
-    border-radius: 14px;
-    border: 1px solid rgba(255,255,255,.12);
-    background: rgba(255,255,255,.05);
-    margin-bottom: 10px;
-  }
-  .customer-name{ font-weight: 900; margin-bottom: 6px; }
-  .date-info{ display:flex; flex-wrap:wrap; gap:8px; }
-  .date-box{
-    background: rgba(255,255,255,.06);
-    border: 1px solid rgba(255,255,255,.12);
-    padding: 6px 10px;
-    border-radius: 999px;
-    font-size: 11px;
-    color: rgba(234,242,255,.86);
-    white-space:nowrap;
+  .icon-button { width: 64px; height: 64px; padding: 4px; border-radius: 12px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s ease; text-decoration: none; flex: 0 0 auto; }
+  .icon-button img { width: 60px; height: 60px; object-fit: contain; }
+  .icon-button:hover { transform: scale(1.1); }
+
+  .inline-field { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; max-width: 600px; }
+  .inline-field label { min-width: 160px; font-weight: bold; font-size: 14px; color: #333; }
+  .inline-field .input-pair { display: flex; gap: 6px; align-items: center; }
+  .inline-field input, .inline-field select { padding: 6px 8px; font-size: 13px; width: 120px; border: 1px solid #ccc; border-radius: 6px; max-width: 100%; }
+  button[type="button"] { background-color: teal; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; margin-top: 10px; }
+
+  @media (max-width: 768px) {
+    .inline-field { flex-direction: column; align-items: flex-start; max-width: 100%; }
+    .inline-field label { min-width: unset; }
+    .inline-field input, .inline-field select { width: auto; min-width: 100px; max-width: 100%; }
+    .inline-field .input-pair { flex-direction: row; width: 100%; }
   }
 
-  /* Responsive */
-  @media (max-width: 1024px){
-    .summary-list{ grid-template-columns: repeat(3, 1fr); }
+  .add-product-button {
+    background-color: #e0f7fa; color: #00796b; border: 1px solid #00bfa5;
+    padding: 6px 14px; font-size: 13px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;
   }
+  .add-product-button:hover { background-color: #b2dfdb; color: #004d40; transform: scale(1.03); }
+
+  .floating-toggle {
+    position: fixed; bottom: env(safe-area-inset-bottom, 18px); left: 50%; transform: translateX(-50%);
+    background: rgba(0, 128, 128, 0); width: 58px; height: 58px; border-radius: 50%;
+    box-shadow: 0 4px 16px rgba(251, 251, 251, 0); display: flex; justify-content: center; align-items: center; z-index: 1000; cursor: pointer;
+  }
+  .floating-menu {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+    background: white; border-radius: 16px; padding: 10px; display: none; flex-direction: column; align-items: center; gap: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.2); z-index: 999; max-height: 60vh; overflow-y: auto;
+  }
+  .floating-menu a img { width: 52px; height: 52px; }
+
+  @media (max-width: 768px) {
+    body { font-size: 10px; }
+    #mainTitle .month { font-size: 14px; }
+    #mainTitle .total, #mainTitle .compare { font-size: 10px; }
+    .summary-list { font-size: 10px; grid-template-columns: repeat(4, 1fr); }
+    .summary-group strong { font-size: 10px; }
+    .top10-box h3 { font-size: 12px; }
+    .top10-box li span.name, .top10-box li span.date, .top10-box li span.amount { font-size: 10px; }
+    .inline-field label, .inline-field input, .inline-field select { font-size: 10px; }
+    .add-product-button { font-size: 10px; padding: 4px 8px; }
+    #customer-modal > div { font-size: 10px !important; }
+    .icon-button { width: 48px; height: 48px; }
+    .icon-button img { width: 48px; height: 48px; }
+    .chart-summary-row { flex-direction: column; }
+  }
+
+  @media (max-width: 1024px) {
+    .floating-dock { bottom: 0; padding-bottom: env(safe-area-inset-bottom); }
+  }
+
+  #mainTitle .compare { font-size: 13px; }
+  @media (max-width: 768px) { #mainTitle .compare { font-size: 10px; } }
+
+  .filter-section {
+    max-width: 650px; margin: auto; padding: 20px; background: #fefefe; border: 1px solid #ddd; border-radius: 12px; font-size: 14px;
+  }
+  h3 { margin-top: 0; color: #00695c; margin-bottom: 20px; font-size: 16px; }
+
+  .product-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+  .inline-field { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+  .inline-field label { min-width: 180px; font-weight: bold; font-size: 14px; color: #333; }
+  .input-pair { display: flex; gap: 6px; align-items: center; }
+  .input-pair input { padding: 6px 8px; font-size: 13px; width: 120px; max-width: 100%; border: 1px solid #ccc; border-radius: 6px; }
+  .product-list-container { margin-bottom: 16px; }
+  .search-button { background-color: teal; color: white; border: none; padding: 8px 20px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 12px; }
+  .search-button:hover { background-color: #00796b; }
+
+  @media (max-width: 768px) {
+    .inline-field { flex-direction: column; align-items: flex-start; }
+    .inline-field label { min-width: unset; }
+    .input-pair { width: 100%; }
+    .input-pair input { width: 100%; }
+    .product-row { flex-direction: column; align-items: flex-start; }
+  }
+  @media (max-width: 768px) {
+    body { font-size: 10px; }
+    .filter-section, .inline-field label, .inline-field input, .inline-field select, .add-product-button, .search-button, .input-pair input { font-size: 10px !important; }
+    h3 { font-size: 11px !important; }
+  }
+  @media (max-width: 768px) {
+    #filterResults, #filterResults div, #filterResults strong, #filterResults span { font-size: 10px !important; }
+  }
+  .inline-field input[type="text"] { padding: 6px 8px; font-size: 13px; width: 240px; max-width: 100%; border: 1px solid #ccc; border-radius: 6px; }
+  @media (max-width: 768px) { .inline-field input[type="text"] { font-size: 10px !important; } }
+  @media (max-width: 480px) { #customer-modal > div { max-width: 94vw !important; padding: 12px !important; } }
+
+  .group-header {
+    font-size: 18px; color: #004d40; font-weight: bold; margin-bottom: 20px;
+    text-align: center; background: #e0f2f1; padding: 10px 16px; border-radius: 12px; box-shadow: 0 2e 6px rgba(0,0,0,0.08);
+  }
+  .customer-entry { padding: 12px 16px; background: #f9f9f9; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+  .customer-name { font-size: 15px; color: #00695c; margin-bottom: 6px; }
+  .date-info { font-size: 13px; color: #444; display: flex; flex-wrap: wrap; gap: 8px; }
+  .date-box { background: #e0f7fa; color: #004d40; padding: 4px 8px; border-radius: 8px; font-size: 13px; white-space: nowrap; border: 1px solid #b2dfdb; }
+
+  #customer-modal-box {
+    width: auto; max-width: 90vw; max-height: 90vh; font-size: 13.5px; padding: 16px; border-radius: 16px;
+    overflow: auto; background: white; box-sizing: border-box;
+  }
+  #customer-modal {
+    display: flex; justify-content: center; align-items: center; padding: 16px;
+  }
+
+  /* ปุ่มในแถบเดือน */
+  .month-nav { display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .month-nav button { background-color:#009688; color:#fff; border:none; padding:8px 14px; font-size:13px; border-radius:10px; cursor:pointer; transition:background-color .2s ease, transform .05s ease; white-space:nowrap; }
+  .month-nav button:hover { background-color:#00796b; }
+  .month-nav button:active { transform: translateY(1px); }
+  #openRangeBtn { background-color:#00897b; }
+  #clearRangeBtn { background-color:#607d8b; }
+  #clearRangeBtn:hover { background-color:#546e7a; }
+
+  /* ===== Modal เลือกช่วงเดือน ===== */
+  .range-modal { position: fixed; inset: 0; z-index: 1200; display: none; }
+  .range-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.45); }
+  .range-modal__panel { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(92vw,420px); background:#fff; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,.18); overflow:hidden; display:flex; flex-direction:column; }
+  .range-modal__header { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:#e0f2f1; font-weight:600; color:#004d40; }
+  .range-modal__close { background:transparent; border:none; font-size:18px; cursor:pointer; color:#004d40; }
+  .range-modal__body { display:grid; gap:12px; padding:14px; }
+  .range-modal__body label { display:grid; gap:6px; font-size:13px; color:#335; }
+  .range-modal__body input[type="month"]{ -webkit-appearance:none; appearance:none; width:100%; padding:8px 10px; font-size:14px; border:1px solid #cfe7e5; border-radius:10px; background:#fff; }
+  .range-modal__footer { display:flex; justify-content:flex-end; gap:8px; padding:12px 14px; border-top:1px solid #eee; }
+  .btn-primary, .btn-secondary { border:none; padding:8px 14px; border-radius:10px; font-size:13px; cursor:pointer; }
+  .btn-primary { background:#009688; color:#fff; }
+  .btn-primary:hover { background:#00796b; }
+  .btn-secondary { background:#eceff1; color:#37474f; }
+  .btn-secondary:hover { background:#e0e3e6; }
+
   @media (max-width: 768px){
-    body{ font-size: 12px; padding: 12px; padding-bottom: 150px; }
-    #mainTitle .month{ font-size: 16px; }
-    #mainTitle .total{ font-size: 13px; }
-    #mainTitle .compare{ font-size: 11px; }
-    .summary-list{ grid-template-columns: repeat(2, 1fr); }
-    .inline-field{ flex-direction:column; align-items:flex-start; }
-    .inline-field label{ min-width: unset; }
-    input, select{ width: 100%; }
-    .input-pair{ width: 100%; }
+    .month-nav { gap:6px; margin-bottom:12px; }
+    .month-nav button { padding:7px 12px; font-size:12px; border-radius:9px; }
+    .range-modal__panel { width:min(94vw,380px); }
+    .range-modal__body input[type="month"]{ font-size:13px; padding:7px 10px; }
   }
-  @media (max-width: 420px){
-    .summary-list{ grid-template-columns: 1fr; }
+
+  /* ===== ตารางสรุปใน popup ===== */
+  .table-mini { width:100%; border-collapse:collapse; font-size:13px; }
+  .table-mini th, .table-mini td { padding:6px 8px; border-bottom:1px dashed #e0e0e0; text-align:right; }
+  .table-mini th:first-child, .table-mini td:first-child { text-align:left; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; background:#e0f2f1; color:#004d40; font-size:12px; }
+
+  /* === กล่องลูกค้าที่ควรโทรก่อน (Lead Score) === */
+  .lead-score-box { max-width:1200px; margin:0 auto 20px; background:#fff; padding:15px 20px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.06); }
+  .lead-score-box h3 { margin-top:0; color:teal; font-size:18px; text-align:center; }
+  .lead-score-sub { text-align:center; font-size:12px; color:#64748b; margin-top:4px; margin-bottom:10px; }
+  #leadScoreList { list-style:none; padding-left:0; margin:0; }
+  #leadScoreList li { padding:6px 0; border-bottom:1px dashed #e5e7eb; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .lead-name { font-weight:600; color:#00695c; cursor:pointer; }
+  .lead-score-badge { background:#e0f2f1; color:#004d40; border-radius:999px; padding:2px 10px; font-size:12px; font-weight:600; }
+  .lead-score-meta { font-size:12px; color:#4b5563; flex:1 1 auto; white-space:normal; }
+  .lead-absent { color:#dc2626; font-weight:600; }
+  .lead-money { font-weight:600; color:#009688; margin-left:auto; font-variant-numeric:tabular-nums; }
+  @media (max-width: 768px) {
+    .lead-score-box h3 { font-size:14px; }
+    .lead-score-sub, .lead-score-meta, .lead-score-badge, #leadScoreList li { font-size:10px; }
   }
+
+  /* ===== CSS สำหรับ Followup Summary ===== */
+  .summary-box { max-width:1200px; margin:0 auto 20px; background:#fff; padding:0; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.06); overflow:hidden; }
+  .tabs-wrap { display:flex; background:#f1f5f9; border-bottom:1px solid #e2e8f0; overflow-x:auto; }
+  .tab-btn { flex:1; border:none; background:transparent; padding:12px 16px; cursor:pointer; font-family:'Prompt',sans-serif; font-size:13px; color:#64748b; border-bottom:3px solid transparent; transition:all 0.2s; display:flex; flex-direction:column; align-items:center; gap:4px; min-width:100px; }
+  .tab-btn:hover { background:#e2e8f0; }
+  .tab-btn.active { background:#fff; color:#0f766e; border-bottom-color:#0f766e; font-weight:bold; }
+  .tab-count { background:#cbd5e1; color:#334155; padding:2px 8px; border-radius:99px; font-size:11px; }
+  .tab-btn.active .tab-count { background:#ccfbf1; color:#0f766e; }
+  #summaryContentArea { padding:0; overflow-x:auto; }
+  .summary-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .summary-table th { background:#f8fafc; text-align:left; padding:10px 16px; color:#475569; font-weight:600; border-bottom:1px solid #e2e8f0; white-space:nowrap; }
+  .summary-table td { padding:10px 16px; border-bottom:1px solid #f1f5f9; vertical-align:top; color:#334155; }
+  .summary-table tr:last-child td { border-bottom:none; }
+  .customer-link { color:#0f766e; font-weight:600; cursor:pointer; text-decoration:underline; }
+  .customer-link:hover { color:#0d9488; }
+
+  /* ย่อตาราง */
+  .summary-table { font-size:11px !important; }
+  .summary-table th, .summary-table td { padding:4px 8px !important; vertical-align:middle !important; }
+  .customer-link { font-size:12px !important; }
+  .summary-table td div { line-height:1.4; }
+
+  /* RESET THEME */
+  body { background-color:white !important; color:black !important; font-family:'Prompt','Segoe UI',sans-serif !important; }
+  .menu-bar, .top10-box, .chart-container, .summary-list, .lead-score-box, .summary-box, .filter-section,
+  #mainTitle, #customer-modal-box, .range-modal__panel { background:#fff !important; border-radius:12px !important; box-shadow:0 4px 12px rgba(0,0,0,0.06) !important; border:none !important; }
+  h3, .group-header, #mainTitle .month { color:teal !important; font-weight:bold !important; }
+  #mainTitle { background-color:#e0f2f1 !important; border:none !important; }
+  #mainTitle .total { color:#009688 !important; }
+  button, .add-product-button, .search-button, .month-nav button, .tab-btn { border-radius:6px !important; letter-spacing:normal !important; transform:none !important; box-shadow:none !important; }
+  .month-nav button, .search-button, .btn-primary, #openRangeBtn { background:teal !important; color:white !important; }
+  .month-nav button:hover, .search-button:hover { background-color:#00796b !important; transform:none !important; }
+  #clearRangeBtn { background-color:#607d8b !important; color:white !important; border:none !important; }
+  input, select { border:1px solid #ccc !important; background-color:#fff !important; border-radius:8px !important; padding:6px 8px !important; color:black !important; box-shadow:none !important; }
+  input:focus, select:focus { border-color:teal !important; }
+  .top10-box li span.amount, .lead-money { color:#009688 !important; }
+  .badge, .lead-score-badge { background:#e0f2f1 !important; color:#004d40 !important; border:none !important; box-shadow:none !important; }
+  #customer-modal, #group-modal, #group-modal-legacy, .range-modal { backdrop-filter:none !important; background-color:rgba(0,0,0,0.5) !important; }
+  .top10-box li, #leadScoreList li, .summary-table th, .summary-table td { border-bottom:1px dashed #ddd !important; }
+  .tab-btn.active { color:#0f766e !important; border-bottom-color:#0f766e !important; background:#fff !important; }
+  .tab-count { background:#cbd5e1 !important; color:#334155 !important; }
+  .tab-btn.active .tab-count { background:#ccfbf1 !important; color:#0f766e !important; }
 </style>
 </head>
 
@@ -623,34 +306,32 @@
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
-<!-- Legacy Group modal -->
-<div id="group-modal-legacy">
-  <div id="group-modal-content-legacy" style="padding:16px; max-height:80vh; overflow:auto; width:min(520px, 92vw);">
+<div id="group-modal-legacy" style="display:none; position:fixed; inset:0; background-color:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
+  <div id="group-modal-content-legacy" style="background:#fff; padding:20px; border-radius:10px; max-height:80vh; overflow:auto; width:90%; max-width:500px;">
     <div id="groupSelectedList-legacy"></div>
-    <div style="text-align:right; margin-top:14px;">
-      <button onclick="closeGroupModal()" style="padding:10px 14px; border-radius:999px; font-weight:900;">ปิด</button>
+    <div style="text-align:right; margin-top:20px;">
+      <button onclick="closeGroupModal()" style="padding:6px 12px;">❌ ปิด</button>
     </div>
   </div>
 </div>
 
-<!-- Customer modal -->
-<div id="customer-modal">
-  <div id="customer-modal-box">
-    <button onclick="closeCustomerModal()" style="position:absolute; top:10px; right:12px;">✕</button>
+<div id="customer-modal" style="display:none;position:fixed;inset:0;background-color:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
+  <div id="customer-modal-box" style="background:white;padding:16px;border-radius:16px;width:auto;max-width:90vw;box-sizing:border-box;margin:auto;max-height:90vh;overflow:auto;position:relative; font-size:13.5px;">
+    <button onclick="closeCustomerModal()" style="position:absolute;top:10px;right:14px;font-size:20px;border:none;background:none;cursor:pointer;">&times;</button>
     <div id="modal-content"></div>
   </div>
 </div>
 
-<!-- Month nav -->
 <div class="month-nav">
   <button onclick="changeMonth(-1)">← เดือนก่อนหน้า</button>
+
   <button id="openRangeBtn" onclick="openRangeModal()">เลือกช่วงเวลา</button>
   <button id="clearRangeBtn" onclick="clearRange()">ล้างช่วง</button>
+
   <button onclick="changeMonth(1)">เดือนถัดไป →</button>
 </div>
 
-<!-- Range modal -->
-<div id="rangeModal" class="range-modal">
+<div id="rangeModal" class="range-modal" style="display:none;">
   <div class="range-modal__backdrop" onclick="closeRangeModal()"></div>
   <div class="range-modal__panel">
     <div class="range-modal__header">
@@ -674,56 +355,43 @@
   </div>
 </div>
 
-<!-- Hero -->
 <div id="mainTitle">
   <div class="month">...</div>
   <div class="total">กำลังโหลดข้อมูล...</div>
-  <div class="compare"></div>
+  <div class="compare" style="margin-top: 6px;"></div>
 </div>
 
-<!-- Top10 card -->
-<div class="card top10-box">
-  <div class="card-header">
-    <h3>🏆 Top 10 ลูกค้าใช้จ่ายสูงสุด</h3>
-  </div>
-  <div class="card-body">
-    <ul id="top10List"><li style="text-align:center; color: rgba(234,242,255,.65);">กำลังโหลดข้อมูล...</li></ul>
-    <p id="totalCustomer" onclick="toggleCustomerList()"></p>
-    <ul id="allCustomerList" style="display:none; padding-top: 10px;"></ul>
-  </div>
+<div class="top10-box">
+  <h3>Top 10 ลูกค้าใช้จ่ายสูงสุด</h3>
+  <ul id="top10List"><li style="text-align:center; color:#999;">กำลังโหลดข้อมูล...</li></ul>
+  <p id="totalCustomer" onclick="toggleCustomerList()" style="text-align:center; margin-top: 10px; font-weight: bold; color: teal; cursor: pointer;"></p>
+  <ul id="allCustomerList" style="display:none; padding-top: 10px;"></ul>
 </div>
 
-<!-- Summary grid -->
 <div class="chart-summary-row">
-  <div class="summary-list" id="summaryList">
-    <div style="text-align:center; color: rgba(234,242,255,.65); grid-column: 1 / -1;">กำลังโหลดข้อมูลสินค้า...</div>
-  </div>
+  <div class="summary-list" id="summaryList"><div style="text-align:center; color:#999; grid-column: 1 / -1;">กำลังโหลดข้อมูลสินค้า...</div></div>
 </div>
-
 <div id="filter-placeholder"></div>
 
-<!-- Lead score -->
+
+
 <div class="lead-score-box">
-  <div class="head">
-    <h3>📞 ลูกค้าที่ควรตามในเดือนนี้</h3>
-    <div class="lead-score-sub">
-      ระบบจะดูจาก <b>= มูลค่าลูกค้า (ยอดรวม + จำนวนครั้ง + บิลเฉลี่ย) + คะแนนหายไปนาน (ดีที่สุดช่วง 46–120 วัน) และตัดคนที่มา 45 วัน</b>
-      <br><span style="opacity:.8;">หมายเหตุ: ลบ Sale Pitch ออกแล้ว เพื่อให้โหลดเร็วขึ้น</span>
-    </div>
+  <h3>📞 ลูกค้าที่ควรตามในเดือนนี้</h3>
+  <div class="lead-score-sub">
+    ระบบจะดูจาก <b>= มูลค่าลูกค้า (ยอดรวม + จำนวนครั้ง + บิลเฉลี่ย) + คะแนนหายไปนาน (ดีที่สุดช่วง 46–120 วัน) และตัดคนที่มา 45 วัน</b><br>
   </div>
   <ul id="leadScoreList">
-    <li style="text-align:center; color: rgba(234,242,255,.65); padding:14px;">กำลังวิเคราะห์ข้อมูล...</li>
+    <li style="text-align:center; color:#999; padding:10px;">กำลังวิเคราะห์ข้อมูล...</li>
   </ul>
 </div>
 
-<!-- Group modal -->
-<div id="group-modal">
-  <div id="group-modal-content" style="padding:16px; width:min(760px, 95vw); max-height:90vh; overflow:auto; position:relative;">
+<div id="group-modal" style="display:none;position:fixed;inset:0;background-color:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
+  <div id="group-modal-content" style="background:white;padding:20px;border-radius:16px;width:95%;max-width:700px;max-height:90vh;overflow:auto;position:relative; font-size:13px;">
     <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
-      <button onclick="saveGroupModalAsImage()" title="บันทึกเป็นรูปภาพ" style="width:40px; height:40px; border-radius:999px; background:rgba(255,255,255,.06); color:rgba(234,242,255,.92); border:1px solid rgba(255,255,255,.12); cursor:pointer;">💾</button>
-      <button onclick="closeGroupModal()" title="ปิดหน้าต่าง" style="width:40px; height:40px; border-radius:999px; background:rgba(255,255,255,.06); color:rgba(234,242,255,.92); border:1px solid rgba(255,255,255,.12); cursor:pointer;">✕</button>
+      <button onclick="saveGroupModalAsImage()" title="บันทึกเป็นรูปภาพ" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">💾</button>
+      <button onclick="closeGroupModal()" title="ปิดหน้าต่าง" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">❌</button>
     </div>
-    <div style="margin-top: 40px;" id="groupSelectedList"></div>
+    <div style="margin-top: 20px;" id="groupSelectedList"></div>
   </div>
 </div>
 
@@ -733,6 +401,7 @@
   const dateYM = (s)=> s.slice(0,7);
   const ymNum = (ym)=>{const[a,b]=ym.split('-').map(Number);return a*100+b;}
 
+  // ===== เพิ่ม Helper Functions ที่ขาดหายไป (สำคัญ) =====
   const pad4 = (s) => String(s||'').padStart(4,'0');
   const esc = (s) => (s||'').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   const fmtShortDate = (d) => { if(!d)return'-'; const date=new Date(d); return `${date.getDate()}/${date.getMonth()+1}/${String(date.getFullYear()).slice(-2)}`; };
@@ -741,6 +410,13 @@
   let viewingDate = new Date();
   let allSalesRecords = [];
   let allCustomerRecords = [];
+  let fullCustomerList = [];
+
+  const leadPitchCache = new Map();
+
+  
+
+  
 
   // โหมดช่วงเดือน
   const monthRange = { enabled:false, startYM:null, endYM:null };
@@ -786,8 +462,6 @@
     }
   }
 
-  function daysInMonth(y,m){ return new Date(y,m,0).getDate(); }
-
   function updateDashboard(records) {
     const compareEl = document.querySelector('#mainTitle .compare');
     compareEl.innerHTML = '';
@@ -805,11 +479,10 @@
     }
 
     let totalSales = 0;
-
     if (monthRange.enabled){
       records.filter(activeFilter).forEach(r => totalSales += parseFloat(r.amount || 0));
-      document.querySelector('#mainTitle .total').innerHTML = `💰 ยอดขายรวม <b>${totalSales.toLocaleString()}</b> บาท`;
-      compareEl.innerHTML = `<span style="opacity:.85;">โหมดช่วงเดือน: ไม่เปรียบเทียบกับเดือนก่อน</span>`;
+      document.querySelector('#mainTitle .total').innerHTML = `💰 ยอดขายรวม ${totalSales.toLocaleString()} บาท`;
+      compareEl.innerHTML = `<span style="color:gray;">โหมดช่วงเดือน: ไม่เปรียบเทียบกับเดือนก่อน</span>`;
     } else {
       const today = new Date();
       const todayDate = Math.min(today.getDate(), daysInMonth(viewingDate.getFullYear(), viewingDate.getMonth()+1));
@@ -832,25 +505,65 @@
         }
       });
 
-      document.querySelector('#mainTitle .total').innerHTML = `💰 ยอดขายรวม <b>${totalSales.toLocaleString()}</b> บาท`;
+      document.querySelector('#mainTitle .total').innerHTML = `💰 ยอดขายรวม ${totalSales.toLocaleString()} บาท`;
 
       let diff = totalSales - lastMonthSales;
       let text = diff > 0
-        ? `<span style="color:${'#22c55e'}; font-weight:900;">+${diff.toLocaleString()} บาท</span> <span style="opacity:.8;">จากเดือนก่อน</span>`
+        ? `<span style="color: green;">+${diff.toLocaleString()} บาท จากเดือนก่อน</span>`
         : diff < 0
-          ? `<span style="color:${'#fb7185'}; font-weight:900;">-${Math.abs(diff).toLocaleString()} บาท</span> <span style="opacity:.8;">จากเดือนก่อน</span>`
-          : `<span style="opacity:.85;">ยอดเท่าเดิมกับเดือนก่อน</span>`;
+          ? `<span style="color: red;">-${Math.abs(diff).toLocaleString()} บาท จากเดือนก่อน</span>`
+          : `<span style="color: gray;">ยอดเท่าเดิมกับเดือนก่อน</span>`;
 
       diff = toDateSales - toDateLastMonthSales;
       let text2 = diff > 0
-        ? `<span style="color:${'#22c55e'}; font-weight:900;">📆 ${todayDate} วันแรก: +${diff.toLocaleString()} บาท</span> <span style="opacity:.8;">จากเดือนก่อน</span>`
+        ? `<span style="color: green;">📆 รวมเฉพาะ ${todayDate} วัน : +${diff.toLocaleString()} บาท จากเดือนก่อน</span>`
         : diff < 0
-          ? `<span style="color:${'#fb7185'}; font-weight:900;">📆 ${todayDate} วันแรก: -${Math.abs(diff).toLocaleString()} บาท</span> <span style="opacity:.8;">จากเดือนก่อน</span>`
-          : `<span style="opacity:.85;">📆 ${todayDate} วันแรก: ยอดเท่าเดิมกับเดือนก่อน</span>`;
-
+          ? `<span style="color: red;">📆 รวมเฉพาะ ${todayDate} วัน: -${Math.abs(diff).toLocaleString()} บาท จากเดือนก่อน</span>`
+          : `<span style="color: gray;">📆 รวมเฉพาะ ${todayDate} วัน: ยอดเท่าเดิมกับเดือนก่อน</span>`;
       compareEl.innerHTML = `${text}<br>${text2}`;
 
-      // today/week
+      const allDates = records.map(r => r.date).filter(Boolean);
+      const latestDate = allDates.sort().reverse()[0];
+      if (latestDate){
+        const targetRangeEnd = todayDate;
+        const monthlyTotalMap = {};
+        records.forEach(r => {
+          const [y,m] = r.date.split("-");
+          const ym = `${y}-${m}`;
+          if (!monthlyTotalMap[ym]) monthlyTotalMap[ym] = 0;
+          monthlyTotalMap[ym] += parseFloat(r.amount || 0);
+        });
+        const VALID_MONTH_THRESHOLD = 400000;
+        const qualifiedMonths = Object.entries(monthlyTotalMap)
+          .filter(([m,total]) => m !== currentPrefix && total >= VALID_MONTH_THRESHOLD)
+          .map(([m]) => m);
+
+        const rangeTotals = {};
+        records.forEach(r => {
+          const [y,m,d] = r.date.split("-");
+          const ym = `${y}-${m}`;
+          if (!qualifiedMonths.includes(ym)) return;
+          if (parseInt(d) <= targetRangeEnd) {
+            if (!rangeTotals[ym]) rangeTotals[ym] = 0;
+            rangeTotals[ym] += parseFloat(r.amount || 0);
+          }
+        });
+        const totalPast = Object.values(rangeTotals).reduce((s,v)=>s+v,0);
+        const averagePast = Math.round(totalPast / (Object.keys(rangeTotals).length || 1));
+        const currentMonthN = toDateSales;
+        const diffFromAvg = currentMonthN - averagePast;
+
+        const compareAvgDiv = document.createElement('div');
+        compareAvgDiv.style.marginTop = '4px';
+        compareAvgDiv.style.color = diffFromAvg > 0 ? 'green' : diffFromAvg < 0 ? 'crimson' : 'gray';
+        compareAvgDiv.innerHTML =
+          `📊 รวมเฉพาะ ${targetRangeEnd} วัน คือ: ${currentMonthN.toLocaleString()} บาท ${
+            diffFromAvg > 0 ? `✅ มากกว่าค่าเฉลี่ย +${diffFromAvg.toLocaleString()} บาท (${averagePast.toLocaleString()})` :
+            diffFromAvg < 0 ? `⚠️ น้อยกว่าค่าเฉลี่ย ${Math.abs(diffFromAvg).toLocaleString()} บาท (${averagePast.toLocaleString()})` :
+            `😐 เท่ากับค่าเฉลี่ย (${averagePast.toLocaleString()} บาท)`}`;
+        compareEl.appendChild(compareAvgDiv);
+      }
+
       let todaySales = 0, weekSales = 0;
       const todayObj = new Date();
       const dow = todayObj.getDay();
@@ -870,14 +583,11 @@
       });
 
       const extraInfo = document.createElement("div");
-      extraInfo.style.marginTop = "6px";
-      extraInfo.style.fontSize = "11px";
-      extraInfo.style.color = "rgba(234,242,255,.78)";
-      extraInfo.innerHTML = `วันนี้: <b>${todaySales.toLocaleString()}</b> บาท · สัปดาห์นี้ (${monday.getDate()}–${sunday.getDate()}): <b>${weekSales.toLocaleString()}</b> บาท`;
+      extraInfo.style.marginTop = "6px"; extraInfo.style.fontSize = "10px"; extraInfo.style.color = "green";
+      extraInfo.innerHTML = `<span style="color: green; font-size: 10px;"> วันนี้: ${todaySales.toLocaleString()} บาท สัปดาห์นี้ (${monday.getDate()}–${sunday.getDate()}): ${weekSales.toLocaleString()} บาท</span>`;
       compareEl.appendChild(extraInfo);
     }
 
-    // ===== Summary by category =====
     const categoryCounts = {}, categoryDetails = {}, customerMap = {};
     records.filter(activeFilter).forEach(r => {
       const key = `${r.name}|${r.phone}`;
@@ -901,25 +611,18 @@
     });
 
     const sortedEntries = Object.entries(categoryCounts).sort((a,b)=>b[1]-a[1]);
-    document.getElementById('summaryList').innerHTML = sortedEntries.length
-      ? sortedEntries.map(([cat]) => {
-          const items = Object.entries(categoryDetails[cat] || {})
-            .slice(0, 8)
-            .map(([sub, d]) => `• ${esc(sub)} <b>${d.qty}</b>`)
-            .join('<br>');
-          const sumQty = categoryCounts[cat];
-          return `
-            <div class="summary-group" onclick="openGroupModalByCategory('${esc(cat).replace(/'/g,"\\'")}')">
-              <strong>${esc(cat)}</strong>
-              รวม <b>${sumQty}</b> ชิ้น
-              <ul>${items || ''}</ul>
-            </div>`;
-        }).join('')
-      : `<div style="text-align:center; color: rgba(234,242,255,.65); grid-column: 1 / -1;">ไม่มีข้อมูลในช่วงนี้</div>`;
+    document.getElementById('summaryList').innerHTML = sortedEntries.map(([cat]) => {
+      const items = Object.entries(categoryDetails[cat] || {}).map(([sub, d]) => `• ${sub} ${d.qty}`).join('<br>');
+      const sumQty = categoryCounts[cat];
+      return `
+        <div class="summary-group" style="cursor:pointer;" onclick="openGroupModalByCategory('${cat}')">
+          <strong>${cat}</strong> รวม ${sumQty} ชิ้น
+          <ul>${items}</ul>
+        </div>`;
+    }).join('');
 
     if (typeof buildLeadScoreList === 'function') buildLeadScoreList();
 
-    // ===== Top10 =====
     const top10 = Object.values(customerMap).sort((a,b)=>b.amount-a.amount).slice(0,10);
     document.getElementById('top10List').innerHTML = top10.map((c) => {
       const key = `${c.name}|${c.phone}`;
@@ -934,37 +637,37 @@
       const latest = allRec.length? new Date(Math.max(...allRec.map(r=>new Date(r.date)))):null;
       const daysSinceLastVisit = latest? Math.floor((new Date()-latest)/(1000*60*60*24)) : null;
 
-      let absentColor = 'rgba(234,242,255,.7)';
-      if (daysSinceLastVisit < 30) absentColor = '#22c55e';
-      else if (daysSinceLastVisit <= 90) absentColor = '#fbbf24';
-      else absentColor = '#fb7185';
+      let absentColor = 'gray';
+      if (daysSinceLastVisit < 30) absentColor = 'green';
+      else if (daysSinceLastVisit <= 90) absentColor = 'orange';
+      else absentColor = 'crimson';
 
-      let totalColor='rgba(234,242,255,.75)', totalExtra='', totalIcon='';
-      if (totalAmount < 50000) totalColor='#fb7185';
-      else if (totalAmount <= 99999) totalColor='#22c55e';
-      else if (totalAmount <= 200000) totalColor='#fbbf24';
-      else { totalColor='#7dd3fc'; totalExtra='font-weight:900;'; totalIcon=' 💎'; }
+      let totalColor='gray', totalExtra='', totalIcon='';
+      if (totalAmount < 50000) totalColor='crimson';
+      else if (totalAmount <= 99999) totalColor='green';
+      else if (totalAmount <= 200000) totalColor='goldenrod';
+      else { totalColor='#8B6508'; totalExtra='font-weight:bold;'; totalIcon=' 💎'; }
 
-      let avgColor='rgba(234,242,255,.75)';
-      if (avg < 5000) avgColor='#fb7185';
-      else if (avg <= 9999) avgColor='#22c55e';
-      else avgColor='#fbbf24';
+      let avgColor='gray';
+      if (avg < 5000) avgColor='crimson';
+      else if (avg <= 9999) avgColor='green';
+      else avgColor='#b8860b';
 
       const lastVisitText = daysSinceLastVisit != null
-        ? `<span style="color:${absentColor}; font-weight:900;">ไม่มา ${daysSinceLastVisit} วัน</span>` : `<span style="opacity:.8;">ไม่มีข้อมูล</span>`;
+        ? `<span style="color:${absentColor};">🔚 ไม่มา ${daysSinceLastVisit} วัน</span>` : `<span>🔚 ไม่มีข้อมูล</span>`;
 
       const isNewCustomer = monthRange.enabled
         ? allRec.filter(r => ymNum(dateYM(r.date)) < ymNum(monthRange.startYM)).length === 0
         : allRec.filter(r => r.date < `${formatYM(viewingDate)}-01`).length === 0;
-      const newBadge = isNewCustomer ? `<span style="color:#fb7185; font-weight:900;"> · ลูกค้าใหม่</span>` : "";
+      const newBadge = isNewCustomer ? `<span style="color:red; font-weight:bold;"> ลูกค้าใหม่</span>` : "";
 
       return `
-      <li>
-        <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">${esc(c.name)}${newBadge}</span>
+      <li style="margin-bottom: 8px;">
+        <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">${c.name}${newBadge}</span>
         <span class="date">
-          (💳 <span style="color:${avgColor}; font-weight:900;">${avg.toLocaleString()}</span> × ${totalVisits}
-           · 💰 <span style="color:${totalColor}; ${totalExtra}">${totalAmount.toLocaleString()}${totalIcon}</span>
-           · ${lastVisitText})
+          (💳 <span style="color:${avgColor};">${avg.toLocaleString()}</span> × ${totalVisits}
+           | 💰 <span style="color:${totalColor}; ${totalExtra}">${totalAmount.toLocaleString()}${totalIcon}</span>
+           | ${lastVisitText})
         </span>
         <span class="amount">${c.amount.toLocaleString()} บาท</span>
       </li>`;
@@ -1010,26 +713,27 @@
           .map(([date, qty]) => {
             const thDate = new Date(date).toLocaleDateString('th-TH',{ day:'numeric', month:'short' });
             return `${thDate} = ${qty}`;
-          }).join(" · ");
-        return `👤 <b>${esc(c.name)}</b>: ${dateParts}`;
+          }).join(" | ");
+        return `👤 <strong>${c.name}</strong>: ${dateParts}`;
       }).join("<br>");
 
-      return `<div style="margin-bottom:12px;">
-        <div style="font-weight:900; color: rgba(234,242,255,.92); margin-bottom:6px;">🔹 ${esc(productName)}</div>
-        <div style="color: rgba(234,242,255,.80); font-size:12px; line-height:1.5;">${buyerLines}</div>
+      return `<div style="margin-bottom:15px;">
+        <div style="font-weight:bold; color:#00796b; margin-bottom:5px;">🔹 ${productName}</div>
+        <div>${buyerLines}</div>
       </div>`;
     }).join("");
 
     document.getElementById("groupSelectedList").innerHTML = `
       <div class="group-header">
-        📦 หมวด: <b>${esc(cat)}</b><br>
-        ✅ รวมทั้งหมด <span style="font-size:16px; color:#7dd3fc; font-weight:900;">${totalQty.count}</span> ชิ้น
+        📦 รายการในหมวด: ${cat}<br>
+        ✅ รวมทั้งหมด <strong style="font-size: 18px; color: #00796b;">${totalQty.count}</strong> ชิ้น
       </div>
-      ${html || '<div style="padding:10px; opacity:.75;">ไม่มีข้อมูลในช่วงนี้</div>'}
+      ${html || '<div style="padding:10px; color:#888;">ไม่มีข้อมูลในช่วงนี้</div>'}
     `;
     document.getElementById("group-modal").style.display = "flex";
   }
 
+  // ✅ แก้ให้ปิดได้ทั้ง group-modal และ group-modal-legacy
   function closeGroupModal() {
     const m1 = document.getElementById("group-modal");
     const m2 = document.getElementById("group-modal-legacy");
@@ -1081,37 +785,37 @@
         const latest = allRec.length? new Date(Math.max(...allRec.map(r=>new Date(r.date)))):null;
         const daysSinceLastVisit = latest? Math.floor((new Date()-latest)/(1000*60*60*24)) : null;
 
-        let absentColor='rgba(234,242,255,.7)';
-        if (daysSinceLastVisit < 30) absentColor='#22c55e';
-        else if (daysSinceLastVisit <= 90) absentColor='#fbbf24';
-        else absentColor='#fb7185';
+        let absentColor='gray';
+        if (daysSinceLastVisit < 30) absentColor='green';
+        else if (daysSinceLastVisit <= 90) absentColor='orange';
+        else absentColor='crimson';
 
-        let totalColor='rgba(234,242,255,.75)', totalExtra='', totalIcon='';
-        if (totalAmount < 50000) totalColor='#fb7185';
-        else if (totalAmount <= 99999) totalColor='#22c55e';
-        else if (totalAmount <= 200000) totalColor='#fbbf24';
-        else { totalColor='#7dd3fc'; totalExtra='font-weight:900;'; totalIcon=' 💎'; }
+        let totalColor='gray', totalExtra='', totalIcon='';
+        if (totalAmount < 50000) totalColor='crimson';
+        else if (totalAmount <= 99999) totalColor='green';
+        else if (totalAmount <= 200000) totalColor='goldenrod';
+        else { totalColor='#8B6508'; totalExtra='font-weight:bold;'; totalIcon=' 💎'; }
 
-        let avgColor='rgba(234,242,255,.75)';
-        if (avg < 5000) avgColor='#fb7185';
-        else if (avg <= 9999) avgColor='#22c55e';
-        else avgColor='#fbbf24';
+        let avgColor='gray';
+        if (avg < 5000) avgColor='crimson';
+        else if (avg <= 9999) avgColor='green';
+        else avgColor='#b8860b';
 
         const lastVisitText = daysSinceLastVisit != null
-          ? `<span style="color:${absentColor}; font-weight:900;">ไม่มา ${daysSinceLastVisit} วัน</span>` : `<span style="opacity:.8;">ไม่มีข้อมูล</span>`;
+          ? `<span style="color:${absentColor};">🔚 ไม่มา ${daysSinceLastVisit} วัน</span>` : `<span>🔚 ไม่มีข้อมูล</span>`;
 
         const isNewCustomer = monthRange.enabled
           ? allRec.filter(r => ymNum(dateYM(r.date)) < ymNum(monthRange.startYM)).length === 0
           : allRec.filter(r => r.date < `${formatYM(viewingDate)}-01`).length === 0;
-        const newBadge = isNewCustomer ? `<span style="color:#fb7185; font-weight:900;"> · ลูกค้าใหม่</span>` : "";
+        const newBadge = isNewCustomer ? `<span style="color:red; font-weight:bold;"> ลูกค้าใหม่</span>` : "";
 
         return `
-        <li>
-          <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">${i+11}. ${esc(c.name)}${newBadge}</span>
+        <li style="margin-bottom: 8px;">
+          <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">${i+11}. ${c.name}${newBadge}</span>
           <span class="date">
-            (💳 <span style="color:${avgColor}; font-weight:900;">${avg.toLocaleString()}</span> × ${totalVisits}
-             · 💰 <span style="color:${totalColor}; ${totalExtra}">${totalAmount.toLocaleString()}${totalIcon}</span>
-             · ${lastVisitText})
+            (💳 <span style="color:${avgColor};">${avg.toLocaleString()}</span> × ${totalVisits}
+             | 💰 <span style="color:${totalColor}; ${totalExtra}">${totalAmount.toLocaleString()}${totalIcon}</span>
+             | ${lastVisitText})
           </span>
           <span class="amount">${c.amount.toLocaleString()} บาท</span>
         </li>`;
@@ -1125,12 +829,14 @@
     const listEl = document.getElementById("allCustomerList");
     if(listEl.style.display==="block"){ listEl.style.display="none"; toggleCustomerList(); }
   }
+  function daysInMonth(y,m){ return new Date(y,m,0).getDate(); }
 
   function escapeHTML(s=''){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]) );}
   function closeCustomerModal(){ document.getElementById("customer-modal").style.display = "none"; }
   function formatDate(d){ if(!d) return ''; const [y,m,day]=d.split('-'); return `${day}/${m}/${y.slice(-2)}`; }
 
-  // ===== Customer Modal (Sale Pitch removed) =====
+  
+
   function openCustomerModal(key) {
     const [name, phone = ''] = String(key).split('|');
     const norm = s => (s || '').trim().toLowerCase();
@@ -1199,8 +905,8 @@
 
     const itemSummary = Object.entries(categorizedItems)
       .map(([cat, items]) => `
-        <div style="margin-bottom:6px;">
-          <b>${escapeHTML(cat)}</b>: <span style="opacity:.9;">${items.join(" · ")}</span>
+        <div style="margin-bottom:4px;">
+          <strong>${escapeHTML(cat)}</strong>: ${items.join(" | ")}
         </div>
       `).join("");
 
@@ -1210,63 +916,83 @@
         const name = m ? m[1] : item.split(" - ")[0];
         const q = item.match(/- (\d+) ชิ้น/);
         const qty = q ? parseInt(q[1]) : 1;
-        return `<li style="margin:3px 0;">${escapeHTML(name)} : <b>${qty}</b></li>`;
+        return `<li>${escapeHTML(name)} : ${qty}</li>`;
       }).join("");
 
       const noteText = r.note
-        ? `<div style="font-size:11px; margin-top:6px; opacity:.85;">📝 หมายเหตุ: ${escapeHTML(r.note)}</div>`
+        ? `<div style="font-size:11px; margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${escapeHTML(r.note)}</div>`
         : "";
 
       return `
         <div style="margin-bottom:14px;">
-          <div style="font-weight:900; font-size:12px;">📅 ${formatDate((r.date || '').slice(0, 10))}</div>
-          <ul style="padding-left:16px; margin:6px 0 0; font-size:12px; opacity:.92;">${items}</ul>
-          <div style="margin-top:6px; font-size:12px; color:#7dd3fc; font-weight:900;">💵 ${Math.round(parseFloat(r.amount || 0)).toLocaleString()} บาท</div>
+          <div style="font-weight:600; font-size:12px;">📅 ${formatDate((r.date || '').slice(0, 10))}</div>
+          <ul style="padding-left:16px; margin:0; font-size:11px;">${items}</ul>
+          <div style="margin-top:4px; color:#0a645a; font-size:11px;">💵 ${Math.round(parseFloat(r.amount || 0)).toLocaleString()} บาท</div>
           ${noteText}
-          <div style="height:1px; background: rgba(255,255,255,.10); margin:10px 0;"></div>
+          <hr style="margin:8px auto; border:0; border-top:1px dashed #ddd; width:60%;">
         </div>
       `;
     }).join("");
 
-    const daysAbsentText = `<span style="color:#fb7185; font-weight:900;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
+    const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
 
     document.getElementById("modal-content").innerHTML = `
-      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; align-items:flex-start;">
-        <div>
-          <div style="font-size:18px; font-weight:900;">📇 ${escapeHTML(customer.name)}</div>
-          <div style="font-size:12px; opacity:.85; margin-top:2px;">🆔 OPD: ${escapeHTML(customer.opd)}</div>
-          <div style="font-size:12px; opacity:.85;">📞 เบอร์: ${escapeHTML(customer.phone)}</div>
-          <div style="font-size:12px; opacity:.85;">📅 วันล่าสุด: ${formatDate(lastDateStr)} ${daysAbsentText}</div>
-        </div>
-        <div style="min-width:220px;">
-          <div class="badge">💰 ยอดรวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท</div>
-          <div class="badge">🔁 จำนวนครั้ง: ${totalVisits} ครั้ง</div>
-          <div class="badge">💳 เฉลี่ย/บิล: ${average.toLocaleString()} บาท</div>
-        </div>
+      <h3 style="font-size:16px; margin-bottom:4px;">📇 ${escapeHTML(customer.name)}</h3>
+      <div style="font-size:12px;">🆔 OPD: ${escapeHTML(customer.opd)}</div>
+      <div style="font-size:12px;">📞 เบอร์: ${escapeHTML(customer.phone)}</div>
+      <div style="font-size:12px;">📅 วันล่าสุด: ${formatDate(lastDateStr)} ${daysAbsentText}</div>
+      <div style="font-size:12px; color:#00796b;">💰 ยอดรวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท</div>
+      <div style="font-size:12px;">🔁 จำนวนครั้ง: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
+      <div style="font-size:12px;">💳 เฉลี่ยต่อครั้ง: ${average.toLocaleString()} บาท</div>
+
+      <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
+
+      <div style="font-weight:600; font-size:13px; margin-bottom:6px;">📦 สรุปรายการซื้อทั้งหมด:</div>
+      <div style="font-size:11px;">${itemSummary || '-'}</div>
+
+      <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
+
+      <div style="font-weight:600; font-size:13px; margin-bottom:4px;">🗣️ Sale Pitch (แบบสั้น):</div>
+      <div id="modal-pitch-container" style="min-height:30px;">
+         <span style="color:#666; font-size:11px;">⏳ กำลังโหลดข้อมูล...</span>
       </div>
 
-      <div style="height:1px; background: rgba(255,255,255,.10); margin:14px 0;"></div>
+      <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
 
-      <div style="font-weight:900; font-size:13px; margin-bottom:8px;">📦 สรุปรายการซื้อทั้งหมด</div>
-      <div style="font-size:12px; opacity:.92; line-height:1.55;">${itemSummary || '-'}</div>
-
-      <div style="height:1px; background: rgba(255,255,255,.10); margin:14px 0;"></div>
-
-      <div style="font-weight:900; font-size:13px; margin-bottom:8px;">🧾 ประวัติการซื้อย้อนหลัง</div>
+      <div style="font-weight:600; font-size:13px; margin-bottom:6px;">🧾 ประวัติการซื้อย้อนหลัง:</div>
       ${historyHtml}
     `;
 
     document.getElementById("customer-modal").style.display = 'flex';
+    loadPitchDataIntoModal(customer.opd);
   }
 
-  // ===== Modal close on backdrop click =====
+  function saveModalAsImage() {
+    const node = document.getElementById("modal-content");
+    if (!node) return alert("ไม่พบเนื้อหาใน modal");
+    html2canvas(node, { scale: 2 }).then(canvas => {
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      if (isIOS) {
+        const previewArea = document.createElement("div");
+        previewArea.style.marginTop = "20px";
+        previewArea.innerHTML = `<div style="font-weight:bold; margin-bottom:6px;">แตะค้างที่ภาพด้านล่างเพื่อบันทึกรูป</div><img src="${dataUrl}" style="width:100%; border:1px solid #ccc; border-radius:12px;">`;
+        const existing = document.getElementById("modalImagePreview"); if (existing) existing.remove();
+        previewArea.id = "modalImagePreview";
+        node.appendChild(previewArea);
+      } else {
+        const link = document.createElement("a"); link.download = 'customer-info.jpg'; link.href = dataUrl; link.click();
+      }
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     const modal = document.getElementById("customer-modal");
     const box = document.getElementById("customer-modal-box");
     if (modal && box) modal.addEventListener("click", e => { if (!box.contains(e.target)) closeCustomerModal(); });
   });
 
-  // ===== Filter UI =====
+  // ===== ฟิลเตอร์ส่วนค้นหา =====
   const productCategories = {
     "โบทอค": ["Aestox 50 u", "Aestox 100 u", "Allergan 50 u", "Allergan 100 u"],
     "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q", "Restylane"],
@@ -1278,75 +1004,71 @@
   };
 
   const filterUI = document.createElement("div");
+  filterUI.style.cssText = "margin: 40px auto 20px; padding: 20px; background: #fefefe; border: 1px solid #e0e0e0; border-radius: 12px; max-width: 1100px; font-size: 13px; line-height: 1.6; font-family: 'Prompt', sans-serif; box-shadow: 0 3px 10px rgba(0,0,0,0.03);";
   filterUI.innerHTML = `
     <div class="filter-section">
       <h3>🔍 ฟิลเตอร์ค้นหาลูกค้า</h3>
-
-      <div class="inline-field" style="margin-top:10px;">
-        <label>🧴 สินค้าที่เคยซื้อ</label>
+      <div class="product-row">
+        <label>🧴 สินค้าที่เคยซื้อ:</label>
         <button type="button" class="add-product-button" onclick="addProductSelect()">➕ เพิ่มสินค้า</button>
       </div>
-      <div id="productListContainer" style="margin-bottom:12px;"></div>
+      <div id="productListContainer" class="product-list-container"></div>
 
       <div class="inline-field">
-        <label>📅 ช่วงเวลา</label>
+        <label>📅 ช่วงเวลา:</label>
         <div class="input-pair">
           <input type="date" id="startDate">
-          <span style="opacity:.7;">–</span>
+          <span>-</span>
           <input type="date" id="endDate">
         </div>
       </div>
 
       <div class="inline-field">
-        <label>💰 ยอดรวมทั้งหมด (บาท)</label>
+        <label>💰 ยอดรวมทั้งหมด (บาท):</label>
         <div class="input-pair">
           <input type="number" id="minTotal" placeholder="ขั้นต่ำ">
-          <span style="opacity:.7;">–</span>
+          <span>-</span>
           <input type="number" id="maxTotal" placeholder="สูงสุด">
         </div>
       </div>
 
       <div class="inline-field">
-        <label>📄 จำนวนครั้งที่เคยมาคลินิก</label>
+        <label>📄 จำนวนครั้งที่เคยมาคลินิก:</label>
         <div class="input-pair">
           <input type="number" id="minVisits" placeholder="ขั้นต่ำ">
-          <span style="opacity:.7;">–</span>
+          <span>-</span>
           <input type="number" id="maxVisits" placeholder="สูงสุด">
         </div>
       </div>
 
       <div class="inline-field">
-        <label>⏳ จำนวนวันที่ไม่ได้มาคลินิก</label>
+        <label>⏳ จำนวนวันที่ไม่ได้มาคลินิก:</label>
         <div class="input-pair">
           <input type="number" id="minAbsent" placeholder="ขั้นต่ำ">
-          <span style="opacity:.7;">–</span>
+          <span>-</span>
           <input type="number" id="maxAbsent" placeholder="สูงสุด">
         </div>
       </div>
 
       <div class="inline-field">
-        <label>💳 ยอดเฉลี่ยต่อบิล (บาท)</label>
+        <label>💳 ยอดเฉลี่ยต่อบิล (บาท):</label>
         <div class="input-pair">
           <input type="number" id="minAvg" placeholder="ขั้นต่ำ">
-          <span style="opacity:.7;">–</span>
+          <span>-</span>
           <input type="number" id="maxAvg" placeholder="สูงสุด">
         </div>
       </div>
 
       <div class="inline-field">
-        <label>👤 ชื่อลูกค้า</label>
-        <input type="text" id="customerName" placeholder="ระบุชื่อลูกค้า" style="width:min(360px, 100%);">
+        <label>👤 ชื่อลูกค้า:</label>
+        <input type="text" id="customerName" placeholder="ระบุชื่อลูกค้า">
       </div>
 
-      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px;">
-        <button type="button" onclick="filterGeneral()" class="search-button">ค้นหา</button>
-        <button type="button" onclick="resetFilters()" class="add-product-button">รีเซ็ตค่า</button>
-        <button type="button" onclick="openGroupModal()" class="add-product-button">ดูรายการที่เลือก</button>
-      </div>
-
-      <div id="filterResults" style="margin-top: 18px; font-size: 13px;"></div>
+      <button type="button" onclick="filterGeneral()" class="search-button">ค้นหา</button>
+      <button type="button" onclick="resetFilters()" class="add-product-button" style="margin-left: 10px;">รีเซ็ตค่า</button>
+      <button type="button" onclick="openGroupModal()" class="add-product-button" style="margin-left: 10px;">ดูรายการที่เลือก</button>
     </div>
-  `;
+    <div id="filterResults" style="margin-top: 24px; font-size: 13px;"></div>`;
 
   const placeholder = document.getElementById('filter-placeholder');
   if (placeholder) placeholder.appendChild(filterUI);
@@ -1354,34 +1076,15 @@
 
   function addProductSelect() {
     const container = document.getElementById("productListContainer");
-    const wrapper = document.createElement("div");
-    wrapper.style.marginBottom = "8px";
-
-    const select = document.createElement("select");
-    select.className = "productInput";
-    select.style.width = "min(360px, 100%)";
-
-    const def = document.createElement("option");
-    def.textContent = "กดเพื่อเลือกสินค้า";
-    def.value = "";
-    def.disabled = true;
-    def.selected = true;
-    select.appendChild(def);
-
+    const wrapper = document.createElement("div"); wrapper.style.marginBottom = "6px";
+    const select = document.createElement("select"); select.className = "productInput"; select.style.cssText = "width: 240px; padding: 4px; font-size: 13px;";
+    const def = document.createElement("option"); def.textContent = "กดเพื่อเลือกสินค้า"; def.value = ""; def.disabled = true; def.selected = true; select.appendChild(def);
     Object.entries(productCategories).forEach(([cat, items]) => {
-      const group = document.createElement("optgroup");
-      group.label = cat;
-      items.forEach(p => {
-        const option = document.createElement("option");
-        option.value = p;
-        option.textContent = p;
-        group.appendChild(option);
-      });
+      const group = document.createElement("optgroup"); group.label = cat;
+      items.forEach(p => { const option = document.createElement("option"); option.value = p; option.textContent = p; group.appendChild(option); });
       select.appendChild(group);
     });
-
-    wrapper.appendChild(select);
-    container.appendChild(wrapper);
+    wrapper.appendChild(select); container.appendChild(wrapper);
   }
 
   function filterGeneral() {
@@ -1443,18 +1146,21 @@
 
     const html = results.map(c => {
       const formattedDate = new Date(c.lastVisit).toLocaleDateString('th-TH',{day:'numeric', month:'short', year:'2-digit'});
-      return `<div style="padding:10px 0;">
-        <input type="checkbox" class="selectCustomerCheckbox" value="${c.key}" style="margin-right:8px; transform: translateY(1px);">
-        📇 <b style="cursor:pointer; color:#7dd3fc;" onclick="openCustomerModal('${c.key}')">${esc(c.name)}</b>
-        <span style="opacity:.85;">· 💰 ${c.totalAmount.toLocaleString()} · 💳 ${Math.round(c.averageBill).toLocaleString()}
-        · 🔁 ${c.totalVisits} (${c.paidVisits} จ่าย) · ⏱️ ${c.absentDays} วัน · ${formattedDate}</span>
-      </div>
-      <div style="height:1px; background: rgba(255,255,255,.10);"></div>`;
+      return `<div>
+        <input type="checkbox" class="selectCustomerCheckbox" value="${c.key}" style="margin-right:6px; vertical-align: middle;">
+        📇 <strong style="cursor:pointer;color:#00796b;" onclick="openCustomerModal('${c.key}')">${c.name}</strong>
+        💰 ยอด: ${c.totalAmount.toLocaleString()} |
+        💳 ${Math.round(c.averageBill).toLocaleString()} |
+        🔁 ${c.totalVisits} (${c.paidVisits} จ่าย) |
+        ⏱️ ${c.absentDays} วัน |
+        ${formattedDate}
+      </div><hr>`;
     }).join('');
 
-    document.getElementById("filterResults").innerHTML = `<div style="font-weight:900; margin-bottom:10px;">ผลลัพธ์ ${results.length} คน</div>` + (html || `<div style="opacity:.75;">ไม่พบข้อมูล</div>`);
+    document.getElementById("filterResults").innerHTML = `<h4>ผลลัพธ์ ${results.length} คน</h4>` + html;
   }
 
+  // ✅ เพิ่ม openGroupModal ให้ปุ่ม "ดูรายการที่เลือก" ไม่พัง
   function openGroupModal() {
     const checked = Array.from(document.querySelectorAll('.selectCustomerCheckbox:checked'))
       .map(cb => cb.value);
@@ -1463,7 +1169,7 @@
     if (!box) return;
 
     if (!checked.length) {
-      box.innerHTML = `<div style="padding:12px; opacity:.8;">ยังไม่ได้เลือกลูกค้า (ติ๊ก checkbox ก่อน)</div>`;
+      box.innerHTML = `<div style="padding:12px; color:#888;">ยังไม่ได้เลือกลูกค้า (ติ๊ก checkbox ก่อน)</div>`;
     } else {
       box.innerHTML = checked.map((key, idx) => {
         const [name, phone=''] = String(key).split('|');
@@ -1472,7 +1178,7 @@
             <div class="customer-name">${idx+1}. ${escapeHTML(name || '-')}</div>
             <div class="date-info">
               <span class="date-box">📞 ${escapeHTML(phone || '-')}</span>
-              <span class="date-box" style="cursor:pointer; border-color: rgba(125,211,252,.25);" onclick="openCustomerModal('${key}')">🔍 เปิดข้อมูล</span>
+              <span class="date-box" style="cursor:pointer;" onclick="openCustomerModal('${key}')">🔍 เปิดข้อมูล</span>
             </div>
           </div>
         `;
@@ -1482,24 +1188,13 @@
     document.getElementById("group-modal").style.display = "flex";
   }
 
-  function resetFilters(){
-    ['startDate','endDate','minTotal','maxTotal','minVisits','maxVisits','minAbsent','maxAbsent','minAvg','maxAvg','customerName'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.value = '';
-    });
-    const container = document.getElementById("productListContainer");
-    if(container) container.innerHTML = '';
-    const results = document.getElementById("filterResults");
-    if(results) results.innerHTML = '';
-  }
-
-  // ===== Range modal =====
+  // ===== Modal เลือกช่วงเดือน =====
   function openRangeModal(){
     const s = document.getElementById('rangeStartModal');
     const e = document.getElementById('rangeEndModal');
     s.value = monthRange.startYM || '';
     e.value = monthRange.endYM || '';
-    document.getElementById('rangeModal').style.display = 'flex';
+    document.getElementById('rangeModal').style.display = 'block';
   }
   function closeRangeModal(){ document.getElementById('rangeModal').style.display = 'none'; }
   function applyRangeFromModal(){
@@ -1578,11 +1273,11 @@
     const toRow = r => `
       <tr>
         <td>${thDateWithWeekday(r.date)}</td>
-        <td style="text-align:right;">${r.total.toLocaleString()}</td>
-        <td style="text-align:right;">${r.bills.toLocaleString()}</td>
-        <td style="text-align:right;">${r.avgBill.toLocaleString()}</td>
-        <td style="text-align:right;">${r.items.toLocaleString()}</td>
-        <td style="text-align:right;">${r.customers.toLocaleString()}</td>
+        <td>${r.total.toLocaleString()}</td>
+        <td>${r.bills.toLocaleString()}</td>
+        <td>${r.avgBill.toLocaleString()}</td>
+        <td>${r.items.toLocaleString()}</td>
+        <td>${r.customers.toLocaleString()}</td>
       </tr>`;
 
     const wdNames = ['อา','จ','อ','พ','พฤ','ศ','ส'];
@@ -1592,14 +1287,15 @@
     const prevTitle= new Date(prevStart).toLocaleString('th-TH',{month:'long'}) + ' ' + (prevStart.getFullYear()+543);
 
     const html = `
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
-        <div style="font-weight:900; font-size:14px;">📅 สรุปรายวัน — ${curTitle}</div>
-        <button onclick="closeCustomerModal()" title="ปิดหน้าต่าง">✕</button>
+      <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
+        <button onclick="saveModalAsImage()" title="บันทึกเป็นรูปภาพ" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer;">💾</button>
+        <button onclick="closeCustomerModal()" title="ปิดหน้าต่าง" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer;">❌</button>
       </div>
 
-      <div style="margin-bottom:10px;">
+      <h3 style="margin:0 0 6px;">📅 สรุปรายวันเดือนปัจจุบัน — ${curTitle}</h3>
+      <div style="margin-bottom:8px;">
         <span class="badge">รวม: ${cur.sum.toLocaleString()} บาท</span>
-        <span class="badge">วันที่มีขาย: ${cur.days} วัน</span>
+        <span class="badge">จำนวนวันที่มีขาย: ${cur.days} วัน</span>
         <span class="badge">เฉลี่ย/วัน: ${cur.avgPerDay.toLocaleString()}</span>
         ${cur.best ? `<span class="badge">สูงสุด: ${thDateWithWeekday(cur.best.date)} = ${cur.best.total.toLocaleString()}</span>`:''}
         ${cur.worst ? `<span class="badge">ต่ำสุด: ${thDateWithWeekday(cur.worst.date)} = ${cur.worst.total.toLocaleString()}</span>`:''}
@@ -1609,22 +1305,22 @@
         <thead>
           <tr>
             <th>วันที่ (วัน)</th>
-            <th style="text-align:right;">ยอดรวม</th>
-            <th style="text-align:right;">บิล</th>
-            <th style="text-align:right;">เฉลี่ย/บิล</th>
-            <th style="text-align:right;">ชิ้น</th>
-            <th style="text-align:right;">ลูกค้า</th>
+            <th>ยอดรวม</th>
+            <th>บิล</th>
+            <th>เฉลี่ย/บิล</th>
+            <th>ชิ้น</th>
+            <th>ลูกค้า</th>
           </tr>
         </thead>
         <tbody>${cur.rows.map(toRow).join('')}</tbody>
       </table>
 
-      <div style="height:1px; background: rgba(255,255,255,.10); margin:16px 0;"></div>
+      <hr style="margin:16px 0; border:0; border-top:1px solid #ddd;">
 
-      <div style="font-weight:900; font-size:14px; margin-bottom:10px;">📅 เดือนที่แล้ว — ${prevTitle}</div>
-      <div style="margin-bottom:10px;">
+      <h3 style="margin:0 0 6px;">📅 เดือนที่แล้ว — ${prevTitle}</h3>
+      <div style="margin-bottom:8px;">
         <span class="badge">รวม: ${prev.sum.toLocaleString()} บาท</span>
-        <span class="badge">วันที่มีขาย: ${prev.days} วัน</span>
+        <span class="badge">จำนวนวันที่มีขาย: ${prev.days} วัน</span>
         <span class="badge">เฉลี่ย/วัน: ${prev.avgPerDay.toLocaleString()}</span>
         ${prev.best ? `<span class="badge">สูงสุด: ${thDateWithWeekday(prev.best.date)} = ${prev.best.total.toLocaleString()}</span>`:''}
         ${prev.worst ? `<span class="badge">ต่ำสุด: ${thDateWithWeekday(prev.worst.date)} = ${prev.worst.total.toLocaleString()}</span>`:''}
@@ -1634,11 +1330,11 @@
         <thead>
           <tr>
             <th>วันที่ (วัน)</th>
-            <th style="text-align:right;">ยอดรวม</th>
-            <th style="text-align:right;">บิล</th>
-            <th style="text-align:right;">เฉลี่ย/บิล</th>
-            <th style="text-align:right;">ชิ้น</th>
-            <th style="text-align:right;">ลูกค้า</th>
+            <th>ยอดรวม</th>
+            <th>บิล</th>
+            <th>เฉลี่ย/บิล</th>
+            <th>ชิ้น</th>
+            <th>ลูกค้า</th>
           </tr>
         </thead>
         <tbody>${prev.rows.map(toRow).join('')}</tbody>
@@ -1649,7 +1345,19 @@
     document.getElementById('customer-modal').style.display = 'flex';
   }
 
-  // ===== Lead Score (no pitch fetch) =====
+  // ===== resetFilters (เผื่อไม่มีในของเดิม) =====
+  function resetFilters(){
+    ['startDate','endDate','minTotal','maxTotal','minVisits','maxVisits','minAbsent','maxAbsent','minAvg','maxAvg','customerName'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.value = '';
+    });
+    const container = document.getElementById("productListContainer");
+    if(container) container.innerHTML = '';
+    const results = document.getElementById("filterResults");
+    if(results) results.innerHTML = '';
+  }
+
+  // ===== Lead Score (โค้ดเดิมของคุณยังอยู่ต่อจากนี้ได้เลย) =====
   function recencyScore(absentDays) {
     if (absentDays <= 45) return 0;
     if (absentDays <= 90)  return 20 + (absentDays - 46) * (20 / (90 - 46));
@@ -1709,6 +1417,8 @@
     return Math.round(r + v + f + a + vipBoost);
   }
 
+  let topLeadCandidates = [];
+
   async function buildLeadScoreList() {
     const ul = document.getElementById('leadScoreList');
     if (!ul || !allCustomerRecords.length) return;
@@ -1741,38 +1451,73 @@
       return { ...core, score };
     });
 
-    const topLeadCandidates = scored
+    topLeadCandidates = scored
       .filter(c => c.absentDays > 45)
       .filter(c => c.score >= 20)
       .sort((a, b) => b.score - a.score)
       .slice(0, 45);
 
     if (!topLeadCandidates.length) {
-      ul.innerHTML = `<li style="text-align:center; padding:16px; opacity:.8;">
+      ul.innerHTML = `<li class="lead-score-meta" style="text-align:center; padding:20px;">
         ยังไม่มีลูกค้าที่เข้าเกณฑ์ (เช่น หายเกิน 45 วัน และมีมูลค่าพอสมควร)
       </li>`;
       return;
     }
 
-    ul.innerHTML = topLeadCandidates.map(c => {
+    const loadButtonHTML = `
+      <li style="text-align:center; padding:10px; background:#f0fdfa; border-bottom:1px dashed #ccc;">
+        <button onclick="loadLeadPitches()" id="btnLoadLeadPitches" style="background:teal; color:white; border:none; padding:6px 16px; border-radius:20px; font-size:12px; cursor:pointer;">
+          🔄 กดเพื่อโหลดประวัติการโทรล่าสุด (${topLeadCandidates.length} คน)
+        </button>
+      </li>`;
+
+    const listHTML = topLeadCandidates.map(c => {
       const total = Math.round(c.totalAmount || 0).toLocaleString();
       const last  = new Date(c.lastDate).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
-
+      const pitchId = `pitch-info-${c.opd}`;
       return `
         <li>
           <span class="lead-name" onclick="openCustomerModal('${c.key}')">${escapeHTML(c.name || '-')}</span>
           <span class="lead-score-badge">คะแนน: ${c.score}</span>
           <span class="lead-score-meta">
             ⏳ ไม่มา <span class="lead-absent">${c.absentDays} วัน</span>
-            · 💰 รวม <b>${total}</b> บ.
-            · 📅 มาล่าสุด: <b>${last}</b>
+            • 💰 รวม ${total} บ.
+            • 📅 มาล่าสุด: ${last}
+            <div id="${pitchId}" style="margin-top:2px; color:#666; font-style:italic;">
+              📞 ประวัติโทร: (กดปุ่มด้านบนเพื่อดู)
+            </div>
           </span>
-          <span class="lead-money">${Math.round(c.averageBill || 0).toLocaleString()} /บิล</span>
         </li>`;
     }).join('');
+
+    ul.innerHTML = loadButtonHTML + listHTML;
   }
 
-  // Start load
+  async function loadLeadPitches() {
+    const btn = document.getElementById('btnLoadLeadPitches');
+    if(btn) { btn.innerHTML = '⏳ กำลังโหลดข้อมูล...'; btn.disabled = true; btn.style.opacity = 0.7; }
+
+    await Promise.all(topLeadCandidates.map(async c => {
+      const pitch = await fetchLatestPitchForOPD(c.opd);
+      const el = document.getElementById(`pitch-info-${c.opd}`);
+      if(el) {
+        let text = 'ยังไม่เคยโทร';
+        let color = '#9ca3af';
+        if (pitch && pitch.date) {
+          const d = formatDate(String(pitch.date).slice(0, 10));
+          const raw = pitch.outcome || pitch.content || '—';
+          text = `${d}: ${raw}`;
+          color = '#059669';
+        }
+        el.innerHTML = `📞 <span style="color:${color}; font-weight:500;">${escapeHTML(text)}</span>`;
+        el.style.fontStyle = 'normal';
+      }
+    }));
+
+    if(btn) btn.style.display = 'none';
+  }
+
+  // เริ่มโหลด
   document.addEventListener('DOMContentLoaded', function() {
     fetchDataAndUpdate();
     fetchAllCustomerRecords();
@@ -1781,5 +1526,6 @@
 
 {% endblock %}
 {% include "floating_menu.html" %}
+
 </body>
 </html>
