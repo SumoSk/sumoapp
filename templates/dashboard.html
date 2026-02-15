@@ -283,7 +283,56 @@
   .tab-count { background:#cbd5e1 !important; color:#334155 !important; }
   .tab-btn.active .tab-count { background:#ccfbf1 !important; color:#0f766e !important; }
 
-  
+  /* ... CSS เดิม ... */
+
+  /* ✅ เพิ่ม CSS สำหรับรูปโปรไฟล์ใน Popup */
+  .profile-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    background: #f8fafc;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+  }
+  .profile-img-box {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    background-color: #e2e8f0;
+    flex-shrink: 0;
+  }
+  .profile-img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .profile-info {
+    flex: 1;
+  }
+  .profile-info h3 {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    color: #0f766e !important;
+  }
+  .profile-badges {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+  .badge-vip {
+    background-color: #fef3c7;
+    color: #92400e;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    border: 1px solid #fcd34d;
+  }
+
 </style>
 </head>
 
@@ -385,7 +434,22 @@
   let allSalesRecords = [];
   let allCustomerRecords = [];
   let fullCustomerList = [];
+  let customerProfileMap = {};
 
+  async function loadCustomerProfiles() {
+    try {
+      const res = await fetch("/api/customers"); 
+      const data = await res.json();
+      data.forEach(c => {
+        // ✅ แก้ตรงนี้: ใช้ pad4() เพื่อบังคับให้เป็น 4 หลัก (เช่น 0001)
+        const opdKey = pad4(c.opd); 
+        customerProfileMap[opdKey] = c;
+      });
+      console.log("โหลดรูปโปรไฟล์เสร็จสิ้น");
+    } catch (err) {
+      console.error("โหลดรูปโปรไฟล์ไม่สำเร็จ:", err);
+    }
+  }
   // โหมดช่วงเดือน
   const monthRange = { enabled:false, startYM:null, endYM:null };
 
@@ -831,32 +895,44 @@
     const [name, phone = ''] = String(key).split('|');
     const norm = s => (s || '').trim().toLowerCase();
 
+    // 1. หาประวัติการซื้อ (จาก allCustomerRecords ที่เป็น Sales Data)
     const records = allCustomerRecords.filter(r =>
       norm(r.name) === norm(name) &&
       norm(r.phone || '') === norm(phone)
     );
 
     if (!records.length) {
-      alert('ไม่พบข้อมูลลูกค้าคนนี้');
+      alert('ไม่พบข้อมูลการซื้อของลูกค้าคนนี้');
       return;
     }
 
     records.sort((a, b) => b.date.localeCompare(a.date));
 
-    const customer = { name: records[0].name, phone: records[0].phone || '-', opd: records[0].opd || '-' };
+    // ข้อมูลพื้นฐานจาก Sales Record
+    const salesInfo = { 
+        name: records[0].name, 
+        phone: records[0].phone || '-', 
+        opd: pad4(records[0].opd) 
+    };
 
+    // ✅ 2. ดึงข้อมูลโปรไฟล์ (รูปภาพ, VIP) จาก customerProfileMap ที่โหลดมา
+    const profileData = customerProfileMap[salesInfo.opd] || {}; 
+    const profilePic = profileData.profile_pic_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2cbdjVlIj48cGF0aCBkPSZNMTIgMTJjMi4yMSAwIDQtMS43OSA0LTRzLTEuNzktNC00LTQtNCAxLjc5LTQgNCAxLjc5IDQgNCA0em0wIDJjLTIuNjcgMC04IDEuMzQtOCA0djJoMTZ2LTJjMC0yLjY2LTUuMzMtNC04LTR6Ii8+PC9zdmc+'; // รูป Default
+    const vipBadge = profileData.vip ? `<span class="badge-vip">VIP: ${profileData.vip}</span>` : '';
+    const realName = profileData.full_name || salesInfo.name; // ใช้ชื่อเต็มถ้ามี
+
+    // คำนวณสถิติยอดเงิน (เหมือนเดิม)
     const lastDateStr = (records[0].date || '').slice(0, 10);
     const baseDate = new Date();
     const lastDate = new Date(lastDateStr);
     const daysAbsent = isNaN(lastDate) ? 0 : Math.floor((baseDate - lastDate) / (1000 * 60 * 60 * 24));
-
     const totalVisits = records.length;
-
     const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
     const paidVisits = paidRecords.length;
     const totalAmount = paidRecords.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
     const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
 
+    // --- ส่วนจัดกลุ่มสินค้า (เหมือนเดิม) ---
     const allItems = {};
     records.forEach(r => {
       (r.items || []).forEach(item => {
@@ -926,24 +1002,48 @@
 
     const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
 
+    // ✅ 3. สร้าง HTML ใหม่ที่มี Header สวยๆ พร้อมรูป
     document.getElementById("modal-content").innerHTML = `
-      <h3 style="font-size:16px; margin-bottom:4px;">📇 ${escapeHTML(customer.name)}</h3>
-      <div style="font-size:12px;">🆔 OPD: ${escapeHTML(customer.opd)}</div>
-      <div style="font-size:12px;">📞 เบอร์: ${escapeHTML(customer.phone)}</div>
-      <div style="font-size:12px;">📅 วันล่าสุด: ${formatDate(lastDateStr)} ${daysAbsentText}</div>
-      <div style="font-size:12px; color:#00796b;">💰 ยอดรวมทั้งหมด: ${Math.round(totalAmount).toLocaleString()} บาท</div>
-      <div style="font-size:12px;">🔁 จำนวนครั้ง: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
-      <div style="font-size:12px;">💳 เฉลี่ยต่อครั้ง: ${average.toLocaleString()} บาท</div>
+      <div class="profile-header">
+        <div class="profile-img-box">
+            <img src="${profilePic}" alt="Profile">
+        </div>
+        <div class="profile-info">
+            <h3>${escapeHTML(realName)}</h3>
+            <div class="profile-badges">
+                <span class="badge">OPD: ${escapeHTML(salesInfo.opd)}</span>
+                ${vipBadge}
+            </div>
+            <div style="font-size:12px; margin-top:4px; color:#555;">📞 ${escapeHTML(salesInfo.phone)}</div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px; margin-bottom:15px;">
+        <div style="background:#e0f2f1; padding:8px; border-radius:8px; color:#00695c;">
+            💰 ยอดรวม: <strong>${Math.round(totalAmount).toLocaleString()}</strong>
+        </div>
+        <div style="background:#f1f8e9; padding:8px; border-radius:8px; color:#33691e;">
+            💳 เฉลี่ย: <strong>${average.toLocaleString()}</strong>
+        </div>
+        <div style="background:#fff3e0; padding:8px; border-radius:8px; color:#e65100;">
+            🔁 มาใช้บริการ: <strong>${totalVisits}</strong> ครั้ง
+        </div>
+        <div style="background:#ffebee; padding:8px; border-radius:8px; color:#c62828;">
+            📅 ล่าสุด: ${formatDate(lastDateStr)} <br> ${daysAbsentText}
+        </div>
+      </div>
 
       <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
 
-      <div style="font-weight:600; font-size:13px; margin-bottom:6px;">📦 สรุปรายการซื้อทั้งหมด:</div>
-      <div style="font-size:11px;">${itemSummary || '-'}</div>
+      <div style="font-weight:600; font-size:13px; margin-bottom:6px; color:#00796b;">📦 สรุปรายการซื้อทั้งหมด:</div>
+      <div style="font-size:11px; background:#f9f9f9; padding:10px; border-radius:8px;">${itemSummary || '-'}</div>
 
       <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
 
-      <div style="font-weight:600; font-size:13px; margin-bottom:6px;">🧾 ประวัติการซื้อย้อนหลัง:</div>
-      ${historyHtml}
+      <div style="font-weight:600; font-size:13px; margin-bottom:6px; color:#00796b;">🧾 ประวัติการซื้อย้อนหลัง:</div>
+      <div style="max-height: 300px; overflow-y: auto;">
+        ${historyHtml}
+      </div>
     `;
 
     document.getElementById("customer-modal").style.display = 'flex';
@@ -1343,7 +1443,10 @@
   document.addEventListener('DOMContentLoaded', function() {
     fetchDataAndUpdate();
     fetchAllCustomerRecords();
+    loadCustomerProfiles();
   });
+
+
 </script>
 
 {% endblock %}
