@@ -2,674 +2,353 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Palmy Clinic">
-  <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo.jpg') }}">
-  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-  <title>เข้าสู่ระบบ</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>เข้าสู่ระบบ - Palmy Clinic</title>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
 
   <style>
-    :root{
-      --bg:#f6f8fb;
-      --surface:#ffffff;
-      --surface2:#f3f6fb;
-      --border: rgba(15,23,42,.10);
-
-      --text:#0f172a;
-      --muted:#64748b;
-
-      --teal:#0f766e;
-      --teal2:#14b8a6;
-
-      --gold:#d4af37;
-      --ring: rgba(20,184,166,.25);
-
-      --shadow: 0 22px 60px rgba(15,23,42,.12);
-      --radius: 26px;
-
-      --danger-bg:#fff1f2;
-      --danger-bd:#fecdd3;
-      --danger-tx:#9f1239;
+    :root {
+      --primary: #0f766e;     /* สีเขียวตาม CI เดิม */
+      --primary-soft: #ccfbf1;
+      --error: #ef4444;
+      --text: #1e293b;
+      --bg-gradient: linear-gradient(135deg, #f0fdfa 0%, #fff 100%);
     }
 
-    html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
-    @supports (-webkit-touch-callout:none){
-      html{ -webkit-text-size-adjust:100% !important; }
-    }
-    *{ box-sizing:border-box; }
-
-    body{
-      font-family:'Prompt',system-ui,-apple-system,'Segoe UI',sans-serif;
-      margin:0; min-height:100vh;
-      color:var(--text);
-      background:
-        radial-gradient(900px 520px at 15% 0%, rgba(20,184,166,.18) 0%, transparent 60%),
-        radial-gradient(900px 520px at 95% 15%, rgba(212,175,55,.14) 0%, transparent 55%),
-        radial-gradient(780px 520px at 55% 110%, rgba(59,130,246,.10) 0%, transparent 55%),
-        linear-gradient(180deg, #ffffff, var(--bg));
-      padding: 18px env(safe-area-inset-right,0) 18px env(safe-area-inset-left,0);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    body.no-scroll{ overflow:hidden; }
-
-    /* ====== NEW LAYOUT ====== */
-    .shell{
-      width: min(980px, 100%);
-      display:grid;
-      grid-template-columns: 1.05fr .95fr;
-      border-radius: var(--radius);
-      overflow:hidden;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      margin: 0;
+      height: 100vh;
+      font-family: 'Prompt', sans-serif;
+      background: var(--bg-gradient);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      color: var(--text);
     }
 
-    .hero{
-      position:relative;
-      padding: 26px 26px 22px;
-      background:
-        radial-gradient(900px 420px at 15% 20%, rgba(20,184,166,.22), transparent 62%),
-        radial-gradient(800px 420px at 80% 0%, rgba(212,175,55,.16), transparent 58%),
-        linear-gradient(180deg, rgba(255,255,255,.85), rgba(243,246,251,.95));
-      border-right: 1px solid rgba(15,23,42,.06);
+    /* กล่องคอนเทนต์หลัก */
+    .app-container {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-height: 800px;
     }
 
-    .brandRow{
-      display:flex;
-      align-items:center;
-      gap:14px;
+    /* ส่วนหัว Logo + ข้อความ */
+    .header {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-top: 20px;
     }
 
-    .logoBtn{
-      width:60px; height:60px;
-      border-radius: 18px;
-      object-fit:cover;
-      border: 1px solid rgba(15,23,42,.10);
-      box-shadow: 0 12px 26px rgba(15,23,42,.10);
-      cursor:pointer;
-      transition: transform .12s ease;
-      background:#fff;
+    .logo-img {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      object-fit: cover;
+      margin-bottom: 15px;
+      box-shadow: 0 10px 25px rgba(15, 118, 110, 0.15);
+      background: #fff;
     }
-    .logoBtn:active{ transform: scale(.98); }
 
-    .brandText h1{
-      margin:0;
+    h1 {
       font-size: 20px;
-      font-weight: 800;
-      color: var(--teal);
-      letter-spacing:.2px;
-      line-height:1.2;
-    }
-    .brandText .sub{
-      margin-top:4px;
-      font-size: 12px;
-      color: var(--muted);
+      font-weight: 600;
+      margin: 0 0 5px 0;
+      color: var(--primary);
     }
 
-    .tag{
-      margin-left:auto;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      font-size: 11px;
-      font-weight: 700;
-      color: rgba(15,23,42,.70);
-      padding: 8px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(15,23,42,.10);
-      background: rgba(255,255,255,.75);
-      user-select:none;
-      white-space:nowrap;
-    }
-    .dot{
-      width:8px; height:8px; border-radius:999px;
-      background: linear-gradient(135deg, var(--teal2), var(--teal));
-      box-shadow: 0 0 0 3px rgba(20,184,166,.14);
-    }
-
-    .heroMain{
-      margin-top: 18px;
-      padding: 18px 18px 16px;
-      border-radius: 22px;
-      background: rgba(255,255,255,.72);
-      border: 1px solid rgba(15,23,42,.08);
-    }
-
-    .headline{
-      margin:0;
-      font-size: 22px;
-      font-weight: 900;
-      letter-spacing:.2px;
-      line-height:1.25;
-    }
-    .desc{
-      margin:8px 0 0;
-      color: var(--muted);
-      font-size: 13px;
-      line-height:1.6;
-    }
-
-    .featureGrid{
-      margin-top: 14px;
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .miniCard{
-      border-radius: 18px;
-      padding: 12px 12px;
-      background: rgba(243,246,251,.85);
-      border: 1px solid rgba(15,23,42,.08);
-      display:flex;
-      gap:10px;
-      align-items:flex-start;
-    }
-    .miniIcon{
-      width:34px; height:34px;
-      border-radius: 12px;
-      display:grid;
-      place-items:center;
-      background: linear-gradient(135deg, rgba(20,184,166,.18), rgba(212,175,55,.14));
-      border: 1px solid rgba(15,23,42,.06);
-      flex:0 0 auto;
-      color: rgba(15,23,42,.70);
-    }
-    .miniTitle{
-      font-size: 12px;
-      font-weight: 800;
+    p {
+      font-size: 14px;
+      color: #64748b;
       margin: 0;
     }
-    .miniText{
-      margin: 4px 0 0;
-      font-size: 12px;
-      color: var(--muted);
-      line-height:1.4;
+
+    /* จุดแสดงผล PIN */
+    .pin-display {
+      margin: 30px 0;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
     }
 
-    .footerNote{
-      margin-top: 14px;
-      font-size: 12px;
-      color: rgba(100,116,139,.9);
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-    .kbd{
-      font-size: 11px;
-      font-weight: 800;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(15,23,42,.10);
-      background: rgba(255,255,255,.75);
-      color: rgba(15,23,42,.75);
-      white-space:nowrap;
+    .dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
     }
 
-    /* ====== FORM SIDE ====== */
-    .panel{
-      padding: 26px 22px 22px;
-      background: linear-gradient(180deg, #ffffff, rgba(243,246,251,.75));
+    .dot.active {
+      background: var(--primary);
+      transform: scale(1.1);
+      box-shadow: 0 0 0 4px var(--primary-soft);
     }
 
-    .panelTitle{
-      margin: 2px 2px 0;
-      font-size: 18px;
-      font-weight: 900;
-      letter-spacing:.2px;
+    .dot.error {
+      background: var(--error);
+      animation: shake 0.3s ease-in-out;
     }
-    .panelSub{
-      margin: 6px 2px 14px;
+
+    /* ข้อความแจ้งเตือน */
+    .status-msg {
+      height: 20px;
       font-size: 13px;
-      color: var(--muted);
-      line-height:1.6;
+      color: var(--error);
+      margin-bottom: 20px;
+      opacity: 0;
+      transition: opacity 0.2s;
     }
+    .status-msg.show { opacity: 1; }
 
-    .error{
-      margin: 0 0 12px;
-      border-radius: 18px;
-      padding: 12px 12px;
-      font-size: 13px;
-      color: var(--danger-tx);
-      border: 1px solid var(--danger-bd);
-      background: var(--danger-bg);
-    }
-
-    .field{ margin: 12px 0; }
-    .input{
-      position:relative;
-    }
-
-    .input input{
-      width:100%;
-      font-size:15px;
-      padding: 16px 44px 14px 46px;
-      border-radius: 16px;
-      border: 1px solid rgba(15,23,42,.12);
-      background: #fff;
-      color: var(--text);
-      outline:none;
-      transition: border-color .15s ease, box-shadow .15s ease, transform .06s ease;
-      -webkit-appearance:none;
-    }
-    .input input:focus{
-      border-color: rgba(20,184,166,.85);
-      box-shadow: 0 0 0 5px var(--ring);
-    }
-
-    /* modern label style (not floating, but compact header) */
-    .lbl{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      margin: 0 2px 7px;
-      font-size: 12px;
-      font-weight: 800;
-      color: rgba(15,23,42,.78);
-    }
-    .helper{
-      font-size: 12px;
-      color: var(--muted);
-      font-weight: 600;
-    }
-
-    .icon{
-      position:absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 18px; height: 18px;
-      opacity:.8;
-      fill: currentColor;
-      color: rgba(15,23,42,.55);
-    }
-
-    .action{
-      position:absolute;
-      right:10px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 36px; height: 36px;
-      border:none;
-      border-radius: 12px;
-      background: rgba(15,23,42,.04);
-      border: 1px solid rgba(15,23,42,.06);
-      cursor:pointer;
-      display:grid;
-      place-items:center;
-      color: rgba(15,23,42,.65);
-      transition: transform .06s ease, background .15s ease;
-    }
-    .action:hover{ background: rgba(15,23,42,.06); }
-    .action:active{ transform: translateY(-50%) scale(.98); }
-
-    .row{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      margin: 8px 2px 14px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-    .row label{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      cursor:pointer;
-      user-select:none;
-    }
-    input[type="checkbox"]{
-      width:18px; height:18px;
-      accent-color: var(--teal2);
-    }
-
-    .btn{
-      width:100%;
-      padding: 13px 14px;
-      border:none;
-      border-radius: 18px;
-      font-size: 16px;
-      font-weight: 900;
-      cursor:pointer;
-      color:#fff;
-      background: linear-gradient(135deg, var(--teal2), var(--teal));
-      box-shadow: 0 14px 32px rgba(20,184,166,.18), 0 18px 44px rgba(15,118,110,.12);
-      transition: transform .06s ease, filter .15s ease;
-      position:relative;
-      overflow:hidden;
-    }
-    .btn::after{
-      content:"";
-      position:absolute;
-      inset:-2px;
-      background: radial-gradient(420px 120px at 20% 0%, rgba(255,255,255,.55), transparent 60%);
-      opacity:.55;
-      pointer-events:none;
-    }
-    .btn:hover{ filter: brightness(1.02); }
-    .btn:active{ transform: translateY(1px); }
-
-    .hint{
-      text-align:center;
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 10px;
-    }
-
-    /* ====== PIN as “secure sheet” ====== */
-    .overlay{
-      position:fixed; inset:0;
-      background: rgba(15,23,42,.22);
-      display:none; z-index:90;
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-    }
-    .modal{
-      position:fixed;
-      left:50%; top:50%;
-      transform: translate(-50%,-50%);
-      width: 92%;
-      max-width: 380px;
-      background: rgba(255,255,255,.94);
-      border: 1px solid rgba(15,23,42,.10);
-      border-radius: 26px;
-      padding: 18px 16px 16px;
-      text-align:center;
-      box-shadow: 0 26px 70px rgba(15,23,42,.18);
-      display:none; z-index:100;
-    }
-    .modal h3{ margin: 6px 0 6px; font-size: 18px; font-weight: 1000; }
-    .modal .desc{ font-size:12px; color: var(--muted); margin: 0 0 10px; }
-
-    .pin-display{
-      font-size: 26px;
-      letter-spacing: 10px;
-      margin: 6px 0 14px;
-      min-height: 34px;
-      font-weight: 900;
-      color: rgba(15,23,42,.80);
-    }
-
-    .pad{
-      display:grid;
+    /* แป้นพิมพ์ตัวเลข */
+    .keypad {
+      display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-top: 8px;
+      gap: 15px;
+      padding-bottom: 30px;
+      width: 100%;
     }
-    .pad button{
-      padding: 14px 0;
-      font-size: 18px;
-      border-radius: 18px;
-      border: 1px solid rgba(15,23,42,.10);
-      cursor:pointer;
-      color: rgba(15,23,42,.88);
-      background: rgba(15,23,42,.04);
-      transition: transform .06s ease, background .15s ease;
-      user-select:none;
-    }
-    .pad button:hover{ background: rgba(15,23,42,.06); }
-    .pad button:active{ transform: translateY(1px); }
-    .pad .alt{ background: rgba(15,23,42,.03); }
 
-    .close-x{
-      position:absolute;
-      right: 10px; top: 10px;
-      width: 40px; height: 40px;
-      border-radius: 14px;
-      border: 1px solid rgba(15,23,42,.10);
-      background: rgba(15,23,42,.04);
-      color: rgba(15,23,42,.85);
-      cursor:pointer;
-      font-size: 20px;
-      display:grid;
-      place-items:center;
+    .key {
+      aspect-ratio: 1.4/1; /* ทรงผืนผ้านิดๆ กดง่าย */
+      border: none;
+      background: #fff;
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--text);
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #f1f5f9;
+      transition: transform 0.1s, background 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
     }
-    .close-x:active{ transform: scale(.98); }
 
-    @keyframes shake{
-      0%{ transform: translateX(0); }
-      20%{ transform: translateX(-6px); }
-      40%{ transform: translateX(6px); }
-      60%{ transform: translateX(-4px); }
-      80%{ transform: translateX(4px); }
-      100%{ transform: translateX(0); }
+    .key:active {
+      transform: translateY(4px);
+      box-shadow: none;
+      background: #f8fafc;
     }
-    .shake{ animation: shake .35s; }
 
-    /* ====== responsive ====== */
-    @media (max-width: 860px){
-      .shell{ grid-template-columns: 1fr; }
-      .hero{ border-right: none; border-bottom: 1px solid rgba(15,23,42,.06); }
-      .featureGrid{ grid-template-columns: 1fr 1fr; }
+    /* ปุ่มฟังก์ชันพิเศษ (ลบ / สแกนหน้า) */
+    .key.action {
+      background: transparent;
+      box-shadow: none;
+      color: #64748b;
     }
-    @media (max-width: 420px){
-      .featureGrid{ grid-template-columns: 1fr; }
+    .key.action:active { transform: scale(0.95); }
+
+    /* หน้าจอตอนล็อค */
+    .locked-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(5px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 99;
+      display: none;
     }
-    @media (prefers-reduced-motion: reduce){
-      *{ transition:none !important; }
+    .lock-icon {
+      font-size: 40px;
+      color: var(--error);
+      margin-bottom: 10px;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    /* Responsive ปรับให้ปุ่มกลมถ้าจอใหญ่พอ */
+    @media (min-width: 480px) {
+      .app-container {
+        border: 1px solid #e2e8f0;
+        border-radius: 40px;
+        height: auto;
+        min-height: 700px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.05);
+        background: #fff;
+      }
+      body { background: #f8fafc; }
+      .key { aspect-ratio: 1/1; border-radius: 50%; width: 70px; margin: 0 auto; }
+      .keypad { gap: 20px; }
     }
   </style>
 </head>
-
 <body>
-  <main class="shell" aria-labelledby="title">
-    <!-- LEFT / BRAND -->
-    <section class="hero" aria-label="Palmy Clinic">
-      <div class="brandRow">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="โลโก้คลินิก" class="logoBtn" id="logoBtn">
-        <div class="brandText">
-          <h1 id="title">Dr.Palmy Clinic System</h1>
-          <div class="sub">ระบบภายในสำหรับเจ้าหน้าที่</div>
-        </div>
-        <div class="tag"><span class="dot" aria-hidden="true"></span>Secure</div>
+
+  <div class="app-container">
+    <div class="header">
+      <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" class="logo-img" onerror="this.src='https://placehold.co/100x100?text=Clinic'">
+      <h1>Doctor Palmy Clinic</h1>
       </div>
 
-      <div class="heroMain">
-        <h2 class="headline">Welcome back 👋</h2>
-        <p class="desc">
-          เข้าสู่ระบบเพื่อจัดการข้อมูลผู้รับบริการ นัดหมาย และงานภายในคลินิก
-          ด้วยหน้าจอที่เน้นความชัดเจนและความปลอดภัย
-        </p>
-
-        <div class="featureGrid" aria-hidden="true">
-          <div class="miniCard">
-            <div class="miniIcon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 2l7 4v6c0 5-3 9-7 10-4-1-7-5-7-10V6l7-4z"></path>
-              </svg>
-            </div>
-            <div>
-              <p class="miniTitle">ปลอดภัย</p>
-              <p class="miniText">รองรับทั้งรหัสผ่านและ PIN</p>
-            </div>
-          </div>
-
-          <div class="miniCard">
-            <div class="miniIcon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="7" cy="7" r="2"></circle><circle cx="17" cy="17" r="2"></circle>
-              </svg>
-            </div>
-            <div>
-              <p class="miniTitle">ใช้งานง่าย</p>
-              <p class="miniText">เลย์เอาต์ใหม่ อ่านง่าย</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="footerNote">
-          <span class="kbd">Tip:</span>
-          
-        </div>
+    <div>
+      <div class="pin-display" id="pinDisplay">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
       </div>
-    </section>
+      <div class="status-msg" id="msg">รหัสไม่ถูกต้อง (เหลือ 2 ครั้ง)</div>
+    </div>
 
-    <!-- RIGHT / FORM -->
-    <section class="panel" aria-label="เข้าสู่ระบบ">
-      <div class="panelTitle">เข้าสู่ระบบ</div>
-      <div class="panelSub">กรอกชื่อผู้ใช้และรหัสผ่านเพื่อเข้าใช้งานระบบ</div>
+    <div class="keypad" id="keypad">
+      <button class="key" onclick="addPin(1)">1</button>
+      <button class="key" onclick="addPin(2)">2</button>
+      <button class="key" onclick="addPin(3)">3</button>
+      <button class="key" onclick="addPin(4)">4</button>
+      <button class="key" onclick="addPin(5)">5</button>
+      <button class="key" onclick="addPin(6)">6</button>
+      <button class="key" onclick="addPin(7)">7</button>
+      <button class="key" onclick="addPin(8)">8</button>
+      <button class="key" onclick="addPin(9)">9</button>
+      
+      <button class="key action">
+         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 3a5 5 0 0 0-5 5v1"></path>
+            <path d="M16 3a5 5 0 0 1 5 5v1"></path>
+            <path d="M3 15v1a5 5 0 0 0 5 5"></path>
+            <path d="M21 15v1a5 5 0 0 1-5 5"></path>
+            <path d="M8 11h0.01"></path> <path d="M16 11h0.01"></path>
+            <path d="M12 16a3.5 3.5 0 0 0 0-7 3.5 3.5 0 0 0 0 7z"></path>
+         </svg>
+      </button>
+      
+      <button class="key" onclick="addPin(0)">0</button>
+      
+      <button class="key action" onclick="delPin()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+          <line x1="18" y1="9" x2="12" y2="15"></line>
+          <line x1="12" y1="9" x2="18" y2="15"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
 
-      {% if error %}
-        <div class="error">{{ error }}</div>
-      {% endif %}
-
-      <form method="POST" novalidate>
-        <div class="field">
-          <div class="lbl">
-            <span>ชื่อผู้ใช้</span>
-            <span class="helper">Username</span>
-          </div>
-          <div class="input">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 12c2.761 0 5-2.239 5-5S14.761 2 12 2 7 4.239 7 7s2.239 5 5 5zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5z"/>
-            </svg>
-            <input type="text" name="username" id="username" autocomplete="username" required>
-          </div>
-        </div>
-
-        <div class="field">
-          <div class="lbl">
-            <span>รหัสผ่าน</span>
-            <span class="helper">Password</span>
-          </div>
-          <div class="input">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M17 8V7a5 5 0 10-10 0v1H5v14h14V8h-2zm-8 0V7a3 3 0 116 0v1H9zm3 5a2 2 0 110 4 2 2 0 010-4z"/>
-            </svg>
-            <input type="password" name="password" id="password" autocomplete="current-password" required>
-            <button type="button" class="action" id="togglePw" aria-label="แสดง/ซ่อนรหัสผ่าน" title="แสดง/ซ่อน">
-              <svg id="eyeIcon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <div class="row">
-          <label>
-            <input type="checkbox" name="remember">
-            จดจำฉันไว้
-          </label>
-          
-        </div>
-
-        <button class="btn" type="submit">เข้าสู่ระบบ</button>
-        <div class="hint">Palmy Clinic Internal • Clean UI</div>
-      </form>
-    </section>
-  </main>
-
-  <!-- PIN MODAL -->
-  <div class="overlay" id="pinOverlay" aria-hidden="true"></div>
-  <div class="modal" id="pinModal" role="dialog" aria-modal="true" aria-labelledby="pinTitle" aria-describedby="pinDesc">
-    <button class="close-x" type="button" id="pinClose" aria-label="ปิด">×</button>
-    <h3 id="pinTitle">ใส่รหัส PIN</h3>
-    <div id="pinDesc" class="desc">กรอกรหัส 6 หลัก</div>
-    <div class="pin-display" id="pinDisplay">○ ○ ○ ○ ○ ○</div>
-    <div class="pad" id="pinPad"></div>
+  <div class="locked-overlay" id="lockedScreen">
+    <div class="lock-icon">
+      <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+    </div>
+    <h2 style="color:#ef4444; margin:0;">ระบบถูกล็อค</h2>
+    <p style="margin-top:5px;">คุณใส่รหัสผิดเกิน 3 ครั้ง</p>
+    <p style="font-size:12px; margin-top:20px;">กรุณาติดต่อผู้ดูแลระบบ</p>
   </div>
 
   <script>
-  (function(){
-    const d = document;
-    const $ = (sel,root=d)=>root.querySelector(sel);
+    let currentPin = '';
+    let attempts = 0;
+    const MAX_ATTEMPTS = 3;
+    
+    // UI Elements
+    const dots = document.querySelectorAll('.dot');
+    const msg = document.getElementById('msg');
+    const lockedScreen = document.getElementById('lockedScreen');
 
-    // Toggle password
-    const pw = $('#password');
-    const togglePw = $('#togglePw');
-    const eyeIcon = $('#eyeIcon');
-
-    togglePw.addEventListener('click', ()=>{
-      const show = pw.type === 'password';
-      pw.type = show ? 'text' : 'password';
-
-      if(!show){
-        eyeIcon.innerHTML = '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle>';
-      }else{
-        eyeIcon.innerHTML = '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-6.5 0-10-7-10-7a21.77 21.77 0 0 1 5.06-6.94"></path><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c6.5 0 10 7 10 7a21.77 21.77 0 0 1-2.83 4.16"></path><path d="M14.12 14.12a3 3 0 0 1-4.24-4.24"></path><path d="M1 1l22 22"></path>';
-      }
-      pw.focus({preventScroll:true});
-    });
-
-    // PIN modal
-    const overlay = $('#pinOverlay');
-    const modal = $('#pinModal');
-    const pinDisplay = $('#pinDisplay');
-    const logoBtn = $('#logoBtn');
-    const pinClose = $('#pinClose');
-    let pinInput = '';
-
-    function updatePinDisplay(){
-      let s='';
-      for(let i=0;i<6;i++){ s += (i<pinInput.length ? '● ' : '○ '); }
-      pinDisplay.textContent = s.trim();
-    }
-    function openPin(){
-      pinInput=''; updatePinDisplay();
-      overlay.style.display='block';
-      modal.style.display='block';
-      d.body.classList.add('no-scroll');
-    }
-    function closePin(){
-      overlay.style.display='none';
-      modal.style.display='none';
-      d.body.classList.remove('no-scroll');
+    function updateDisplay() {
+      // อัปเดตจุดสีเขียว
+      dots.forEach((dot, index) => {
+        if (index < currentPin.length) {
+          dot.classList.add('active');
+        } else {
+          dot.classList.remove('active');
+          dot.classList.remove('error'); // เคลียร์สถานะ error เมื่อพิมพ์ใหม่
+        }
+      });
+      msg.classList.remove('show');
     }
 
-    logoBtn.addEventListener('click', openPin);
-    overlay.addEventListener('click', closePin);
-    pinClose.addEventListener('click', closePin);
-    d.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closePin(); });
-
-    // keypad
-    const pad = $('#pinPad');
-    ['1','2','3','4','5','6','7','8','9','ลบ','0'].forEach(txt=>{
-      const b = d.createElement('button');
-      b.type='button';
-      b.textContent=txt;
-      if(txt==='ลบ'){ b.classList.add('alt'); }
-      b.addEventListener('click', ()=> handleKey(txt));
-      pad.appendChild(b);
-    });
-
-    function handleKey(k){
-      if(k==='ลบ'){
-        if(pinInput.length){ pinInput=pinInput.slice(0,-1); updatePinDisplay(); }
-        return;
-      }
-      if(pinInput.length<6){
-        pinInput += k; updatePinDisplay();
-        if(pinInput.length===6){ setTimeout(submitPin, 80); }
+    function addPin(num) {
+      if (attempts >= MAX_ATTEMPTS) return; // ล็อคแล้วห้ามกด
+      if (currentPin.length < 6) {
+        currentPin += num;
+        updateDisplay();
+        
+        // ถ้าครบ 6 หลัก ส่งตรวจสอบทันที (จำลองการส่ง)
+        if (currentPin.length === 6) {
+          setTimeout(submitPin, 100);
+        }
       }
     }
 
-    function submitPin(){
+    function delPin() {
+      if (currentPin.length > 0) {
+        currentPin = currentPin.slice(0, -1);
+        updateDisplay();
+      }
+    }
+
+    function submitPin() {
+      // ตรงนี้คือส่วนที่ยิงไปหา Server Flask
+      // fetch('/pin-login', { ... }) 
+      
+      // *** จำลองการยิงข้อมูล (Mockup) ***
+      // ให้แก้ Logic ตรงนี้เพื่อต่อกับ Backend จริง
       fetch('/pin-login', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        body: JSON.stringify({ pin: pinInput })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: currentPin })
       })
-      .then(res=>res.json())
-      .then(data=>{
-        if(data && data.success){ window.location.href='/dashboard'; }
-        else{
-          pinDisplay.classList.add('shake');
-          setTimeout(()=> pinDisplay.classList.remove('shake'), 380);
-          pinInput=''; updatePinDisplay();
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          // ผ่าน: ไปหน้า Dashboard
+          window.location.href = '/dashboard';
+        } else {
+          // ไม่ผ่าน: เรียกฟังก์ชันจัดการ Error
+          handleError();
         }
       })
-      .catch(()=> alert('เกิดข้อผิดพลาด'));
+      .catch(err => {
+        // กรณีต่อ Server ไม่ได้ หรือเทสอยู่ ให้สมมติว่าผิดไปก่อน
+        handleError();
+      });
     }
-  })();
+
+    function handleError() {
+      attempts++;
+      currentPin = ''; // ล้าง PIN
+      
+      // อนิเมชั่นสั่นๆ ที่จุด
+      dots.forEach(d => d.classList.add('error'));
+      setTimeout(() => updateDisplay(), 400);
+
+      // แสดงข้อความเตือน
+      if (attempts < MAX_ATTEMPTS) {
+        msg.textContent = `รหัสไม่ถูกต้อง (เหลือโอกาส ${MAX_ATTEMPTS - attempts} ครั้ง)`;
+        msg.classList.add('show');
+      } else {
+        // ล็อคระบบ
+        setTimeout(() => {
+            lockedScreen.style.display = 'flex';
+        }, 300);
+      }
+    }
   </script>
 </body>
 </html>
