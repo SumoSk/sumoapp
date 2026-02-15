@@ -77,43 +77,45 @@
     .pill .dot{width:8px;height:8px;border-radius:999px;background:var(--primary);}
 
     /* ===== Top tabs (4 tabs on top) ===== */
-    .tabs-wrap{
-      width:100%;
-      display:grid;
-      grid-template-columns: repeat(4, minmax(0,1fr));
-      gap:10px;
-      margin-top:6px;
-    }
-    .tab-btn{
-      width:100%;
-      border:1px solid var(--line);
-      background:#fff;
-      border-radius:16px;
-      padding:10px 12px;
-      cursor:pointer;
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      transition:.15s;
-      user-select:none;
-      box-shadow: 0 6px 18px rgba(2,8,23,.04);
-    }
-    .tab-btn:hover{ box-shadow:0 0 0 3px var(--ring); }
-    .tab-btn.active{
-      border-color: transparent;
-      background: linear-gradient(180deg, color-mix(in oklab, var(--primary) 18%, #fff 82%), #fff);
-      box-shadow: 0 10px 24px rgba(14,165,164,.18);
-    }
-    .tab-left{display:flex; flex-direction:column; gap:2px; min-width:0}
-    .tab-left b{font-size:12px; font-weight:1000}
-    .tab-left span{font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-    .tab-chip{
-      font-weight:1000;
-      border-radius:999px;
-      padding:4px 8px;
-      border:1px solid var(--line);
-      background:#fff;
-      font-size:11px;
-      white-space:nowrap;
-    }
+    /* 1. แก้ที่ .tabs-wrap เพื่อบังคับ 4 คอลัมน์ */
+.tabs-wrap {
+    width: 100%;
+    display: grid;
+    /* บังคับ 4 ช่องเสมอ */
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important; 
+    gap: 10px;
+    margin-top: 6px;
+}
+
+/* 2. แก้ที่ .tab-btn เพื่อจัดกึ่งกลางเพราะไม่มีตัวเลขแล้ว */
+.tab-btn {
+    width: 100%;
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 16px;
+    padding: 10px 4px; /* ลด padding ข้างๆ หน่อยเผื่อจอเล็ก */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* จัดกึ่งกลาง */
+    gap: 10px;
+    transition: .15s;
+    user-select: none;
+    box-shadow: 0 6px 18px rgba(2, 8, 23, .04);
+}
+
+/* 3. ลบ หรือ แก้ไข Media Query ที่เคยสั่งให้เรียงแนวตั้ง */
+@media (max-width: 1080px) {
+    /* ลบ .tabs-wrap ออกจากตรงนี้ หรือทับด้วยโค้ดด้านล่าง */
+    .tabs-wrap { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; } 
+}
+@media (max-width: 520px) {
+    /* ลบ .tabs-wrap ออกจากตรงนี้ หรือทับด้วยโค้ดด้านล่าง */
+    .tabs-wrap { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+    
+    /* เพิ่ม: ลดขนาดตัวหนังสือในปุ่มหน่อยถ้าจอเล็กมาก จะได้บรรทัดเดียวพอ */
+    .tab-left b { font-size: 10px !important; }
+}
 
     /* ===== Layout ===== */
     .shell{
@@ -420,7 +422,7 @@
 
   <div class="appbar">
     <div class="appbar-inner">
-      <div class="brand">🧠 Customer Intelligence <small>Sales Pitch + RFM + Priority</small></div>
+      <div class="brand"> Sales Pitch</small></div>
 
       <div class="pill" title="โหลดข้อมูลล่าสุด">
         <span class="dot"></span> <span id="lastSyncText">Sync: —</span>
@@ -432,28 +434,22 @@
 
       <!-- ✅ 4 แถบด้านบน (แทน sidebar) -->
       <div class="tabs-wrap" id="topTabs">
-        <button class="tab-btn active" data-view="plan" type="button">
-          <div class="tab-left"><b>📝 บันทึกการโทร</b><span>เพิ่มรายการ + บันทึกชุด</span></div>
-          <span class="tab-chip mono" id="tabChipPlan">0</span>
+    <button class="tab-btn active" data-view="plan" type="button">
+        <div class="tab-left"><b>📝 บันทึกการโทร</b></div>
         </button>
 
-        <button class="tab-btn" data-view="dashboard" type="button">
-          <div class="tab-left"><b>📊 สรุปข้อมูล</b><span>ภาพรวม + วิเคราะห์</span></div>
-          <span class="tab-chip mono" id="tabChipDash">OK</span>
+    <button class="tab-btn" data-view="dashboard" type="button">
+        <div class="tab-left"><b>📊 สรุปข้อมูล</b></div>
         </button>
 
-        <button class="tab-btn" data-view="customers" type="button">
-          <div class="tab-left"><b>👥 ลูกค้าทั้งหมด</b><span>เรียงตาม Pitch ล่าสุด</span></div>
-          <span class="tab-chip mono" id="tabChipCust">—</span>
+    <button class="tab-btn" data-view="customers" type="button">
+        <div class="tab-left"><b>👥 ลูกค้าทั้งหมด</b></div>
         </button>
 
-        <button class="tab-btn" data-view="history" type="button">
-          <div class="tab-left"><b>🕰️ ประวัติการโทร</b><span>สรุปเป็นหน้า + Export</span></div>
-          <span class="tab-chip mono" id="tabChipHist">—</span>
+    <button class="tab-btn" data-view="history" type="button">
+        <div class="tab-left"><b>🕰️ ประวัติการโทร</b></div>
         </button>
-      </div>
-    </div>
-  </div>
+</div>
 
   <div class="shell">
     <main class="main">
@@ -463,8 +459,7 @@
         <div class="card-head">
           <div>
             <div class="card-title">📝 บันทึกการโทร</div>
-            <div class="card-sub">Draft บันทึกในเครื่องอัตโนมัติ, แล้วกดยิง API ทีเดียว</div>
-          </div>
+                      </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <div class="badge b-slate">วันที่: <span class="mono" id="planTitleDate">—</span></div>
             <button class="btn" id="btnClearDraft" type="button">🧹 ล้าง Draft</button>
@@ -478,11 +473,11 @@
               <input class="input" type="date" id="planDate">
             </div>
             <div class="field" style="min-width:260px;">
-              <label>โปรโมชันเริ่มต้น (คัดลอกให้แถวใหม่)</label>
-              <input class="input" type="text" id="planDefaultPromo" placeholder="เช่น โปร X / แพ็กเกจ Y">
+              <label>โปรโมชัน</label>
+              <input class="input" type="text" id="planDefaultPromo" placeholder=>
             </div>
             <div class="field" style="min-width:260px;">
-              <label>ช่องทางเริ่มต้น</label>
+              <label>ช่องทาง</label>
               <select class="input" id="planDefaultChannel"></select>
             </div>
             <div style="display:flex; gap:8px; align-items:flex-end;">
@@ -503,7 +498,7 @@
             <div class="card-head">
               <div>
                 <div class="card-title">🧾 สรุปข้อมูลที่บันทึกวันนี้</div>
-                <div class="card-sub">อิงจากวันที่บันทึกด้านบน (ดึงจากฐานข้อมูลจริง ไม่ใช่ Draft)</div>
+                
               </div>
               <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                 <span class="badge b-slate">วันที่: <span class="mono" id="todaySummaryDate">—</span></span>
@@ -982,14 +977,7 @@
     // ===================== Elements =====================
     const lastSyncText = $('#lastSyncText');
 
-    // Top tabs
-    const topTabs = $('#topTabs');
-    const tabChipDash = $('#tabChipDash');
-    const tabChipPlan = $('#tabChipPlan');
-    const tabChipCust = $('#tabChipCust');
-    const tabChipHist = $('#tabChipHist');
-
-    const btnRefreshAll = $('#btnRefreshAll');
+    
 
     // Dashboard
     const kpiCustomers = $('#kpiCustomers');
@@ -1332,10 +1320,7 @@
     }
 
     function renderDashboard(){
-      tabChipDash.textContent = 'OK';
-      tabChipCust.textContent = analytics.length.toString();
-      tabChipHist.textContent = pitches.length.toString();
-
+      
       kpiCustomers.textContent = analytics.length.toString();
       kpiPitches.textContent = pitches.length.toString();
       kpiInterested.textContent = pitches.filter(p=> isInterested(p.outcome)).length.toString();
@@ -1540,10 +1525,10 @@
         const topChannel = Array.from(freqChannel.entries()).sort((a,b)=> b[1]-a[1])[0]?.[0] || '-';
 
         todayKpis.innerHTML =
-          kpiBox('โทรทั้งหมด (วันนี้)', total, 'จำนวนรายการที่บันทึกจริง') +
-          kpiBox('สนใจ', interested, 'Outcome ขึ้นต้นด้วย “สนใจ”') +
-          kpiBox('ปฏิเสธ/ควรหยุด', hardReject, 'Outcome “ไม่สนใจ/ไม่น่าจะกลับมา”') +
-          kpiBox('ไม่รับสาย/ปิดเครื่อง', noPickup, 'รวม 2 outcome นี้');
+          kpiBox('โทรทั้งหมด (วันนี้)', total, ) +
+          kpiBox('สนใจ', interested, ) +
+          kpiBox('ปฏิเสธ/ควรหยุด', hardReject, ) +
+          kpiBox('ไม่รับสาย/ปิดเครื่อง', noPickup, );
 
                 
 
@@ -1652,7 +1637,7 @@
         <div>
           <div class="field">
             <label>โปรโมชัน</label>
-            <input class="input" data-promo placeholder="โปรโมชันที่นำเสนอ" value="${esc(row.promotion ?? defaultPromo)}">
+            <input class="input" data-promo placeholder="${esc(row.promotion ?? defaultPromo)}">
           </div>
         </div>
 
@@ -1695,7 +1680,7 @@
       const valid = payload.filter(x=> x.opd && x.outcome).length;
       planCount.textContent = payload.length.toString();
       planValid.textContent = valid.toString();
-      tabChipPlan.textContent = payload.length.toString();
+      
     }
 
     function getPlanRowsPayload(includeInvalid=false){
@@ -1877,7 +1862,7 @@
 
         histPage = 1;
         renderHistoryTablePaged();
-        tabChipHist.textContent = String(historyAll.length);
+        
       }catch{
         historyAll = [];
         histPage = 1;
@@ -2251,9 +2236,9 @@
         buildPitchesIndex();
         rebuildAnalytics();
 
-        tabChipDash.textContent = 'OK';
-        tabChipCust.textContent = `${analytics.length}`;
-        tabChipHist.textContent = `${pitches.length}`;
+        
+        
+        
         lastSyncText.textContent = `Sync: ${nowStamp()}`;
 
         renderDashboard();
