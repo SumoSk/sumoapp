@@ -1048,28 +1048,90 @@ def delete_sales_record():
         if not record_id:
             return jsonify({"error": "Missing ID"}), 400
 
-        rec = (
-            supabase.table("sales_records")
-            .select("id,orig_no")
-            .eq("id", record_id)
-            .single()
-            .execute()
-        ).data
-        if rec and rec.get("orig_no"):
-            return (
-                jsonify(
-                    {
-                        "error": "cannot_delete_issued_receipt",
-                        "message": "รายการนี้ออกใบเสร็จ (RC) แล้ว ไม่อนุญาตให้ลบ",
-                    }
-                ),
-                400,
-            )
-
+        # ลบได้ทุกกรณี แม้ออกใบเสร็จแล้ว
         supabase.table("sales_records").delete().eq("id", record_id).execute()
         return jsonify({"message": "ลบสำเร็จ"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+
+
+@app.route("/api/rebuild_rc_receipts", methods=["POST"])
+@login_required
+def rebuild_rc_receipts():
+    try:
+        data = request.get_json(silent=True) or {}
+        year = int(data.get("year") or 0)
+        if year < 2000 or year > 2100:
+            return jsonify({"success": False, "error": "Invalid year"}), 400
+
+        # (แนะนำ) จำกัดสิทธิ์เฉพาะ admin กันกดพลาด
+        if (session.get("role") or "") != "admin":
+            return jsonify({"success": False, "error": "forbidden"}), 403
+
+        start_date = f"{year}-01-01"
+        end_date = f"{year}-12-31"
+
+        # ดึงรายการขายทั้งหมดในปีนั้น
+        q = (
+            supabase.table("sales_records")
+            .select("id,date,created_at")
+            .gte("date", start_date)
+            .lte("date", end_date)
+            .order("date", desc=False)
+            .order("created_at", desc=False)
+        )
+
+        all_rows = []
+        start = 0
+        limit = 1000
+        while True:
+            resp = q.range(start, start + limit - 1).execute()
+            batch = resp.data or []
+            all_rows.extend(batch)
+            if len(batch) < limit:
+                break
+            start += limit
+
+        # PASS 1: เคลียร์ orig_no อย่างเดียวพอ (กันชน unique) — ปลอดภัยสุด (ไม่ชน NOT NULL)
+        supabase.table("sales_records").update(
+            {"orig_no": None}
+        ).gte("date", start_date).lte("date", end_date).execute()
+
+        # PASS 2: ใส่เลข RC ใหม่
+        now_iso = _utc_now_iso()
+        seq = 1
+
+        for r in all_rows:
+            rid = r.get("id")
+            if not rid:
+                continue
+
+            new_no = f"RC-{year}-{str(seq).zfill(4)}"
+
+            supabase.table("sales_records").update(
+                {
+                    "orig_year": year,
+                    "orig_seq": seq,
+                    "orig_no": new_no,
+                    "orig_issued_at": now_iso,
+                    "receipt_status": "issued",
+                }
+            ).eq("id", rid).execute()
+
+            seq += 1
+
+        # อัปเดต counter ให้ next_seq ต่อจากตัวล่าสุด
+        supabase.table("receipt_counters_orig").upsert(
+            {"year": year, "next_seq": seq},
+            on_conflict="year"  # ✅ ต้องเป็น string ในหลายเวอร์ชัน
+        ).execute()
+
+        return jsonify({"success": True, "count": len(all_rows)}), 200
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route("/api/cleanup_duplicates")
