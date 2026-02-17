@@ -249,26 +249,13 @@
     .submit-btn { background: var(--primary); color: #fff; }
     .cancel-btn { background: #f5f5f5; color: #666; }
 
-    .floating-toggle {
-      position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
-      width: 65px; height: 65px; cursor: pointer; z-index: 2000;
-      transition: transform 0.2s;
-    }
-    .floating-toggle:hover { transform: translateX(-50%) scale(1.05); }
-    .floating-toggle img { width: 100%; height: 100%; drop-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-    .floating-menu {
-      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
-      background: rgba(255,255,255,0.95); border-radius: 24px; padding: 15px;
-      display: none; flex-direction: column; gap: 12px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 1999;
-      backdrop-filter: blur(10px); max-height: 60vh; overflow-y: auto;
-    }
-    .floating-menu img { width: 50px; height: 50px; }
+    
 
   </style>
 </head>
 <body>
-
+<!-- ✅ floating menu -->
+{% include 'floating_menu.html' %}
   <h2>📦 คลังเวชภัณฑ์</h2>
 
   <div class="month-nav">
@@ -322,21 +309,7 @@
     </div>
   </div>
 
-  <div id="floatingToggle" class="floating-toggle">
-    <img src="{{ url_for('static', filename='icon/icon_menu_toggle.png') }}" alt="menu">
-  </div>
-  <div id="floatingMenu" class="floating-menu">
-    <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='icon/icon_dashboard.png') }}" title="Dashboard"></a>
-    <a href="{{ url_for('sale_summary') }}"><img src="{{ url_for('static', filename='icon/icon_sale_summary.png') }}" title="Sale summary"></a>
-    <a href="{{ url_for('crm') }}"><img src="{{ url_for('static', filename='icon/icon_crm.png') }}" title="CRM"></a>
-    <a href="{{ url_for('record_sales') }}"><img src="{{ url_for('static', filename='icon/icon_record_sales.png') }}" title="Record sales"></a>
-    <a href="{{ url_for('customer_list') }}"><img src="{{ url_for('static', filename='icon/icon_customer_list.png') }}" title="Customer list"></a>
-    <a href="{{ url_for('record_customer') }}"><img src="{{ url_for('static', filename='icon/icon_customer_history.png') }}" title="Record customer"></a>
-    <a href="{{ url_for('oldsaledata') }}"><img src="{{ url_for('static', filename='icon/icon_old_customers.png') }}" title="Old customers"></a>
-    <a href="{{ url_for('inventory') }}"><img src="{{ url_for('static', filename='icon/icon_inventory.png') }}" title="Inventory"></a>
-    <a href="{{ url_for('staff') }}"><img src="{{ url_for('static', filename='icon/icon_staff.png') }}" title="Staff"></a>
-    <a href="{{ url_for('appointments') }}"><img src="{{ url_for('static', filename='icon/icon_appointments.png') }}" title="Appointments"></a>
-  </div>
+  
 
   <script>
   document.addEventListener('DOMContentLoaded', () => {
@@ -679,9 +652,7 @@
       if(currentMonthIdx > 0){ currentMonthIdx--; renderTable(); renderDashboard(); updateNavButtons(); }
     });
 
-    const menu = $('#floatingMenu'); const toggle = $('#floatingToggle');
-    toggle?.addEventListener('click', (e) => { e.stopPropagation(); menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex'; });
-    document.addEventListener('click', (e) => { if(menu && toggle && !menu.contains(e.target) && !toggle.contains(e.target)) menu.style.display = 'none'; });
+    
 
     fetchData();
   });

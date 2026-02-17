@@ -1048,28 +1048,90 @@ def delete_sales_record():
         if not record_id:
             return jsonify({"error": "Missing ID"}), 400
 
-        rec = (
-            supabase.table("sales_records")
-            .select("id,orig_no")
-            .eq("id", record_id)
-            .single()
-            .execute()
-        ).data
-        if rec and rec.get("orig_no"):
-            return (
-                jsonify(
-                    {
-                        "error": "cannot_delete_issued_receipt",
-                        "message": "รายการนี้ออกใบเสร็จ (RC) แล้ว ไม่อนุญาตให้ลบ",
-                    }
-                ),
-                400,
-            )
-
+        # ลบได้ทุกกรณี แม้ออกใบเสร็จแล้ว
         supabase.table("sales_records").delete().eq("id", record_id).execute()
         return jsonify({"message": "ลบสำเร็จ"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+
+
+@app.route("/api/rebuild_rc_receipts", methods=["POST"])
+@login_required
+def rebuild_rc_receipts():
+    try:
+        data = request.get_json(silent=True) or {}
+        year = int(data.get("year") or 0)
+        if year < 2000 or year > 2100:
+            return jsonify({"success": False, "error": "Invalid year"}), 400
+
+        # (แนะนำ) จำกัดสิทธิ์เฉพาะ admin กันกดพลาด
+        if (session.get("role") or "") != "admin":
+            return jsonify({"success": False, "error": "forbidden"}), 403
+
+        start_date = f"{year}-01-01"
+        end_date = f"{year}-12-31"
+
+        # ดึงรายการขายทั้งหมดในปีนั้น
+        q = (
+            supabase.table("sales_records")
+            .select("id,date,created_at")
+            .gte("date", start_date)
+            .lte("date", end_date)
+            .order("date", desc=False)
+            .order("created_at", desc=False)
+        )
+
+        all_rows = []
+        start = 0
+        limit = 1000
+        while True:
+            resp = q.range(start, start + limit - 1).execute()
+            batch = resp.data or []
+            all_rows.extend(batch)
+            if len(batch) < limit:
+                break
+            start += limit
+
+        # PASS 1: เคลียร์ orig_no อย่างเดียวพอ (กันชน unique) — ปลอดภัยสุด (ไม่ชน NOT NULL)
+        supabase.table("sales_records").update(
+            {"orig_no": None}
+        ).gte("date", start_date).lte("date", end_date).execute()
+
+        # PASS 2: ใส่เลข RC ใหม่
+        now_iso = _utc_now_iso()
+        seq = 1
+
+        for r in all_rows:
+            rid = r.get("id")
+            if not rid:
+                continue
+
+            new_no = f"RC-{year}-{str(seq).zfill(4)}"
+
+            supabase.table("sales_records").update(
+                {
+                    "orig_year": year,
+                    "orig_seq": seq,
+                    "orig_no": new_no,
+                    "orig_issued_at": now_iso,
+                    "receipt_status": "issued",
+                }
+            ).eq("id", rid).execute()
+
+            seq += 1
+
+        # อัปเดต counter ให้ next_seq ต่อจากตัวล่าสุด
+        supabase.table("receipt_counters_orig").upsert(
+            {"year": year, "next_seq": seq},
+            on_conflict="year"  # ✅ ต้องเป็น string ในหลายเวอร์ชัน
+        ).execute()
+
+        return jsonify({"success": True, "count": len(all_rows)}), 200
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route("/api/cleanup_duplicates")
@@ -2309,44 +2371,7 @@ def api_work_tx():
 
 
 # =============================================================
-# Clinic Time Module — Customers Search (Search on Demand)
-# =============================================================
-@app.route("/api/search_customer")
-@login_required
-def api_search_customer():
-    try:
-        q = (request.args.get("q") or "").strip()
-        if not q or len(q) < 1:
-            return jsonify([])
-
-        limit = 20
-        q_digits = re.sub(r"\D", "", q)
-        is_opd = q_digits.isdigit() and len(q_digits) <= 4
-
-        qry = supabase.table("customers").select("opd,name,phone,profile,note").limit(limit)
-
-        or_parts = []
-        or_parts.append(f"name.ilike.%{q}%")
-        or_parts.append(f"phone.ilike.%{q}%")
-        if is_opd:
-            or_parts.append(f"opd.ilike.%{q_digits.zfill(4)}%")
-
-        qry = qry.or_(",".join(or_parts)).order("opd", desc=False)
-        res = qry.execute()
-        rows = res.data or []
-
-        for r in rows:
-            r["opd"] = normalize_opd(r.get("opd"))
-
-        return jsonify(rows)
-
-    except Exception as e:
-        app.logger.error(f"/api/search_customer error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
-# =============================================================
-# Clinic Time Module — Appointments CRUD (Daily)
+# Clinic Time Module 
 # =============================================================
 @app.route("/api/get_appointments")
 @login_required
@@ -2363,7 +2388,9 @@ def api_get_appointments():
             .order("start_time", desc=False)
             .execute()
         )
+
         return jsonify(res.data or [])
+
     except Exception as e:
         app.logger.error(f"/api/get_appointments error: {e}")
         return jsonify({"error": str(e)}), 500
@@ -2374,49 +2401,50 @@ def api_save_appointment():
     try:
         data = request.get_json(silent=True) or {}
 
+        print("DEBUG DATA:", data)
+
         appt_date = safe_date_str(data.get("appt_date"))
         start_time = data.get("start_time")
-        
-        # รองรับ end_time ถ้าไม่มีให้ Default เป็น start_time
-        end_time = data.get("end_time") 
-        if not end_time and start_time:
-             end_time = start_time 
-
+        end_time = data.get("end_time") or start_time
         column_id = data.get("column_id")
-        guest_name = data.get("guest_name")
-        guest_phone = data.get("guest_phone")
-        
-        service = data.get("service") or data.get("procedure") 
-        
-        status = data.get("status") or "pending"
+
+        guest_name = (
+            data.get("guest_name")
+            or data.get("customer_name")
+            or data.get("name")
+            or ""
+        ).strip()
+
+        guest_phone = (
+            data.get("guest_phone")
+            or data.get("phone")
+            or ""
+        ).strip()
+
+        service = (data.get("service") or data.get("procedure") or "").strip()
         note = data.get("note")
-        customer_id = data.get("customer_id")
 
         if not appt_date or not start_time or not column_id or not service:
-            return jsonify({"error": "missing_required_fields", "detail": "Date, Time, Column, Service are required"}), 400
+            return jsonify({"error": "missing_required_fields"}), 400
 
-        if not guest_name: guest_name = None
-        if not guest_phone: guest_phone = None
-        
         payload = {
             "appt_date": appt_date,
             "start_time": start_time,
-            "end_time": end_time, 
+            "end_time": end_time,
             "column_id": int(column_id),
-            "guest_name": guest_name,
-            "guest_phone": guest_phone,
+            "guest_name": guest_name if guest_name else None,
+            "guest_phone": guest_phone if guest_phone else None,
             "service": service,
-            "status": status,
+            "status": "pending",
             "note": note,
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
 
-        if customer_id:
-            payload["customer_id"] = customer_id
+        print("DEBUG PAYLOAD:", payload)
 
-        res = supabase.table("appointments").insert(payload).execute()
+        supabase.table("appointments").insert(payload).execute()
 
-        return jsonify({"success": True, "message": "Saved."}), 200
+        return jsonify({"success": True}), 200
 
     except Exception as e:
         app.logger.error(f"Save Appt Error: {e}")
@@ -2429,7 +2457,7 @@ def api_delete_appointment():
     try:
         data = request.get_json(silent=True) or {}
         appt_id = data.get("id")
-        
+
         if not appt_id:
             return jsonify({"error": "missing_id"}), 400
 
@@ -2440,6 +2468,43 @@ def api_delete_appointment():
     except Exception as e:
         app.logger.error(f"Delete Appt Error: {e}")
         return jsonify({"error": str(e)}), 500
+
+_ALLOWED_APPT_STATUS = {"pending", "confirmed", "cancelled"}
+
+def _normalize_appt_status(s):
+    s = (s or "").strip().lower()
+    return s if s in _ALLOWED_APPT_STATUS else "pending"
+
+
+@app.route("/api/set_appointment_status", methods=["POST"])
+@login_required
+def api_set_appointment_status():
+    try:
+        data = request.get_json(silent=True) or {}
+        appt_id = data.get("id")
+        status = _normalize_appt_status(data.get("status"))
+
+        if not appt_id:
+            return jsonify({"success": False, "error": "missing_id"}), 400
+
+        patch = {"status": status}
+
+        res = (
+            supabase.table("appointments")
+            .update(patch)
+            .eq("id", appt_id)
+            .select("*")
+            .single()
+            .execute()
+        )
+
+        return jsonify({"success": True, "row": res.data}), 200
+
+    except Exception as e:
+        app.logger.error(f"Set Appt Status Error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 
 
 # =============================================================

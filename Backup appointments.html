@@ -205,6 +205,8 @@
       white-space:nowrap;
       line-height:1;
     }
+    .pill-old{ background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .pill-new{ background:#fff7ed; color:#9a3412; border-color:#fed7aa; }
     .pill-pending{ background:#fff7ed; color:#9a3412; border-color:#fed7aa; }
     .pill-confirmed{ background:#ecfdf5; color:#047857; border-color:#bbf7d0; }
     .pill-cancelled{ background:#fef2f2; color:#b91c1c; border-color:#fecaca; }
@@ -377,17 +379,17 @@
       padding: 6px 6px;
       vertical-align: middle;
     }
-    
 
     table.qTable th:nth-child(1), table.qTable td:nth-child(1),
     table.qTable th:nth-child(2), table.qTable td:nth-child(2),
     table.qTable th:nth-child(4), table.qTable td:nth-child(4),
-    table.qTable th:nth-child(5), table.qTable td:nth-child(5),
-    table.qTable th:nth-child(6), table.qTable td:nth-child(6){
+    table.qTable th:nth-child(6), table.qTable td:nth-child(6),
+    table.qTable th:nth-child(7), table.qTable td:nth-child(7){
       white-space: nowrap;
     }
 
-    table.qTable th:nth-child(3), table.qTable td:nth-child(3){
+    table.qTable th:nth-child(3), table.qTable td:nth-child(3),
+    table.qTable th:nth-child(5), table.qTable td:nth-child(5){
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -395,9 +397,9 @@
 
     table.qTable th:nth-child(1), table.qTable td:nth-child(1){ width: 60px; }
     table.qTable th:nth-child(2), table.qTable td:nth-child(2){ width: 78px; }
-    table.qTable th:nth-child(4), table.qTable td:nth-child(4){ width: 108px; }
-    table.qTable th:nth-child(5), table.qTable td:nth-child(5){ width: 108px; }
-    table.qTable th:nth-child(6), table.qTable td:nth-child(6){ width: 92px; }
+    table.qTable th:nth-child(4), table.qTable td:nth-child(4){ width: 86px; }
+    table.qTable th:nth-child(6), table.qTable td:nth-child(6){ width: 98px; }
+    table.qTable th:nth-child(7), table.qTable td:nth-child(7){ width: 92px; }
 
     .pill{ max-width: 100%; }
     .btn{ max-width: 100%; }
@@ -552,78 +554,79 @@
     </div>
   </div>
 
+  <!-- Appointment Modal -->
+  <div class="modal" id="apptModal" onclick="Modal.closeBackdrop(event, 'apptModal')">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-hdr">
+        <span id="apptModalTitle">ลงนัดหมายใหม่</span>
+        <button onclick="Modal.close('apptModal')" style="background:none; border:none; cursor:pointer; font-weight:900;">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="apptId">
+        <input type="hidden" id="apptCustId">
+        <input type="hidden" id="apptStatus">
 
-<!-- Appointment Modal -->
-<!-- ========================= -->
-<div class="modal" id="apptModal" onclick="Modal.closeBackdrop(event, 'apptModal')">
-  <div class="modal-box" onclick="event.stopPropagation()">
-    <div class="modal-hdr">
-      <span id="apptModalTitle">ลงนัดหมายใหม่</span>
-      <button onclick="Modal.close('apptModal')" style="background:none;border:none;cursor:pointer;font-weight:900;">×</button>
+        <label style="font-weight:900; display:block; margin-bottom:6px;">ประเภทลูกค้า</label>
+        <div style="display:flex; gap:14px; margin-bottom:12px;">
+          <label style="font-weight:800;"><input type="radio" name="custType" value="existing" checked onchange="Modal.toggleCustType()"> เก่า</label>
+          <label style="font-weight:800;"><input type="radio" name="custType" value="guest" onchange="Modal.toggleCustType()"> ใหม่</label>
+        </div>
+
+        <div id="boxExisting">
+          <label style="font-weight:900; display:block; margin-bottom:6px;">ค้นหาลูกค้า</label>
+          <div class="search-wrapper">
+            <input type="text" class="ipt" id="searchCustInput"
+                   placeholder="พิมพ์เพื่อค้นหา..."
+                   oninput="document.getElementById('apptCustId').value=''; Search.debounce(this.value)">
+            <div class="search-dropdown" id="searchDropdown"></div>
+          </div>
+          <div style="margin-top:6px; color:#64748b; font-weight:800;">
+            * ไม่บังคับเลือกจากรายการ: พิมพ์ชื่อเองได้เลย
+          </div>
+        </div>
+
+        <div id="boxGuest" style="display:none;">
+          <label style="font-weight:900; display:block; margin-bottom:6px;">ชื่อลูกค้า</label>
+          <input type="text" class="ipt" id="guestName" placeholder="ระบุชื่อ">
+          <label style="font-weight:900; display:block; margin-top:10px; margin-bottom:6px;">เบอร์โทร</label>
+          <input type="text" class="ipt" id="guestPhone" placeholder="ระบุเบอร์โทร">
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
+          <div>
+            <label style="font-weight:900; display:block; margin-bottom:6px;">วันที่</label>
+            <input type="date" class="ipt" id="apptDate">
+          </div>
+          <div>
+            <label style="font-weight:900; display:block; margin-bottom:6px;">เวลา</label>
+            <input type="time" class="ipt" id="apptTime">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
+          <div>
+            <label style="font-weight:900; display:block; margin-bottom:6px;">ช่อง</label>
+            <select class="ipt" id="apptCol">
+              <option value="1">แพทย์ 1</option>
+              <option value="2">แพทย์ 2</option>
+              <option value="3">Treat</option>
+              <option value="4">IV</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-weight:900; display:block; margin-bottom:6px;">หัตถการ</label>
+            <input type="text" class="ipt" id="apptProc" placeholder="เช่น Botox">
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label style="font-weight:900; display:block; margin-bottom:6px;">หมายเหตุ</label>
+          <textarea class="ipt" id="apptNote" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="modal-ftr" id="apptModalFtr"></div>
     </div>
-
-    <div class="modal-body">
-      <input type="hidden" id="apptId">
-      <input type="hidden" id="apptStatus">
-      <input type="hidden" id="apptCustId">
-
-      <!-- ประเภทลูกค้า -->
-      <label style="font-weight:900; margin-bottom:6px; display:block;">ประเภทลูกค้า</label>
-      <select class="ipt" id="customerTypeSelect" onchange="Search.toggleType()">
-        <option value="new">ลูกค้าใหม่</option>
-        <option value="old">ลูกค้าเก่า</option>
-      </select>
-
-      <!-- ชื่อ -->
-      <label style="font-weight:900; margin-top:10px; margin-bottom:6px; display:block;">ชื่อลูกค้า</label>
-      <div class="search-wrapper">
-        <input type="text" class="ipt" id="searchCustInput"
-               placeholder="พิมพ์ชื่อ..."
-               oninput="Search.handleInput(this.value)">
-        <div class="search-dropdown" id="searchDropdown"></div>
-      </div>
-
-      <!-- เบอร์ -->
-      <label style="font-weight:900; margin-top:10px; margin-bottom:6px; display:block;">เบอร์โทร</label>
-      <input type="text" class="ipt" id="guestPhone">
-
-      <!-- วันที่ / เวลา -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
-        <div>
-          <label style="font-weight:900; margin-bottom:6px; display:block;">วันที่</label>
-          <input type="date" class="ipt" id="apptDate">
-        </div>
-        <div>
-          <label style="font-weight:900; margin-bottom:6px; display:block;">เวลา</label>
-          <input type="time" class="ipt" id="apptTime">
-        </div>
-      </div>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
-        <div>
-          <label style="font-weight:900; margin-bottom:6px; display:block;">ช่อง</label>
-          <select class="ipt" id="apptCol">
-            <option value="1">แพทย์ 1</option>
-            <option value="2">แพทย์ 2</option>
-            <option value="3">Treat</option>
-            <option value="4">IV</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-weight:900; margin-bottom:6px; display:block;">หัตถการ</label>
-          <input type="text" class="ipt" id="apptProc">
-        </div>
-      </div>
-
-      <div style="margin-top:12px;">
-        <label style="font-weight:900; margin-bottom:6px; display:block;">หมายเหตุ</label>
-        <textarea class="ipt" id="apptNote" rows="2"></textarea>
-      </div>
-    </div>
-
-    <div class="modal-ftr" id="apptModalFtr"></div>
   </div>
-</div>
 
   <!-- Roster Modal -->
   <div class="modal" id="rosterModal" onclick="Modal.closeBackdrop(event, 'rosterModal')">
@@ -752,7 +755,44 @@
       }
     };
 
-    
+    // --- Search ---
+    const Search = {
+      timer: null,
+      debounce(kw) {
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => this.exec(kw), 350);
+      },
+      async exec(kw) {
+        if(!kw || kw.length < 2) { $('searchDropdown').style.display='none'; return; }
+        const res = await api(`/api/search_customer?q=${encodeURIComponent(kw)}`);
+        const box = $('searchDropdown');
+        box.innerHTML = '';
+
+        if(res && res.__http_ok === false) {
+          box.innerHTML = `<div class="search-item" style="color:#ef4444">ค้นหาไม่สำเร็จ: ${res.__error}</div>`;
+          box.style.display = 'block';
+          return;
+        }
+
+        if(res && res.length > 0) {
+          res.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'search-item';
+            div.innerHTML = `<strong>${c.name}</strong><small>${c.phone || '-'} | OPD: ${c.opd}</small>`;
+            div.onclick = () => {
+              $('searchCustInput').value = c.name;
+              $('apptCustId').value = c.id || ''; // ✅ มีค่อยเก็บ (ไม่บังคับ)
+              box.style.display = 'none';
+            };
+            box.appendChild(div);
+          });
+          box.style.display = 'block';
+        } else {
+          box.innerHTML = '<div class="search-item" style="color:#ef4444">ไม่พบข้อมูล</div>';
+          box.style.display = 'block';
+        }
+      }
+    };
 
     // --- Modal ---
     const Modal = {
@@ -760,12 +800,19 @@
       close(id) { $(id).classList.remove('show'); },
       closeBackdrop(e, id) { if(e.target.id === id) this.close(id); },
 
+      toggleCustType() {
+        const type = document.querySelector('input[name="custType"]:checked').value;
+        $('boxExisting').style.display = type === 'existing' ? 'block' : 'none';
+        $('boxGuest').style.display = type === 'guest' ? 'block' : 'none';
+      },
+
       openAppt(data = null) {
         $('apptId').value = '';
         $('apptCustId').value = '';
         $('apptStatus').value = 'pending';
 
         $('searchCustInput').value = '';
+        $('guestName').value = '';
         $('guestPhone').value = '';
         $('apptProc').value = '';
         $('apptNote').value = '';
@@ -786,10 +833,28 @@
             $('apptNote').value = data.note || '';
             $('apptStatus').value = data.status || 'pending';
 
-            // ✅ ไม่แยกเก่า/ใหม่แล้ว: ใช้ชื่อจาก customer_name เป็นหลัก
-            $('searchCustInput').value = data.customer_name || data.guest_name || data.opd || '';
-            $('guestPhone').value = data.guest_phone || data.phone || '';
-            $('apptCustId').value = data.customer_id || '';
+            // ✅ ใช้ customer_type เป็นหลักเพื่อเลือก radio
+            const t = (data.customer_type || '').toLowerCase();
+            if(t === 'existing') {
+              document.querySelector('input[name="custType"][value="existing"]').checked = true;
+              // ✅ ชื่อเก่าใช้ customer_name เป็นหลัก
+              $('searchCustInput').value = data.customer_name || data.opd || '';
+              $('apptCustId').value = data.customer_id || ''; // optional
+            } else if(t === 'guest') {
+              document.querySelector('input[name="custType"][value="guest"]').checked = true;
+              $('guestName').value = data.guest_name || '';
+              $('guestPhone').value = data.guest_phone || '';
+            } else {
+              if(data.customer_name || data.customer_id || data.opd) {
+                document.querySelector('input[name="custType"][value="existing"]').checked = true;
+                $('searchCustInput').value = data.customer_name || data.opd || '';
+                $('apptCustId').value = data.customer_id || '';
+              } else {
+                document.querySelector('input[name="custType"][value="guest"]').checked = true;
+                $('guestName').value = data.guest_name || '';
+                $('guestPhone').value = data.guest_phone || '';
+              }
+            }
           } else {
             $('apptModalTitle').innerText = 'ลงนัดหมายใหม่';
             $('apptStatus').value = 'pending';
@@ -801,6 +866,7 @@
           $('apptModalTitle').innerText = 'ลงนัดหมายใหม่';
         }
 
+        this.toggleCustType();
         this.renderButtons();
         this.open('apptModal');
       },
@@ -831,62 +897,6 @@
           `${btnDeleteHard} ${btnCancelAppt} ${btnBackPending} ${btnConfirm} ${btnClose} ${btnSave}`;
       }
     };
-
-// =========================
-// Search System
-// =========================
-const Search = {
-  timer: null,
-
-  toggleType() {
-    const type = $('customerTypeSelect').value;
-    if(type === 'new') {
-      $('searchDropdown').style.display = 'none';
-      $('apptCustId').value = '';
-    }
-  },
-
-  handleInput(value) {
-    const type = $('customerTypeSelect').value;
-    if(type !== 'old') return;
-
-    clearTimeout(this.timer);
-    this.timer = setTimeout(() => this.search(value), 300);
-  },
-
-  async search(q) {
-    if(!q || q.length < 1) {
-      $('searchDropdown').style.display = 'none';
-      return;
-    }
-
-    const res = await api(`/api/search_customer_simple?q=${encodeURIComponent(q)}`);
-    if(!Array.isArray(res)) return;
-
-    const box = $('searchDropdown');
-    box.innerHTML = '';
-
-    res.forEach(r => {
-      const div = document.createElement('div');
-      div.className = 'search-item';
-      div.innerHTML = `
-        <strong>${r.display_name}</strong>
-        <small>${r.phone || '-'}</small>
-      `;
-      div.onclick = () => {
-        $('searchCustInput').value = r.display_name;
-        $('guestPhone').value = r.phone || '';
-        $('apptCustId').value = r.opd || '';
-        box.style.display = 'none';
-      };
-      box.appendChild(div);
-    });
-
-    box.style.display = 'block';
-  }
-};
-
-
 
     // --- Daily ---
     const Daily = {
@@ -942,8 +952,17 @@ const Search = {
         return s.length >= 5 ? s.substring(0,5) : s;
       },
 
-      // ✅ ชื่อ = ใช้ customer_name เป็นหลัก (ไม่แยกเก่า/ใหม่)
+      // ✅ ชื่อ = ชื่อจริงเท่านั้น
       resolveDisplayName(a){
+        const ct = (a.customer_type || '').toLowerCase();
+
+        if(ct === 'guest'){
+          return trim(a.guest_name) || 'ไม่ระบุชื่อ';
+        }
+        if(ct === 'existing'){
+          // ✅ ใช้ customer_name เป็นหลัก (เพื่อกัน "ไม่ระบุชื่อ")
+          return trim(a.customer_name) || trim(a.opd) || 'ไม่ระบุชื่อ';
+        }
         return trim(a.customer_name) || trim(a.guest_name) || trim(a.opd) || 'ไม่ระบุชื่อ';
       },
 
@@ -983,7 +1002,7 @@ const Search = {
               div.className = `apptCard ${st}`;
               div.innerHTML = `
                 <div class="name" title="${nameDisplay}">${nameDisplay}</div>
-                <div class="meta" title="${found.guest_phone || found.phone || ''}">${found.guest_phone || found.phone || ''}</div>
+                <div class="meta" title="${found.guest_phone || ''}">${found.guest_phone || ''}</div>
                 <div class="svc" title="${found.service || found.procedure || '-'}">${found.service || found.procedure || '-'}</div>
               `;
               div.onclick = () => Modal.openAppt(found);
@@ -1003,56 +1022,83 @@ const Search = {
       },
 
       // =========================================================
-      // ✅✅✅ SAVE (แก้แล้ว: ไม่มี customer_type/เก่า/ใหม่)
-      // - บังคับกรอกชื่อเสมอ
-      // - เบอร์โทรเป็น optional
-      // - ถ้าเลือกจาก dropdown ค่อยส่ง customer_id (optional)
+      // ✅✅✅ SAVE (แก้แล้วตามที่คุยกัน)
+      // - ลูกค้าเก่า: ไม่บังคับเลือกจาก dropdown
+      // - เก่า/ใหม่ดูจาก radio เท่านั้น
+      // - เก่า: ส่ง customer_name เสมอ (กัน "ไม่ระบุชื่อ")
       // =========================================================
       async save() {
-  const id = trim($('apptId').value);
+        const id = trim($('apptId').value);
+        const type = document.querySelector('input[name="custType"]:checked').value;
 
-  const appt_date = trim($('apptDate').value);
-  const start_time = trim($('apptTime').value);
-  const column_id = parseInt(trim($('apptCol').value || '0'), 10);
-  const service = trim($('apptProc').value);
-  const note = trim($('apptNote').value);
-  const status = this.normalizeStatus(trim($('apptStatus').value) || 'pending');
+        const appt_date = trim($('apptDate').value);
+        const start_time = trim($('apptTime').value);
+        const column_id = parseInt(trim($('apptCol').value || '0'), 10);
+        const service = trim($('apptProc').value);
+        const note = trim($('apptNote').value);
+        const status = this.normalizeStatus(trim($('apptStatus').value) || 'pending');
 
-  const customer_name = trim($('searchCustInput').value);
-  const guest_phone = trim($('guestPhone').value);
-  const customer_type = $('customerTypeSelect').value;
+        if(!appt_date) return Toast.show('กรุณาเลือกวันที่', 'error');
+        if(!start_time) return Toast.show('กรุณาเลือกเวลา', 'error');
+        if(!column_id) return Toast.show('กรุณาเลือกช่อง', 'error');
+        if(!service) return Toast.show('กรุณากรอกหัตถการ', 'error');
 
-  if(!customer_name) return Toast.show('กรุณากรอกชื่อลูกค้า', 'error');
-  if(!appt_date) return Toast.show('กรุณาเลือกวันที่', 'error');
-  if(!start_time) return Toast.show('กรุณาเลือกเวลา', 'error');
-  if(!column_id) return Toast.show('กรุณาเลือกช่อง', 'error');
-  if(!service) return Toast.show('กรุณากรอกหัตถการ', 'error');
+        const payload = {
+          appt_date,
+          start_time,
+          end_time: start_time,
+          column_id,
+          service,
+          note,
+          status,
+          customer_type: type
+        };
 
-  const payload = {
-    appt_date,
-    start_time,
-    end_time: start_time,
-    column_id,
-    service,
-    note,
-    status,
-    customer_name,
-    guest_phone: guest_phone || null,
-    customer_type
-  };
+        if(type === 'existing') {
+          // ✅ ไม่บังคับเลือกจาก dropdown
+          const typedName = trim($('searchCustInput').value);
+          const custId = trim($('apptCustId').value); // optional
 
-  if(id) payload.id = id;
+          if(!typedName) return Toast.show('กรุณากรอกชื่อในช่องค้นหา', 'error');
 
-  const res = await api('/api/save_appointment', 'POST', payload);
+          // ✅ สำคัญ: ส่งชื่อเสมอ
+          payload.customer_name = typedName;
 
-  if(res && res.success) {
-    Toast.show('บันทึกสำเร็จ');
-    Modal.close('apptModal');
-    this.load();
-    MonthQueue.load(false);
-  } else {
-    Toast.show('เกิดข้อผิดพลาด', 'error');
-  }
+          // ✅ ถ้าเลือกจาก dropdown ค่อยส่ง id (ไม่บังคับ)
+          if(custId) payload.customer_id = custId;
+
+          // เคลียร์ guest เผื่อเคยเป็นรายการใหม่
+          payload.guest_name = null;
+          payload.guest_phone = null;
+
+        } else {
+          const gname = trim($('guestName').value);
+          if(!gname) return Toast.show('กรุณากรอกชื่อลูกค้า', 'error');
+          payload.guest_name = gname;
+          payload.guest_phone = trim($('guestPhone').value);
+
+          // เคลียร์ existing เผื่อเคยเป็นรายการเก่า
+          payload.customer_id = null;
+          payload.customer_name = null;
+        }
+
+        if(id) payload.id = id;
+
+        const res = await api('/api/save_appointment', 'POST', payload);
+
+        if(res && res.__http_ok === false) {
+          Toast.show(`บันทึกไม่สำเร็จ: ${res.__error}`, 'error');
+          return;
+        }
+
+        if(res && res.success) {
+          Toast.show('บันทึกสำเร็จ');
+          Modal.close('apptModal');
+          this.load();
+          MonthQueue.load(false);
+        } else {
+          Toast.show('เกิดข้อผิดพลาด', 'error');
+        }
       },
 
       async setStatusUI(status){
@@ -1139,6 +1185,12 @@ const Search = {
         return `<span class="pill pill-pending">⏳ Pending</span>`;
       },
 
+      pillCust(isOld){
+        return isOld
+          ? `<span class="pill pill-old">ลูกค้าเก่า</span>`
+          : `<span class="pill pill-new">ลูกค้าใหม่</span>`;
+      },
+
       openByKey(k){
         const a = this._rowMap[k];
         if(a) Modal.openAppt(a);
@@ -1165,6 +1217,9 @@ const Search = {
       },
 
       resolveDisplayName(a){
+        const ct = (a.customer_type || '').toLowerCase();
+        if(ct === 'guest') return trim(a.guest_name) || 'ไม่ระบุชื่อ';
+        if(ct === 'existing') return trim(a.customer_name) || trim(a.opd) || 'ไม่ระบุชื่อ';
         return trim(a.customer_name) || trim(a.guest_name) || trim(a.opd) || 'ไม่ระบุชื่อ';
       },
 
@@ -1293,17 +1348,16 @@ const Search = {
               <div class="tableWrap">
                 <table class="qTable">
                   <thead>
-  <tr>
-    <th style="text-align:left;">เวลา</th>
-    <th style="text-align:left;">ช่อง</th>
-    <th style="text-align:left;">ลูกค้า</th>
-    <th style="text-align:left;">ประเภท</th>
-    <th style="text-align:left;">เบอร์โทร</th>
-    <th style="text-align:left;">หัตถการ</th>
-    <th style="text-align:left;">สถานะ</th>
-  </tr>
-</thead>
-
+                    <tr>
+                      <th style="width:62px;">เวลา</th>
+                      <th style="width:78px;">ช่อง</th>
+                      <th>ลูกค้า</th>
+                      <th style="width:88px;">เก่า/ใหม่</th>
+                      <th>หัตถการ</th>
+                      <th style="width:108px;">สถานะ</th>
+                      <th style="width:92px;">ทำรายการ</th>
+                    </tr>
+                  </thead>
                   <tbody>
           `;
 
@@ -1312,28 +1366,30 @@ const Search = {
             const time = (trim(a.start_time) || '').slice(0,5) || '-';
             const col = colName(a.column_id);
 
+            const ct = (a.customer_type || '').toLowerCase();
+            const isOld = (ct === 'existing') ? true : (ct === 'guest' ? false : !!(a.customer_id || a.opd));
+
             const nameDisplay = this.resolveDisplayName(a);
             const svc = a.service || a.procedure || '-';
 
             const key = `k${++kCounter}`;
             this._rowMap[key] = a;
 
-            
-            const customerType = a.customer_type === 'old' ? 'เก่า' : 'ใหม่';
-const phone = a.guest_phone || a.phone || '-';
+            const confirmBtn = (st === 'pending' && a.id)
+              ? `<button class="btn btn-sm btn-success" onclick="event.stopPropagation(); MonthQueue.confirmFromRow('${a.id}')">คอนเฟิร์ม</button>`
+              : `<span style="color:#94a3b8; font-weight:800;">-</span>`;
 
-html += `
-  <tr class="rowClickable" onclick="MonthQueue.openByKey('${key}')">
-    <td>${time}</td>
-    <td>${col}</td>
-    <td title="${nameDisplay}">${nameDisplay}</td>
-    <td>${customerType}</td>
-    <td>${phone}</td>
-    <td title="${svc}">${svc}</td>
-    <td>${this.pillStatus(st)}</td>
-  </tr>
-`;
-
+            html += `
+              <tr class="rowClickable" onclick="MonthQueue.openByKey('${key}')">
+                <td data-label="เวลา" title="${time}">${time}</td>
+                <td data-label="ช่อง" title="${col}">${col}</td>
+                <td data-label="ลูกค้า" title="${nameDisplay}">${nameDisplay}</td>
+                <td data-label="เก่า/ใหม่">${this.pillCust(isOld)}</td>
+                <td data-label="หัตถการ" title="${svc}">${svc}</td>
+                <td data-label="สถานะ">${this.pillStatus(st)}</td>
+                <td data-label="ทำรายการ">${confirmBtn}</td>
+              </tr>
+            `;
           });
 
           html += `

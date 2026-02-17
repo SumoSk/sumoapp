@@ -1,165 +1,518 @@
-<!-- customer_modal.html -->
-<style>
-  #customer-modal {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.45);
-    display: none; align-items: center; justify-content: center;
-    z-index: 1100;
-  }
-  #customer-modal .panel {
-    position: relative;
-    width: min(900px, 92vw);
-    max-height: 88vh; overflow: auto;
-    background: #fff; border-radius: 14px;
-    padding: 16px 18px 22px;
-    box-shadow: 0 12px 34px rgba(0,0,0,.25);
-  }
-</style>
+CSS (สไตล์ของ Popup + รูปโปรไฟล์ + ดูรูปใหญ่ + ปุ่ม)
 
+/* ===== Customer Profile Modal ===== */
+#customer-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background-color:rgba(0,0,0,0.5);
+  z-index:9999;
+  justify-content:center;
+  align-items:center;
+  padding: 16px;
+}
+#customer-modal-box{
+  width:auto;
+  max-width: 90vw;
+  max-height: 90vh;
+  font-size: 13.5px;
+  padding: 16px;
+  border-radius: 16px;
+  overflow:auto;
+  background: white;
+  box-sizing: border-box;
+  position:relative;
+}
+#customer-modal-box .close-x{
+  position:absolute;
+  top:10px;
+  right:14px;
+  font-size:20px;
+  border:none;
+  background:none;
+  cursor:pointer;
+}
+
+/* Header */
+.profile-header{
+  display:flex;
+  align-items:center;
+  gap:15px;
+  margin-bottom: 15px;
+  background:#f8fafc;
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+.profile-img-box{
+  width:70px;
+  height:70px;
+  border-radius:50%;
+  overflow:hidden;
+  border:3px solid white;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+  background-color:#e2e8f0;
+  flex-shrink:0;
+  cursor: zoom-in;
+}
+.profile-img-box img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.profile-info{ flex:1; }
+.profile-info h3{
+  margin:0 0 4px 0;
+  font-size:18px;
+  color:#0f766e;
+}
+.profile-badges{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.badge{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:999px;
+  background:#e0f2f1;
+  color:#004d40;
+  font-size:12px;
+}
+.badge-vip{
+  background-color:#fef3c7;
+  color:#92400e;
+  font-size:10px;
+  padding:2px 8px;
+  border-radius:999px;
+  border:1px solid #fcd34d;
+}
+.profile-actions{
+  margin-top:8px;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.btn-mini{
+  border:none;
+  padding:6px 10px;
+  border-radius:10px;
+  cursor:pointer;
+  font-size:12px;
+  background:#009688;
+  color:#fff;
+}
+.btn-mini.secondary{
+  background:#eceff1;
+  color:#37474f;
+}
+.btn-mini:hover{ opacity:.92; }
+
+/* Summary grid */
+.profile-summary-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  font-size:12px;
+  margin-bottom:15px;
+}
+.profile-summary-box{
+  padding:8px;
+  border-radius:8px;
+}
+.profile-summary-box.total{ background:#e0f2f1; color:#00695c; }
+.profile-summary-box.avg{ background:#f1f8e9; color:#33691e; }
+.profile-summary-box.visits{ background:#fff3e0; color:#e65100; }
+.profile-summary-box.last{ background:#ffebee; color:#c62828; }
+
+/* Image Viewer */
+.img-viewer{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:20000;
+  background:rgba(0,0,0,.75);
+  justify-content:center;
+  align-items:center;
+  padding:16px;
+}
+.img-viewer__panel{
+  width:min(92vw,720px);
+  max-height:92vh;
+  background:transparent;
+  position:relative;
+}
+.img-viewer__img{
+  width:100%;
+  height:auto;
+  max-height:92vh;
+  object-fit:contain;
+  border-radius:14px;
+  background:#111;
+  box-shadow:0 16px 50px rgba(0,0,0,.35);
+}
+.img-viewer__close{
+  position:absolute;
+  top:-10px;
+  right:-10px;
+  width:40px;
+  height:40px;
+  border:none;
+  border-radius:50%;
+  cursor:pointer;
+  font-size:18px;
+  background:#fff;
+  box-shadow:0 6px 18px rgba(0,0,0,.25);
+}
+
+/* Mobile tweak */
+@media (max-width: 480px){
+  #customer-modal-box{ max-width:94vw; padding:12px; }
+  .profile-info h3{ font-size:16px; }
+}
+
+
+
+.....................................................................
+HTML (ตัว Modal + Image Viewer + input file)
+
+<!-- ===== Customer Modal ===== -->
 <div id="customer-modal">
-  <div class="panel">
+  <div id="customer-modal-box">
+    <button class="close-x" onclick="closeCustomerModal()">&times;</button>
     <div id="modal-content"></div>
   </div>
 </div>
 
-<script>
-(function () {
-  // ===== Helpers =====
-  window.formatDate ||= function (d) {
-    if (!d) return '-';
-    const x = new Date(d); if (isNaN(x)) return d;
-    const dd = String(x.getDate()).padStart(2,'0');
-    const mm = String(x.getMonth()+1).padStart(2,'0');
-    const yy = x.getFullYear();
-    return `${dd}/${mm}/${yy}`;
+<!-- ===== Image Viewer Modal ===== -->
+<div id="imgViewer" class="img-viewer" onclick="closeImgViewer()">
+  <div class="img-viewer__panel" onclick="event.stopPropagation()">
+    <button class="img-viewer__close" onclick="closeImgViewer()">✕</button>
+    <img id="imgViewerImg" class="img-viewer__img" src="" alt="Profile Large">
+  </div>
+</div>
+
+<!-- hidden file input -->
+<input id="profileUploadInput" type="file" accept="image/*" style="display:none;">
+
+
+
+
+.......................................................
+
+
+/* ===============================
+   Customer Popup Module (Reusable)
+   =============================== */
+
+/** ต้องมีข้อมูลจากหน้าหลัก */
+window.allCustomerRecords = window.allCustomerRecords || [];
+window.customerProfileMap = window.customerProfileMap || {}; // { "0004": {profile_pic_url, full_name, vip...} }
+
+/** ---- Helpers ---- */
+const pad4 = (s) => String(s || '').padStart(4, '0');
+const escapeHTML = (s='') => String(s).replace(/[&<>"']/g, m => ({
+  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+}[m]));
+
+function closeCustomerModal(){
+  const m = document.getElementById("customer-modal");
+  if(m) m.style.display = "none";
+}
+function formatDate(d){
+  if(!d) return '';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y.slice(-2)}`;
+}
+
+/** ---- Image Viewer ---- */
+function openImgViewer(src){
+  const m = document.getElementById('imgViewer');
+  const img = document.getElementById('imgViewerImg');
+  if(!m || !img) return;
+  img.src = src || '';
+  m.style.display = 'flex';
+}
+function closeImgViewer(){
+  const m = document.getElementById('imgViewer');
+  const img = document.getElementById('imgViewerImg');
+  if(!m || !img) return;
+  m.style.display = 'none';
+  img.src = '';
+}
+
+/** ---- Upload Profile Pic ---- */
+let _pendingUploadOPD = null;
+
+function _validateImageFile(file){
+  if(!file) return { ok:false, msg:'ไม่พบไฟล์' };
+  const okTypes = ['image/jpeg','image/png','image/webp'];
+  if(!okTypes.includes(file.type)) return { ok:false, msg:'ไฟล์ต้องเป็น jpg/png/webp เท่านั้น' };
+  const MAX_MB = 6;
+  if(file.size > MAX_MB * 1024 * 1024) return { ok:false, msg:`ไฟล์ใหญ่เกิน ${MAX_MB}MB` };
+  return { ok:true };
+}
+
+async function _readErrorMessage(res){
+  try{
+    const ct = (res.headers.get('content-type') || '').toLowerCase();
+    if(ct.includes('application/json')){
+      const j = await res.json().catch(()=> ({}));
+      return j.error || j.message || JSON.stringify(j);
+    }
+    const t = await res.text().catch(()=> '');
+    return t || `HTTP ${res.status}`;
+  }catch{
+    return `HTTP ${res.status}`;
+  }
+}
+
+async function uploadProfilePic(opd, file){
+  const fd = new FormData();
+  const opd4 = pad4(opd);
+
+  fd.append('opd', opd4);
+  // ส่งหลาย key กัน backend รับชื่อไม่ตรง
+  fd.append('file', file);
+  fd.append('profile_pic', file);
+  fd.append('profile_pic_file', file);
+
+  const res = await fetch('/api/customer/profile_pic', {
+    method: 'POST',
+    credentials: 'same-origin',
+    body: fd
+  });
+
+  if(!res.ok){
+    const msg = await _readErrorMessage(res);
+    throw new Error(msg || 'Upload failed');
+  }
+
+  const data = await res.json().catch(()=> ({}));
+  const url = data.url || data.profile_pic_url || data.secure_url || data.path;
+  const ok = (data.ok === true) || (!!url);
+
+  if(!ok || !url){
+    throw new Error(data.error || data.message || 'Bad response from server');
+  }
+  return url;
+}
+
+function pickProfileImage(opd){
+  _pendingUploadOPD = pad4(opd);
+  const input = document.getElementById('profileUploadInput');
+  if(!input) return alert('ไม่พบ input อัปโหลดรูป');
+  input.value = '';
+  input.click();
+}
+
+/** ผูก event ให้ input อัปโหลด */
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('profileUploadInput');
+  if(!input) return;
+
+  input.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if(!file || !_pendingUploadOPD) return;
+
+    const chk = _validateImageFile(file);
+    if(!chk.ok){
+      alert(chk.msg);
+      _pendingUploadOPD = null;
+      return;
+    }
+
+    try{
+      const url = await uploadProfilePic(_pendingUploadOPD, file);
+
+      // ✅ ดึงใหม่ทั้งก้อนให้ map ตรงกับ DB (ถ้ามีฟังก์ชันนี้ในหน้า)
+      if(typeof loadCustomerProfiles === 'function'){
+        await loadCustomerProfiles();
+      } else {
+        // fallback: update map อย่างน้อย
+        window.customerProfileMap[_pendingUploadOPD] = window.customerProfileMap[_pendingUploadOPD] || {};
+        window.customerProfileMap[_pendingUploadOPD].profile_pic_url = url;
+      }
+
+      // update รูปใน modal ที่เปิดอยู่ + กัน cache
+      const imgEl = document.getElementById('modalProfileImg');
+      if(imgEl){
+        imgEl.src = url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now();
+      }
+
+      alert('อัปเดตรูปโปรไฟล์เรียบร้อย');
+    }catch(err){
+      console.error(err);
+      alert('อัปโหลดไม่สำเร็จ: ' + (err?.message || err));
+    }finally{
+      _pendingUploadOPD = null;
+    }
+  });
+});
+
+/** ---- Customer Modal: Open ----
+ * key รูปแบบ "name|phone"
+ */
+function openCustomerModal(key){
+  const [name, phone = ''] = String(key).split('|');
+  const norm = s => (s || '').trim().toLowerCase();
+
+  const records = (window.allCustomerRecords || []).filter(r =>
+    norm(r.name) === norm(name) &&
+    norm(r.phone || '') === norm(phone)
+  );
+
+  if(!records.length){
+    alert('ไม่พบข้อมูลการซื้อของลูกค้าคนนี้');
+    return;
+  }
+
+  records.sort((a,b)=> (b.date || '').localeCompare(a.date || ''));
+
+  const salesInfo = {
+    name: records[0].name,
+    phone: records[0].phone || '-',
+    opd: pad4(records[0].opd)
   };
-  window.escapeHTML ||= (s)=>String(s||'')
-    .replaceAll('&','&amp;').replaceAll('<','&lt;')
-    .replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
 
-  function showModal(){ document.getElementById('customer-modal').style.display='flex'; }
-  function hideModal(){ document.getElementById('customer-modal').style.display='none'; }
-  window.closeCustomerModal = hideModal;
-  document.getElementById('customer-modal').addEventListener('click', e=>{
-    const panel=document.querySelector('#customer-modal .panel');
-    if(!panel.contains(e.target)) hideModal();
-  });
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape') hideModal(); });
+  const profileData = (window.customerProfileMap || {})[salesInfo.opd] || {};
+  const fallbackPic = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzZiNzI4MCI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==';
+  const profilePic = profileData.profile_pic_url || fallbackPic;
+  const vipBadge = profileData.vip ? `<span class="badge-vip">VIP: ${escapeHTML(profileData.vip)}</span>` : '';
+  const realName = profileData.full_name || salesInfo.name;
 
-  // === สะดวกเวลา map คีย์ ===
-  function buildKey(name, phone){ return `${name||''}|${phone||''}`; }
+  // stats
+  const lastDateStr = (records[0].date || '').slice(0,10);
+  const baseDate = new Date();
+  const lastDate = new Date(lastDateStr);
+  const daysAbsent = isNaN(lastDate) ? 0 : Math.floor((baseDate - lastDate) / (1000*60*60*24));
 
-  // === Hook: ให้ element ที่มี class="customer-link" กดแล้วเปิด modal ได้ ===
-  document.addEventListener('click', function(e){
-    const el = e.target.closest('.customer-link');
-    if(!el) return;
-    const name = el.getAttribute('data-name') || el.textContent.trim();
-    const phone = el.getAttribute('data-phone') || '';
-    openCustomerModal(buildKey(name, phone));
-  });
+  const totalVisits = records.length;
+  const paidRecords = records.filter(r => parseFloat(r.amount || 0) > 0);
+  const paidVisits = paidRecords.length;
+  const totalAmount = paidRecords.reduce((s,r)=> s + parseFloat(r.amount || 0), 0);
+  const average = paidVisits ? Math.round(totalAmount / paidVisits) : 0;
 
-  // === ฟังก์ชันหลัก ===
-  window.openCustomerModal = function(key) {
-    const recs = (window.allCustomerRecords||[]).filter(r => `${r.name}|${r.phone||''}` === key);
-    if(!recs.length) return;
-
-    const first = recs[0];
-    const customer = { name:first.name, phone:first.phone||'-', opd:first.opd||'-' };
-
-    const latestRecord = recs.reduce((latest,r)=> 
-      new Date(r.date) > new Date(latest.date)? r:latest, recs[0]);
-
-    const lastDate = new Date(latestRecord.date);
-    const today = new Date();
-    const daysAbsent = Math.floor((today - lastDate)/(1000*60*60*24));
-
-    const totalVisits = recs.length;
-    const paidRecords = recs.filter(r => parseFloat(r.amount||0) > 0);
-    const paidVisits = paidRecords.length;
-    const totalAmount = paidRecords.reduce((s,r)=>s+parseFloat(r.amount||0),0);
-    const average = paidVisits>0 ? Math.round(totalAmount/paidVisits) : 0;
-
-    const allItems = {};
-    recs.forEach(r => {
-      (r.items||[]).forEach(item=>{
-        let name = item;
-        const m = item.match(/\((.*?)\)/); name = m? m[1] : item.split(" - ")[0];
-        const q = item.match(/- (\d+) ชิ้น/); const qty = q? parseInt(q[1]) : 1;
-        allItems[name] = (allItems[name]||0) + qty;
-      });
+  // รวมรายการซื้อทั้งหมด (แบบเดิมของคุณ: ใช้ชื่อในวงเล็บเป็นชื่อจริง)
+  const allItems = {};
+  records.forEach(r=>{
+    (r.items || []).forEach(item=>{
+      const m = String(item).match(/\((.*?)\)/);
+      const itemName = m ? m[1] : String(item).split(' - ')[0];
+      const q = String(item).match(/- (\d+)\s*ชิ้น/);
+      const qty = q ? parseInt(q[1]) : 1;
+      allItems[itemName] = (allItems[itemName] || 0) + qty;
     });
+  });
 
-    const categoryMap = {
-      "โบทอค":["Aestox 50 u","Aestox 100 u","Allergan 50 u","Allergan 100 u","เฉพาะจุด","แบ่งไว้แล้ว","Nabota"],
-      "ฟิลเลอร์":["Neuramis สีดำ","Neuramis สีทอง","E.P.T.Q ระบุสีด้วย","Restylane ระบุสีด้วย"],
-      "งานผิว":["Meso Chanel","P - Cell","Aquatic","Hestina","Exosome","Rejuran","Belotero Revive","Sculptra","Juvelook","Aesthefill","Mesowink","AlphaArbutin","PRP","Biocollagen","Transamine"],
-      "ดริปผิว":["Snow White","Super Aurawhite","Vitamin Mix","Brain Booster","Energy Booster"],
-      "ทรีทเม้นท์":["ทรีทเมนต์หน้าใส","ทรีทเมนต์สิว","ทรีทเมนต์ฝ้า"],
-      "Fat/Hifu":["Bromi","Sisi","HIFU","HIFU แถม"],
-      "อื่นๆ":["ยาฉีดสลายฝ้า","ครีมทาฝ้า","ยาทานฝ้า","ไหมลิฟท์กรอบหน้า","ไหม PDO","ไหม Collagen","จ่ายเงิน/จองสินค้า"],
-      "โปรโมชั่น/อีเว้นพิเศษ":["สลายฟิลเลอร์","ไหม PDO","ปั่น RF","ไหมลิฟท์กรอบหน้า","ผลักวิตามิน"]
-    };
+  // (ถ้าหน้าอื่นไม่มี categoryMap ก็ยังทำงานได้ เพราะเราสรุปแบบรวมรายการก็พอ)
+  const itemSummary = Object.entries(allItems)
+    .sort((a,b)=> b[1]-a[1])
+    .map(([n,q])=> `• ${escapeHTML(n)} : ${q}`)
+    .join('<br>') || '-';
 
-    const categorizedItems = {};
-    for (const [cat, names] of Object.entries(categoryMap)) {
-      names.forEach(n => {
-        if (allItems[n]) {
-          (categorizedItems[cat] ||= []).push(`${n} : ${allItems[n]}`);
-          delete allItems[n];
-        }
-      });
-    }
-    if (Object.keys(allItems).length) {
-      (categorizedItems["อื่นๆ"] ||= []);
-      for (const [n,q] of Object.entries(allItems)) categorizedItems["อื่นๆ"].push(`${n} : ${q}`);
-    }
+  // ประวัติการซื้อย้อนหลัง
+  const historyHtml = records.map(r=>{
+    const items = (r.items || []).map(item=>{
+      const m = String(item).match(/\((.*?)\)/);
+      const itemName = m ? m[1] : String(item).split(' - ')[0];
+      const q = String(item).match(/- (\d+)\s*ชิ้น/);
+      const qty = q ? parseInt(q[1]) : 1;
+      return `<li>${escapeHTML(itemName)} : ${qty}</li>`;
+    }).join('');
 
-    const itemSummary = Object.entries(categorizedItems)
-      .map(([cat,items])=>`<div style="margin-bottom:6px;"><strong>${cat}</strong>: ${items.join(" | ")}</div>`).join("");
+    const noteText = r.note
+      ? `<div style="font-size:11px; margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${escapeHTML(r.note)}</div>`
+      : '';
 
-    const historyHtml = recs
-      .slice().sort((a,b)=>b.date.localeCompare(a.date))
-      .map(r=>{
-        const items = (r.items||[]).map(item=>{
-          const m = item.match(/\((.*?)\)/);
-          const name = m? m[1] : item.split(" - ")[0];
-          const q = item.match(/- (\d+) ชิ้น/); const qty = q? parseInt(q[1]) : 1;
-          return `<li>${escapeHTML(name)} : ${qty}</li>`;
-        }).join("");
-        const noteText = r.note ? `<div style="margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${escapeHTML(r.note)}</div>` : "";
-        return `
-          <div style="margin-bottom:16px;">
-            <div style="margin-bottom:4px;font-weight:bold;">📅 ${formatDate(r.date)}</div>
-            <ul style="padding-left:16px;margin:0;">${items}</ul>
-            <div style="margin-top:4px;color:#00796b;">💵 ยอด: ${parseFloat(r.amount||0).toLocaleString()} บาท</div>
-            ${noteText}
-            <hr style="margin: 10px auto; border: 0; border-top: 1px dashed #999; width: 60%;">
-          </div>`;
-      }).join("");
+    return `
+      <div style="margin-bottom:14px;">
+        <div style="font-weight:600; font-size:12px;">📅 ${formatDate((r.date || '').slice(0,10))}</div>
+        <ul style="padding-left:16px; margin:0; font-size:11px;">${items}</ul>
+        <div style="margin-top:4px; color:#0a645a; font-size:11px;">💵 ${Math.round(parseFloat(r.amount || 0)).toLocaleString()} บาท</div>
+        ${noteText}
+        <hr style="margin:8px auto; border:0; border-top:1px dashed #ddd; width:60%;">
+      </div>
+    `;
+  }).join('');
 
-    const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
+  const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
 
-    document.getElementById("modal-content").innerHTML = `
-      <div style="position:absolute; top:10px; right:10px; display:flex; gap:10px;">
-        <button onclick="closeCustomerModal()" title="ปิดหน้าต่าง" style="background:white; border:none; border-radius:50%; width:36px; height:36px; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; display:flex; align-items:center; justify-content:center;">❌</button>
+  document.getElementById("modal-content").innerHTML = `
+    <div class="profile-header">
+      <div class="profile-img-box" onclick="openImgViewer('${profilePic}')">
+        <img id="modalProfileImg" src="${profilePic}" alt="Profile">
       </div>
 
-      <h3 style="font-size:18px;margin-bottom:4px;">📇 ${escapeHTML(customer.name)}</h3>
-      <div>🆔 <strong>OPD:</strong> ${escapeHTML(customer.opd)}</div>
-      <div>📞 <strong>เบอร์:</strong> ${escapeHTML(customer.phone)}</div>
-      <div>📅 <strong>วันล่าสุด:</strong> ${formatDate(latestRecord.date)} ${daysAbsentText}</div>
-      <div style="color:#00796b;"><strong>💰 ยอดรวม:</strong> ${totalAmount.toLocaleString()} บาท</div>
-      <div>🔁 มาใช้บริการ: ${totalVisits} ครั้ง (${paidVisits} ครั้งจ่ายเงิน)</div>
-      <div>💳 <strong>เฉลี่ยต่อครั้ง:</strong> ${Math.round(average).toLocaleString()} บาท</div>
+      <div class="profile-info">
+        <h3>${escapeHTML(realName)}</h3>
+        <div class="profile-badges">
+          <span class="badge">OPD: ${escapeHTML(salesInfo.opd)}</span>
+          ${vipBadge}
+        </div>
+        <div style="font-size:12px; margin-top:4px; color:#555;">📞 ${escapeHTML(salesInfo.phone)}</div>
 
-      <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
-      <div style="font-weight:bold;">📦 สรุปรายการซื้อทั้งหมด:</div>
-      <div style="margin:6px 0 12px;">${itemSummary}</div>
-      <hr style="margin: 16px auto 8px; border: 0; border-top: 1px solid #ccc; width: 60%;">
-      <div style="font-weight:bold;margin-bottom:6px;">🛍️ ประวัติการซื้อย้อนหลัง:</div>
+        <div class="profile-actions">
+          <button class="btn-mini" type="button" onclick="pickProfileImage('${escapeHTML(salesInfo.opd)}')">📷 เปลี่ยนรูป</button>
+          <button class="btn-mini secondary" type="button" onclick="openImgViewer('${profilePic}')">🔍 ดูรูปใหญ่</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-summary-grid">
+      <div class="profile-summary-box total">💰 ยอดรวม: <strong>${Math.round(totalAmount).toLocaleString()}</strong></div>
+      <div class="profile-summary-box avg">💳 เฉลี่ย: <strong>${average.toLocaleString()}</strong></div>
+      <div class="profile-summary-box visits">🔁 มาใช้บริการ: <strong>${totalVisits}</strong> ครั้ง</div>
+      <div class="profile-summary-box last">📅 ล่าสุด: ${formatDate(lastDateStr)} <br> ${daysAbsentText}</div>
+    </div>
+
+    <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
+
+    <div style="font-weight:600; font-size:13px; margin-bottom:6px; color:#00796b;">📦 สรุปรายการซื้อทั้งหมด:</div>
+    <div style="font-size:11px; background:#f9f9f9; padding:10px; border-radius:8px;">${itemSummary}</div>
+
+    <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
+
+    <div style="font-weight:600; font-size:13px; margin-bottom:6px; color:#00796b;">🧾 ประวัติการซื้อย้อนหลัง:</div>
+    <div style="max-height: 300px; overflow-y: auto;">
       ${historyHtml}
-      <div style="margin-top:10px;font-weight:bold;color:#b8860b;">💰 รวมทั้งหมด: ${totalAmount.toLocaleString()} บาท</div>`;
-    showModal();
-  };
-})();
-</script>
+    </div>
+  `;
+
+  const modal = document.getElementById("customer-modal");
+  if(modal) modal.style.display = 'flex';
+}
+
+/** ปิด modal เมื่อคลิกนอกกล่อง */
+document.addEventListener("DOMContentLoaded", function(){
+  const modal = document.getElementById("customer-modal");
+  const box = document.getElementById("customer-modal-box");
+  if(modal && box){
+    modal.addEventListener("click", e => {
+      if(!box.contains(e.target)) closeCustomerModal();
+    });
+  }
+});
+
+..............................................................................
+
+
+วิธีเอาไปใช้หน้าอื่น (สั้น ๆ)
+
+วาง CSS ใน <style> หรือไฟล์ css
+
+วาง HTML Modal ไว้ท้าย <body>
+
+วาง JS ไว้ท้ายหน้า หรือไฟล์ .js
+
+ในหน้าใหม่ ต้องมี:
+
+allCustomerRecords = [...] (ข้อมูลบิลทั้งหมด)
+
+loadCustomerProfiles() (ถ้าจะให้รีเฟรช map ตอนอัปโหลดรูป)
+
+customerProfileMap (จะเริ่มว่างก็ได้ แล้วค่อยโหลด)
+
+แล้วเรียกเปิด popup ด้วย:
+
+openCustomerModal("ชื่อลูกค้า|เบอร์โทร");

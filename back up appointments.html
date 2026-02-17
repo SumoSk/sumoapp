@@ -2,444 +2,464 @@
 <html lang="th">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
   <title>ตารางนัด & ตารางเวร</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
 
   <style>
     :root{
       --teal:#0f766e; --teal-600:#0d9488;
-      --bg:#f7faf9; --card:#ffffff; --line:#e5e7eb;
+      --bg:#f7faf9; --card:#ffffff;
+      --line:#eef2f7; --grid:#eef2f7; --hover:#f8fafc;
       --text:#0f172a; --muted:#6b7280;
-      --shadow:0 8px 24px rgba(2,8,23,.06);
-
+      --shadow:0 6px 16px rgba(2,8,23,.05);
       --radius:16px;
+      --danger:#ef4444; --warning:#f59e0b; --success:#10b981;
+
+      /* ✅ ฟอนต์ 8 เท่ากันทั้งหน้า */
+      --fs:8px;
     }
 
-    *{box-sizing:border-box}
+    *{ box-sizing:border-box; }
+    html, body{ width:100%; height:100%; overflow-x:hidden; overflow-x:clip; }
+
     body{
-      font-family:'Prompt','Segoe UI',sans-serif;
+      font-family:'Prompt',sans-serif;
       margin:0;
       background:var(--bg);
       color:var(--text);
-      padding:10px 10px 120px; /* เผื่อ floating menu */
-      font-size:12px; /* mobile-first */
+      padding:10px 10px 90px;
+      font-size:var(--fs);
+      -webkit-text-size-adjust:100%;
     }
 
+    /* ✅ บังคับทุกที่เป็น 8 */
+    body, button, input, select, textarea, table, th, td, label, span, div{
+      font-size:var(--fs);
+    }
+
+    /* --- Layout --- */
     .container{
-      max-width:1280px;
-      margin:12px auto;
+      width:100%;
+      max-width:none;
+      margin:0;
       background:#fff;
       border-radius:var(--radius);
       box-shadow:var(--shadow);
-      padding:14px;
-    }
-
-    /* ========== Header + Tabs (chip) ========== */
-    .headline{font-size:18px;font-weight:800;color:#0b7660;margin:0 0 6px}
-    .sub-muted{color:var(--muted);font-size:12px;margin-top:-2px;line-height:1.35}
-
-    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-    .chip{
-      padding:8px 12px;
-      border:1px solid #a7e1da;
-      border-radius:999px;
-      background:#fff;
-      color:#0b7660;
-      font-size:12px;
-      cursor:pointer;
-      font-weight:800;
-      user-select:none;
-    }
-    .chip.active{background:#0b7660;color:#fff}
-
-    .panel{display:none}
-    .panel.active{display:block}
-
-    /* ========== Cards ========== */
-    .card{
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:14px;
       padding:12px;
     }
-    .section{margin:12px 0 16px}
+    .headline{ font-weight:800; color:#0b7660; margin:0 0 4px; }
+    .sub-muted{ color:var(--muted); line-height:1.25; }
 
+    /* --- Tabs --- */
+    .chips{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+    .chip{
+      padding:8px 10px; border:1px solid #cfeeea; border-radius:999px;
+      background:#fff; color:#0b7660; cursor:pointer; user-select:none; transition:0.2s;
+      font-weight:700; white-space:nowrap;
+    }
+    .chip.active{ background:#0b7660; color:#fff; border-color:#0b7660; }
+    .panel{ display:none; animation: fadeIn 0.2s; }
+    .panel.active{ display:block; }
+    @keyframes fadeIn { from{opacity:0; transform:translateY(2px);} to{opacity:1; transform:translateY(0);} }
+
+    /* --- Buttons & Inputs --- */
     .btn{
       display:inline-flex; align-items:center; justify-content:center; gap:6px;
-      padding:10px 12px;
-      border-radius:10px;
-      border:1px solid #a7e1da;
-      background:#fff;
-      color:#0b7660;
-      cursor:pointer;
-      font-weight:800;
-      font-size:12px;
+      padding:8px 10px; border-radius:10px; border:none; cursor:pointer;
+      font-weight:800; transition:0.15s; white-space:nowrap;
+      line-height:1;
     }
-    .btn-primary{border-color:transparent;background:var(--teal-600);color:#fff}
-    .btn-ghost{background:#f1f5f9;border-color:#e5e7eb;color:#0f172a}
+    .btn-primary{ background:var(--teal-600); color:#fff; }
+    .btn-primary:active{ opacity:0.9; transform:scale(0.98); }
+    .btn-ghost{ background:#f1f5f9; color:#334155; }
+    .btn-danger{ background:#fee2e2; color:#b91c1c; }
+    .btn-success{ background:#d1fae5; color:#047857; }
+    .btn-sm{ padding:6px 8px; border-radius:9px; }
 
     .ipt{
       width:100%;
-      padding:10px 12px;
-      border:1px solid #d1d5db;
+      padding:8px 10px;
+      border:1px solid #cbd5e1;
       border-radius:10px;
-      background:#fff;
-      font-size:13px;
-      -webkit-appearance:none; appearance:none;
       font-family:inherit;
-    }
-
-    /* ==========================================================
-       TAB 1: DAILY SCHEDULE (ให้เหมือนกระดาษ)
-       ========================================================== */
-    .paperWrap{
-      border:2px solid #111;
-      border-radius:8px;
-      overflow:hidden;
+      outline:none;
       background:#fff;
+      min-width:0;
     }
+    .ipt:focus{ border-color:var(--teal-600); }
 
-    /* หัวกระดาษ: "ตารางนัดลูกค้า วัน...ที่... เดือน... หมอเข้าเวลา..." */
-    .paperHeader{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-end;
-      gap:10px;
-      padding:10px 10px 8px;
-      border-bottom:2px solid #111;
-      flex-wrap:wrap;
-    }
-    .paperHeader .left{
-      display:flex;
-      gap:10px;
-      align-items:flex-end;
-      flex-wrap:wrap;
-      font-weight:700;
-      color:#111;
-    }
-    .paperTitle{
-      font-weight:800;
-      font-size:13px;
-      margin-right:6px;
-    }
-    .lineField{
-      display:inline-flex;
-      align-items:flex-end;
-      gap:6px;
-      white-space:nowrap;
-      font-size:12px;
-    }
-    .line{
-      display:inline-block;
-      min-width:90px;
-      border-bottom:1px dotted #111;
-      padding:0 6px 2px;
-      font-weight:800;
-      text-align:center;
-    }
-    .line.small{min-width:60px}
-    .line.medium{min-width:110px}
-
-    .paperHeader .right{
-      display:flex;
-      gap:8px;
-      align-items:flex-end;
-      flex-wrap:wrap;
-      font-weight:700;
-    }
-
-    .paperControls{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-      justify-content:space-between;
-      margin-top:10px;
-    }
-    .paperControls .group{
+    /* --- Small summary boxes (compact) --- */
+    .sumRow{
       display:flex;
       gap:8px;
       flex-wrap:wrap;
       align-items:center;
     }
+    .sumBox{
+      border:1px solid #e2e8f0;
+      background:#fff;
+      border-radius:12px;
+      padding:8px 10px;
+      display:flex;
+      gap:8px;
+      align-items:center;
+      box-shadow:none;
+      line-height:1.15;
+    }
+    .sumLabel{ color:#64748b; font-weight:800; }
+    .sumValue{ color:#0f172a; font-weight:900; }
 
-    /* ตารางจริง */
-    .tableScroll{
-      overflow:auto;
-      -webkit-overflow-scrolling:touch;
-    }
-    table.paper{
-      width:100%;
-      min-width:820px; /* ให้ 5 คอลัมน์ไม่บีบ */
-      border-collapse:collapse;
-      background:#fff;
-    }
-    table.paper th, table.paper td{
-      border:2px solid #111;
-      padding:8px;
-      font-size:12px;
-      vertical-align:top;
-    }
-    table.paper thead th{
-      text-align:center;
-      font-weight:900;
-      background:#fff;
-    }
-    .col-time{width:90px;text-align:center;font-weight:900}
-    .slotCell{
-      height:46px;
-      background:#fff;
-    }
-
-    /* appointment tag สีแบบเบาๆ (เขียว=ลูกค้าเก่า, เหลือง=guest) */
-    .apptPill{
+    .toggleMini{
       display:inline-flex;
       align-items:center;
       gap:6px;
-      padding:6px 8px;
-      border-radius:999px;
-      border:1px solid #e5e7eb;
-      font-weight:800;
-      font-size:11px;
-      margin:2px 0;
-      max-width:100%;
-    }
-    .apptPill .dot{
-      width:8px;height:8px;border-radius:999px;flex:0 0 auto;
-    }
-    .apptOld{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
-    .apptOld .dot{background:#22c55e}
-    .apptGuest{background:#fffbeb;border-color:#fde68a;color:#92400e}
-    .apptGuest .dot{background:#f59e0b}
-
-    .slotAdd{
-      display:block;
-      width:100%;
-      border:1px dashed #94a3b8;
-      border-radius:10px;
-      padding:7px 8px;
+      padding:8px 10px;
+      border:1px solid #e2e8f0;
       background:#fff;
-      color:#475569;
-      cursor:pointer;
+      border-radius:12px;
       font-weight:800;
-      font-size:11px;
-      text-align:center;
-    }
-    .slotAdd:hover{background:#f8fafc}
-
-    /* ==========================================================
-       TAB 2: MONTHLY ROSTER (ให้เหมือน iOS calendar)
-       ========================================================== */
-    .iosMonthHeader{
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-      padding:6px 2px 10px;
-    }
-    .iosMonthHeader .monthTitle{
-      font-size:28px;
-      font-weight:900;
-      letter-spacing:.2px;
-    }
-    .iosMonthHeader .todayBtn{
-      font-weight:900;
-      color:#ef4444;
-      cursor:pointer;
       user-select:none;
+      cursor:pointer;
     }
+    .toggleMini input{ margin:0; }
 
-    .iosWeekHead{
-      display:grid;
-      grid-template-columns:repeat(7,1fr);
-      gap:0;
-      border-top:1px solid #e5e7eb;
-      border-bottom:1px solid #e5e7eb;
-      padding:8px 0;
-      margin-top:6px;
-      color:#94a3b8;
-      font-weight:900;
-      font-size:12px;
-      text-align:center;
-    }
-
-    .iosGrid{
-      display:grid;
-      grid-template-columns:repeat(7,1fr);
-      gap:0;
-      border-bottom:1px solid #e5e7eb;
-    }
-    .iosDay{
-      min-height:110px;
-      border-right:1px solid #e5e7eb;
-      border-top:1px solid #e5e7eb;
-      padding:8px 8px 10px;
-      background:#fff;
-      position:relative;
-      overflow:hidden;
-    }
-    .iosDay:nth-child(7n){border-right:none}
-    .iosDay .num{
-      font-weight:900;
-      font-size:16px;
-      color:#0f172a;
-    }
-    .iosDay.muted .num{color:#cbd5e1}
-    .iosDay .events{
+    /* --- Month Queue (table style) --- */
+    .mqTopBar{
+      margin-top:12px;
       display:flex;
-      flex-direction:column;
-      gap:6px;
-      margin-top:8px;
-    }
-
-    .eventPill{
-      display:flex;
+      justify-content:space-between;
       align-items:center;
-      gap:6px;
-      padding:6px 8px;
-      border-radius:8px;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .mqTitle{ font-weight:900; color:#0f766e; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .mqHint{ color:#64748b; font-weight:700; }
+
+    .mqWrap{
+      margin-top:10px;
+      border:1px solid #e2e8f0;
+      border-radius:14px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .mqHeaderBar{
+      padding:10px;
+      background:#f8fafc;
+      border-bottom:1px solid #e2e8f0;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .mqList{ padding:10px; }
+
+    .dayBlock{
+      border:1px solid #e2e8f0;
+      border-radius:14px;
+      overflow:hidden;
+      margin-bottom:10px;
+      background:#fff;
+    }
+    .dayHdr{
+      padding:10px;
+      background:#ffffff;
+      border-bottom:1px solid #e2e8f0;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .dayTitle{ font-weight:900; color:#0f766e; }
+    .dayCount{ color:#64748b; font-weight:900; }
+
+    .tableWrap{ overflow-x:hidden; }
+    table.qTable{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+      min-width:0;
+    }
+    table.qTable th{
+      background:#f1f5f9;
+      color:#475569;
       font-weight:900;
-      font-size:12px;
-      white-space:nowrap;
+      padding:8px 6px;
+      border-bottom:1px solid #e2e8f0;
+      text-align:left;
+      word-break:break-word;
+    }
+    table.qTable td{
+      border-bottom:1px solid #f1f5f9;
+      padding:8px 6px;
+      vertical-align:middle;
       overflow:hidden;
       text-overflow:ellipsis;
+      white-space:nowrap;
+      min-width:0;
     }
-    /* สี event ให้เหมือนภาพ */
-    .ev-green{background:#d9f2cc;color:#1f5e2b}
-    .ev-purple{background:#e9d5ff;color:#6b21a8}
-    .ev-blue{background:#cfe8ff;color:#0b4b7a}
-    .ev-brown{background:#ead8c5;color:#5a3a1a}
+    table.qTable tr:hover td{ background:#f8fafc; }
+    .rowClickable{ cursor:pointer; }
 
-    .eventPill .icon{
-      width:14px;height:14px;border-radius:4px;
-      display:inline-flex;align-items:center;justify-content:center;
-      font-size:10px;background:rgba(0,0,0,.12);
-      flex:0 0 auto;
+    .pill{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:4px 8px;
+      border-radius:999px;
+      font-weight:900;
+      border:1px solid transparent;
+      white-space:nowrap;
+      line-height:1;
     }
+    .pill-old{ background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .pill-new{ background:#fff7ed; color:#9a3412; border-color:#fed7aa; }
+    .pill-pending{ background:#fff7ed; color:#9a3412; border-color:#fed7aa; }
+    .pill-confirmed{ background:#ecfdf5; color:#047857; border-color:#bbf7d0; }
+    .pill-cancelled{ background:#fef2f2; color:#b91c1c; border-color:#fecaca; }
 
-    /* Controls on roster */
-    .rosterControls{
+    /* --- Daily --- */
+    .dailyTopBar{
+      margin-top:12px;
       display:flex;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+    }
+    .dateNav{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; min-width:0; }
+    #dailyDatepicker{ width:auto; }
+
+    .paperWrap{ border:1px solid var(--grid); border-radius:14px; overflow:hidden; background:#fff; margin-top:10px; }
+    .paperHeader{
+      padding:10px;
+      background:#f8fafc;
+      border-bottom:1px solid var(--grid);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
       gap:10px;
       flex-wrap:wrap;
-      align-items:center;
-      justify-content:space-between;
-      margin-top:8px;
+      min-width:0;
     }
-    .rosterControls .group{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      align-items:center;
+    .paperHeaderTitle{ font-weight:900; color:#0f766e; }
+    .paperHeaderNote{ color:#64748b; font-weight:700; }
+
+    .tableScroll{ overflow-x:hidden; }
+    table.clean{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+      min-width:0;
+    }
+    table.clean th{
+      background:#f1f5f9;
+      color:#475569;
+      font-weight:900;
+      padding:8px 6px;
+      border-bottom:1px solid #e2e8f0;
+      text-align:left;
+      word-break:break-word;
+    }
+    table.clean td{
+      border-bottom:1px solid #f1f5f9;
+      padding:8px 6px;
+      vertical-align:top;
+      height:44px;
+      overflow:hidden;
+      min-width:0;
+    }
+    table.clean td.timeCell{
+      width:52px;
+      background:#f8fafc;
+      text-align:center;
+      font-weight:900;
+      color:#64748b;
+      border-right:1px solid #e2e8f0;
+      white-space:nowrap;
     }
 
-    /* ==========================================================
-       Responsive
-       ========================================================== */
-    @media (max-width:640px){
-      .iosMonthHeader .monthTitle{font-size:26px}
-      .paperHeader{padding:10px 8px 8px}
-      .line{min-width:80px}
-      .line.medium{min-width:96px}
+    .apptCard{
+      background:#fff;
+      border:1px solid #e2e8f0;
+      border-left:4px solid var(--teal-600);
+      border-radius:10px;
+      padding:6px;
+      cursor:pointer;
+      overflow:hidden;
     }
+    .apptCard.pending{ border-left-color:var(--warning); background:#fff7ed; border-color:#fed7aa; }
+    .apptCard.confirmed{ border-left-color:var(--success); background:#ecfdf5; border-color:#bbf7d0; }
+    .apptCard.cancelled{ border-left-color:var(--danger); background:#fef2f2; border-color:#fecaca; }
+    .apptCard .name{ font-weight:900; color:#1e293b; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .apptCard .meta{ color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .apptCard .svc{ color:#334155; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+
+    .slotEmpty{
+      height:100%;
+      border-radius:10px;
+      border:1px dashed transparent;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:transparent;
+      cursor:pointer;
+      min-height:34px;
+      font-weight:800;
+    }
+    .slotEmpty:hover{ border-color:#cbd5e1; background:#f8fafc; color:#94a3b8; }
+    .slotEmpty::after{ content:'+ ลงนัด'; }
+
+    /* --- Monthly Calendar --- */
+    .iosMonthHeader{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; gap:10px; flex-wrap:wrap; }
+    .iosWeekHead{
+      display:grid; grid-template-columns:repeat(7,1fr);
+      text-align:center; font-weight:900; color:#64748b;
+      padding:8px 0; border-bottom:1px solid #e2e8f0; border-top:1px solid #e2e8f0;
+      background:#fcfcfd;
+    }
+    .iosGrid{ display:grid; grid-template-columns:repeat(7,1fr); border-left:1px solid #e2e8f0; border-top:1px solid #e2e8f0; }
+    .iosDay{ min-height:72px; border-right:1px solid #e2e8f0; border-bottom:1px solid #e2e8f0; padding:6px; background:#fff; cursor:pointer; }
+    .iosDay .num{ font-weight:900; }
+    .eventPill{ padding:3px 6px; border-radius:6px; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    /* --- Modals --- */
+    .modal{ position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; display:none; align-items:center; justify-content:center; padding:12px; opacity:0; transition: opacity 0.2s; }
+    .modal.show{ display:flex; opacity:1; }
+    .modal-box{ width:100%; max-width:460px; background:#fff; border-radius:16px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); overflow:hidden; transform:scale(0.98); transition:transform 0.2s; }
+    .modal.show .modal-box{ transform:scale(1); }
+    .modal-hdr{ padding:12px 14px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; font-weight:900; background:#f8fafc; }
+    .modal-body{ padding:14px; max-height:70vh; overflow-y:auto; }
+    .modal-ftr{ padding:12px 14px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; background:#f8fafc; }
+
+    /* --- Search Dropdown --- */
+    .search-wrapper{ position:relative; }
+    .search-dropdown{ position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #cbd5e1; border-radius:0 0 12px 12px; max-height:220px; overflow-y:auto; z-index:50; display:none; box-shadow:0 10px 15px rgba(0,0,0,0.1); }
+    .search-item{ padding:10px; border-bottom:1px solid #f1f5f9; cursor:pointer; }
+    .search-item strong{ display:block; font-weight:900; }
+    .search-item small{ color:#64748b; }
+
+    /* --- Toast Notification --- */
+    #toast-container{ position:fixed; top:10px; right:10px; z-index:10000; display:flex; flex-direction:column; gap:8px; }
+    .toast{ min-width:220px; padding:10px 12px; background:#fff; border-left:4px solid #333; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); border-radius:12px; display:flex; align-items:center; justify-content:space-between; }
+    .toast.success{ border-left-color: var(--success); }
+    .toast.error{ border-left-color: var(--danger); }
+    .toast.warn{ border-left-color: var(--warning); }
+
+    /* --- Shift Rows --- */
+    .shift-row { display:flex; justify-content:space-between; align-items:center; padding:10px; border:1px solid #e2e8f0; border-radius:12px; margin-bottom:8px; gap:10px; }
+    .shift-row.leave { background:#fef2f2; border-color:#fecaca; }
+    .shift-row.work { background:#f0fdfa; border-color:#ccfbf1; }
   </style>
 </head>
 
 <body>
+  <div id="toast-container"></div>
 
   <div class="container">
     <div class="headline">ระบบนัดหมาย & ตารางเวร</div>
-    <div class="sub-muted">
-      หน้าตาอิงตามสมุดนัดจริง + ปฏิทินเวรแบบ iOS (Mobile-first 100%)<br>
-      * ตอนนี้ทำ “หน้าตา” ให้เหมือนรูปก่อน เดี๋ยวค่อยผูกข้อมูลกับ app.py ทีหลัง
-    </div>
+    <div class="sub-muted">จัดการตารางนัดหมายและเวรแพทย์ (เชื่อมต่อฐานข้อมูล)</div>
 
     <div class="chips">
-      <span class="chip active" data-tab="daily">ตารางนัดรายวัน</span>
+      <!-- ✅ ให้เปิดแถบแรกก่อน -->
+      <span class="chip active" data-tab="monthqueue">คิวทั้งเดือน</span>
+
+      <span class="chip" data-tab="daily">ตารางนัดรายวัน</span>
       <span class="chip" data-tab="monthly">ตารางเวรรายเดือน</span>
       <span class="chip" data-tab="settings">ตั้งค่า</span>
     </div>
 
-    <!-- ======================================================
-         TAB: DAILY
-         ====================================================== -->
-    <div class="panel active" id="panel-daily">
-      <div class="section">
-
-        <div class="paperControls">
-          <div class="group">
-            <div style="font-weight:900;color:#0b3d35">Daily Schedule</div>
-            <button class="btn btn-ghost" type="button" onclick="UI.dailyToday()">วันนี้</button>
-          </div>
-          <div class="group" style="min-width:240px;flex:1;justify-content:flex-end">
-            <input class="ipt" style="max-width:220px" type="date" id="dailyDate">
-            <button class="btn btn-primary" type="button" onclick="UI.openAddMock()">+ เพิ่มนัด</button>
-          </div>
+    <!-- ========================= -->
+    <!-- ✅ NEW PANEL: MONTH QUEUE -->
+    <!-- ========================= -->
+    <div class="panel active" id="panel-monthqueue">
+      <div class="mqTopBar">
+        <div class="mqTitle">
+          <span>คิวทั้งเดือน (ตั้งแต่วันนี้ → สิ้นเดือน)</span>
+          <span class="mqHint" id="mqDateRange">-</span>
         </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-ghost" onclick="MonthQueue.goToday()">ไปวันนี้</button>
+          <button class="btn btn-primary" onclick="MonthQueue.load(true)">รีเฟรช</button>
+        </div>
+      </div>
 
-        <!-- กระดาษ -->
-        <div class="paperWrap" style="margin-top:10px;">
-          <div class="paperHeader">
-            <div class="left">
-              <span class="paperTitle">ตารางนัดลูกค้า</span>
-              <span class="lineField">วัน <span class="line small" id="hdrDay">ศุกร์</span></span>
-              <span class="lineField">ที่ <span class="line small" id="hdrDateNum">2</span></span>
-              <span class="lineField">เดือน <span class="line medium" id="hdrMonth">มกราคม</span></span>
+      <div class="mqWrap">
+        <div class="mqHeaderBar">
+          <!-- ✅ กล่องสรุปเล็กๆ -->
+          <div class="sumRow" id="mqSummaryRow">
+            <div class="sumBox">
+              <span class="sumLabel">วันนี้</span>
+              <span class="sumValue" id="sumToday">- เคส</span>
             </div>
-
-            <div class="right">
-              <span class="lineField">หมอเข้าเวลา <span class="line small" id="hdrDoctorTime">11:00</span></span>
+            <div class="sumBox">
+              <span class="sumLabel">คงเหลือเดือนนี้</span>
+              <span class="sumValue" id="sumRemain">- เคส</span>
             </div>
           </div>
 
-          <div class="tableScroll">
-            <table class="paper" id="dailyTable">
-              <thead>
-                <tr>
-                  <th class="col-time">เวลา</th>
-                  <th>เคสแพทย์</th>
-                  <th>เคสแพทย์</th>
-                  <th>
-                    เคสพยาบาล<br>
-                    <span style="font-weight:700;font-size:11px">Treatment</span>
-                  </th>
-                  <th>
-                    เคสพยาบาล<br>
-                    <span style="font-weight:700;font-size:11px">IV, PRP</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody id="dailyBody">
-                <!-- JS render slots -->
-              </tbody>
-            </table>
-          </div>
+          <!-- ✅ ซ่อนวันไม่มีคิว -->
+          <label class="toggleMini" title="ซ่อนวันที่ไม่มีคิว">
+            <input type="checkbox" id="hideEmptyDays" checked onchange="MonthQueue.renderFromCache()">
+            ซ่อนวันไม่มีคิว
+          </label>
         </div>
 
+        <div class="mqList" id="mqList">
+          <div style="padding:16px; text-align:center; color:#64748b;">- กำลังเตรียม -</div>
+        </div>
       </div>
     </div>
 
-    <!-- ======================================================
-         TAB: MONTHLY
-         ====================================================== -->
-    <div class="panel" id="panel-monthly">
-      <div class="section card">
-
-        <div class="iosMonthHeader">
-          <div class="monthTitle" id="monthTitle">ธันวาคม 2568</div>
-          <div class="todayBtn" onclick="UI.monthToday()">วันนี้</div>
+    <!-- ========================= -->
+    <!-- DAILY -->
+    <!-- ========================= -->
+    <div class="panel" id="panel-daily">
+      <div class="dailyTopBar">
+        <div class="dateNav">
+          <button class="btn btn-ghost" onclick="Daily.goToday()">วันนี้</button>
+          <button class="btn btn-ghost" onclick="Daily.goPrevDay()">◀</button>
+          <input type="date" class="ipt" id="dailyDatepicker">
+          <button class="btn btn-ghost" onclick="Daily.goNextDay()">▶</button>
         </div>
 
-        <div class="rosterControls">
-          <div class="group">
-            <input class="ipt" style="max-width:200px" type="month" id="monthPicker">
-            <button class="btn btn-ghost" type="button" onclick="UI.renderMonth()">โหลดเดือน</button>
-          </div>
-          <div class="group">
-            <button class="btn btn-primary" type="button" onclick="UI.copyWeekMock()">Copy เวร</button>
+        <button class="btn btn-primary" onclick="Modal.openAppt()">+ เพิ่มนัด</button>
+      </div>
+
+      <div class="paperWrap">
+        <div class="paperHeader">
+          <div id="dailyHeaderTitle" class="paperHeaderTitle">กำลังโหลด...</div>
+          <div class="paperHeaderNote">*คลิกช่องว่างเพื่อลงนัด</div>
+        </div>
+
+        <div class="tableScroll">
+          <table class="clean">
+            <thead>
+              <tr>
+                <th class="timeCell">เวลา</th>
+                <th>แพทย์ 1</th>
+                <th>แพทย์ 2</th>
+                <th>Treat</th>
+                <th>IV</th>
+              </tr>
+            </thead>
+            <tbody id="dailyTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================= -->
+    <!-- MONTHLY ROSTER -->
+    <!-- ========================= -->
+    <div class="panel" id="panel-monthly">
+      <div style="margin-top:12px; border:1px solid #e2e8f0; border-radius:14px; padding:0; background:#fff; overflow:hidden;">
+        <div class="iosMonthHeader" style="padding:12px;">
+          <div id="monthTitle" style="font-weight:900; color:#0f172a;">-</div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button class="btn btn-ghost" onclick="Roster.goToday()">เดือนนี้</button>
+            <input type="month" class="ipt" id="monthPicker" style="width:auto;">
           </div>
         </div>
 
@@ -447,291 +467,1093 @@
           <div>อา.</div><div>จ.</div><div>อ.</div><div>พ.</div><div>พฤ.</div><div>ศ.</div><div>ส.</div>
         </div>
 
-        <div class="iosGrid" id="iosGrid">
-          <!-- JS render calendar -->
-        </div>
-
+        <div class="iosGrid" id="monthGrid"></div>
       </div>
     </div>
 
-    <!-- ======================================================
-         TAB: SETTINGS (placeholder UI)
-         ====================================================== -->
+    <!-- ========================= -->
+    <!-- SETTINGS -->
+    <!-- ========================= -->
     <div class="panel" id="panel-settings">
-      <div class="section card">
-        <div style="font-weight:900;color:#0b3d35;margin-bottom:8px">ตั้งค่า (เตรียมไว้ก่อน)</div>
-        <div class="sub-muted">
-          ตรงนี้เดี๋ยวผูกกับ clinic_settings: เวลาเปิด-ปิด, ชื่อคอลัมน์, รายชื่อ staff
+      <div style="padding:12px;">
+        <div style="font-weight:900; color:#0f766e; margin-bottom:12px;">จัดการพนักงาน</div>
+
+        <div style="background:#fff; padding:12px; border-radius:14px; border:1px solid #e2e8f0; margin-bottom:12px;">
+          <div style="display:grid; grid-template-columns: 2fr 1.5fr 0.9fr auto; gap:10px; align-items:end;">
+            <div>
+              <label style="display:block; margin-bottom:6px; font-weight:900;">ชื่อพนักงาน</label>
+              <input class="ipt" id="newStaffName" placeholder="ชื่อ-สกุล">
+            </div>
+            <div>
+              <label style="display:block; margin-bottom:6px; font-weight:900;">ตำแหน่ง</label>
+              <select class="ipt" id="newStaffRole">
+                <option value="doctor">แพทย์</option>
+                <option value="nurse">พยาบาล</option>
+                <option value="staff">จนท.</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block; margin-bottom:6px; font-weight:900;">สี</label>
+              <input type="color" class="ipt" id="newStaffColor" style="padding:2px; height:38px;" value="#0ea5e9">
+            </div>
+            <button class="btn btn-primary" onclick="Settings.addStaff()">+ เพิ่ม</button>
+          </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-          <div>
-            <label>เวลาเปิด</label>
-            <input class="ipt" placeholder="11:00">
-          </div>
-          <div>
-            <label>เวลาปิด</label>
-            <input class="ipt" placeholder="19:30">
+        <div style="font-weight:900; margin-bottom:10px; color:#64748b;">รายชื่อพนักงานทั้งหมด</div>
+        <div id="staffListContainer" style="background:#fff; border-radius:14px; border:1px solid #e2e8f0; overflow:hidden;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Appointment Modal -->
+  <div class="modal" id="apptModal" onclick="Modal.closeBackdrop(event, 'apptModal')">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-hdr">
+        <span id="apptModalTitle">ลงนัดหมายใหม่</span>
+        <button onclick="Modal.close('apptModal')" style="background:none; border:none; cursor:pointer; font-weight:900;">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="apptId">
+        <input type="hidden" id="apptCustId">
+        <input type="hidden" id="apptStatus">
+
+        <label style="font-weight:900; display:block; margin-bottom:6px;">ประเภทลูกค้า</label>
+        <div style="display:flex; gap:14px; margin-bottom:12px;">
+          <label style="font-weight:800;"><input type="radio" name="custType" value="existing" checked onchange="Modal.toggleCustType()"> เก่า</label>
+          <label style="font-weight:800;"><input type="radio" name="custType" value="guest" onchange="Modal.toggleCustType()"> ใหม่</label>
+        </div>
+
+        <div id="boxExisting">
+          <label style="font-weight:900; display:block; margin-bottom:6px;">ค้นหาลูกค้า</label>
+          <div class="search-wrapper">
+            <input type="text" class="ipt" id="searchCustInput" placeholder="พิมพ์เพื่อค้นหา..." onkeyup="Search.debounce(this.value)">
+            <div class="search-dropdown" id="searchDropdown"></div>
           </div>
         </div>
 
-        <div style="margin-top:10px;display:flex;justify-content:flex-end;gap:8px">
-          <button class="btn btn-primary" type="button" onclick="alert('mock')">บันทึก</button>
+        <div id="boxGuest" style="display:none;">
+          <label style="font-weight:900; display:block; margin-bottom:6px;">ชื่อลูกค้า</label>
+          <input type="text" class="ipt" id="guestName" placeholder="ระบุชื่อ">
+          <label style="font-weight:900; display:block; margin-top:10px; margin-bottom:6px;">เบอร์โทร</label>
+          <input type="text" class="ipt" id="guestPhone" placeholder="ระบุเบอร์โทร">
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
+          <div>
+            <label style="font-weight:900; display:block; margin-bottom:6px;">วันที่</label>
+            <input type="date" class="ipt" id="apptDate">
+          </div>
+          <div>
+            <label style="font-weight:900; display:block; margin-bottom:6px;">เวลา</label>
+            <input type="time" class="ipt" id="apptTime">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
+          <div>
+            <label style="font-weight:900; display:block; margin-bottom:6px;">ช่อง</label>
+            <select class="ipt" id="apptCol">
+              <option value="1">แพทย์ 1</option>
+              <option value="2">แพทย์ 2</option>
+              <option value="3">Treat</option>
+              <option value="4">IV</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-weight:900; display:block; margin-bottom:6px;">หัตถการ</label>
+            <input type="text" class="ipt" id="apptProc" placeholder="เช่น Botox">
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label style="font-weight:900; display:block; margin-bottom:6px;">หมายเหตุ</label>
+          <textarea class="ipt" id="apptNote" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="modal-ftr" id="apptModalFtr"></div>
+    </div>
+  </div>
+
+  <!-- Roster Modal -->
+  <div class="modal" id="rosterModal" onclick="Modal.closeBackdrop(event, 'rosterModal')">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-hdr">
+        <span id="rosterDateTitle">จัดการเวร</span>
+        <button onclick="Modal.close('rosterModal')" style="background:none; border:none; cursor:pointer; font-weight:900;">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="rosterSelectedDate">
+
+        <div style="font-weight:900; color:#64748b; margin-bottom:6px;">รายการที่มีอยู่</div>
+        <div id="rosterList" style="margin-bottom:12px; min-height:30px;"></div>
+
+        <hr style="border:0; border-top:1px solid #e2e8f0; margin-bottom:12px;">
+
+        <div style="font-weight:900; color:#0f766e; margin-bottom:10px;">+ เพิ่มรายการใหม่</div>
+
+        <label style="font-weight:900; display:block; margin-bottom:6px;">เลือกพนักงาน</label>
+        <select class="ipt" id="rosterStaffId">
+          <option value="">-- กำลังโหลด --</option>
+        </select>
+
+        <label style="font-weight:900; display:block; margin-top:10px; margin-bottom:6px;">ประเภท</label>
+        <div style="display:flex; gap:14px; margin-bottom:10px;">
+          <label style="font-weight:800;"><input type="radio" name="workType" value="work" checked onchange="Roster.toggleLeave()"> เข้างาน</label>
+          <label style="font-weight:800;"><input type="radio" name="workType" value="leave" onchange="Roster.toggleLeave()"> ลาหยุด</label>
+        </div>
+
+        <div id="workTimeBox">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-weight:900; display:block; margin-bottom:6px;">เริ่ม</label>
+              <input type="time" class="ipt" id="rosterStart" value="11:00">
+            </div>
+            <div>
+              <label style="font-weight:900; display:block; margin-bottom:6px;">เลิก</label>
+              <input type="time" class="ipt" id="rosterEnd" value="20:00">
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:10px;">
+          <label style="font-weight:900; display:block; margin-bottom:6px;">โน้ต</label>
+          <input type="text" class="ipt" id="rosterNote" placeholder="เช่น เวรเช้า / ลากิจ">
+        </div>
+
+        <button class="btn btn-primary" style="width:100%; margin-top:12px;" onclick="Roster.save()">บันทึกรายการ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Modal (ลบถาวร) -->
+  <div class="modal" id="confirmModal">
+    <div class="modal-box" style="max-width:360px;">
+      <div class="modal-body" style="text-align:center; padding-top:22px;">
+        <div style="font-weight:900; margin-bottom:10px;">ยืนยันการทำรายการ</div>
+        <div style="color:#64748b; margin-bottom:16px;">ต้องการลบรายการนี้ถาวรใช่หรือไม่?</div>
+        <div style="display:flex; justify-content:center; gap:10px; margin-top:12px;">
+          <button class="btn btn-ghost" onclick="Modal.close('confirmModal')">ยกเลิก</button>
+          <button class="btn btn-danger" id="confirmYesBtn">ลบถาวร</button>
         </div>
       </div>
     </div>
-
-  </div><!-- /container -->
+  </div>
 
   <script>
-    // =========================================================
-    // Tabs
-    // =========================================================
-    const UI = {
-      goto(tab){
-        document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
-        document.querySelector(`.chip[data-tab="${tab}"]`)?.classList.add('active');
+    // --- Utilities ---
+    const $ = id => document.getElementById(id);
 
-        document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-        document.getElementById(`panel-${tab}`)?.classList.add('active');
-      },
-      dailyToday(){
-        const d = new Date();
-        const ymd = d.toISOString().slice(0,10);
-        document.getElementById('dailyDate').value = ymd;
-        applyDailyHeaderFromDate(ymd);
-      },
-      monthToday(){
-        const d = new Date();
-        document.getElementById('monthPicker').value = d.toISOString().slice(0,7);
-        UI.renderMonth();
-      },
-      openAddMock(){ alert('เพิ่มนัด (เดี๋ยวผูก modal + API)'); },
-      copyWeekMock(){ alert('Copy เวร (เดี๋ยวผูก API)'); },
+    const safeText = (v) => (v ?? '').toString();
+    const trim = (v) => safeText(v).trim();
 
-      // render functions
-      renderDaily(){ renderDailyTable(); },
-      renderMonth(){ renderIOSCalendar(); },
+    const pad2 = (n) => String(n).padStart(2,'0');
+    const toYMD = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+
+    const colName = (c) => {
+      const m = { 1:'แพทย์ 1', 2:'แพทย์ 2', 3:'Treat', 4:'IV' };
+      return m[Number(c)] || `ช่อง ${c}`;
     };
 
-    document.querySelectorAll('.chip[data-tab]').forEach(ch=>{
-      ch.addEventListener('click', ()=>UI.goto(ch.getAttribute('data-tab')));
-    });
+    // ✅ API helper
+    const api = async (url, method='GET', body=null) => {
+      const opts = { method, headers: {'Content-Type': 'application/json'} };
+      if(body) opts.body = JSON.stringify(body);
 
-    // =========================================================
-    // Daily: render table 11:00-19:00 step 30 (เหมือนกระดาษ)
-    // =========================================================
-    function pad2(n){ return String(n).padStart(2,'0'); }
-    function toHHMM(mins){
-      const h=Math.floor(mins/60), m=mins%60;
-      return `${pad2(h)}:${pad2(m)}`;
-    }
+      try {
+        const res = await fetch(url, opts);
 
-    function renderDailyTable(){
-      const tbody = document.getElementById('dailyBody');
-      tbody.innerHTML = '';
-
-      const start = 11*60;
-      const end = 19*60;   // ภาพตัวอย่างลงถึง 19.00
-      const step = 30;
-
-      for(let t=start; t<=end; t+=step){
-        const tr = document.createElement('tr');
-
-        // เวลา
-        const tdTime = document.createElement('td');
-        tdTime.className = 'col-time';
-        tdTime.textContent = toHHMM(t).replace(':','.');
-        tr.appendChild(tdTime);
-
-        // 4 ช่องงาน
-        for(let col=1; col<=4; col++){
-          const td = document.createElement('td');
-          td.className = 'slotCell';
-
-          // ปุ่มว่าง (placeholder)
-          const add = document.createElement('button');
-          add.type='button';
-          add.className='slotAdd';
-          add.textContent='+';
-          add.onclick=()=>UI.openAddMock();
-          td.appendChild(add);
-
-          // mock ตัวอย่างให้เห็น “สีแบบในบรีฟ”
-          if(toHHMM(t)==='11:30' && col===1){
-            td.innerHTML = `
-              <div class="apptPill apptOld" title="ลูกค้าเก่า">
-                <span class="dot"></span>
-                คุณเอ • Consult
-              </div>
-            `;
-          }
-          if(toHHMM(t)==='13:00' && col===3){
-            td.innerHTML = `
-              <div class="apptPill apptGuest" title="ลูกค้าใหม่">
-                <span class="dot"></span>
-                Walk-in • Treatment
-              </div>
-            `;
-          }
-
-          tr.appendChild(td);
+        let data = null;
+        const ct = res.headers.get('content-type') || '';
+        if(ct.includes('application/json')) {
+          data = await res.json().catch(()=>null);
+        } else {
+          const text = await res.text().catch(()=> '');
+          data = text ? { message: text } : null;
         }
 
-        tbody.appendChild(tr);
+        if(!res.ok) {
+          const msg =
+            (data && (data.error || data.message || data.detail)) ?
+              (data.error || data.message || data.detail) :
+              `HTTP ${res.status}`;
+          return { __http_ok:false, __status: res.status, __error: msg, __data: data };
+        }
+
+        return data;
+      } catch(e) {
+        console.warn('API Fetch Error:', e);
+        if(url.includes('get_appointments')) return [];
+        if(url.includes('get_roster')) return [];
+        Toast.show('Connection Error', 'error');
+        return null;
       }
-    }
+    };
 
-    // =========================================================
-    // Daily header from selected date
-    // =========================================================
-    const TH_DAYS = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
-    const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-
-    function applyDailyHeaderFromDate(ymd){
-      if(!ymd) return;
-      const d = new Date(ymd + 'T00:00:00');
-      if(isNaN(d)) return;
-
-      document.getElementById('hdrDay').textContent = TH_DAYS[d.getDay()];
-      document.getElementById('hdrDateNum').textContent = String(d.getDate());
-      document.getElementById('hdrMonth').textContent = TH_MONTHS[d.getMonth()];
-
-      // หมอเข้าเวลา (ตอนนี้คง 11:00 ตามบรีฟ)
-      document.getElementById('hdrDoctorTime').textContent = '11:00';
-    }
-
-    // =========================================================
-    // Monthly: iOS-like calendar
-    // =========================================================
-    function thYear(y){ return y + 543; }
-
-    function renderIOSCalendar(){
-      const grid = document.getElementById('iosGrid');
-      grid.innerHTML = '';
-
-      const mp = document.getElementById('monthPicker');
-      const ym = mp.value || new Date().toISOString().slice(0,7);
-      const [Y,M] = ym.split('-').map(Number);
-
-      const first = new Date(Y, M-1, 1);
-      const last = new Date(Y, M, 0);
-
-      // header "ธันวาคม 2568"
-      const monthName = TH_MONTHS[M-1];
-      document.getElementById('monthTitle').textContent = `${monthName} ${thYear(Y)}`;
-
-      // iOS calendar ในภาพ: เริ่มที่ อา.
-      // เติมช่องว่างก่อนวันแรก
-      const firstDow = first.getDay(); // 0=อาทิตย์
-      for(let i=0;i<firstDow;i++){
-        const box = document.createElement('div');
-        box.className = 'iosDay muted';
-        box.innerHTML = `<div class="num">${''}</div>`;
-        grid.appendChild(box);
+    // --- Toast ---
+    const Toast = {
+      show(msg, type='success') {
+        const c = $('toast-container');
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.innerHTML = `<span>${msg}</span> <span style="cursor:pointer;font-weight:900;" onclick="this.parentElement.remove()">×</span>`;
+        c.appendChild(el);
+        setTimeout(() => { el.remove(); }, 2500);
       }
+    };
 
-      // mock events ตามภาพแนว iOS (ไว้เป็นตัวอย่าง UI)
-      // key: day -> events
-      const mock = {
-        3: [
-          {cls:'ev-purple', icon:'👩', text:'พยาบาล16.30-18.30'},
-          {cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}
-        ],
-        4: [{cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}],
-        6: [{cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}],
-        7: [
-          {cls:'ev-purple', icon:'👩', text:'พยาบาล13.30-15.30'},
-          {cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}
-        ],
-        8: [{cls:'ev-blue', icon:'📘', text:'Dion 14.00-1...'}],
-        11: [
-          {cls:'ev-purple', icon:'👩', text:'พยาบาล16.30-18.30'},
-          {cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}
-        ],
-        12: [{cls:'ev-brown', icon:'☕', text:'Cinder13.30'}],
-        14: [
-          {cls:'ev-purple', icon:'👩', text:'พยาบาล13.30-15.30'},
-          {cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}
-        ],
-        16: [{cls:'ev-blue', icon:'📘', text:'Dion 14.00-1...'}],
-        17: [
-          {cls:'ev-purple', icon:'👩', text:'พยาบาล13.30-15.30'},
-          {cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}
-        ],
-        18: [{cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}],
-        19: [{cls:'ev-brown', icon:'☕', text:'Cinder13.30'}],
-        21: [
-          {cls:'ev-purple', icon:'👩', text:'พยาบาล13.30-15.30'},
-          {cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}
-        ],
-        23: [{cls:'ev-blue', icon:'📘', text:'Dion 14.00-1...'}],
-        24: [{cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}],
-        25: [
-          {cls:'ev-purple', icon:'👩', text:'พยาบาล16.30-18.30'},
-          {cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}
-        ],
-        26: [{cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}],
-        27: [{cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}],
-        28: [{cls:'ev-green', icon:'🩺', text:'Dr.Palmy'}],
-      };
+    // --- Search ---
+    const Search = {
+      timer: null,
+      debounce(kw) {
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => this.exec(kw), 350);
+      },
+      async exec(kw) {
+        if(!kw || kw.length < 2) { $('searchDropdown').style.display='none'; return; }
+        const res = await api(`/api/search_customer?q=${encodeURIComponent(kw)}`);
+        const box = $('searchDropdown');
+        box.innerHTML = '';
 
-      for(let d=1; d<=last.getDate(); d++){
-        const box = document.createElement('div');
-        box.className = 'iosDay';
-        box.onclick = ()=>alert(`เปิดจัดเวรวันที่ ${d}/${M}/${thYear(Y)} (เดี๋ยวผูก modal+API)`);
+        if(res && res.__http_ok === false) {
+          box.innerHTML = `<div class="search-item" style="color:#ef4444">ค้นหาไม่สำเร็จ: ${res.__error}</div>`;
+          box.style.display = 'block';
+          return;
+        }
 
-        const ev = (mock[d] || []).map(e=>`
-          <div class="eventPill ${e.cls}" title="${e.text}">
-            <span class="icon">${e.icon}</span>
-            <span style="overflow:hidden;text-overflow:ellipsis">${e.text}</span>
-          </div>
-        `).join('');
-
-        box.innerHTML = `
-          <div class="num">${d}</div>
-          <div class="events">${ev}</div>
-        `;
-        grid.appendChild(box);
+        if(res && res.length > 0) {
+          res.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'search-item';
+            div.innerHTML = `<strong>${c.name}</strong><small>${c.phone || '-'} | OPD: ${c.opd}</small>`;
+            div.onclick = () => {
+              $('searchCustInput').value = c.name;
+              $('apptCustId').value = c.id || '';
+              box.style.display = 'none';
+            };
+            box.appendChild(div);
+          });
+          box.style.display = 'block';
+        } else {
+          box.innerHTML = '<div class="search-item" style="color:#ef4444">ไม่พบข้อมูล</div>';
+          box.style.display = 'block';
+        }
       }
+    };
 
-      // เติมช่องว่างท้ายให้ครบแถว (optional, ให้ดูสวย)
-      const totalCells = firstDow + last.getDate();
-      const remain = (7 - (totalCells % 7)) % 7;
-      for(let i=0;i<remain;i++){
-        const box = document.createElement('div');
-        box.className = 'iosDay muted';
-        box.innerHTML = `<div class="num">${''}</div>`;
-        grid.appendChild(box);
+    // --- Modal ---
+    const Modal = {
+      open(id) { $(id).classList.add('show'); },
+      close(id) { $(id).classList.remove('show'); },
+      closeBackdrop(e, id) { if(e.target.id === id) this.close(id); },
+
+      toggleCustType() {
+        const type = document.querySelector('input[name="custType"]:checked').value;
+        $('boxExisting').style.display = type === 'existing' ? 'block' : 'none';
+        $('boxGuest').style.display = type === 'guest' ? 'block' : 'none';
+      },
+
+      openAppt(data = null) {
+        $('apptId').value = '';
+        $('apptCustId').value = '';
+        $('apptStatus').value = 'pending';
+
+        $('searchCustInput').value = '';
+        $('guestName').value = '';
+        $('guestPhone').value = '';
+        $('apptProc').value = '';
+        $('apptNote').value = '';
+        $('searchDropdown').style.display = 'none';
+
+        $('apptDate').value = $('dailyDatepicker').value || new Date().toISOString().split('T')[0];
+        $('apptTime').value = '11:00';
+        $('apptCol').value = '1';
+
+        if(data) {
+          if(data.id) {
+            $('apptModalTitle').innerText = 'จัดการนัดหมาย';
+            $('apptId').value = data.id;
+            $('apptDate').value = data.appt_date;
+            $('apptTime').value = (data.start_time || '').substring(0,5);
+            $('apptCol').value = String(data.column_id || '1');
+            $('apptProc').value = data.procedure || data.service || '';
+            $('apptNote').value = data.note || '';
+            $('apptStatus').value = data.status || 'pending';
+
+            if(data.customer_id || data.opd) {
+              document.querySelector('input[name="custType"][value="existing"]').checked = true;
+              $('searchCustInput').value = data.customer_name || data.opd || '';
+              $('apptCustId').value = data.customer_id || '';
+            } else {
+              document.querySelector('input[name="custType"][value="guest"]').checked = true;
+              $('guestName').value = data.guest_name || '';
+              $('guestPhone').value = data.guest_phone || '';
+            }
+          } else {
+            $('apptModalTitle').innerText = 'ลงนัดหมายใหม่';
+            $('apptStatus').value = 'pending';
+            if(data.time) $('apptTime').value = data.time;
+            if(data.col) $('apptCol').value = String(data.col);
+            if(data.appt_date) $('apptDate').value = data.appt_date;
+          }
+        } else {
+          $('apptModalTitle').innerText = 'ลงนัดหมายใหม่';
+        }
+
+        this.toggleCustType();
+        this.renderButtons();
+        this.open('apptModal');
+      },
+
+      renderButtons() {
+        const isEdit = !!$('apptId').value;
+
+        const btnConfirm = isEdit
+          ? `<button class="btn btn-success" onclick="Daily.setStatusUI('confirmed')">✅ คอนเฟิร์ม</button>`
+          : '';
+
+        const btnCancelAppt = isEdit
+          ? `<button class="btn btn-danger" onclick="Daily.setStatusUI('cancelled')">⛔ ยกเลิกนัด</button>`
+          : '';
+
+        const btnDeleteHard = isEdit
+          ? `<button class="btn btn-ghost" style="color:#ef4444;" onclick="Daily.confirmDelete()">ลบถาวร</button>`
+          : '';
+
+        const btnClose = `<button class="btn btn-ghost" onclick="Modal.close('apptModal')">ปิด</button>`;
+        const btnSave = `<button class="btn btn-primary" onclick="Daily.save()">บันทึก</button>`;
+
+        $('apptModalFtr').innerHTML =
+          `${btnDeleteHard} ${btnCancelAppt} ${btnConfirm} ${btnClose} ${btnSave}`;
       }
-    }
+    };
 
-    // =========================================================
-    // Init
-    // =========================================================
-    (function init(){
-      const today = new Date();
-      const ymd = today.toISOString().slice(0,10);
+    // --- Daily ---
+    const Daily = {
+      init() {
+        const today = new Date().toISOString().split('T')[0];
+        $('dailyDatepicker').value = today;
+        $('dailyDatepicker').addEventListener('change', () => this.load());
+        this.load();
+      },
 
-      // Daily default
-      document.getElementById('dailyDate').value = ymd;
-      applyDailyHeaderFromDate(ymd);
-      renderDailyTable();
+      shiftDay(delta) {
+        const cur = $('dailyDatepicker').value || new Date().toISOString().split('T')[0];
+        const d = new Date(cur + 'T00:00:00');
+        d.setDate(d.getDate() + delta);
+        $('dailyDatepicker').value = toYMD(d);
+        this.load();
+      },
 
-      // Monthly default
-      document.getElementById('monthPicker').value = today.toISOString().slice(0,7);
-      renderIOSCalendar();
+      goPrevDay() { this.shiftDay(-1); },
+      goNextDay() { this.shiftDay(1); },
 
-      // on change
-      document.getElementById('dailyDate').addEventListener('change', (e)=>{
-        applyDailyHeaderFromDate(e.target.value);
+      goToday() {
+        $('dailyDatepicker').value = new Date().toISOString().split('T')[0];
+        this.load();
+      },
+
+      async load() {
+        const date = $('dailyDatepicker').value;
+        $('dailyHeaderTitle').innerText = `ตารางนัดวันที่ ${this.formatDateTH(date)}`;
+
+        const tbody = $('dailyTableBody');
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:16px;">กำลังโหลด...</td></tr>';
+
+        const appts = await api(`/api/get_appointments?date=${date}`);
+        if(appts && appts.__http_ok === false) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:16px;">โหลดไม่สำเร็จ: ${appts.__error}</td></tr>`;
+          return;
+        }
+
+        this.renderTable(appts || []);
+      },
+
+      normalizeStatus(s){
+        const v = (s || 'pending').toLowerCase();
+        if(v === 'confirm' || v === 'confirmed') return 'confirmed';
+        if(v === 'cancel' || v === 'canceled' || v === 'cancelled') return 'cancelled';
+        return 'pending';
+      },
+
+      timeKey(t){
+        const s = trim(t);
+        if(!s) return '';
+        return s.length >= 5 ? s.substring(0,5) : s;
+      },
+
+      renderTable(appts) {
+        const tbody = $('dailyTableBody');
+        tbody.innerHTML = '';
+
+        const times = [];
+        for(let h=11; h<20; h++) {
+          times.push(`${pad2(h)}:00`);
+          times.push(`${pad2(h)}:30`);
+        }
+
+        const idx = new Map();
+        (appts || []).forEach(a => {
+          const k = `${this.timeKey(a.start_time)}|${String(a.column_id)}`;
+          idx.set(k, a);
+        });
+
+        times.forEach(t => {
+          const tr = document.createElement('tr');
+
+          const tdTime = document.createElement('td');
+          tdTime.className = 'timeCell';
+          tdTime.innerText = t;
+          tr.appendChild(tdTime);
+
+          for(let c=1; c<=4; c++) {
+            const td = document.createElement('td');
+            const found = idx.get(`${t}|${String(c)}`);
+
+            if(found) {
+              const isGuest = !found.customer_id && !found.opd;
+              const nameDisplay = isGuest
+                ? (found.guest_name || 'ลูกค้าใหม่')
+                : (found.opd ? `${found.guest_name || 'ลูกค้า'} (${found.opd})` : (found.customer_name || 'ลูกค้าเก่า'));
+
+              const st = this.normalizeStatus(found.status);
+
+              const div = document.createElement('div');
+              div.className = `apptCard ${st}`;
+              div.innerHTML = `
+                <div class="name" title="${nameDisplay}">${nameDisplay}</div>
+                <div class="meta" title="${found.guest_phone || ''}">${found.guest_phone || ''}</div>
+                <div class="svc" title="${found.service || found.procedure || '-'}">${found.service || found.procedure || '-'}</div>
+              `;
+              div.onclick = () => Modal.openAppt(found);
+              td.appendChild(div);
+            } else {
+              const div = document.createElement('div');
+              div.className = 'slotEmpty';
+              div.onclick = () => Modal.openAppt({ time: t, col: c, appt_date: $('dailyDatepicker').value });
+              td.appendChild(div);
+            }
+
+            tr.appendChild(td);
+          }
+
+          tbody.appendChild(tr);
+        });
+      },
+
+      async save() {
+        const id = trim($('apptId').value);
+        const type = document.querySelector('input[name="custType"]:checked').value;
+
+        const appt_date = trim($('apptDate').value);
+        const start_time = trim($('apptTime').value);
+        const column_id = parseInt(trim($('apptCol').value || '0'), 10);
+        const service = trim($('apptProc').value);
+        const note = trim($('apptNote').value);
+        const status = this.normalizeStatus(trim($('apptStatus').value) || 'pending');
+
+        if(!appt_date) return Toast.show('กรุณาเลือกวันที่', 'error');
+        if(!start_time) return Toast.show('กรุณาเลือกเวลา', 'error');
+        if(!column_id) return Toast.show('กรุณาเลือกช่อง', 'error');
+        if(!service) return Toast.show('กรุณากรอกหัตถการ', 'error');
+
+        const payload = {
+          appt_date,
+          start_time,
+          end_time: start_time,
+          column_id,
+          service,
+          note,
+          status
+        };
+
+        if(type === 'existing') {
+          const custId = trim($('apptCustId').value);
+          if(custId) payload.customer_id = custId;
+          else payload.guest_name = trim($('searchCustInput').value);
+        } else {
+          payload.guest_name = trim($('guestName').value);
+          payload.guest_phone = trim($('guestPhone').value);
+        }
+
+        if(id) payload.id = id;
+
+        const res = await api('/api/save_appointment', 'POST', payload);
+
+        if(res && res.__http_ok === false) {
+          Toast.show(`บันทึกไม่สำเร็จ: ${res.__error}`, 'error');
+          return;
+        }
+
+        if(res && res.success) {
+          Toast.show('บันทึกสำเร็จ');
+          Modal.close('apptModal');
+          this.load();
+          MonthQueue.load(false);
+        } else {
+          Toast.show('เกิดข้อผิดพลาด', 'error');
+        }
+      },
+
+      async setStatusUI(status){
+        const id = trim($('apptId').value);
+        if(!id) return Toast.show('ยังไม่มีรายการ', 'error');
+
+        const s = this.normalizeStatus(status);
+        const r = await this.setStatus(id, s);
+
+        if(r.ok){
+          $('apptStatus').value = s;
+          Toast.show(s === 'confirmed' ? 'คอนเฟิร์มแล้ว' : 'อัปเดตสถานะแล้ว', s === 'confirmed' ? 'success' : 'warn');
+          Modal.close('apptModal');
+          this.load();
+          MonthQueue.load(false);
+        } else {
+          Toast.show(`เปลี่ยนสถานะไม่สำเร็จ: ${r.error || 'unknown'}`, 'error');
+        }
+      },
+
+      async setStatus(id, status){
+        const res = await api('/api/update_appointment_status', 'POST', { id, status });
+
+        if(res && res.__http_ok === false) return { ok:false, error: res.__error };
+        if(res && (res.success === true || res.ok === true || res.row)) return { ok:true };
+        return { ok:false, error:'bad_response' };
+      },
+
+      confirmDelete() {
+        const id = trim($('apptId').value);
+        if(!id) return;
+        $('confirmYesBtn').onclick = () => this.doDelete(id);
+        Modal.open('confirmModal');
+      },
+
+      async doDelete(id) {
+        const res = await api('/api/delete_appointment', 'POST', {id: id});
+
+        if(res && res.__http_ok === false) {
+          Toast.show(`ลบไม่สำเร็จ: ${res.__error}`, 'error');
+          return;
+        }
+
+        if(res && res.success) {
+          Toast.show('ลบรายการสำเร็จ');
+          Modal.close('confirmModal');
+          Modal.close('apptModal');
+          this.load();
+          MonthQueue.load(false);
+        } else {
+          Toast.show('ลบไม่สำเร็จ', 'error');
+        }
+      },
+
+      formatDateTH(dateStr) {
+        if(!dateStr) return '';
+        const d = new Date(dateStr + 'T00:00:00');
+        return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
+      }
+    };
+
+    // --- ✅ Month Queue (TABLE) ---
+    const MonthQueue = {
+      _loading:false,
+      _cacheKey:'',
+      _cacheData:null,
+      _rowMap:{},
+
+      normalizeStatus(s){
+        const v = (s || 'pending').toLowerCase();
+        if(v === 'confirm' || v === 'confirmed') return 'confirmed';
+        if(v === 'cancel' || v === 'canceled' || v === 'cancelled') return 'cancelled';
+        return 'pending';
+      },
+
+      pillStatus(st){
+        if(st === 'confirmed') return `<span class="pill pill-confirmed">✅ Confirmed</span>`;
+        if(st === 'cancelled') return `<span class="pill pill-cancelled">⛔ Cancelled</span>`;
+        return `<span class="pill pill-pending">⏳ Pending</span>`;
+      },
+
+      pillCust(isOld){
+        return isOld
+          ? `<span class="pill pill-old">ลูกค้าเก่า</span>`
+          : `<span class="pill pill-new">ลูกค้าใหม่</span>`;
+      },
+
+      openByKey(k){
+        const a = this._rowMap[k];
+        if(a) Modal.openAppt(a);
+      },
+
+      async confirmFromRow(id){
+        const r = await Daily.setStatus(id, 'confirmed');
+        if(r.ok){
+          Toast.show('คอนเฟิร์มแล้ว', 'success');
+          await this.load(true);
+        } else {
+          Toast.show(`คอนเฟิร์มไม่สำเร็จ: ${r.error || 'unknown'}`, 'error');
+        }
+      },
+
+      goToday(){
+        const el = document.querySelector('[data-mq-today="1"]');
+        if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+        else Toast.show('ยังไม่มีคิววันนี้', 'warn');
+      },
+
+      renderFromCache(){
+        if(Array.isArray(this._cacheData)) this.render(this._cacheData, this._cacheKey.split('_')[0]);
+      },
+
+      async load(force=false){
+        if(this._loading) return;
+        this._loading = true;
+
+        const list = $('mqList');
+        list.innerHTML = `<div style="padding:16px; text-align:center; color:#64748b;">กำลังโหลดคิวทั้งเดือน...</div>`;
+
+        try {
+          const now = new Date();
+          const y = now.getFullYear();
+          const m = now.getMonth();
+          const todayStr = toYMD(now);
+
+          const end = new Date(y, m+1, 0);
+          const endStr = toYMD(end);
+
+          $('mqDateRange').innerText =
+            `${new Date(todayStr).toLocaleDateString('th-TH',{day:'numeric',month:'short'})} → ${new Date(endStr).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'})}`;
+
+          const cacheKey = `${todayStr}_${endStr}`;
+          if(!force && this._cacheKey === cacheKey && Array.isArray(this._cacheData)){
+            this.render(this._cacheData, todayStr);
+            return;
+          }
+
+          // dates: today -> end
+          const dates = [];
+          const d = new Date(todayStr + 'T00:00:00');
+          const endD = new Date(endStr + 'T00:00:00');
+          while(d <= endD){
+            dates.push(toYMD(d));
+            d.setDate(d.getDate()+1);
+          }
+
+          const results = await Promise.all(
+            dates.map(ds => api(`/api/get_appointments?date=${ds}`))
+          );
+
+          const byDate = {};
+          results.forEach((res, i) => {
+            const ds = dates[i];
+            if(res && res.__http_ok === false) return;
+            (res || []).forEach(a => {
+              const row = { ...a, appt_date: a.appt_date || ds };
+              if(!byDate[ds]) byDate[ds] = [];
+              byDate[ds].push(row);
+            });
+          });
+
+          // sort each day by time
+          Object.keys(byDate).forEach(ds => {
+            byDate[ds].sort((x,y) => (trim(x.start_time).localeCompare(trim(y.start_time))));
+          });
+
+          const dayBlocks = dates.map(ds => ({
+            date: ds,
+            items: byDate[ds] || []
+          }));
+
+          this._cacheKey = cacheKey;
+          this._cacheData = dayBlocks;
+
+          this.render(dayBlocks, todayStr);
+
+        } catch(e) {
+          console.warn(e);
+          $('mqList').innerHTML = `<div style="padding:16px; text-align:center; color:#ef4444;">โหลดไม่สำเร็จ</div>`;
+        } finally {
+          this._loading = false;
+        }
+      },
+
+      render(dayBlocks, todayStr){
+        const hideEmpty = $('hideEmptyDays')?.checked ?? true;
+
+        // summary counts
+        let todayCount = 0;
+        let remainCount = 0;
+
+        dayBlocks.forEach(b => {
+          const n = (b.items || []).length;
+          if(b.date === todayStr) todayCount += n;
+          remainCount += n;
+        });
+
+        $('sumToday').innerText = `${todayCount} เคส`;
+        $('sumRemain').innerText = `${remainCount} เคส`;
+
+        // render list
+        this._rowMap = {};
+        let kCounter = 0;
+
+        const list = $('mqList');
+        let html = '';
+
+        let any = false;
+        dayBlocks.forEach(block => {
+          const ds = block.date;
+          const items = block.items || [];
+          if(hideEmpty && items.length === 0) return;
+          if(items.length === 0){
+            // show empty day only if toggle off
+            const th = new Date(ds + 'T00:00:00').toLocaleDateString('th-TH', { weekday:'short', day:'numeric', month:'short' });
+            html += `
+              <div class="dayBlock">
+                <div class="dayHdr">
+                  <div class="dayTitle">${ds === todayStr ? '📌 ' : ''}${th}</div>
+                  <div class="dayCount">(0 เคส)</div>
+                </div>
+                <div style="padding:10px; color:#94a3b8; text-align:center; font-weight:800;">- ไม่มีคิว -</div>
+              </div>
+            `;
+            return;
+          }
+
+          any = true;
+          const isToday = (ds === todayStr);
+          const th = new Date(ds + 'T00:00:00').toLocaleDateString('th-TH', { weekday:'short', day:'numeric', month:'short' });
+
+          html += `
+            <div class="dayBlock" ${isToday ? 'data-mq-today="1"' : ''}>
+              <div class="dayHdr">
+                <div class="dayTitle">${isToday ? '📌 ' : ''}${th} (${ds})</div>
+                <div class="dayCount">(${items.length} เคส)</div>
+              </div>
+
+              <div class="tableWrap">
+                <table class="qTable">
+                  <thead>
+                    <tr>
+                      <th style="width:62px;">เวลา</th>
+                      <th style="width:78px;">ช่อง</th>
+                      <th>ลูกค้า</th>
+                      <th style="width:88px;">เก่า/ใหม่</th>
+                      <th>หัตถการ</th>
+                      <th style="width:108px;">สถานะ</th>
+                      <th style="width:92px;">ทำรายการ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+          `;
+
+          items.forEach(a => {
+            const st = this.normalizeStatus(a.status);
+            const time = (trim(a.start_time) || '').slice(0,5) || '-';
+            const col = colName(a.column_id);
+
+            const isOld = !!(a.customer_id || a.opd);
+            const nameDisplay = isOld
+              ? (a.opd ? `${a.guest_name || 'ลูกค้า'} (${a.opd})` : (a.customer_name || a.opd || 'ลูกค้าเก่า'))
+              : (a.guest_name || 'ลูกค้าใหม่');
+
+            const svc = a.service || a.procedure || '-';
+
+            const key = `k${++kCounter}`;
+            this._rowMap[key] = a;
+
+            const confirmBtn = (st === 'pending' && a.id)
+              ? `<button class="btn btn-sm btn-success" onclick="event.stopPropagation(); MonthQueue.confirmFromRow('${a.id}')">คอนเฟิร์ม</button>`
+              : `<span style="color:#94a3b8; font-weight:800;">-</span>`;
+
+            html += `
+              <tr class="rowClickable" onclick="MonthQueue.openByKey('${key}')">
+                <td title="${time}">${time}</td>
+                <td title="${col}">${col}</td>
+                <td title="${nameDisplay}">${nameDisplay}</td>
+                <td>${this.pillCust(isOld)}</td>
+                <td title="${svc}">${svc}</td>
+                <td>${this.pillStatus(st)}</td>
+                <td>${confirmBtn}</td>
+              </tr>
+            `;
+          });
+
+          html += `
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        });
+
+        if(!any && hideEmpty){
+          list.innerHTML = `<div style="padding:16px; text-align:center; color:#64748b; font-weight:800;">- ไม่มีคิวตั้งแต่วันนี้ถึงสิ้นเดือน -</div>`;
+        } else {
+          list.innerHTML = html || `<div style="padding:16px; text-align:center; color:#64748b; font-weight:800;">- ไม่มีข้อมูล -</div>`;
+        }
+      }
+    };
+
+    // --- ROSTER ---
+    const Roster = {
+      staffs: [],
+      currentShifts: [],
+
+      init() {
+        const d = new Date();
+        $('monthPicker').value = `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+        $('monthPicker').addEventListener('change', ()=>this.load());
+        this.loadStaffs();
+      },
+      goToday() { this.init(); this.load(); },
+
+      async loadStaffs() {
+        this.staffs = await api('/api/staffs');
+
+        const sel = $('rosterStaffId');
+        sel.innerHTML = '<option value="">-- เลือกพนักงาน --</option>';
+
+        if(this.staffs && this.staffs.__http_ok === false) {
+          sel.innerHTML = `<option value="">โหลดพนักงานไม่สำเร็จ</option>`;
+          return;
+        }
+
+        if(this.staffs) {
+          this.staffs.forEach(s => {
+            sel.innerHTML += `<option value="${s.id}">${s.name} (${s.role})</option>`;
+          });
+        }
+      },
+
+      async load() {
+        const ym = $('monthPicker').value;
+        const [y, m] = ym.split('-');
+        $('monthTitle').innerText = new Date(y, m-1, 1).toLocaleDateString('th-TH', {month:'long', year:'numeric'});
+        $('monthGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:#64748b;font-weight:800;">โหลดตารางเวร...</div>';
+
+        const shifts = await api(`/api/get_roster?month=${ym}`);
+
+        if(shifts && shifts.__http_ok === false) {
+          $('monthGrid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:16px;color:#ef4444;font-weight:800;">โหลดไม่สำเร็จ: ${shifts.__error}</div>`;
+          return;
+        }
+
+        this.renderCalendar(y, m, shifts||[]);
+      },
+
+      renderCalendar(y, m, shifts) {
+        const grid = $('monthGrid'); grid.innerHTML='';
+        const firstDay = new Date(y, m-1, 1).getDay();
+        const daysInMonth = new Date(y, m, 0).getDate();
+
+        for(let i=0; i<firstDay; i++) grid.innerHTML+=`<div class="iosDay" style="background:#f8fafc;"></div>`;
+
+        const today = new Date().toISOString().split('T')[0];
+        for(let d=1; d<=daysInMonth; d++) {
+          const dateStr = `${y}-${pad2(m)}-${pad2(d)}`;
+          const dayShifts = shifts.filter(s => s.date === dateStr);
+
+          let html = `<div class="iosDay ${today===dateStr?'today':''}" onclick="Roster.openModal('${dateStr}')">
+                        <div class="num">${d}</div>`;
+
+          dayShifts.forEach(s => {
+            const isLeave = s.work_type === 'leave';
+            const style = isLeave ? 'background:#fee2e2; color:#b91c1c;' :
+              (s.staff_color ? `background:${s.staff_color}20; color:${s.staff_color}; border-left:2px solid ${s.staff_color};` : 'background:#ccfbf1; color:#0f766e;');
+
+            const txt = isLeave ? `ลา(${s.staff_name})` : `${s.staff_name}`;
+            const tm = isLeave ? '' : `<span style="opacity:0.7;">${(s.start_time||'').slice(0,5)}</span>`;
+
+            html += `<div class="eventPill" style="${style}">${txt} ${tm}</div>`;
+          });
+
+          grid.innerHTML += html + `</div>`;
+        }
+        this.currentShifts = shifts;
+      },
+
+      openModal(date) {
+        $('rosterSelectedDate').value = date;
+        $('rosterDateTitle').innerText = `จัดการเวรวันที่ ${new Date(date).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}`;
+
+        const list = $('rosterList'); list.innerHTML = '';
+        const existing = this.currentShifts.filter(s => s.date === date);
+
+        if(existing.length === 0) list.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:12px;font-weight:800;">- ยังไม่มีรายการ -</div>';
+        else existing.forEach(s => {
+          const isLeave = s.work_type === 'leave';
+          const div = document.createElement('div');
+          div.className = `shift-row ${isLeave?'leave':'work'}`;
+
+          const timeInfo = isLeave ? '<b>ลาหยุด</b>' : `${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)}`;
+
+          div.innerHTML = `
+            <div>
+              <strong style="font-weight:900;">${s.staff_name}</strong> <small style="color:#64748b; font-weight:800;">(${s.staff_role})</small><br>
+              <span style="color:#334155; font-weight:800;">${timeInfo} ${s.note?`(${s.note})`:''}</span>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="Roster.deleteShift('${s.id}')">ลบ</button>
+          `;
+          list.appendChild(div);
+        });
+
+        $('rosterStaffId').value = '';
+        document.querySelector('input[name="workType"][value="work"]').checked = true;
+        this.toggleLeave();
+        $('rosterStart').value='11:00'; $('rosterEnd').value='20:00'; $('rosterNote').value='';
+
+        Modal.open('rosterModal');
+      },
+
+      toggleLeave() {
+        const t = document.querySelector('input[name="workType"]:checked').value;
+        $('workTimeBox').style.display = t==='leave' ? 'none' : 'block';
+      },
+
+      async save() {
+        const staffId = $('rosterStaffId').value;
+        if(!staffId) return Toast.show('กรุณาเลือกพนักงาน', 'error');
+
+        const payload = {
+          staff_id: staffId,
+          date: $('rosterSelectedDate').value,
+          work_type: document.querySelector('input[name="workType"]:checked').value,
+          start_time: $('rosterStart').value,
+          end_time: $('rosterEnd').value,
+          note: $('rosterNote').value
+        };
+
+        const res = await api('/api/save_roster', 'POST', payload);
+
+        if(res && res.__http_ok === false) {
+          Toast.show(`บันทึกไม่สำเร็จ: ${res.__error}`, 'error');
+          return;
+        }
+
+        if(res && res.success) {
+          Toast.show('บันทึกสำเร็จ');
+          Modal.close('rosterModal');
+          this.load();
+        } else {
+          Toast.show('เกิดข้อผิดพลาด', 'error');
+        }
+      },
+
+      async deleteShift(id) {
+        if(!confirm('ยืนยันลบรายการนี้?')) return;
+        const res = await api('/api/delete_roster', 'POST', {id});
+
+        if(res && res.__http_ok === false) {
+          Toast.show(`ลบไม่สำเร็จ: ${res.__error}`, 'error');
+          return;
+        }
+
+        if(res && res.success) {
+          this.load();
+          Modal.close('rosterModal');
+          Toast.show('ลบแล้ว');
+        }
+      }
+    };
+
+    // --- SETTINGS ---
+    const Settings = {
+      async load() {
+        const box = $('staffListContainer');
+        box.innerHTML = '<div style="padding:16px; text-align:center; color:#64748b; font-weight:800;">กำลังโหลด...</div>';
+
+        const staffs = await api('/api/staffs');
+        box.innerHTML = '';
+
+        if(staffs && staffs.__http_ok === false) {
+          box.innerHTML = `<div style="padding:16px; text-align:center; color:#ef4444; font-weight:800;">โหลดไม่สำเร็จ: ${staffs.__error}</div>`;
+          return;
+        }
+
+        if(!staffs || staffs.length === 0) {
+          box.innerHTML = '<div style="padding:16px; text-align:center; color:#94a3b8; font-weight:800;">ยังไม่มีพนักงาน</div>';
+          return;
+        }
+
+        staffs.forEach(s => {
+          const div = document.createElement('div');
+          div.style.cssText = "padding:10px 12px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; gap:10px;";
+          div.innerHTML = `
+            <div style="display:flex; gap:10px; align-items:center; min-width:0;">
+              <div style="width:26px; height:26px; border-radius:50%; background:${s.color_code||'#ccc'}; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:900;">${(s.name||'?').charAt(0)}</div>
+              <div style="min-width:0;">
+                <div style="font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${s.name}</div>
+                <div style="color:#64748b; font-weight:800;">${s.role}</div>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-ghost" style="color:#ef4444;" onclick="Settings.del(${s.id})">ลบ</button>
+          `;
+          box.appendChild(div);
+        });
+      },
+
+      async addStaff() {
+        const name = $('newStaffName').value;
+        const role = $('newStaffRole').value;
+        const color = $('newStaffColor').value;
+        if(!name) return Toast.show('กรุณากรอกชื่อ', 'error');
+
+        const res = await api('/api/staffs', 'POST', {name, role, color_code: color});
+
+        if(res && res.__http_ok === false) {
+          Toast.show(`เพิ่มไม่สำเร็จ: ${res.__error}`, 'error');
+          return;
+        }
+
+        if(res && res.success) {
+          Toast.show('เพิ่มพนักงานแล้ว');
+          $('newStaffName').value = '';
+          this.load();
+          Roster.loadStaffs();
+        } else {
+          Toast.show('เกิดข้อผิดพลาด', 'error');
+        }
+      },
+
+      async del(id) {
+        if(!confirm('ลบพนักงานคนนี้?')) return;
+        try {
+          const r = await fetch(`/api/staffs?id=${id}`, { method: 'DELETE' });
+          if(!r.ok) throw new Error(`HTTP ${r.status}`);
+          Toast.show('ลบสำเร็จ');
+          this.load();
+          Roster.loadStaffs();
+        } catch(e) { Toast.show('ลบไม่สำเร็จ', 'error'); }
+      }
+    };
+
+    // Tab switching
+    document.querySelector('.chip[data-tab="settings"]').addEventListener('click', () => Settings.load());
+
+    document.querySelectorAll('.chip').forEach(el => {
+      el.addEventListener('click', async () => {
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        const tab = el.dataset.tab;
+        $(`panel-${tab}`).classList.add('active');
+
+        if(tab === 'monthly') Roster.load();
+        if(tab === 'monthqueue') MonthQueue.load(false);
+        if(tab === 'daily') Daily.load();
       });
-      document.getElementById('monthPicker').addEventListener('change', ()=>renderIOSCalendar());
-    })();
+    });
+
+    // Init
+    Daily.init();
+    Roster.init();
+
+    // ✅ เข้าเว็บให้เปิดแถบแรก และโหลดคิวทันที
+    MonthQueue.load(false);
   </script>
 
-  <!-- ✅ Floating Menu (ลิงก์ไปหน้าอื่น) -->
   {% include "floating_menu.html" %}
-
 </body>
 </html>

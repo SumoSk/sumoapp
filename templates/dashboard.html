@@ -283,8 +283,6 @@
   .tab-count { background:#cbd5e1 !important; color:#334155 !important; }
   .tab-btn.active .tab-count { background:#ccfbf1 !important; color:#0f766e !important; }
 
-  /* ... CSS เดิม ... */
-
   /* ✅ เพิ่ม CSS สำหรับรูปโปรไฟล์ใน Popup */
   .profile-header {
     display: flex;
@@ -332,6 +330,67 @@
     border-radius: 99px;
     border: 1px solid #fcd34d;
   }
+
+  /* ✅ Modal ดูรูปใหญ่ */
+  .img-viewer {
+    display:none;
+    position:fixed;
+    inset:0;
+    z-index: 20000;
+    background: rgba(0,0,0,.75);
+    justify-content:center;
+    align-items:center;
+    padding: 16px;
+  }
+  .img-viewer__panel{
+    width: min(92vw, 720px);
+    max-height: 92vh;
+    background: transparent;
+    position: relative;
+  }
+  .img-viewer__img{
+    width: 100%;
+    height: auto;
+    max-height: 92vh;
+    object-fit: contain;
+    border-radius: 14px;
+    background: #111;
+    box-shadow: 0 16px 50px rgba(0,0,0,.35);
+  }
+  .img-viewer__close{
+    position:absolute;
+    top:-10px;
+    right:-10px;
+    width: 40px;
+    height: 40px;
+    border:none;
+    border-radius: 50%;
+    cursor:pointer;
+    font-size: 18px;
+    background:#fff;
+    box-shadow:0 6px 18px rgba(0,0,0,.25);
+  }
+  .profile-img-box { cursor: zoom-in; }
+  .profile-actions{
+    margin-top: 8px;
+    display:flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn-mini{
+    border:none;
+    padding:6px 10px;
+    border-radius:10px;
+    cursor:pointer;
+    font-size: 12px;
+    background:#009688;
+    color:#fff;
+  }
+  .btn-mini.secondary{
+    background:#eceff1;
+    color:#37474f;
+  }
+  .btn-mini:hover{ opacity:.92; }
 
 </style>
 </head>
@@ -438,11 +497,10 @@
 
   async function loadCustomerProfiles() {
     try {
-      const res = await fetch("/api/customers"); 
+      const res = await fetch("/api/customers");
       const data = await res.json();
       data.forEach(c => {
-        // ✅ แก้ตรงนี้: ใช้ pad4() เพื่อบังคับให้เป็น 4 หลัก (เช่น 0001)
-        const opdKey = pad4(c.opd); 
+        const opdKey = pad4(c.opd);
         customerProfileMap[opdKey] = c;
       });
       console.log("โหลดรูปโปรไฟล์เสร็จสิ้น");
@@ -450,6 +508,7 @@
       console.error("โหลดรูปโปรไฟล์ไม่สำเร็จ:", err);
     }
   }
+
   // โหมดช่วงเดือน
   const monthRange = { enabled:false, startYM:null, endYM:null };
 
@@ -626,7 +685,7 @@
 
     // --- ส่วนที่ 2: นับจำนวนสินค้า (จุดที่แก้ให้ซูโม่) ---
     const categoryCounts = {}, categoryDetails = {}, customerMap = {};
-    
+
     records.filter(activeFilter).forEach(r => {
       // เก็บข้อมูลลูกค้า (Customer Map)
       const key = `${r.name}|${r.phone}`;
@@ -641,20 +700,19 @@
         const subItem = match ? match[1] : item.split(" - ")[0].trim();
 
         // 2. หาจำนวน (Qty) ** แก้ไข Regex ให้ยืดหยุ่นขึ้น **
-        // หาแพทเทิร์น "- เลข ชิ้น" โดยอนุญาตให้มีวรรคหรือไม่มีก็ได้
         const qtyMatch = item.match(/- (\d+)\s*ชิ้น/);
-        const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1; // ถ้าหาไม่เจอจริงๆ ให้ default เป็น 1
+        const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
 
-        // 3. หาหมวดหมู่ (Category) จากชื่อหน้าวงเล็บ
+        // 3. หาหมวดหมู่ (Category)
         const categoryMatch = item.match(/^(.+?) ?\(/);
         const category = categoryMatch ? categoryMatch[1].trim() : "อื่นๆ";
 
         // 4. รวมยอด
         if (!categoryCounts[category]) categoryCounts[category] = 0;
         if (!categoryDetails[category]) categoryDetails[category] = {};
-        
+
         categoryCounts[category] += qty;
-        
+
         if (!categoryDetails[category][subItem]) {
              categoryDetails[category][subItem] = { qty:0, total:0 };
         }
@@ -735,24 +793,19 @@
     const summary = {};
     const totalQty = { count: 0 };
 
-    // พลอยแก้ตรงนี้: ไม่ต้องไปดึง text จากหน้าจอแล้ว เช็คจาก data โดยตรงเลย
     allSalesRecords.filter(activeFilter).forEach(r => {
       (r.items || []).forEach(item => {
-        
-        // 1. แยกชื่อสินค้าและจำนวนเหมือนเดิม
+
         const match = item.match(/\((.*?)\)/);
         const subItem = match ? match[1] : item.split(" - ")[0].trim();
-        const qtyMatch = item.match(/- (\d+) ชิ้น/);
+        const qtyMatch = item.match(/- (\d+)\s*ชิ้น/);
         const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
 
-        // 2. ดึงชื่อหมวดหมู่จาก item เพื่อเช็คว่าตรงกับ cat ที่กดเข้ามาไหม
         const categoryMatch = item.match(/^(.+?) ?\(/);
         const itemCategory = categoryMatch ? categoryMatch[1].trim() : "อื่นๆ";
 
-        // 3. ถ้าหมวดหมู่ไม่ตรง ก็ข้ามไปเลย
         if (itemCategory !== cat) return;
 
-        // เก็บข้อมูลลงตัวแปร summary
         if (!summary[subItem]) summary[subItem] = {};
         const key = `${r.name}|${r.phone}`;
         if (!summary[subItem][key]) summary[subItem][key] = { name: r.name, dates: {} };
@@ -895,7 +948,6 @@
     const [name, phone = ''] = String(key).split('|');
     const norm = s => (s || '').trim().toLowerCase();
 
-    // 1. หาประวัติการซื้อ (จาก allCustomerRecords ที่เป็น Sales Data)
     const records = allCustomerRecords.filter(r =>
       norm(r.name) === norm(name) &&
       norm(r.phone || '') === norm(phone)
@@ -908,20 +960,17 @@
 
     records.sort((a, b) => b.date.localeCompare(a.date));
 
-    // ข้อมูลพื้นฐานจาก Sales Record
-    const salesInfo = { 
-        name: records[0].name, 
-        phone: records[0].phone || '-', 
-        opd: pad4(records[0].opd) 
+    const salesInfo = {
+        name: records[0].name,
+        phone: records[0].phone || '-',
+        opd: pad4(records[0].opd)
     };
 
-    // ✅ 2. ดึงข้อมูลโปรไฟล์ (รูปภาพ, VIP) จาก customerProfileMap ที่โหลดมา
-    const profileData = customerProfileMap[salesInfo.opd] || {}; 
-    const profilePic = profileData.profile_pic_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2cbdjVlIj48cGF0aCBkPSZNMTIgMTJjMi4yMSAwIDQtMS43OSA0LTRzLTEuNzktNC00LTQtNCAxLjc5LTQgNCAxLjc5IDQgNCA0em0wIDJjLTIuNjcgMC04IDEuMzQtOCA0djJoMTZ2LTJjMC0yLjY2LTUuMzMtNC04LTR6Ii8+PC9zdmc+'; // รูป Default
+    const profileData = customerProfileMap[salesInfo.opd] || {};
+    const profilePic = profileData.profile_pic_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2cbdjVlIj48cGF0aCBkPSZNMTIgMTJjMi4yMSAwIDQtMS43OSA0LTRzLTEuNzktNC00LTQtNCAxLjc5LTQgNCAxLjc5IDQgNCA0em0wIDJjLTIuNjcgMC04IDEuMzQtOCA0djJoMTZ2LTJjMC0yLjY2LTUuMzMtNC04LTR6Ii8+PC9zdmc+';
     const vipBadge = profileData.vip ? `<span class="badge-vip">VIP: ${profileData.vip}</span>` : '';
-    const realName = profileData.full_name || salesInfo.name; // ใช้ชื่อเต็มถ้ามี
+    const realName = profileData.full_name || salesInfo.name;
 
-    // คำนวณสถิติยอดเงิน (เหมือนเดิม)
     const lastDateStr = (records[0].date || '').slice(0, 10);
     const baseDate = new Date();
     const lastDate = new Date(lastDateStr);
@@ -932,14 +981,13 @@
     const totalAmount = paidRecords.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
     const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
 
-    // --- ส่วนจัดกลุ่มสินค้า (เหมือนเดิม) ---
     const allItems = {};
     records.forEach(r => {
       (r.items || []).forEach(item => {
         let n = item;
         const m = item.match(/\((.*?)\)/);
         n = m ? m[1] : item.split(' - ')[0];
-        const q = item.match(/- (\d+) ชิ้น/);
+        const q = item.match(/- (\d+)\s*ชิ้น/);
         const qty = q ? parseInt(q[1]) : 1;
         allItems[n] = (allItems[n] || 0) + qty;
       });
@@ -980,7 +1028,7 @@
       const items = (r.items || []).map(item => {
         const m = item.match(/\((.*?)\)/);
         const name = m ? m[1] : item.split(" - ")[0];
-        const q = item.match(/- (\d+) ชิ้น/);
+        const q = item.match(/- (\d+)\s*ชิ้น/);
         const qty = q ? parseInt(q[1]) : 1;
         return `<li>${escapeHTML(name)} : ${qty}</li>`;
       }).join("");
@@ -1002,34 +1050,40 @@
 
     const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
 
-    // ✅ 3. สร้าง HTML ใหม่ที่มี Header สวยๆ พร้อมรูป
     document.getElementById("modal-content").innerHTML = `
       <div class="profile-header">
-        <div class="profile-img-box">
-            <img src="${profilePic}" alt="Profile">
+        <div class="profile-img-box" onclick="openImgViewer('${profilePic}')">
+          <img id="modalProfileImg" src="${profilePic}" alt="Profile">
         </div>
+
         <div class="profile-info">
-            <h3>${escapeHTML(realName)}</h3>
-            <div class="profile-badges">
-                <span class="badge">OPD: ${escapeHTML(salesInfo.opd)}</span>
-                ${vipBadge}
-            </div>
-            <div style="font-size:12px; margin-top:4px; color:#555;">📞 ${escapeHTML(salesInfo.phone)}</div>
+          <h3>${escapeHTML(realName)}</h3>
+          <div class="profile-badges">
+            <span class="badge">OPD: ${escapeHTML(salesInfo.opd)}</span>
+            ${vipBadge}
+          </div>
+          <div style="font-size:12px; margin-top:4px; color:#555;">📞 ${escapeHTML(salesInfo.phone)}</div>
+
+          <div class="profile-actions">
+            <button class="btn-mini" type="button" onclick="pickProfileImage('${escapeHTML(salesInfo.opd)}')">📷 เปลี่ยนรูป</button>
+            <button class="btn-mini secondary" type="button" onclick="openImgViewer(document.getElementById('modalProfileImg')?.src)">🔍 ดูรูปใหญ่</button>
+
+          </div>
         </div>
       </div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px; margin-bottom:15px;">
         <div style="background:#e0f2f1; padding:8px; border-radius:8px; color:#00695c;">
-            💰 ยอดรวม: <strong>${Math.round(totalAmount).toLocaleString()}</strong>
+          💰 ยอดรวม: <strong>${Math.round(totalAmount).toLocaleString()}</strong>
         </div>
         <div style="background:#f1f8e9; padding:8px; border-radius:8px; color:#33691e;">
-            💳 เฉลี่ย: <strong>${average.toLocaleString()}</strong>
+          💳 เฉลี่ย: <strong>${average.toLocaleString()}</strong>
         </div>
         <div style="background:#fff3e0; padding:8px; border-radius:8px; color:#e65100;">
-            🔁 มาใช้บริการ: <strong>${totalVisits}</strong> ครั้ง
+          🔁 มาใช้บริการ: <strong>${totalVisits}</strong> ครั้ง
         </div>
         <div style="background:#ffebee; padding:8px; border-radius:8px; color:#c62828;">
-            📅 ล่าสุด: ${formatDate(lastDateStr)} <br> ${daysAbsentText}
+          📅 ล่าสุด: ${formatDate(lastDateStr)} <br> ${daysAbsentText}
         </div>
       </div>
 
@@ -1242,7 +1296,7 @@
     document.getElementById("filterResults").innerHTML = `<h4>ผลลัพธ์ ${results.length} คน</h4>` + html;
   }
 
-  // ✅ เพิ่ม openGroupModal ให้ปุ่ม "ดูรายการที่เลือก" ไม่พัง
+  // ✅ openGroupModal (สำหรับ "ดูรายการที่เลือก")
   function openGroupModal() {
     const checked = Array.from(document.querySelectorAll('.selectCustomerCheckbox:checked'))
       .map(cb => cb.value);
@@ -1300,7 +1354,7 @@
   // ===== Popup รายวัน =====
   function openMonthlySalesPopup(){
     const fmtYM = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    const parseQty = (items=[]) => items.reduce((s,it)=>{ const m = it.match(/- (\d+) ชิ้น/); return s + (m? parseInt(m[1]):1); },0);
+    const parseQty = (items=[]) => items.reduce((s,it)=>{ const m = it.match(/- (\d+)\s*ชิ้น/); return s + (m? parseInt(m[1]):1); },0);
     const thDateWithWeekday = (iso)=>{ const d = new Date(iso); const wd = d.toLocaleDateString('th-TH',{ weekday:'long' }); const dt = d.toLocaleDateString('th-TH',{ day:'2-digit', month:'short', year:'numeric' }); return `${dt} (${wd})`; };
 
     const now = new Date();
@@ -1446,11 +1500,178 @@
     loadCustomerProfiles();
   });
 
+  // ✅ ดูรูปใหญ่
+  function openImgViewer(src){
+    const m = document.getElementById('imgViewer');
+    const img = document.getElementById('imgViewerImg');
+    img.src = src || '';
+    m.style.display = 'flex';
+  }
+  function closeImgViewer(){
+    const m = document.getElementById('imgViewer');
+    const img = document.getElementById('imgViewerImg');
+    m.style.display = 'none';
+    img.src = '';
+  }
+
+  // ✅ เปิดเลือกไฟล์ + อัปโหลดเปลี่ยนรูป
+  let _pendingUploadOPD = null;
+
+  function pickProfileImage(opd){
+    _pendingUploadOPD = pad4(opd);
+    const input = document.getElementById('profileUploadInput');
+    input.value = '';
+    input.click();
+  }
+
+  // ✅ helper: อ่าน error จาก response ให้ได้มากที่สุด
+  async function _readErrorMessage(res){
+    try{
+      const ct = (res.headers.get('content-type') || '').toLowerCase();
+      if(ct.includes('application/json')){
+        const j = await res.json().catch(()=> ({}));
+        return j.error || j.message || JSON.stringify(j);
+      }
+      const t = await res.text().catch(()=> '');
+      return t || `HTTP ${res.status}`;
+    }catch{
+      return `HTTP ${res.status}`;
+    }
+  }
+
+  // ✅ helper: validate ไฟล์
+  function _validateImageFile(file){
+    if(!file) return { ok:false, msg:'ไม่พบไฟล์' };
+    const okTypes = ['image/jpeg','image/png','image/webp'];
+    if(!okTypes.includes(file.type)) return { ok:false, msg:'ไฟล์ต้องเป็น jpg/png/webp เท่านั้น' };
+    const MAX_MB = 6;
+    if(file.size > MAX_MB * 1024 * 1024) return { ok:false, msg:`ไฟล์ใหญ่เกิน ${MAX_MB}MB` };
+    return { ok:true };
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('profileUploadInput');
+    if(!input) return;
+
+    input.addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  if(!file || !_pendingUploadOPD) return;
+
+  try{
+    const url = await uploadProfilePic(_pendingUploadOPD, file);
+
+    // ✅ ดึงข้อมูลลูกค้าใหม่จาก DB
+    await loadCustomerProfiles();
+
+    // update local map (เผื่อ backend ไม่คืนครบ)
+    if(!customerProfileMap[_pendingUploadOPD]) customerProfileMap[_pendingUploadOPD] = {};
+    customerProfileMap[_pendingUploadOPD].profile_pic_url = url;
+
+    // update รูปใน modal ที่เปิดอยู่ + กัน cache
+    const imgEl = document.getElementById('modalProfileImg');
+    if(imgEl) {
+      imgEl.src = url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now();
+    }
+
+    alert('อัปเดตรูปโปรไฟล์เรียบร้อย');
+
+      }catch(err){
+        console.error(err);
+        alert('อัปโหลดไม่สำเร็จ: ' + (err?.message || err));
+      }finally{
+        _pendingUploadOPD = null;
+      }
+    });
+  });
+
+  async function uploadProfilePic(opd, file){
+  const opd4 = pad4(opd);
+
+  const fd = new FormData();
+  fd.append('opd', opd4);
+  fd.append('file', file);
+  fd.append('profile_pic', file);
+  fd.append('profile_pic_file', file);
+  fd.append('image', file);
+  fd.append('avatar', file);
+
+  const endpoints = [
+    '/api/update_customer_with_image',
+    '/api/customer/profile_pic',
+  ];
+
+  async function fetchPicUrlFromCustomers(opdKey){
+    const res = await fetch('/api/customers', { credentials:'same-origin' });
+    if(!res.ok) return null;
+    const list = await res.json().catch(()=>[]);
+    const found = (list || []).find(c => pad4(c.opd) === opdKey);
+    return found?.profile_pic_url || found?.profile_pic || found?.avatar_url || null;
+  }
+
+  let lastErr = null;
+
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: fd
+      });
+
+      if (res.status === 404) continue;
+
+      if (!res.ok) {
+        const msg = await _readErrorMessage(res);
+        throw new Error(msg || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json().catch(()=> ({}));
+      console.log("UPLOAD RESPONSE:", data);
+
+      // ✅ พยายามหา url จาก response ก่อน
+      const picUrl =
+        data.profile_pic_url ||
+        data.url ||
+        data.secure_url ||
+        data.path ||
+        data.profile_pic ||
+        data.avatar_url ||
+        (data.customer && (data.customer.profile_pic_url || data.customer.profile_pic || data.customer.avatar_url));
+
+      if (picUrl) return picUrl;
+
+      // ✅ ถ้าไม่มี url แต่ถือว่า upload ผ่าน → ไปดึงจาก /api/customers แทน
+      const fetchedUrl = await fetchPicUrlFromCustomers(opd4);
+      if (fetchedUrl) return fetchedUrl;
+
+      // ยังไม่มีจริง ๆ ค่อยฟ้อง
+      throw new Error('Bad response: missing profile pic url');
+    } catch (e) {
+      lastErr = e;
+      break;
+    }
+  }
+
+  throw lastErr || new Error('Upload failed: no valid endpoint');
+}
+
+
 
 </script>
 
 {% endblock %}
 {% include "floating_menu.html" %}
+
+<!-- ✅ Image Viewer Modal -->
+<div id="imgViewer" class="img-viewer" onclick="closeImgViewer()">
+  <div class="img-viewer__panel" onclick="event.stopPropagation()">
+    <button class="img-viewer__close" onclick="closeImgViewer()">✕</button>
+    <img id="imgViewerImg" class="img-viewer__img" src="" alt="Profile Large">
+  </div>
+</div>
+
+<!-- ✅ hidden file input (ใช้ร่วมกันทั้งหน้า) -->
+<input id="profileUploadInput" type="file" accept="image/*" style="display:none;">
 
 </body>
 </html>
