@@ -378,26 +378,50 @@
       vertical-align: middle;
     }
     
+/* ✅ คิวทั้งเดือน: ทำให้ไม่ย่นทับกัน โดยให้ตาราง "กว้างพอ" แล้วเลื่อนแทน */
+.tableWrap{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
 
-    table.qTable th:nth-child(1), table.qTable td:nth-child(1),
-    table.qTable th:nth-child(2), table.qTable td:nth-child(2),
-    table.qTable th:nth-child(4), table.qTable td:nth-child(4),
-    table.qTable th:nth-child(5), table.qTable td:nth-child(5),
-    table.qTable th:nth-child(6), table.qTable td:nth-child(6){
-      white-space: nowrap;
-    }
+/* ให้ตารางมีความกว้างขั้นต่ำ เพื่อไม่บีบคอลัมน์จนทับกัน */
+table.qTable{
+  width:100%;
+  min-width:760px;      /* ปรับได้ เช่น 720-900 ตามชอบ */
+  table-layout:fixed;
+}
 
-    table.qTable th:nth-child(3), table.qTable td:nth-child(3){
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+/* ตั้งกติกาแต่ละคอลัมน์ (7 คอลัมน์) */
+table.qTable th:nth-child(1), table.qTable td:nth-child(1){ width:60px;  white-space:nowrap; }  /* เวลา */
+table.qTable th:nth-child(2), table.qTable td:nth-child(2){ width:90px;  white-space:nowrap; }  /* ช่อง */
 
-    table.qTable th:nth-child(1), table.qTable td:nth-child(1){ width: 60px; }
-    table.qTable th:nth-child(2), table.qTable td:nth-child(2){ width: 78px; }
-    table.qTable th:nth-child(4), table.qTable td:nth-child(4){ width: 108px; }
-    table.qTable th:nth-child(5), table.qTable td:nth-child(5){ width: 108px; }
-    table.qTable th:nth-child(6), table.qTable td:nth-child(6){ width: 92px; }
+table.qTable th:nth-child(3), table.qTable td:nth-child(3){
+  width:160px;                 /* ลูกค้า */
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+table.qTable th:nth-child(6), table.qTable td:nth-child(4){
+  width:170px;                 /* หัตถการ */
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+table.qTable th:nth-child(5), table.qTable td:nth-child(5){
+  width:110px;                 /* เบอร์โทร */
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+table.qTable th:nth-child(4), table.qTable td:nth-child(6){ width:70px;  white-space:nowrap; }  /* ประเภท */
+
+
+table.qTable th:nth-child(7), table.qTable td:nth-child(7){
+  width:110px;                 /* สถานะ */
+  white-space:nowrap;
+}
 
     .pill{ max-width: 100%; }
     .btn{ max-width: 100%; }
@@ -1295,12 +1319,13 @@ const Search = {
                   <thead>
   <tr>
     <th style="text-align:left;">เวลา</th>
-    <th style="text-align:left;">ช่อง</th>
-    <th style="text-align:left;">ลูกค้า</th>
-    <th style="text-align:left;">ประเภท</th>
-    <th style="text-align:left;">เบอร์โทร</th>
-    <th style="text-align:left;">หัตถการ</th>
-    <th style="text-align:left;">สถานะ</th>
+<th style="text-align:left;">ช่อง</th>
+<th style="text-align:left;">ลูกค้า</th>
+<th style="text-align:left;">หัตถการ</th>
+<th style="text-align:left;">เบอร์โทร</th>
+<th style="text-align:left;">ประเภท</th>
+<th style="text-align:left;">สถานะ</th>
+
   </tr>
 </thead>
 
@@ -1327,9 +1352,9 @@ html += `
     <td>${time}</td>
     <td>${col}</td>
     <td title="${nameDisplay}">${nameDisplay}</td>
-    <td>${customerType}</td>
-    <td>${phone}</td>
     <td title="${svc}">${svc}</td>
+    <td>${phone}</td>
+    <td>${customerType}</td>
     <td>${this.pillStatus(st)}</td>
   </tr>
 `;
