@@ -1108,7 +1108,7 @@ const Search = {
       },
 
       async setStatus(id, status){
-        const res = await api('/api/update_appointment_status', 'POST', { id, status });
+const res = await api('/api/set_appointment_status', 'POST', { id, status });
         if(res && res.__http_ok === false) return { ok:false, error: res.__error };
         if(res && (res.success === true || res.ok === true || res.row)) return { ok:true };
         return { ok:false, error:'bad_response' };

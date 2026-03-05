@@ -82,7 +82,7 @@
     width: 100%;
     display: grid;
     /* บังคับ 4 ช่องเสมอ */
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important; 
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     gap: 10px;
     margin-top: 6px;
 }
@@ -107,12 +107,12 @@
 /* 3. ลบ หรือ แก้ไข Media Query ที่เคยสั่งให้เรียงแนวตั้ง */
 @media (max-width: 1080px) {
     /* ลบ .tabs-wrap ออกจากตรงนี้ หรือทับด้วยโค้ดด้านล่าง */
-    .tabs-wrap { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; } 
+    .tabs-wrap { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
 }
 @media (max-width: 520px) {
     /* ลบ .tabs-wrap ออกจากตรงนี้ หรือทับด้วยโค้ดด้านล่าง */
     .tabs-wrap { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
-    
+
     /* เพิ่ม: ลดขนาดตัวหนังสือในปุ่มหน่อยถ้าจอเล็กมาก จะได้บรรทัดเดียวพอ */
     .tab-left b { font-size: 10px !important; }
 }
@@ -434,22 +434,24 @@
 
       <!-- ✅ 4 แถบด้านบน (แทน sidebar) -->
       <div class="tabs-wrap" id="topTabs">
-    <button class="tab-btn active" data-view="plan" type="button">
-        <div class="tab-left"><b>📝 บันทึกการโทร</b></div>
+        <button class="tab-btn active" data-view="plan" type="button">
+          <div class="tab-left"><b>📝 บันทึกการโทร</b></div>
         </button>
 
-    <button class="tab-btn" data-view="dashboard" type="button">
-        <div class="tab-left"><b>📊 สรุปข้อมูล</b></div>
+        <button class="tab-btn" data-view="dashboard" type="button">
+          <div class="tab-left"><b>📊 สรุปข้อมูล</b></div>
         </button>
 
-    <button class="tab-btn" data-view="customers" type="button">
-        <div class="tab-left"><b>👥 ลูกค้าทั้งหมด</b></div>
+        <button class="tab-btn" data-view="customers" type="button">
+          <div class="tab-left"><b>👥 ลูกค้าทั้งหมด</b></div>
         </button>
 
-    <button class="tab-btn" data-view="history" type="button">
-        <div class="tab-left"><b>🕰️ ประวัติการโทร</b></div>
+        <button class="tab-btn" data-view="history" type="button">
+          <div class="tab-left"><b>🕰️ ประวัติการโทร</b></div>
         </button>
-</div>
+      </div>
+    </div>
+  </div>
 
   <div class="shell">
     <main class="main">
@@ -459,7 +461,7 @@
         <div class="card-head">
           <div>
             <div class="card-title">📝 บันทึกการโทร</div>
-                      </div>
+          </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <div class="badge b-slate">วันที่: <span class="mono" id="planTitleDate">—</span></div>
             <button class="btn" id="btnClearDraft" type="button">🧹 ล้าง Draft</button>
@@ -498,7 +500,6 @@
             <div class="card-head">
               <div>
                 <div class="card-title">🧾 สรุปข้อมูลที่บันทึกวันนี้</div>
-                
               </div>
               <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                 <span class="badge b-slate">วันที่: <span class="mono" id="todaySummaryDate">—</span></span>
@@ -513,16 +514,12 @@
 
               <div class="grid" style="grid-template-columns: 1fr 1fr; gap:10px;">
                 <div class="card" style="box-shadow:none;">
-                  <div class="card-head">
-                    
-                  </div>
+                  <div class="card-head"></div>
                   <div class="card-body" id="todayStats"></div>
                 </div>
 
                 <div class="card" style="box-shadow:none;">
-                  <div class="card-head">
-                    
-                  </div>
+                  <div class="card-head"></div>
                   <div class="card-body" id="todayPromoTop"></div>
                 </div>
               </div>
@@ -923,11 +920,25 @@
       };
     };
 
+    // ✅ normalize ให้เป็น YYYY-MM-DD เสมอ (รองรับทั้ง "YYYY-MM-DD" และ ISO8601 timestamp)
+    const iso10 = (v)=>{
+      const s = String(v || '').trim();
+      return s ? s.slice(0,10) : '';
+    };
+
+    // ✅ daysBetween แบบไม่โดน timezone shift
     function daysBetween(aISO, bISO){
-      const a = new Date(String(aISO||'').slice(0,10));
-      const b = new Date(String(bISO||'').slice(0,10));
-      if(isNaN(a)||isNaN(b)) return null;
-      return Math.floor((b-a)/(1000*60*60*24));
+      const a10 = iso10(aISO);
+      const b10 = iso10(bISO);
+      if(!a10 || !b10) return null;
+
+      const [ay,am,ad] = a10.split('-').map(Number);
+      const [by,bm,bd] = b10.split('-').map(Number);
+      if(!ay||!am||!ad||!by||!bm||!bd) return null;
+
+      const aUTC = Date.UTC(ay, am-1, ad);
+      const bUTC = Date.UTC(by, bm-1, bd);
+      return Math.floor((bUTC - aUTC) / 86400000);
     }
 
     function nowStamp(){
@@ -976,8 +987,6 @@
 
     // ===================== Elements =====================
     const lastSyncText = $('#lastSyncText');
-
-    
 
     // Dashboard
     const kpiCustomers = $('#kpiCustomers');
@@ -1095,6 +1104,7 @@
       dlCustomers.innerHTML = keys.map(k=> `<option value="${esc(k)}"></option>`).join('');
     }
 
+    // ✅ ปรับ sort record ให้คอนซิสต์ แม้ date จะเป็น YYYY-MM-DD หรือ ISO timestamp
     function buildRecordsIndex(){
       recordsByOPD = new Map();
       for(const r of records){
@@ -1104,7 +1114,13 @@
         recordsByOPD.get(opd).push(r);
       }
       for(const [opd, list] of recordsByOPD.entries()){
-        list.sort((a,b)=> String(b.date||'').localeCompare(String(a.date||'')));
+        list.sort((a,b)=>{
+          const ad = iso10(a?.date);
+          const bd = iso10(b?.date);
+          if(bd !== ad) return bd.localeCompare(ad); // วันล่าสุดก่อน
+          // วันเดียวกันค่อยดู timestamp เต็ม (กรณีมีเวลา)
+          return String(b?.date||'').localeCompare(String(a?.date||''));
+        });
       }
     }
 
@@ -1121,9 +1137,13 @@
       }
     }
 
-    // ===================== Scoring & Segmentation =====================
-    const VIP_THRESHOLD = 15000;
-    function calcCustomerAnalytics(opd){
+   // ===================== Scoring & Segmentation =====================
+const VIP_THRESHOLD = 15000;
+
+// ✅ แนะนำให้โทรเฉพาะคนที่ไม่ได้มาเกิน 2 เดือน
+const INACTIVE_DAYS = 60; // ~2 เดือน
+
+function calcCustomerAnalytics(opd){
       const cust = customerByOPD.get(opd) || {opd, name:opd, phone:''};
       const pitchList = pitchesByOPD.get(opd) || [];
       const recList = recordsByOPD.get(opd) || [];
@@ -1132,20 +1152,27 @@
       const totalAmount = paid.reduce((s,r)=> s + Number(r.amount||0), 0);
       const paidVisits = paid.length;
       const avgAmount = paidVisits ? totalAmount/paidVisits : 0;
-      const lastBuyDate = recList[0]?.date ? String(recList[0].date).slice(0,10) : '';
+
+      // ✅ last visit date (ใช้ record ล่าสุด ไม่ว่า amount=0 หรือไม่)
+      const lastBuyDate = recList[0]?.date ? iso10(recList[0].date) : '';
 
       const attempts = pitchList.length;
       const lastPitch = pitchList[0] || null;
-      const lastPitchDate = lastPitch ? String(lastPitch.created_at||lastPitch.date||'').slice(0,10) : '';
+      const lastPitchDate = lastPitch ? iso10(lastPitch.created_at||lastPitch.date||'') : '';
       const lastOutcome = lastPitch?.outcome || '';
       const everInterested = pitchList.some(p=> isInterested(p.outcome));
       const lastInterestedDate = (()=> {
         const f = pitchList.find(p=> isInterested(p.outcome));
-        return f ? String(f.created_at||f.date||'').slice(0,10) : '';
+        return f ? iso10(f.created_at||f.date||'') : '';
       })();
 
       const daysSincePitch = lastPitchDate ? daysBetween(lastPitchDate, todayISO()) : null;
       const daysSinceBuy = lastBuyDate ? daysBetween(lastBuyDate, todayISO()) : null;
+      const cameRecently = (daysSinceBuy !== null && daysSinceBuy < INACTIVE_DAYS);
+
+      // ✅ มาแล้ว "หลังโทรล่าสุด" (รวมวันเดียวกัน) และมาเมื่อวาน/วันนี้ => กด STOP/priority ต่ำ
+      const visitedAfterPitch = !!(lastPitchDate && lastBuyDate && lastBuyDate >= lastPitchDate);
+      const visitedRecently = visitedAfterPitch && (daysSinceBuy !== null && daysSinceBuy <= 1);
 
       let sInterest = 0;
       if(everInterested) sInterest += 18;
@@ -1201,6 +1228,20 @@
       else if(priority >= 50) bucket = 'Warm';
       else bucket = 'Cold';
 
+      // ✅ แบบ B: ถ้ามาแล้วหลังโทรล่าสุด และมาวันนี้/เมื่อวาน => ไม่แนะนำทั้งระบบ
+      if(visitedRecently){
+        priority = 0;
+        segment = 'STOP';
+        bucket = 'Stop';
+        recommend = 'มาแล้ว (ไม่ต้องโทร)';
+      }
+// ✅ RULE ใหม่: ถ้ามาใน 2 เดือนนี้ -> ไม่แนะนำทั้งระบบ (STOP + priority=0)
+if(cameRecently){
+  priority = 0;
+  segment = 'STOP';
+  bucket = 'Stop';
+  recommend = 'มาใน 2 เดือนนี้ (ไม่ต้องโทร)';
+}
       return {
         opd,
         name: cust.name || opd,
@@ -1216,10 +1257,13 @@
         lastInterestedDate,
         daysSincePitch,
         daysSinceBuy,
+          cameRecently,   
         priority,
         segment,
         bucket,
-        recommend
+        recommend,
+        visitedAfterPitch,
+        visitedRecently
       };
     }
 
@@ -1294,12 +1338,13 @@
     }
 
     function renderRecommend(a){
-      if(a.segment==='STOP') return `<span class="badge b-red">พัก/หยุด</span>`;
-      if(a.segment==='VIP') return `<span class="badge b-green">VIP follow-up</span>`;
-      if(a.bucket==='Hot') return `<span class="badge b-green">โทรวันนี้</span>`;
-      if(a.bucket==='Warm') return `<span class="badge b-amber">ตามต่อ</span>`;
-      return `<span class="badge b-slate">ค่อยโทร</span>`;
-    }
+  if(a.cameRecently) return `<span class="badge b-slate">มาใน 2 เดือนนี้</span>`;
+  if(a.segment==='STOP') return `<span class="badge b-red">พัก/หยุด</span>`;
+  if(a.segment==='VIP') return `<span class="badge b-green">VIP follow-up</span>`;
+  if(a.bucket==='Hot') return `<span class="badge b-green">โทรวันนี้</span>`;
+  if(a.bucket==='Warm') return `<span class="badge b-amber">ตามต่อ</span>`;
+  return `<span class="badge b-slate">ค่อยโทร</span>`;
+}
 
     function filterAnalyticsForDash(list){
       const q = (dashQ.value||'').trim().toLowerCase();
@@ -1320,7 +1365,6 @@
     }
 
     function renderDashboard(){
-      
       kpiCustomers.textContent = analytics.length.toString();
       kpiPitches.textContent = pitches.length.toString();
       kpiInterested.textContent = pitches.filter(p=> isInterested(p.outcome)).length.toString();
@@ -1525,12 +1569,10 @@
         const topChannel = Array.from(freqChannel.entries()).sort((a,b)=> b[1]-a[1])[0]?.[0] || '-';
 
         todayKpis.innerHTML =
-          kpiBox('โทรทั้งหมด (วันนี้)', total, ) +
-          kpiBox('สนใจ', interested, ) +
-          kpiBox('ปฏิเสธ/ควรหยุด', hardReject, ) +
-          kpiBox('ไม่รับสาย/ปิดเครื่อง', noPickup, );
-
-                
+          kpiBox('โทรทั้งหมด (วันนี้)', total, '') +
+          kpiBox('สนใจ', interested, '') +
+          kpiBox('ปฏิเสธ/ควรหยุด', hardReject, '') +
+          kpiBox('ไม่รับสาย/ปิดเครื่อง', noPickup, '');
 
         todaySummaryTbody.innerHTML = rows.map(r=>{
           const t = String(r.created_at||'').slice(11,16) || '-';
@@ -1680,7 +1722,6 @@
       const valid = payload.filter(x=> x.opd && x.outcome).length;
       planCount.textContent = payload.length.toString();
       planValid.textContent = valid.toString();
-      
     }
 
     function getPlanRowsPayload(includeInvalid=false){
@@ -1862,7 +1903,7 @@
 
         histPage = 1;
         renderHistoryTablePaged();
-        
+
       }catch{
         historyAll = [];
         histPage = 1;
@@ -1991,8 +2032,6 @@
       showCustomerModal();
     }
 
-   
-
     async function renderCustomerModal(opd){
       const a = analytics.find(x=> x.opd === opd) || calcCustomerAnalytics(opd);
       const pitchList = pitchesByOPD.get(opd) || [];
@@ -2023,7 +2062,7 @@
             <div class="mini">
               <div class="k">ความล่าสุด</div>
               <div class="v mono">${a.lastPitchDate ? fmtShortDate(a.lastPitchDate) : '-'}</div>
-              <div class="s">โทรล่าสุด: ${daysPitch} • ซื้อล่าสุด: ${daysBuy}</div>
+              <div class="s">โทรล่าสุด: ${daysPitch} • มาล่าสุด: ${daysBuy}</div>
             </div>
           </div>
 
@@ -2036,6 +2075,7 @@
                 ${a.phone ? `<span class="badge b-slate">📞 ${esc(a.phone)}</span>` : `<span class="badge b-slate">📞 —</span>`}
                 <span class="badge b-slate">โทรแล้ว <span class="mono">${a.attempts}</span> ครั้ง</span>
                 ${a.everInterested ? `<span class="badge b-green">เคยสนใจ</span>` : `<span class="badge b-slate">ไม่เคยสนใจ</span>`}
+                ${a.visitedRecently ? `<span class="badge b-slate">✅ มาแล้ว (ล่าสุด)</span>` : ``}
               </div>
             </div>
             <div class="card-body">
@@ -2045,15 +2085,17 @@
               <div style="height:10px;"></div>
               <div style="color:#334155; font-weight:900; margin-bottom:6px;">แนะนำ Next step</div>
               <div style="color:#0f172a;">
-                ${a.segment==='STOP'
-                  ? 'พักไว้ก่อน (Hard reject/ครบโควตาแล้ว) เพื่อไม่เสียเวลาทีม'
-                  : a.segment==='VIP'
-                    ? 'ลูกค้ามูลค่าสูง: โทร/ไลน์แบบ personal + offer ที่ตรงรายการซื้อ'
-                    : a.bucket==='Hot'
-                      ? 'โทรวันนี้: สัญญาณดี + recency เหมาะ'
-                      : a.bucket==='Warm'
-                        ? 'ตามต่อ: ยังมีโอกาสปิด'
-                        : 'ค่อยโทร: จัดเป็นคิวรอง'}
+                ${a.visitedRecently
+                  ? 'ลูกค้ามาแล้วหลังโทรล่าสุด (วันนี้/เมื่อวาน) — ไม่ต้องแนะนำให้โทรซ้ำ'
+                  : a.segment==='STOP'
+                    ? 'พักไว้ก่อน (Hard reject/ครบโควตาแล้ว) เพื่อไม่เสียเวลาทีม'
+                    : a.segment==='VIP'
+                      ? 'ลูกค้ามูลค่าสูง: โทร/ไลน์แบบ personal + offer ที่ตรงรายการซื้อ'
+                      : a.bucket==='Hot'
+                        ? 'โทรวันนี้: สัญญาณดี + recency เหมาะ'
+                        : a.bucket==='Warm'
+                          ? 'ตามต่อ: ยังมีโอกาสปิด'
+                          : 'ค่อยโทร: จัดเป็นคิวรอง'}
               </div>
             </div>
           </div>
@@ -2107,7 +2149,6 @@
           </div>
         `;
 
-        // copy promo to plan default
         setTimeout(()=>{
           const btn = $('#btnCopyLastPromo');
           if(!btn) return;
@@ -2141,7 +2182,7 @@
       const topItems = Array.from(itemCounts.entries()).sort((a,b)=> b[1]-a[1]).slice(0,10);
 
       const historyHtml = recList.slice(0, 30).map(r=>{
-        const d = String(r.date||'').slice(0,10);
+        const d = iso10(r.date||'');
         const amount = Number(r.amount||0);
         const items = (r.items||[]).slice(0, 8).map(x=> `• ${esc(x)}`).join('<br>');
         const note = r.note ? `<div style="margin-top:6px; color:#334155; font-size:11px;"><b>หมายเหตุ:</b> ${esc(r.note)}</div>` : '';
@@ -2236,9 +2277,6 @@
         buildPitchesIndex();
         rebuildAnalytics();
 
-        
-        
-        
         lastSyncText.textContent = `Sync: ${nowStamp()}`;
 
         renderDashboard();

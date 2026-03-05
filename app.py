@@ -2527,16 +2527,24 @@ def api_set_appointment_status():
 
         patch = {"status": status}
 
-        res = (
+        # ✅ อัปเดต (ห้าม chain .select/.single)
+        upd = (
             supabase.table("appointments")
             .update(patch)
             .eq("id", appt_id)
-            .select("*")
-            .single()
             .execute()
         )
 
-        return jsonify({"success": True, "row": res.data}), 200
+        # (optional) ถ้าอยากส่ง row กลับไป ก็ query อีกรอบ
+        row = (
+            supabase.table("appointments")
+            .select("*")
+            .eq("id", appt_id)
+            .single()
+            .execute()
+        ).data
+
+        return jsonify({"success": True, "row": row}), 200
 
     except Exception as e:
         app.logger.error(f"Set Appt Status Error: {e}")
