@@ -540,7 +540,44 @@ def appsettings():
         role=session.get("role", ""),
     )
 
+@app.route("/api/update_customer_global", methods=["POST"])
+@login_required
+def update_customer_global():
+    data = request.get_json(force=True)
+    old_opd = normalize_opd(data.get("old_opd"))
+    new_opd = normalize_opd(data.get("new_opd"))
+    name = (data.get("name") or "").strip()
+    phone = (data.get("phone") or "").strip()
 
+    if not old_opd or not new_opd:
+        return jsonify({"error": "missing_opd"}), 400
+
+    try:
+        # ถ้าเปลี่ยนเลข OPD ต้องเช็กก่อนว่าเลขใหม่มีคนใช้ไปหรือยัง
+        if old_opd != new_opd:
+            check = supabase.table("customers").select("opd").eq("opd", new_opd).execute()
+            if check.data:
+                return jsonify({"error": f"เลข OPD ใหม่ ({new_opd}) มีในระบบแล้ว กรุณาใช้เลขอื่น"}), 400
+
+        # 1. อัปเดตในตาราง customers
+        supabase.table("customers").update({
+            "opd": new_opd,
+            "name": name,
+            "phone": phone
+        }).eq("opd", old_opd).execute()
+
+        # 2. อัปเดตในตาราง sales_records ทุกใบ
+        supabase.table("sales_records").update({
+            "opd": new_opd,
+            "name": name,
+            "phone": phone
+        }).eq("opd", old_opd).execute()
+
+        return jsonify({"message": "อัปเดตข้อมูลลูกค้าและบิลย้อนหลังเรียบร้อยแล้ว"})
+    
+    except Exception as e:
+        app.logger.error(f"Global Update Error: {e}")
+        return jsonify({"error": str(e)}), 500
 # =============================================================
 # API — Health
 # =============================================================

@@ -1305,8 +1305,39 @@
         <div id="editDateButtons" class="chips" style="margin-top:12px;"></div>
         <div id="editRecordList" style="margin-top:12px;"></div>
       </div>
+<div class="edit-panel" style="margin-top: 14px;">
+        <div class="section-title">👤 แก้ไขประวัติลูกค้ารวดเดียว (อัปเดตบิลย้อนหลัง)</div>
+        <p class="section-sub">การแก้ไขนี้จะเปลี่ยนเลข OPD, ชื่อย่อ และเบอร์โทรศัพท์ ของลูกค้าในทุกๆ การบันทึกที่ผ่านมาให้ตรงกันทั้งหมด</p>
+        
+        <div class="field-row">
+          <label>ดึงข้อมูลจาก OPD เดิม</label>
+          <div class="row nowrap">
+            <input type="text" id="globalEditOldOPD" class="grow" placeholder="เช่น 0007" inputmode="numeric" pattern="\d{4}" maxlength="4" oninput="digitsOnly(this)">
+            <button type="button" class="btn btn-outline" onclick="loadCustomerForGlobalEdit()">ดึงข้อมูล</button>
+          </div>
+        </div>
 
+        <div id="globalEditForm" style="display:none; margin-top:14px; padding-top:14px; border-top:1px dashed var(--line);">
+          <div class="field-row">
+            <label>เลข OPD (เลขใหม่)</label>
+            <input type="text" id="globalEditNewOPD" placeholder="เลข 4 หลัก" inputmode="numeric" pattern="\d{4}" maxlength="4" oninput="digitsOnly(this)">
+          </div>
+          <div class="field-row">
+            <label>ชื่อย่อ</label>
+            <input type="text" id="globalEditName">
+          </div>
+          <div class="field-row">
+            <label>เบอร์โทรศัพท์</label>
+            <input type="tel" id="globalEditPhone">
+          </div>
+          <div class="center-actions">
+            <button type="button" class="btn btn-primary" onclick="saveGlobalCustomerEdit()">บันทึกการแก้ไขทุกรายการ</button>
+            <button type="button" class="btn btn-ghost" onclick="cancelGlobalEdit()">ยกเลิก</button>
+          </div>
+        </div>
+      </div>
       <div class="diag-panel">
+        
         <div class="diag-title">🔎 ค้นหาข้อมูลที่อาจไม่เรียบร้อย <span id="diag-count"></span></div>
         <div class="chips" style="gap:8px; flex-wrap:wrap;">
           <button class="chip-btn" onclick="runDiag('missingPhone')">ไม่มีเบอร์โทร</button>
@@ -3469,85 +3500,25 @@ async function fetchWithTimeout(url, options={}, ms=10000){
       const cols = headersByType[type] || ['ข้อมูล'];
       head.innerHTML = cols.map(c=>`<th>${c}</th>`).join('');
 
+      // เปลี่ยนปุ่มทุกอันให้ไปเรียก loadGlobalEditFromDiag แทน เพื่อแก้ทุกบิลรวดเดียว
       body.innerHTML = rows.map(r=>{
         switch(type){
-          case 'missingPhone': {
-            return `<tr>
-              <td>${safe(r.name)}</td>
-              <td>${safe(r.opd)}</td>
-              <td style="color:#b91c1c">-</td>
-              <td>${formatDate((r.date||'').slice(0,10))}</td>
-              <td><button class="btn btn-outline" onclick="editFromDiag('${r.opd}','${r.id||''}')">แก้ไขรายการ</button></td>
-            </tr>`;
-          }
-          case 'nameDifferentOPD': {
-            const opds = (r.opds||[]).map(o=>`<button class="btn btn-outline" onclick="goEditByOPD('${o}')">OPD ${o}</button>`).join(' ');
-            return `<tr>
-              <td>${safe(r.name)}</td>
-              <td>${safe((r.opds||[]).join(', '))}</td>
-              <td>${safe((r.phones||[]).join(', ')||'-')}</td>
-              <td>${r.count}</td>
-              <td>${opds||'-'}</td>
-            </tr>`;
-          }
-          case 'phoneDifferentName': {
-            const opds = (r.opds||[]).map(o=>`<button class="btn btn-outline" onclick="goEditByOPD('${o}')">OPD ${o}</button>`).join(' ');
-            return `<tr>
-              <td>${safe(r.phone)}</td>
-              <td>${safe((r.names||[]).join(', '))}</td>
-              <td>${safe((r.opds||[]).join(', '))}</td>
-              <td>${r.count}</td>
-              <td>${opds||'-'}</td>
-            </tr>`;
-          }
-          case 'opdDifferentNamePhone': {
-            return `<tr>
-              <td>${safe(r.opd)}</td>
-              <td>${safe((r.names||[]).join(', '))}</td>
-              <td>${safe((r.phones||[]).join(', '))}</td>
-              <td>${r.count}</td>
-              <td><button class="btn btn-outline" onclick="goEditByOPD('${r.opd}')">แก้ไข OPD ${safe(r.opd)}</button></td>
-            </tr>`;
-          }
-          case 'invalidPhone': {
-            return `<tr>
-              <td>${safe(r.name)}</td>
-              <td>${safe(r.opd)}</td>
-              <td style="color:#b91c1c">${safe(r.phone)}</td>
-              <td>${formatDate((r.date||'').slice(0,10))}</td>
-              <td><button class="btn btn-outline" onclick="editFromDiag('${r.opd}','${r.id||''}')">แก้ไขรายการ</button></td>
-            </tr>`;
-          }
-          case 'invalidOPD': {
-            return `<tr>
-              <td>${safe(r.name)}</td>
-              <td style="color:#b91c1c">${safe(r.opd)}</td>
-              <td>${safe(r.norm)}</td>
-              <td>${safe(r.phone)}</td>
-              <td>${formatDate((r.date||'').slice(0,10))}</td>
-              <td><button class="btn btn-outline" onclick="goEditByOPD('${r.norm}')">ลองเปิด OPD ${safe(r.norm)}</button></td>
-            </tr>`;
-          }
-          case 'splitGroups': {
-            return `<tr>
-              <td>${safe(r.name)}</td>
-              <td>${safe(r.opd)}</td>
-              <td>${safe(r.phone)}</td>
-              <td>${safe((r.variants||[]).join(' | '))}</td>
-              <td>${r.count}</td>
-              <td><button class="btn btn-outline" onclick="goEditByOPD('${r.opd}')">แก้ไข OPD ${safe(r.opd)}</button></td>
-            </tr>`;
-          }
-          case 'sameNameMultiPhones': {
-            const opds = (r.opds||[]).map(o=>`<button class="btn btn-outline" onclick="goEditByOPD('${o}')">OPD ${o}</button>`).join(' ');
-            return `<tr>
-              <td>${safe(r.name)}</td>
-              <td>${safe((r.phones||[]).map(p=>p||'(ว่าง)').join(', '))}</td>
-              <td>${safe((r.opds||[]).join(', '))}</td>
-              <td>${r.count}</td>
-              <td>${opds||'-'}</td>
-            </tr>`;
-          }
+          case 'missingPhone': 
+            return `<tr><td>${safe(r.name)}</td><td>${safe(r.opd)}</td><td style="color:#b91c1c">-</td><td>${formatDate((r.date||'').slice(0,10))}</td><td><button class="btn btn-primary" onclick="loadGlobalEditFromDiag('${r.opd}')">แก้ทุกบิล</button></td></tr>`;
+          case 'nameDifferentOPD': 
+            return `<tr><td>${safe(r.name)}</td><td>${safe((r.opds||[]).join(', '))}</td><td>${safe((r.phones||[]).join(', ')||'-')}</td><td>${r.count}</td><td>${(r.opds||[]).map(o=>`<button class="btn btn-primary" onclick="loadGlobalEditFromDiag('${o}')">แก้ OPD ${o}</button>`).join(' ') ||'-'}</td></tr>`;
+          case 'phoneDifferentName': 
+            return `<tr><td>${safe(r.phone)}</td><td>${safe((r.names||[]).join(', '))}</td><td>${safe((r.opds||[]).join(', '))}</td><td>${r.count}</td><td>${(r.opds||[]).map(o=>`<button class="btn btn-primary" onclick="loadGlobalEditFromDiag('${o}')">แก้ OPD ${o}</button>`).join(' ')||'-'}</td></tr>`;
+          case 'opdDifferentNamePhone': 
+            return `<tr><td>${safe(r.opd)}</td><td>${safe((r.names||[]).join(', '))}</td><td>${safe((r.phones||[]).join(', '))}</td><td>${r.count}</td><td><button class="btn btn-primary" onclick="loadGlobalEditFromDiag('${r.opd}')">แก้ OPD ${safe(r.opd)}</button></td></tr>`;
+          case 'invalidPhone': 
+            return `<tr><td>${safe(r.name)}</td><td>${safe(r.opd)}</td><td style="color:#b91c1c">${safe(r.phone)}</td><td>${formatDate((r.date||'').slice(0,10))}</td><td><button class="btn btn-primary" onclick="loadGlobalEditFromDiag('${r.opd}')">แก้ทุกบิล</button></td></tr>`;
+          case 'invalidOPD': 
+            return `<tr><td>${safe(r.name)}</td><td style="color:#b91c1c">${safe(r.opd)}</td><td>${safe(r.norm)}</td><td>${safe(r.phone)}</td><td>${formatDate((r.date||'').slice(0,10))}</td><td><button class="btn btn-primary" onclick="loadGlobalEditFromDiag('${r.norm}')">แก้เป็น OPD ${safe(r.norm)}</button></td></tr>`;
+          case 'splitGroups': 
+            return `<tr><td>${safe(r.name)}</td><td>${safe(r.opd)}</td><td>${safe(r.phone)}</td><td>${safe((r.variants||[]).join(' | '))}</td><td>${r.count}</td><td><button class="btn btn-primary" onclick="loadGlobalEditFromDiag('${r.opd}')">แก้ OPD ${safe(r.opd)}</button></td></tr>`;
+          case 'sameNameMultiPhones': 
+            return `<tr><td>${safe(r.name)}</td><td>${safe((r.phones||[]).map(p=>p||'(ว่าง)').join(', '))}</td><td>${safe((r.opds||[]).join(', '))}</td><td>${r.count}</td><td>${(r.opds||[]).map(o=>`<button class="btn btn-primary" onclick="loadGlobalEditFromDiag('${o}')">แก้ OPD ${o}</button>`).join(' ')||'-'}</td></tr>`;
           default: return `<tr><td>—</td></tr>`;
         }
       }).join('');
@@ -3555,6 +3526,27 @@ async function fetchWithTimeout(url, options={}, ms=10000){
       document.getElementById('diag-results').style.display = 'table';
       counter.textContent = rows.length ? `พบ ${rows.length} เคส` : 'ไม่พบความผิดปกติ';
       document.getElementById('diag-results').scrollIntoView({behavior:'smooth', block:'start'});
+    }
+
+    // ฟังก์ชันใหม่: ดึง OPD จากตารางตรวจสุขภาพ มาใส่กล่อง "แก้รวดเดียว"
+    function loadGlobalEditFromDiag(opd) {
+      if(!opd) return;
+      
+      // สลับมาแท็บ 2
+      const btnTab2 = document.querySelectorAll('.tab-btn')[1];
+      switchTab('tab-opd', btnTab2);
+
+      // เอารหัส OPD ไปใส่ในช่องดึงข้อมูล แล้วสั่งดึงข้อมูลเลย
+      const oldOpdInput = document.getElementById('globalEditOldOPD');
+      if(oldOpdInput) {
+        oldOpdInput.value = opd;
+        loadCustomerForGlobalEdit();
+        
+        // เลื่อนหน้าจอไปที่กล่องแก้ไข
+        setTimeout(() => {
+          oldOpdInput.scrollIntoView({behavior: 'smooth', block: 'center'});
+        }, 300);
+      }
     }
 
     function goEditByOPD(opd){
@@ -5383,7 +5375,80 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+// =========================
+// ฟังก์ชันแก้ไขประวัติลูกค้ารวดเดียว (Global Update)
+// =========================
+function loadCustomerForGlobalEdit() {
+      const oldOpd = (document.getElementById('globalEditOldOPD').value || '').trim();
+      if(!isValidOPD(oldOpd)) return alert('กรุณากรอก OPD 4 หลักให้ครบถ้วน');
 
+      const c = customerMap[oldOpd];
+      if(c) {
+        document.getElementById('globalEditNewOPD').value = oldOpd;
+        document.getElementById('globalEditName').value = c.name || '';
+        document.getElementById('globalEditPhone').value = c.phone || '';
+        document.getElementById('globalEditForm').style.display = 'block';
+      } else {
+        alert('ไม่พบข้อมูลลูกค้า OPD นี้ในระบบ');
+        document.getElementById('globalEditForm').style.display = 'none';
+      }
+    }
+
+    function cancelGlobalEdit() {
+      document.getElementById('globalEditOldOPD').value = '';
+      document.getElementById('globalEditNewOPD').value = '';
+      document.getElementById('globalEditName').value = '';
+      document.getElementById('globalEditPhone').value = '';
+      document.getElementById('globalEditForm').style.display = 'none';
+    }
+
+    async function saveGlobalCustomerEdit() {
+      const old_opd = (document.getElementById('globalEditOldOPD').value || '').trim();
+      const new_opd = (document.getElementById('globalEditNewOPD').value || '').trim();
+      const name = (document.getElementById('globalEditName').value || '').trim();
+      const phone = (document.getElementById('globalEditPhone').value || '').trim();
+
+      if(!old_opd || !new_opd || !name) return alert('กรุณากรอก OPD และชื่อให้ครบถ้วน');
+      if(new_opd.length !== 4) return alert('เลข OPD ใหม่ต้องมี 4 หลัก');
+
+      let msg = `ยืนยันการแก้ไขข้อมูล OPD ${old_opd}\n`;
+      if(old_opd !== new_opd) msg += `เปลี่ยนเลข OPD เป็น: ${new_opd}\n`;
+      msg += `ชื่อย่อ: ${name}\nเบอร์: ${phone}\n\nระบบจะอัปเดตในประวัติหลักและบิลย้อนหลังทั้งหมด ยืนยันหรือไม่`;
+
+      if(!confirm(msg)) return;
+
+      try {
+        const res = await fetch('/api/update_customer_global', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ old_opd, new_opd, name, phone })
+        });
+
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.error || 'เกิดข้อผิดพลาด');
+
+        alert(`✅ ${data.message}`);
+
+        // อัปเดตข้อมูลในหน้าเว็บ
+        const updatedData = { ...customerMap[old_opd], name: name, phone: phone };
+        if(old_opd !== new_opd) {
+           customerMap[new_opd] = updatedData;
+           delete customerMap[old_opd];
+        } else {
+           customerMap[old_opd] = updatedData;
+        }
+
+        cancelGlobalEdit();
+
+        if(document.getElementById('editOPD').value === old_opd) {
+          document.getElementById('editOPD').value = new_opd;
+          loadDatesByOPD();
+        }
+      } catch(e) {
+        console.error(e);
+        alert('❌ บันทึกไม่สำเร็จ: ' + e.message);
+      }
+    }
   </script>
 
 
