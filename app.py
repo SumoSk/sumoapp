@@ -540,7 +540,7 @@ def appsettings():
         role=session.get("role", ""),
     )
 
-@app.route("/tax2")
+@app.route("/Tax2")
 @login_required
 def tax2_page():
     return render_template("tax2.html", username=session["username"])
