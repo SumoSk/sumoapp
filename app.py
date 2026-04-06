@@ -543,7 +543,7 @@ def appsettings():
 @app.route("/Tax2")
 @login_required
 def tax2_page():
-    return render_template("tax2.html", username=session["username"])
+    return render_template("Tax2.html", username=session["username"])
 
 
 @app.route("/api/update_customer_global", methods=["POST"])
