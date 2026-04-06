@@ -489,11 +489,31 @@
   const fmtShortDate = (d) => { if(!d)return'-'; const date=new Date(d); return `${date.getDate()}/${date.getMonth()+1}/${String(date.getFullYear()).slice(-2)}`; };
   const makeCustomerKey = (opd, name, phone) => `${opd}|${name}|${phone}`;
 
-  let viewingDate = new Date();
+  function startOfMonth(d) {
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  }
+
+  function getLatestSalesMonth(records = []) {
+    const latestDate = records
+      .map(r => (r.date || '').slice(0, 10))
+      .filter(Boolean)
+      .sort()
+      .at(-1);
+
+    return latestDate ? startOfMonth(new Date(latestDate)) : startOfMonth(new Date());
+  }
+
+  function hasMonthData(records, date) {
+    const prefix = formatYM(date);
+    return records.some(r => (r.date || '').startsWith(prefix));
+  }
+
+  let viewingDate = startOfMonth(new Date());
   let allSalesRecords = [];
   let allCustomerRecords = [];
   let fullCustomerList = [];
   let customerProfileMap = {};
+  let hasInitializedViewMonth = false;
 
   async function loadCustomerProfiles() {
     try {
@@ -521,34 +541,37 @@
   }
 
   function changeMonth(delta) {
-    viewingDate.setMonth(viewingDate.getMonth() + delta);
+    viewingDate = new Date(
+      viewingDate.getFullYear(),
+      viewingDate.getMonth() + delta,
+      1
+    );
+
     monthRange.enabled = false;
-    fetchDataAndUpdate();
+    updateDashboard(allSalesRecords);
     refreshCustomerList();
   }
 
-  function fetchAllCustomerRecords() {
-    return fetch("/api/sales")
-      .then(res => res.json())
-      .then(records => {
-        allCustomerRecords = records;
-      })
-      .catch(err => { console.error("❌ โหลดข้อมูลทั้งหมดไม่สำเร็จ:", err); });
-  }
+  async function fetchDataAndUpdate() {
+    try {
+      if (!allSalesRecords.length) {
+        const records = await fetch("/api/sales").then(res => res.json());
 
-  function fetchDataAndUpdate() {
-    if (allSalesRecords.length > 0 && allCustomerRecords.length > 0) {
+        allSalesRecords = records;
+        allCustomerRecords = records;
+
+        if (!hasInitializedViewMonth) {
+          viewingDate = hasMonthData(records, viewingDate)
+            ? startOfMonth(viewingDate)
+            : getLatestSalesMonth(records);
+
+          hasInitializedViewMonth = true;
+        }
+      }
+
       updateDashboard(allSalesRecords);
-    } else {
-      Promise.all([
-        fetch("/api/sales").then(res => res.json()),
-        fetchAllCustomerRecords()
-      ]).then(([salesRecords]) => {
-        allSalesRecords = salesRecords;
-        updateDashboard(allSalesRecords);
-      }).catch(err => {
-        console.error("❌ โหลดข้อมูลไม่สำเร็จ:", err);
-      });
+    } catch (err) {
+      console.error("❌ โหลดข้อมูลไม่สำเร็จ:", err);
     }
   }
 
@@ -1494,9 +1517,8 @@
   }
 
   // เริ่มโหลด
-  document.addEventListener('DOMContentLoaded', function() {
-    fetchDataAndUpdate();
-    fetchAllCustomerRecords();
+  document.addEventListener('DOMContentLoaded', async function() {
+    await fetchDataAndUpdate();
     loadCustomerProfiles();
   });
 

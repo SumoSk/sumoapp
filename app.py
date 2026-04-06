@@ -540,6 +540,12 @@ def appsettings():
         role=session.get("role", ""),
     )
 
+@app.route("/tax2")
+@login_required
+def tax2_page():
+    return render_template("tax2.html", username=session["username"])
+
+
 @app.route("/api/update_customer_global", methods=["POST"])
 @login_required
 def update_customer_global():
@@ -2940,3 +2946,193 @@ def api_idcard_extract():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+    # =============================================================
+# TAX DISPLAY ADDITIONS (เพิ่มใน app.py)
+# สำหรับคอลัมน์ sales_records.tax_display = 'show' / 'noshow'
+# อ้างอิงจาก app.py เดิมที่มี /api/sales ใช้งาน select('*') อยู่แล้ว
+# ดังนั้น /api/sales จะส่ง tax_display กลับมาให้อัตโนมัติหลังเพิ่มคอลัมน์ใน Supabase
+# =============================================================
+
+# -----------------------------
+# Helper: normalize tax_display
+# วางไว้แถว Helpers อื่น ๆ ใน app.py
+# -----------------------------
+def _normalize_tax_display(v: Any) -> str:
+    s = str(v or "").strip().lower()
+    return s if s in {"show", "noshow"} else "show"
+
+
+# -----------------------------
+# API: save tax_display แบบหลายบิลพร้อมกัน
+# ใช้ตอนหน้าเว็บกดปุ่ม "บันทึก"
+# รับ payload แบบ:
+# {
+#   "updates": [
+#     {"id": 1, "tax_display": "show"},
+#     {"id": 2, "tax_display": "noshow"}
+#   ]
+# }
+# -----------------------------
+@app.route("/api/save_tax_display", methods=["POST"])
+@login_required
+def api_save_tax_display():
+    try:
+        data = request.get_json(silent=True) or {}
+        updates = data.get("updates") or []
+
+        if not isinstance(updates, list) or not updates:
+            return jsonify({"error": "updates_required"}), 400
+
+        updated_count = 0
+        errors = []
+
+        for idx, row in enumerate(updates):
+            if not isinstance(row, dict):
+                errors.append({"index": idx, "error": "invalid_row"})
+                continue
+
+            record_id = row.get("id")
+            if not record_id:
+                errors.append({"index": idx, "error": "missing_id"})
+                continue
+
+            tax_display = _normalize_tax_display(row.get("tax_display"))
+
+            try:
+                res = (
+                    supabase.table("sales_records")
+                    .update({"tax_display": tax_display})
+                    .eq("id", record_id)
+                    .execute()
+                )
+                if res.data:
+                    updated_count += 1
+                else:
+                    errors.append({"index": idx, "id": record_id, "error": "not_found_or_not_updated"})
+            except Exception as inner_e:
+                errors.append({"index": idx, "id": record_id, "error": str(inner_e)})
+
+        return jsonify({
+            "success": True,
+            "updated": updated_count,
+            "errors": errors,
+        }), 200
+
+    except Exception as e:
+        app.logger.error(f"/api/save_tax_display error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# -----------------------------
+# API: เลือกทั้งหมด / ยกเลิกทั้งหมด ตามช่วงวันที่หรือเดือน
+# ใช้กับปุ่ม "เลือกทั้งหมด" หรือ "ยกเลิกทั้งหมด"
+# รับ payload ได้ 2 แบบ
+# แบบเดือนเดียว:
+# {
+#   "month": "2026-04",
+#   "tax_display": "show"
+# }
+#
+# แบบช่วงวันที่:
+# {
+#   "start_date": "2026-04-01",
+#   "end_date": "2026-04-30",
+#   "tax_display": "noshow"
+# }
+#
+# optional: ใส่ opd หรือ date เพิ่มได้ ถ้าจะกรองเฉพาะบางกลุ่ม
+# -----------------------------
+@app.route("/api/set_all_tax_display", methods=["POST"])
+@login_required
+def api_set_all_tax_display():
+    try:
+        data = request.get_json(silent=True) or {}
+        tax_display = _normalize_tax_display(data.get("tax_display"))
+
+        month = (data.get("month") or "").strip()
+        date = safe_date_str(data.get("date")) if data.get("date") else ""
+        start_date = safe_date_str(data.get("start_date")) if data.get("start_date") else ""
+        end_date = safe_date_str(data.get("end_date")) if data.get("end_date") else ""
+        opd = normalize_opd(data.get("opd")) if data.get("opd") else ""
+
+        # ถ้าส่ง month มา แต่ไม่ได้ส่ง start/end ให้แปลงเป็นช่วงวันของเดือนนั้น
+        if month and not start_date and not end_date:
+            m = re.match(r"^(\d{4})-(\d{2})$", month)
+            if not m:
+                return jsonify({"error": "invalid_month_format_use_YYYY_MM"}), 400
+
+            y = int(m.group(1))
+            mo = int(m.group(2))
+            if mo < 1 or mo > 12:
+                return jsonify({"error": "invalid_month_value"}), 400
+
+            start_date = f"{y}-{str(mo).zfill(2)}-01"
+            if mo == 12:
+                next_month = datetime(y + 1, 1, 1)
+            else:
+                next_month = datetime(y, mo + 1, 1)
+            end_date = (next_month - timedelta(days=1)).strftime("%Y-%m-%d")
+
+        q = supabase.table("sales_records").update({"tax_display": tax_display})
+
+        has_filter = False
+        if opd:
+            q = q.eq("opd", opd)
+            has_filter = True
+        if date:
+            q = q.eq("date", date)
+            has_filter = True
+        if start_date:
+            q = q.gte("date", start_date)
+            has_filter = True
+        if end_date:
+            q = q.lte("date", end_date)
+            has_filter = True
+
+        if not has_filter:
+            return jsonify({"error": "at_least_one_filter_required"}), 400
+
+        res = q.execute()
+        affected = len(res.data or [])
+
+        return jsonify({
+            "success": True,
+            "tax_display": tax_display,
+            "affected": affected,
+            "month": month or None,
+            "date": date or None,
+            "start_date": start_date or None,
+            "end_date": end_date or None,
+            "opd": opd or None,
+        }), 200
+
+    except Exception as e:
+        app.logger.error(f"/api/set_all_tax_display error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# -----------------------------
+# OPTIONAL (แนะนำ): ถ้าอยากให้ของเก่าที่เป็น NULL ถูกอ่านเป็น show ชัด ๆ
+# แก้ใน /api/sales ตอน loop for r in all_data:
+# -----------------------------
+# เพิ่มบรรทัดนี้ใน for r in all_data:
+#     r["tax_display"] = _normalize_tax_display(r.get("tax_display"))
+#
+# ตัวอย่างบริเวณใน /api/sales:
+#
+#        for r in all_data:
+#            r["opd"] = normalize_opd(r.get("opd"))
+#            r["tax_display"] = _normalize_tax_display(r.get("tax_display"))
+#
+#            raw_item = r.get("item")
+#            if raw_item is None and r.get("items") is not None:
+#                raw_item = r.get("items")
+#
+#            normalized_item_list = _ensure_item_list(raw_item)
+#            r["item"] = normalized_item_list
+#            r["items"] = _coerce_items_to_text_list(normalized_item_list)
+#
+# แบบนี้ frontend จะได้ค่า show/noshow แน่นอนเสมอ
+# -----------------------------
+

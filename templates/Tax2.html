@@ -26,6 +26,11 @@
       --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
       --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
       --radius: 16px;
+      --danger: #c62828;
+      --muted: #9ca3af;
+      --line: #e5e7eb;
+      --selected-bg: #f0fdf4;
+      --excluded-bg: #f9fafb;
     }
 
     html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
@@ -37,14 +42,14 @@
     h2{ text-align:center; color:var(--primary); font-size:18px; margin:0 0 15px; font-weight: 600; }
 
     .container{
-      max-width:1000px; margin:20px auto;
+      max-width:1100px; margin:20px auto;
       background:var(--white); border-radius:var(--radius);
       padding:20px; box-shadow:var(--shadow-md);
     }
 
     .month-nav{
       display:flex; gap:8px; align-items:center; justify-content:center;
-      margin-bottom:20px; flex-wrap:wrap;
+      margin-bottom:14px; flex-wrap:wrap;
     }
     .month-btn{
       background:var(--white); color:var(--text-main); border:1px solid #e5e7eb;
@@ -63,6 +68,43 @@
       background:#e0f2f1; border-radius:20px; font-weight:600;
     }
 
+    .tax-toolbar{
+      background:#f8fafc; border:1px solid var(--line); border-radius:14px;
+      padding:12px; margin-bottom:14px;
+    }
+    .tax-toolbar-row{
+      display:flex; gap:8px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+    }
+    .tax-toolbar-actions{
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+    }
+    .tax-mini-btn{
+      border:none; background:var(--primary); color:#fff; padding:8px 12px; border-radius:10px;
+      cursor:pointer; font-size:12px; font-weight:500; box-shadow: var(--shadow-sm);
+    }
+    .tax-mini-btn.secondary{ background:#fff; color:#374151; border:1px solid var(--line); }
+    .tax-mini-btn.warn{ background:#ef6c00; }
+    .tax-mini-btn.danger{ background:#c62828; }
+    .tax-mini-btn:disabled{ opacity:.55; cursor:not-allowed; }
+
+    .summary-grid{
+      display:grid; grid-template-columns:repeat(4, minmax(150px, 1fr)); gap:10px; margin-top:10px;
+    }
+    .summary-card{
+      background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px;
+    }
+    .summary-card .label{ color:var(--text-light); font-size:11px; }
+    .summary-card .value{ font-size:18px; font-weight:700; color:var(--primary-dark); margin-top:4px; }
+    .summary-card .sub{ color:#6b7280; font-size:11px; margin-top:2px; }
+
+    .view-toggle{
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    }
+    .view-toggle label{
+      display:flex; align-items:center; gap:6px; font-size:12px; cursor:pointer;
+      background:#fff; border:1px solid var(--line); padding:8px 10px; border-radius:10px;
+    }
+
     table{
       width:100%; border-collapse:collapse; margin-top:15px;
       font-size:11.5px; table-layout:auto;
@@ -76,10 +118,13 @@
       border-bottom:1px solid #f1f5f9; border-left:none; border-right:none;
     }
     td { border:none; border-bottom:1px solid #f0f0f0; }
-    thead th:nth-child(4), tbody td:nth-child(4){ width:45%; }
+    thead th:nth-child(5), tbody td:nth-child(5){ width:40%; }
 
     tbody tr{ transition: background 0.1s; }
     tbody tr:hover{ background: #f9fafb; }
+    tr.sale-row.is-noshow{ background: var(--excluded-bg); opacity: 0.78; }
+    tr.sale-row.is-show{ background: #fff; }
+    tr.sale-row.is-dirty{ outline: 2px solid #fde68a; outline-offset:-2px; }
 
     .day-header td{
       background: #e0f2f1; color: var(--primary-dark);
@@ -108,6 +153,19 @@
     .btn:disabled{
       opacity:.5; cursor:not-allowed; box-shadow:none; background:#9ca3af;
     }
+
+    .status-chip{
+      display:inline-flex; align-items:center; gap:4px; padding:4px 8px; border-radius:999px;
+      font-size:10px; font-weight:600;
+    }
+    .status-chip.show{ background:#dcfce7; color:#166534; }
+    .status-chip.noshow{ background:#fee2e2; color:#991b1b; }
+
+    .row-tax-toggle{
+      display:flex; flex-direction:column; align-items:flex-start; gap:4px;
+    }
+    .row-tax-toggle input[type="checkbox"]{ width:16px; height:16px; cursor:pointer; }
+    .row-tax-toggle .small{ font-size:10px; color:#6b7280; }
 
     .search-wrap{
       position:fixed; bottom:130px; left:50%; transform:translateX(-50%);
@@ -142,6 +200,10 @@
     body{ font-size: calc(12px * var(--shrink)); }
     * { font-family: 'Prompt', sans-serif !important; -webkit-font-smoothing: antialiased; }
 
+    @media (max-width: 900px){
+      .summary-grid{ grid-template-columns:repeat(2, minmax(140px,1fr)); }
+    }
+
     @media (max-width: 600px) {
       :root { --shrink: 0.6; }
       body { padding: 4px; }
@@ -149,17 +211,15 @@
       h2 { font-size: 16px; margin-bottom: 10px; }
       .month-btn { padding: 4px 10px; font-size: 10px; }
       .month-nav { gap: 5px; margin-bottom: 10px; }
+      .tax-toolbar{ padding:10px; }
+      .summary-grid{ grid-template-columns:1fr 1fr; gap:8px; }
       table { margin-top: 10px; }
       th, td { padding: 6px 3px; font-size: 11px; }
-      thead th:nth-child(1) { width: 20px; }
       .day-header td { padding: 4px 8px; font-size: 11.5px; }
     }
 
     thead { display: none !important; }
 
-    /* ===============================
-       Customer Profile Modal
-       =============================== */
     #customer-modal{
       display:none; position:fixed; inset:0;
       background-color:rgba(0,0,0,0.5); z-index:9999;
@@ -235,134 +295,37 @@
       .profile-info h3{ font-size:16px; }
     }
 
-    /* ===============================
-       PDF Print Area (Landscape / Readable)
-       =============================== */
     #pdf-print-area{
-      position: fixed;
-      left: -99999px;
-      top: 0;
-      width: 1123px;
-      background: #fff;
-      color: #1f2937;
-      padding: 0;
-      box-sizing: border-box;
-      z-index: -1;
+      position: fixed; left: -99999px; top: 0; width: 1123px;
+      background: #fff; color: #1f2937; padding: 0; box-sizing: border-box; z-index: -1;
     }
-
-    .pdf-page{
-      width: 1123px;
-      min-height: 794px;
-      background: #fff;
-      box-sizing: border-box;
-      page-break-after: always;
-      padding: 22px 26px;
-    }
+    .pdf-page{ width: 1123px; min-height: 794px; background: #fff; box-sizing: border-box; page-break-after: always; padding: 22px 26px; }
     .pdf-page:last-child{ page-break-after: auto; }
-
-    .pdf-header{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      margin-bottom: 14px;
-      gap: 16px;
-    }
+    .pdf-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 14px; gap: 16px; }
     .pdf-header-left{ flex:1; }
-    .pdf-title{
-      font-size: 30px;
-      font-weight: 700;
-      color: #00695c;
-      margin-bottom: 4px;
-      line-height: 1.2;
-    }
-    .pdf-subtitle{
-      font-size: 15px;
-      color: #6b7280;
-    }
-    .pdf-header-right{
-      text-align:right;
-      min-width: 260px;
-    }
-    .pdf-count,
-    .pdf-total,
-    .pdf-page-no{
-      font-size: 14px;
-      color: #374151;
-      margin-bottom: 4px;
-    }
-    .pdf-total strong{
-      color:#b45309;
-      font-size: 18px;
-    }
-
-    .pdf-table{
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-      font-size: 14px;
-    }
-    .pdf-table thead{
-      display: table-header-group !important;
-    }
-    .pdf-table th{
-      background: #00897b;
-      color: #fff;
-      font-weight: 700;
-      text-align: center;
-      padding: 10px 8px;
-      border: 2px solid #d1d5db;
-      position: static !important;
-      line-height: 1.3;
-    }
-    .pdf-table td{
-      border: 1px solid #d1d5db;
-      padding: 8px 10px;
-      vertical-align: top;
-      word-break: break-word;
-      white-space: pre-wrap;
-      line-height: 1.45;
-    }
-    .pdf-table tbody tr:nth-child(even){
-      background: #f9fafb;
-    }
-    .pdf-table tbody tr:hover{
-      background: transparent;
-    }
-    .pdf-num,
-    .pdf-date{
-      text-align:center;
-    }
-    .pdf-amount,
-    .pdf-running{
-      text-align:right;
-      font-weight:600;
-    }
-    .pdf-name{
-      font-weight:600;
-    }
-    .pdf-items{
-      font-size: 13px;
-      line-height: 1.5;
-    }
-    .pdf-footer{
-      margin-top: 10px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      font-size: 12px;
-      color:#6b7280;
-    }
+    .pdf-title{ font-size: 30px; font-weight: 700; color: #00695c; margin-bottom: 4px; line-height: 1.2; }
+    .pdf-subtitle{ font-size: 15px; color: #6b7280; }
+    .pdf-header-right{ text-align:right; min-width: 260px; }
+    .pdf-count,.pdf-total,.pdf-page-no{ font-size: 14px; color: #374151; margin-bottom: 4px; }
+    .pdf-total strong{ color:#b45309; font-size: 18px; }
+    .pdf-table{ width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; }
+    .pdf-table thead{ display: table-header-group !important; }
+    .pdf-table th{ background: #00897b; color: #fff; font-weight: 700; text-align: center; padding: 10px 8px; border: 2px solid #d1d5db; position: static !important; line-height: 1.3; }
+    .pdf-table td{ border: 1px solid #d1d5db; padding: 8px 10px; vertical-align: top; word-break: break-word; white-space: pre-wrap; line-height: 1.45; }
+    .pdf-table tbody tr:nth-child(even){ background: #f9fafb; }
+    .pdf-table tbody tr:hover{ background: transparent; }
+    .pdf-num,.pdf-date{ text-align:center; }
+    .pdf-amount,.pdf-running{ text-align:right; font-weight:600; }
+    .pdf-name{ font-weight:600; }
+    .pdf-items{ font-size: 13px; line-height: 1.5; }
+    .pdf-footer{ margin-top: 10px; display:flex; justify-content:space-between; align-items:center; font-size: 12px; color:#6b7280; }
   </style>
 </head>
 <body>
   {% include 'floating_menu.html' %}
 
   <div class="container">
-    <h2>
-  <a href="/tax2" style="color:inherit; text-decoration:none; cursor:pointer;">
-    สรุปยอดขายประจำเดือน
-  </a>
-</h2>
+    <h2>สรุปยอดขายประจำเดือน</h2>
 
     <div class="month-nav">
       <button id="btnPrev" class="month-btn" type="button" title="เดือนก่อนหน้า">← เดือนก่อนหน้า</button>
@@ -373,6 +336,45 @@
       <input type="month" id="monthPicker" />
     </div>
 
+    <div class="tax-toolbar">
+      <div class="tax-toolbar-row">
+        <div class="tax-toolbar-actions">
+          <button id="selectAllBtn" class="tax-mini-btn secondary" type="button">เลือกทั้งหมด</button>
+          <button id="unselectAllBtn" class="tax-mini-btn secondary" type="button">ไม่เลือกทั้งหมด</button>
+          <button id="saveTaxBtn" class="tax-mini-btn" type="button" disabled>บันทึกการเลือก</button>
+        </div>
+
+        <div class="view-toggle">
+          <label><input type="radio" name="taxViewMode" value="all" checked> แสดงทั้งหมด</label>
+          <label><input type="radio" name="taxViewMode" value="show_only"> แสดงเฉพาะที่เลือก</label>
+          <label><input type="radio" name="taxViewMode" value="noshow_only"> แสดงเฉพาะที่ไม่เลือก</label>
+        </div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="label">ยอดรวมทั้งหมด</div>
+          <div class="value" id="sumAllAmount">0</div>
+          <div class="sub" id="sumAllCount">0 รายการ</div>
+        </div>
+        <div class="summary-card">
+          <div class="label">ยอดที่เลือกแสดง</div>
+          <div class="value" id="sumShowAmount">0</div>
+          <div class="sub" id="sumShowCount">0 รายการ</div>
+        </div>
+        <div class="summary-card">
+          <div class="label">ยอดที่ไม่เลือก</div>
+          <div class="value" id="sumNoShowAmount">0</div>
+          <div class="sub" id="sumNoShowCount">0 รายการ</div>
+        </div>
+        <div class="summary-card">
+          <div class="label">รายการที่ยังไม่บันทึก</div>
+          <div class="value" id="sumDirtyCount">0</div>
+          <div class="sub" id="saveStatusText">พร้อมใช้งาน</div>
+        </div>
+      </div>
+    </div>
+
     <div id="reviewSection">กำลังโหลดข้อมูล...</div>
 
     <div style="text-align:center; margin-top:8px;">
@@ -381,10 +383,19 @@
     </div>
   </div>
 
+  <div id="searchWrap" class="search-wrap">
+    <button id="searchFab" class="search-fab" type="button" aria-label="ค้นหา">
+      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E" alt="search" />
+    </button>
+    <div class="search-panel">
+      <input id="searchInput" type="text" placeholder="ค้นหาชื่อ, เบอร์, OPD, รายการ..." />
+      <button id="searchCloseBtn" class="search-close" type="button">×</button>
+    </div>
+  </div>
+
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
-  <!-- Customer Modal -->
   <div id="customer-modal">
     <div id="customer-modal-box">
       <button class="close-x" type="button" onclick="closeCustomerModal()" aria-label="ปิด">&times;</button>
@@ -392,7 +403,6 @@
     </div>
   </div>
 
-  <!-- Image Viewer -->
   <div id="imgViewer" class="img-viewer" onclick="closeImgViewer()">
     <div class="img-viewer__panel" onclick="event.stopPropagation()">
       <button class="img-viewer__close" type="button" onclick="closeImgViewer()">✕</button>
@@ -402,7 +412,6 @@
 
   <input id="profileUploadInput" type="file" accept="image/*" style="display:none;">
 
-  <!-- Modal เลือกช่วงเวลา -->
   <div id="month-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;justify-content:center;align-items:center;">
     <div id="month-modal-box" style="background:#fff;padding:16px;border-radius:12px;width:100%;max-width:340px;box-sizing:border-box;position:relative;">
       <button type="button" id="monthCloseBtn" aria-label="ปิด" style="position:absolute;top:8px;right:10px;border:none;background:none;font-size:20px;cursor:pointer;">&times;</button>
@@ -424,17 +433,14 @@
     </div>
   </div>
 
-  <!-- Modal เลือกเดือนสำหรับโหลด PDF -->
   <div id="pdf-month-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10001;justify-content:center;align-items:center;">
     <div style="background:#fff;padding:16px;border-radius:12px;width:100%;max-width:340px;box-sizing:border-box;position:relative;">
       <button type="button" id="pdfMonthCloseBtn" aria-label="ปิด" style="position:absolute;top:8px;right:10px;border:none;background:none;font-size:20px;cursor:pointer;">&times;</button>
       <div style="font-weight:600;margin-bottom:12px;">เลือกเดือนสำหรับดาวน์โหลด PDF</div>
-
       <div style="display:flex;flex-direction:column;gap:10px;">
         <label for="pdfMonthSelect" style="font-size:13px;color:#555;">เดือน:</label>
         <select id="pdfMonthSelect" style="padding:10px;border:1px solid #ddd;border-radius:8px;font-family:'Prompt',sans-serif;"></select>
       </div>
-
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">
         <button type="button" class="btn" id="pdfMonthCancelBtn" style="background:#78909c;">ยกเลิก</button>
         <button type="button" class="btn" id="pdfMonthOkBtn" style="background:#c62828;">ดาวน์โหลด PDF</button>
@@ -442,25 +448,13 @@
     </div>
   </div>
 
-  <!-- Hidden render area for PDF -->
   <div id="pdf-print-area"></div>
 
   <script>
   document.addEventListener('DOMContentLoaded', () => {
-    // ===== Helpers =====
-    const subOptionsMap = {
-      "โบทอค": ["Aestox 50 u", "Aestox 100 u", "Allergan 50 u", "Allergan 100 u"],
-      "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q", "Restylane", "Ex-Filler"],
-      "Fat/Hifu": ["Bromi", "Sisi", "HIFU", "HIFU แถม"],
-      "งานผิว": ["Meso Chanel", "P - Cell", "Aquatic", "Hestina", "Exosome", "Rejuran", "Belotero Revive", "Sculptra", "Juvelook", "Aesthefill"],
-      "ดริปผิว": ["Snow White", "Super Aurawhite", "Vitamin Mix", "Brain Booster", "Energy Booster"],
-      "อื่นๆ": ["ยาฉีดสลายฝ้า", "ครีมทาฝ้า", "ยาทานฝ้า", "ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen", "จ่ายเงิน/จองสินค้า"],
-      "ทรีทเม้นท์": ["ทรีทเมนต์หน้าใส", "ทรีทเมนต์สิว", "ทรีทเมนต์ฝ้า"]
-    };
-    subOptionsMap["โปรโมชั่น/อีเว้นพิเศษ"] = [...new Set(Object.values(subOptionsMap).flat())];
-
     const thaiMonthsFull = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
     const ITEM_RE = /^(.*?)\s*(?:\((.*?)\))?\s*-\s*(\d+)\s*ชิ้น(?:\s*[xX*]\s*([\d,.\s]+)(?:\s*(?:บาท|฿))?)?/;
+    const DEFAULT_TAX_DISPLAY = 'show';
 
     function parseCurrency(v){
       if (v == null) return 0;
@@ -468,6 +462,10 @@
       const s = String(v).replace(/[^\d.-]/g,'');
       const n = parseFloat(s);
       return isNaN(n) ? 0 : n;
+    }
+
+    function normalizeTaxDisplay(v){
+      return String(v || '').trim().toLowerCase() === 'noshow' ? 'noshow' : 'show';
     }
 
     function parseLine(itemText){
@@ -493,7 +491,6 @@
     }
 
     function daysInMonth(year, month){ return new Date(year, month, 0).getDate(); }
-
     function daysToCompareForMonth(year, month){
       const now = new Date();
       const isCurrent = (now.getFullYear()===year && (now.getMonth()+1)===month);
@@ -535,7 +532,6 @@
     function recordAmount(r){
       const a = parseCurrency(r.amount);
       if (!isNaN(a) && a > 0) return a;
-
       let sum = 0;
       (r.items || []).forEach(text => {
         const p = parseLine(text);
@@ -547,7 +543,6 @@
 
     const esc = escapeHtml;
 
-    // ===== State =====
     let allCustomerRecords = [];
     let groupedByMonth = {};
     let monthsSorted = [];
@@ -555,10 +550,10 @@
     let rangeStart = null;
     let rangeEnd = null;
     let chartInstance = null;
+    let taxDisplayMap = {};
+    let originalTaxDisplayMap = {};
+    let currentViewMode = 'all';
 
-    const isRangeActive = () => !!(rangeStart && rangeEnd);
-
-    // ===== Profile endpoint probing =====
     const PROFILE_LIST_ENDPOINTS = [
       '/api/customers',
       '/api/customer_list',
@@ -579,23 +574,136 @@
       return { url:null, data:null };
     }
 
-    // ===== Fetch & Init =====
+    const isRangeActive = () => !!(rangeStart && rangeEnd);
+
+    function getRecordKey(r){
+      if (r?.id != null && r?.id !== '') return String(r.id);
+      return [r.date || '', r.opd || '', r.name || '', r.phone || '', r.amount || '', (r.items || []).join('|')].join('::');
+    }
+
+    function getCurrentVisibleMonths(){
+      return isRangeActive()
+        ? monthsSorted.filter(m=> m >= rangeStart && m <= rangeEnd)
+        : (selectedMonth ? [selectedMonth] : []);
+    }
+
+    function getCurrentRecords(){
+      return getCurrentVisibleMonths().flatMap(m => groupedByMonth[m] || []);
+    }
+
+    function getRecordTaxDisplay(r){
+      const key = getRecordKey(r);
+      return normalizeTaxDisplay(taxDisplayMap[key] || r.tax_display || DEFAULT_TAX_DISPLAY);
+    }
+
+    function isDirtyRecord(r){
+      const key = getRecordKey(r);
+      return normalizeTaxDisplay(taxDisplayMap[key]) !== normalizeTaxDisplay(originalTaxDisplayMap[key]);
+    }
+
+    function shouldRenderRecord(r){
+      const val = getRecordTaxDisplay(r);
+      if(currentViewMode === 'show_only') return val === 'show';
+      if(currentViewMode === 'noshow_only') return val === 'noshow';
+      return true;
+    }
+
+    function calculateSummary(records){
+      const out = {
+        totalCount: 0,
+        totalAmount: 0,
+        showCount: 0,
+        showAmount: 0,
+        noShowCount: 0,
+        noShowAmount: 0,
+        dirtyCount: 0,
+      };
+      records.forEach(r => {
+        const amount = recordAmount(r);
+        const state = getRecordTaxDisplay(r);
+        out.totalCount += 1;
+        out.totalAmount += amount;
+        if(state === 'show'){
+          out.showCount += 1;
+          out.showAmount += amount;
+        }else{
+          out.noShowCount += 1;
+          out.noShowAmount += amount;
+        }
+        if(isDirtyRecord(r)) out.dirtyCount += 1;
+      });
+      return out;
+    }
+
+    function updateSummaryCards(){
+      const summary = calculateSummary(getCurrentRecords());
+      document.getElementById('sumAllAmount').textContent = `฿${summary.totalAmount.toLocaleString()}`;
+      document.getElementById('sumAllCount').textContent = `${summary.totalCount.toLocaleString()} รายการ`;
+      document.getElementById('sumShowAmount').textContent = `฿${summary.showAmount.toLocaleString()}`;
+      document.getElementById('sumShowCount').textContent = `${summary.showCount.toLocaleString()} รายการ`;
+      document.getElementById('sumNoShowAmount').textContent = `฿${summary.noShowAmount.toLocaleString()}`;
+      document.getElementById('sumNoShowCount').textContent = `${summary.noShowCount.toLocaleString()} รายการ`;
+      document.getElementById('sumDirtyCount').textContent = `${summary.dirtyCount.toLocaleString()}`;
+      document.getElementById('saveStatusText').textContent = summary.dirtyCount > 0 ? 'มีรายการรอบันทึก' : 'บันทึกครบแล้ว';
+      document.getElementById('saveTaxBtn').disabled = summary.dirtyCount === 0;
+    }
+
+    function collectDirtyUpdates(){
+      return getCurrentRecords()
+        .filter(r => isDirtyRecord(r))
+        .map(r => ({
+          id: r.id,
+          tax_display: getRecordTaxDisplay(r)
+        }))
+        .filter(x => x.id != null && x.id !== '');
+    }
+
+    function applyTaxDisplayToCurrentRecords(value){
+      getCurrentRecords().forEach(r => {
+        const key = getRecordKey(r);
+        taxDisplayMap[key] = value;
+      });
+      renderView();
+    }
+
+    function updateRangeBadge(){
+      const badge = document.getElementById('rangeBadge');
+      if (isRangeActive()){
+        badge.style.display = 'inline-block';
+        badge.textContent = `${monthLabel(rangeStart)} – ${monthLabel(rangeEnd)}`;
+      } else {
+        badge.style.display = 'none';
+        badge.textContent = '';
+      }
+    }
+
+    function destroyChart(){
+      if (chartInstance && typeof chartInstance.destroy === 'function') {
+        try{ chartInstance.destroy(); }catch{}
+        chartInstance = null;
+      }
+    }
+
     fetch('/api/sales')
       .then(res => res.json())
       .then(async (data) => {
         if(!data || data.length===0){
           document.getElementById('reviewSection').textContent='ไม่มีข้อมูลยอดขาย';
+          updateSummaryCards();
           return;
         }
 
-        const records = data.map(rec => ({
-          ...rec,
-          items: typeof rec.items === 'string' ? JSON.parse(rec.items) : (rec.items||[])
-        }));
+        const records = data.map(rec => {
+          const items = typeof rec.items === 'string' ? JSON.parse(rec.items) : (rec.items||[]);
+          return {
+            ...rec,
+            items,
+            tax_display: normalizeTaxDisplay(rec.tax_display || DEFAULT_TAX_DISPLAY)
+          };
+        });
 
         saveAllRecords(records);
         await loadCustomerProfiles();
-
         setupMonthState();
         renderView();
         updateMonthButtons();
@@ -611,17 +719,24 @@
     function saveAllRecords(records){
       allCustomerRecords = records;
       window.allCustomerRecords = allCustomerRecords;
-
       groupedByMonth = {};
+      taxDisplayMap = {};
+      originalTaxDisplayMap = {};
+
       records.forEach(rec => {
         const d = rec.date && /^\d{4}-\d{2}-\d{2}$/.test(rec.date) ? rec.date : null;
         if(!d) return;
         const month = d.slice(0,7);
-        (groupedByMonth[month] ??= []).push({
+        const normalized = {
           ...rec,
           amount: parseCurrency(rec.amount),
-          items: Array.isArray(rec.items) ? rec.items : []
-        });
+          items: Array.isArray(rec.items) ? rec.items : [],
+          tax_display: normalizeTaxDisplay(rec.tax_display)
+        };
+        const key = getRecordKey(normalized);
+        taxDisplayMap[key] = normalized.tax_display;
+        originalTaxDisplayMap[key] = normalized.tax_display;
+        (groupedByMonth[month] ??= []).push(normalized);
       });
 
       monthsSorted = Object.keys(groupedByMonth).sort((a,b)=>{
@@ -636,286 +751,34 @@
       rangeStart = null;
       rangeEnd = null;
       updateRangeBadge();
+      updateSummaryCards();
     }
 
-    function updateRangeBadge(){
-      const badge = document.getElementById('rangeBadge');
-      if (isRangeActive()){
-        badge.style.display = 'inline-block';
-        badge.textContent = `${monthLabel(rangeStart)} – ${monthLabel(rangeEnd)}`;
-      } else {
-        badge.style.display = 'none';
-        badge.textContent = '';
-      }
-    }
-
-    // ===== Rendering =====
     function renderView(){
       if (isRangeActive()) renderSelectedRange();
       else renderSelectedMonth();
-
+      updateSummaryCards();
       const input = document.getElementById('searchInput');
-      if (input){ input.value=''; onSearch(); }
-      toggleSearch(false);
+      if (input){ onSearch(); }
     }
 
-    function destroyChart(){
-      if (chartInstance && typeof chartInstance.destroy === 'function') {
-        try{ chartInstance.destroy(); }catch{}
-        chartInstance = null;
-      }
-    }
-
-    function renderSelectedRange(){
-      const reviewSection = document.getElementById('reviewSection');
-      reviewSection.innerHTML = '';
-
-      const monthsInRange = monthsSorted.filter(m=> m >= rangeStart && m <= rangeEnd);
-      if (monthsInRange.length === 0){
-        reviewSection.innerHTML = '<div style="text-align:center;padding:20px;color:#888;">ไม่พบข้อมูลในช่วงเวลาที่เลือก</div>';
-        return;
-      }
-
-      const recs = monthsInRange.flatMap(m=> groupedByMonth[m] || []);
-      const total = recs.reduce((s,r)=> s + parseCurrency(r.amount), 0);
-
-      const summaryRow = document.createElement('div');
-      summaryRow.className='month-summary';
-      summaryRow.innerHTML = `
-        <div>${monthLabel(rangeStart)} – ${monthLabel(rangeEnd)}</div>
-        <div style="font-size:24px; color:var(--primary); margin-top:4px;">฿${total.toLocaleString()}</div>
-      `;
-      reviewSection.appendChild(summaryRow);
-
-      const tableWrapper = document.createElement('div');
-      tableWrapper.style.marginTop = '18px';
-      tableWrapper.innerHTML = '<h3 style="font-size:16px; color:#555; margin-bottom:10px;">📄 รายละเอียดบิลรายวัน</h3>';
-
-      const table = document.createElement('table');
-      table.innerHTML = `<tbody></tbody>`;
-      const tbody = table.querySelector('tbody');
-      const sortedRecs = recs.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
-
-      let currentDate = '';
-      let subIndex = 1;
-      let dailyTotal = 0;
-
-      function pushDayHeader(dateStr){
-        const tr=document.createElement('tr');
-        tr.className='day-header';
-        const td=document.createElement('td');
-        td.colSpan=5;
-        td.textContent=`📅 วันที่ ${dateStr}`;
-        tr.appendChild(td);
-        tbody.appendChild(tr);
-      }
-
-      function pushDayTotal(){
-        const tr=document.createElement('tr');
-        tr.className='day-total';
-        const td=document.createElement('td');
-        td.colSpan=5;
-        td.innerHTML=`รวมยอด ${dailyTotal.toLocaleString()} บาท`;
-        tr.appendChild(td);
-        tbody.appendChild(tr);
-      }
-
-      sortedRecs.forEach(r=>{
-        const formattedDate = formatDate(r.date);
-        if(formattedDate !== currentDate){
-          if(currentDate !== '') pushDayTotal();
-          currentDate = formattedDate;
-          subIndex = 1;
-          dailyTotal = 0;
-          pushDayHeader(formattedDate);
-        }
-        dailyTotal += parseCurrency(r.amount);
-        const tr = buildRow(r, subIndex++);
-        tbody.appendChild(tr);
-      });
-      if(currentDate !== '') pushDayTotal();
-
-      tableWrapper.appendChild(table);
-      reviewSection.appendChild(tableWrapper);
-
-      const canvasContainer = document.createElement('div');
-      canvasContainer.style.marginTop='24px';
-      canvasContainer.style.height='260px';
-      canvasContainer.innerHTML = `<h3 style="font-size:16px; color:#555; margin:0 0 10px;">📊 กราฟยอดขายรายเดือน</h3>`;
-      const canvas = document.createElement('canvas');
-      canvas.id='salesChart';
-      canvasContainer.appendChild(canvas);
-      reviewSection.appendChild(canvasContainer);
-
-      destroyChart();
-      const ctx = canvas.getContext('2d');
-      if(ctx){
-        const monthTotals = monthsInRange.map(m=> ({
-          m,
-          total: (groupedByMonth[m]||[]).reduce((s,r)=> s + parseCurrency(r.amount), 0)
-        }));
-        chartInstance = new Chart(ctx, {
-          type:'bar',
-          data:{
-            labels: monthTotals.map(x=> monthLabel(x.m)),
-            datasets:[{
-              label:'ยอดขาย',
-              data: monthTotals.map(x=> x.total),
-              backgroundColor: '#00897b',
-              borderRadius: 4
-            }]
-          },
-          options:{
-            responsive:true,
-            maintainAspectRatio:false,
-            plugins:{ legend:{ display:false } },
-            scales:{
-              y:{ grid:{borderDash:[4,4]}, ticks:{ precision:0 } },
-              x:{ grid:{display:false} }
-            }
-          }
-        });
-      }
-    }
-
-    function renderSelectedMonth(){
-      const reviewSection = document.getElementById('reviewSection');
-      reviewSection.innerHTML = '';
-
-      if(!selectedMonth || !groupedByMonth[selectedMonth]){
-        reviewSection.innerHTML = '<div style="text-align:center;padding:20px;">ไม่พบข้อมูล</div>';
-        return;
-      }
-
-      const recs = groupedByMonth[selectedMonth].slice();
-      const total = recs.reduce((sum, r)=> sum + parseCurrency(r.amount), 0);
-
-      const [y,m] = selectedMonth.split('-').map(n=>parseInt(n,10));
-
-      const headerDiv = document.createElement('div');
-      headerDiv.style.textAlign = 'center';
-      headerDiv.innerHTML = `
-        <div style="font-size:16px; color:#555;">เดือน ${thaiMonthsFull[m-1]} ${y}</div>
-        <div style="font-size:32px; font-weight:bold; color:var(--primary); margin:5px 0;">฿${total.toLocaleString()}</div>
-      `;
-      reviewSection.appendChild(headerDiv);
-
-      const prevMonthDate = new Date(y, m-2, 1);
-      const prevMonth = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth()+1).padStart(2,'0')}`;
-      const limitDayCurr = daysToCompareForMonth(y, m);
-
-      const currToDateTotal = recs
-        .filter(r=> (parseInt((r.date ? r.date.split('-')[2] : '0'))||0) <= limitDayCurr)
-        .reduce((s,r)=> s+parseCurrency(r.amount), 0);
-
-      const prevRecs = groupedByMonth[prevMonth] || [];
-      const [py, pm] = prevMonth.split('-').map(n=>parseInt(n,10));
-      const limitDayPrev = (pm && py) ? Math.min(limitDayCurr, daysInMonth(py, pm)) : 0;
-      const prevToDateTotal = prevRecs
-        .filter(r=> (parseInt((r.date ? r.date.split('-')[2] : '0'))||0) <= limitDayPrev)
-        .reduce((s,r)=> s+parseCurrency(r.amount), 0);
-
-      const diff = currToDateTotal - prevToDateTotal;
-
-      const compareDiv = document.createElement('div');
-      compareDiv.className='compare';
-      compareDiv.innerHTML = diff>0
-        ? `📈 ดีกว่าเดือนก่อน <span style="color:green;font-weight:bold;">+${diff.toLocaleString()}</span> บาท (เทียบวันที่ 1-${limitDayCurr})`
-        : diff<0
-          ? `📉 น้อยกว่าเดือนก่อน <span style="color:red;font-weight:bold;">${diff.toLocaleString()}</span> บาท (เทียบวันที่ 1-${limitDayCurr})`
-          : `📊 เท่ากับเดือนก่อนหน้า`;
-      reviewSection.appendChild(compareDiv);
-
-      const tableWrapper = document.createElement('div');
-      tableWrapper.style.marginTop = '10px';
-      tableWrapper.innerHTML = '<h3 style="font-size:16px; color:#555; margin-bottom:10px;">📄 รายละเอียดบิลรายวัน</h3>';
-
-      const table = document.createElement('table');
-      table.innerHTML = `<tbody></tbody>`;
-      const tbody = table.querySelector('tbody');
-
-      const sortedRecs = recs.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
-      let currentDate = '';
-      let subIndex = 1;
-      let dailyTotal = 0;
-
-      function pushDayHeader(dateStr){
-        const tr=document.createElement('tr');
-        tr.className='day-header';
-        const td=document.createElement('td');
-        td.colSpan=5;
-        td.textContent=`📅 วันที่ ${dateStr}`;
-        tr.appendChild(td);
-        tbody.appendChild(tr);
-      }
-
-      function pushDayTotal(){
-        const tr=document.createElement('tr');
-        tr.className='day-total';
-        const td=document.createElement('td');
-        td.colSpan=5;
-        td.innerHTML=`รวมยอด ${dailyTotal.toLocaleString()} บาท`;
-        tr.appendChild(td);
-        tbody.appendChild(tr);
-      }
-
-      sortedRecs.forEach(r=>{
-        const formattedDate = formatDate(r.date);
-        if(formattedDate !== currentDate){
-          if(currentDate !== '') pushDayTotal();
-          currentDate = formattedDate;
-          subIndex = 1;
-          dailyTotal = 0;
-          pushDayHeader(formattedDate);
-        }
-        dailyTotal += parseCurrency(r.amount);
-        const tr = buildRow(r, subIndex++);
-        tbody.appendChild(tr);
-      });
-      if(currentDate !== '') pushDayTotal();
-
-      tableWrapper.appendChild(table);
-      reviewSection.appendChild(tableWrapper);
-
-      const canvasContainer = document.createElement('div');
-      canvasContainer.style.marginTop='24px';
-      canvasContainer.style.height='220px';
-      canvasContainer.innerHTML = `<h3 style="font-size:16px; color:#555; margin:0 0 10px;">📊 กราฟยอดรวมเดือนนี้</h3>`;
-      const canvas = document.createElement('canvas');
-      canvas.id='salesChart';
-      canvasContainer.appendChild(canvas);
-      reviewSection.appendChild(canvasContainer);
-
-      const ctx = canvas.getContext('2d');
-      destroyChart();
-      if(ctx){
-        chartInstance = new Chart(ctx, {
-          type:'bar',
-          data:{
-            labels: [thaiMonthsFull[m-1]],
-            datasets:[{
-              label:'ยอดรวม',
-              data: [total],
-              backgroundColor:'#00897b',
-              borderRadius:4
-            }]
-          },
-          options:{
-            responsive:true,
-            maintainAspectRatio:false,
-            plugins:{ legend:{ display:false } },
-            scales:{
-              y:{ grid:{borderDash:[4,4]}, ticks:{ precision:0 } },
-              x:{ grid:{display:false} }
-            }
-          }
-        });
-      }
-    }
-
-    // ===== Row builder =====
     function buildRow(r, subIndex){
       const tr = document.createElement('tr');
+      const taxDisplay = getRecordTaxDisplay(r);
+      const dirty = isDirtyRecord(r);
+      tr.className = `sale-row is-${taxDisplay}${dirty ? ' is-dirty' : ''}`;
+      tr.dataset.taxDisplay = taxDisplay;
+
+      const key = getRecordKey(r);
+      const amount = recordAmount(r);
+
+      const tdToggle = document.createElement('td');
+      tdToggle.innerHTML = `
+        <div class="row-tax-toggle">
+          <input type="checkbox" class="tax-display-checkbox" data-key="${escapeAttr(key)}" ${taxDisplay === 'show' ? 'checked' : ''}>
+          <span class="status-chip ${taxDisplay}">${taxDisplay === 'show' ? 'แสดง' : 'ซ่อน'}</span>
+        </div>`;
+      tr.appendChild(tdToggle);
 
       const tdIndex = document.createElement('td');
       tdIndex.textContent = subIndex;
@@ -956,20 +819,288 @@
       tr.appendChild(tdItems);
 
       const tdAmt = document.createElement('td');
-      const amt = parseCurrency(r.amount);
       tdAmt.innerHTML = `
-        <div>${amt.toLocaleString()} บาท${r.payment ? ` (${escapeHtml(r.payment)})` : ''}</div>
-        ${
-          r.note && String(r.note).trim()
-            ? `<div style="color:#888; font-size:10px; margin-top:4px;">📝 ${escapeHtml(r.note)}</div>`
-            : ''
-        }`;
+        <div>${amount.toLocaleString()} บาท${r.payment ? ` (${escapeHtml(r.payment)})` : ''}</div>
+        ${r.note && String(r.note).trim() ? `<div style="color:#888; font-size:10px; margin-top:4px;">📝 ${escapeHtml(r.note)}</div>` : ''}
+        ${dirty ? `<div style="color:#b45309; font-size:10px; margin-top:4px;">⚠️ ยังไม่ได้บันทึก</div>` : ''}`;
       tr.appendChild(tdAmt);
 
       return tr;
     }
 
-    // ===== Month Nav =====
+    function renderSelectedRange(){
+      const reviewSection = document.getElementById('reviewSection');
+      reviewSection.innerHTML = '';
+
+      const monthsInRange = getCurrentVisibleMonths();
+      if (monthsInRange.length === 0){
+        reviewSection.innerHTML = '<div style="text-align:center;padding:20px;color:#888;">ไม่พบข้อมูลในช่วงเวลาที่เลือก</div>';
+        return;
+      }
+
+      const recs = getCurrentRecords();
+      const summary = calculateSummary(recs);
+
+      const summaryRow = document.createElement('div');
+      summaryRow.className='month-summary';
+      summaryRow.innerHTML = `
+        <div>${monthLabel(rangeStart)} – ${monthLabel(rangeEnd)}</div>
+        <div style="font-size:24px; color:var(--primary); margin-top:4px;">ยอดที่เลือก ฿${summary.showAmount.toLocaleString()}</div>
+        <div style="font-size:12px; color:#6b7280; margin-top:2px;">ยอดทั้งหมด ฿${summary.totalAmount.toLocaleString()}</div>
+      `;
+      reviewSection.appendChild(summaryRow);
+
+      const tableWrapper = document.createElement('div');
+      tableWrapper.style.marginTop = '18px';
+      tableWrapper.innerHTML = '<h3 style="font-size:16px; color:#555; margin-bottom:10px;">📄 รายละเอียดบิลรายวัน</h3>';
+
+      const table = document.createElement('table');
+      table.innerHTML = `<tbody></tbody>`;
+      const tbody = table.querySelector('tbody');
+      const sortedRecs = recs.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
+
+      let currentDate = '';
+      let subIndex = 1;
+      let dailyTotal = 0;
+      let dailyShowTotal = 0;
+      let dayHasVisibleRows = false;
+
+      function pushDayHeader(dateStr){
+        const tr=document.createElement('tr');
+        tr.className='day-header';
+        const td=document.createElement('td');
+        td.colSpan=6;
+        td.textContent=`📅 วันที่ ${dateStr}`;
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return tr;
+      }
+
+      function pushDayTotal(){
+        if(currentDate === '' || !dayHasVisibleRows) return;
+        const tr=document.createElement('tr');
+        tr.className='day-total';
+        const td=document.createElement('td');
+        td.colSpan=6;
+        td.innerHTML=`รวมที่เลือก ${dailyShowTotal.toLocaleString()} บาท <span style="color:#6b7280;font-weight:500;">| รวมทั้งหมด ${dailyTotal.toLocaleString()} บาท</span>`;
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      }
+
+      let pendingHeader = null;
+
+      sortedRecs.forEach(r=>{
+        const formattedDate = formatDate(r.date);
+        if(formattedDate !== currentDate){
+          pushDayTotal();
+          currentDate = formattedDate;
+          subIndex = 1;
+          dailyTotal = 0;
+          dailyShowTotal = 0;
+          dayHasVisibleRows = false;
+          pendingHeader = pushDayHeader(formattedDate);
+        }
+        const amt = recordAmount(r);
+        dailyTotal += amt;
+        if(getRecordTaxDisplay(r) === 'show') dailyShowTotal += amt;
+
+        if(shouldRenderRecord(r)){
+          dayHasVisibleRows = true;
+          const tr = buildRow(r, subIndex++);
+          tbody.appendChild(tr);
+        }
+      });
+      pushDayTotal();
+
+      [...tbody.querySelectorAll('.day-header')].forEach(header => {
+        const nextRows = [];
+        let cur = header.nextElementSibling;
+        while(cur && !cur.classList.contains('day-header')){
+          nextRows.push(cur);
+          cur = cur.nextElementSibling;
+        }
+        const hasSaleRows = nextRows.some(r => r.classList.contains('sale-row'));
+        if(!hasSaleRows){
+          header.remove();
+          nextRows.forEach(r => r.remove());
+        }
+      });
+
+      tableWrapper.appendChild(table);
+      reviewSection.appendChild(tableWrapper);
+
+      const canvasContainer = document.createElement('div');
+      canvasContainer.style.marginTop='24px';
+      canvasContainer.style.height='260px';
+      canvasContainer.innerHTML = `<h3 style="font-size:16px; color:#555; margin:0 0 10px;">📊 กราฟยอดขายรายเดือน (เฉพาะที่เลือก)</h3>`;
+      const canvas = document.createElement('canvas');
+      canvas.id='salesChart';
+      canvasContainer.appendChild(canvas);
+      reviewSection.appendChild(canvasContainer);
+
+      destroyChart();
+      const ctx = canvas.getContext('2d');
+      if(ctx){
+        const monthTotals = monthsInRange.map(m=> {
+          const monthRows = groupedByMonth[m] || [];
+          const total = monthRows
+            .filter(r => getRecordTaxDisplay(r) === 'show')
+            .reduce((s,r)=> s + recordAmount(r), 0);
+          return { m, total };
+        });
+        chartInstance = new Chart(ctx, {
+          type:'bar',
+          data:{
+            labels: monthTotals.map(x=> monthLabel(x.m)),
+            datasets:[{ label:'ยอดขาย', data: monthTotals.map(x=> x.total), backgroundColor: '#00897b', borderRadius: 4 }]
+          },
+          options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ grid:{borderDash:[4,4]}, ticks:{ precision:0 } }, x:{ grid:{display:false} } } }
+        });
+      }
+    }
+
+    function renderSelectedMonth(){
+      const reviewSection = document.getElementById('reviewSection');
+      reviewSection.innerHTML = '';
+      if(!selectedMonth || !groupedByMonth[selectedMonth]){
+        reviewSection.innerHTML = '<div style="text-align:center;padding:20px;">ไม่พบข้อมูล</div>';
+        return;
+      }
+
+      const recs = getCurrentRecords();
+      const summary = calculateSummary(recs);
+      const [y,m] = selectedMonth.split('-').map(n=>parseInt(n,10));
+
+      const headerDiv = document.createElement('div');
+      headerDiv.style.textAlign = 'center';
+      headerDiv.innerHTML = `
+        <div style="font-size:16px; color:#555;">เดือน ${thaiMonthsFull[m-1]} ${y}</div>
+        <div style="font-size:32px; font-weight:bold; color:var(--primary); margin:5px 0;">฿${summary.showAmount.toLocaleString()}</div>
+        <div style="font-size:12px; color:#6b7280;">ยอดที่เลือก | ยอดทั้งหมด ฿${summary.totalAmount.toLocaleString()}</div>
+      `;
+      reviewSection.appendChild(headerDiv);
+
+      const prevMonthDate = new Date(y, m-2, 1);
+      const prevMonth = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth()+1).padStart(2,'0')}`;
+      const limitDayCurr = daysToCompareForMonth(y, m);
+      const currToDateTotal = recs
+        .filter(r=> (parseInt((r.date ? r.date.split('-')[2] : '0'))||0) <= limitDayCurr)
+        .filter(r=> getRecordTaxDisplay(r) === 'show')
+        .reduce((s,r)=> s+recordAmount(r), 0);
+
+      const prevRecs = (groupedByMonth[prevMonth] || []).filter(r => getRecordTaxDisplay(r) === 'show');
+      const [py, pm] = prevMonth.split('-').map(n=>parseInt(n,10));
+      const limitDayPrev = (pm && py) ? Math.min(limitDayCurr, daysInMonth(py, pm)) : 0;
+      const prevToDateTotal = prevRecs
+        .filter(r=> (parseInt((r.date ? r.date.split('-')[2] : '0'))||0) <= limitDayPrev)
+        .reduce((s,r)=> s+recordAmount(r), 0);
+
+      const diff = currToDateTotal - prevToDateTotal;
+      const compareDiv = document.createElement('div');
+      compareDiv.className='compare';
+      compareDiv.innerHTML = diff>0
+        ? `📈 ดีกว่าเดือนก่อน <span style="color:green;font-weight:bold;">+${diff.toLocaleString()}</span> บาท (เฉพาะที่เลือก)`
+        : diff<0
+          ? `📉 น้อยกว่าเดือนก่อน <span style="color:red;font-weight:bold;">${diff.toLocaleString()}</span> บาท (เฉพาะที่เลือก)`
+          : `📊 เท่ากับเดือนก่อนหน้า (เฉพาะที่เลือก)`;
+      reviewSection.appendChild(compareDiv);
+
+      const tableWrapper = document.createElement('div');
+      tableWrapper.style.marginTop = '10px';
+      tableWrapper.innerHTML = '<h3 style="font-size:16px; color:#555; margin-bottom:10px;">📄 รายละเอียดบิลรายวัน</h3>';
+
+      const table = document.createElement('table');
+      table.innerHTML = `<tbody></tbody>`;
+      const tbody = table.querySelector('tbody');
+
+      const sortedRecs = recs.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
+      let currentDate = '';
+      let subIndex = 1;
+      let dailyTotal = 0;
+      let dailyShowTotal = 0;
+      let dayHasVisibleRows = false;
+
+      function pushDayHeader(dateStr){
+        const tr=document.createElement('tr');
+        tr.className='day-header';
+        const td=document.createElement('td');
+        td.colSpan=6;
+        td.textContent=`📅 วันที่ ${dateStr}`;
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      }
+
+      function pushDayTotal(){
+        if(currentDate === '' || !dayHasVisibleRows) return;
+        const tr=document.createElement('tr');
+        tr.className='day-total';
+        const td=document.createElement('td');
+        td.colSpan=6;
+        td.innerHTML=`รวมที่เลือก ${dailyShowTotal.toLocaleString()} บาท <span style="color:#6b7280;font-weight:500;">| รวมทั้งหมด ${dailyTotal.toLocaleString()} บาท</span>`;
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      }
+
+      sortedRecs.forEach(r=>{
+        const formattedDate = formatDate(r.date);
+        if(formattedDate !== currentDate){
+          pushDayTotal();
+          currentDate = formattedDate;
+          subIndex = 1;
+          dailyTotal = 0;
+          dailyShowTotal = 0;
+          dayHasVisibleRows = false;
+          pushDayHeader(formattedDate);
+        }
+        const amt = recordAmount(r);
+        dailyTotal += amt;
+        if(getRecordTaxDisplay(r) === 'show') dailyShowTotal += amt;
+
+        if(shouldRenderRecord(r)){
+          dayHasVisibleRows = true;
+          const tr = buildRow(r, subIndex++);
+          tbody.appendChild(tr);
+        }
+      });
+      pushDayTotal();
+
+      [...tbody.querySelectorAll('.day-header')].forEach(header => {
+        const nextRows = [];
+        let cur = header.nextElementSibling;
+        while(cur && !cur.classList.contains('day-header')){
+          nextRows.push(cur);
+          cur = cur.nextElementSibling;
+        }
+        const hasSaleRows = nextRows.some(r => r.classList.contains('sale-row'));
+        if(!hasSaleRows){
+          header.remove();
+          nextRows.forEach(r => r.remove());
+        }
+      });
+
+      tableWrapper.appendChild(table);
+      reviewSection.appendChild(tableWrapper);
+
+      const canvasContainer = document.createElement('div');
+      canvasContainer.style.marginTop='24px';
+      canvasContainer.style.height='220px';
+      canvasContainer.innerHTML = `<h3 style="font-size:16px; color:#555; margin:0 0 10px;">📊 กราฟยอดรวมเดือนนี้ (เฉพาะที่เลือก)</h3>`;
+      const canvas = document.createElement('canvas');
+      canvas.id='salesChart';
+      canvasContainer.appendChild(canvas);
+      reviewSection.appendChild(canvasContainer);
+
+      const ctx = canvas.getContext('2d');
+      destroyChart();
+      if(ctx){
+        chartInstance = new Chart(ctx, {
+          type:'bar',
+          data:{ labels: [thaiMonthsFull[m-1]], datasets:[{ label:'ยอดรวม', data: [summary.showAmount], backgroundColor:'#00897b', borderRadius:4 }] },
+          options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ grid:{borderDash:[4,4]}, ticks:{ precision:0 } }, x:{ grid:{display:false} } } }
+        });
+      }
+    }
+
     function updateMonthButtons(){
       const idx = monthsSorted.indexOf(selectedMonth);
       const disabled = isRangeActive();
@@ -981,30 +1112,84 @@
 
     document.getElementById('btnPrev')?.addEventListener('click', ()=>{
       const idx=monthsSorted.indexOf(selectedMonth);
-      if(idx>0){
-        selectedMonth = monthsSorted[idx-1];
-        renderView();
-        updateMonthButtons();
-      }
+      if(idx>0){ selectedMonth = monthsSorted[idx-1]; renderView(); updateMonthButtons(); }
     });
-
     document.getElementById('btnNext')?.addEventListener('click', ()=>{
       const idx=monthsSorted.indexOf(selectedMonth);
-      if(idx<monthsSorted.length-1){
-        selectedMonth = monthsSorted[idx+1];
-        renderView();
-        updateMonthButtons();
-      }
+      if(idx<monthsSorted.length-1){ selectedMonth = monthsSorted[idx+1]; renderView(); updateMonthButtons(); }
     });
-
     document.getElementById('btnPick')?.addEventListener('click', ()=>{ openMonthModal(); });
-    document.getElementById('btnClear')?.addEventListener('click', ()=>{
-      setupMonthState();
-      renderView();
-      updateMonthButtons();
+    document.getElementById('btnClear')?.addEventListener('click', ()=>{ setupMonthState(); renderView(); updateMonthButtons(); });
+
+    document.querySelectorAll('input[name="taxViewMode"]').forEach(el => {
+      el.addEventListener('change', (e) => {
+        currentViewMode = e.target.value || 'all';
+        renderView();
+      });
     });
 
-    // ===== Search logic =====
+    document.getElementById('selectAllBtn')?.addEventListener('click', () => applyTaxDisplayToCurrentRecords('show'));
+    document.getElementById('unselectAllBtn')?.addEventListener('click', () => applyTaxDisplayToCurrentRecords('noshow'));
+
+    document.addEventListener('change', (e) => {
+      const checkbox = e.target.closest?.('.tax-display-checkbox');
+      if(!checkbox) return;
+      const key = checkbox.dataset.key;
+      if(!key) return;
+      taxDisplayMap[key] = checkbox.checked ? 'show' : 'noshow';
+      renderView();
+    });
+
+    document.getElementById('saveTaxBtn')?.addEventListener('click', saveTaxDisplayChanges);
+
+    async function saveTaxDisplayChanges(){
+      const updates = collectDirtyUpdates();
+      if(!updates.length){
+        alert('ไม่มีรายการที่ต้องบันทึก');
+        return;
+      }
+      const btn = document.getElementById('saveTaxBtn');
+      const status = document.getElementById('saveStatusText');
+      try{
+        btn.disabled = true;
+        status.textContent = 'กำลังบันทึก...';
+        const res = await fetch('/api/save_tax_display', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ updates })
+        });
+        const data = await res.json().catch(() => ({}));
+        if(!res.ok || data.success === false){
+          throw new Error(data.error || 'save_failed');
+        }
+
+        updates.forEach(u => {
+          const key = String(u.id);
+          originalTaxDisplayMap[key] = normalizeTaxDisplay(u.tax_display);
+          taxDisplayMap[key] = normalizeTaxDisplay(u.tax_display);
+        });
+        allCustomerRecords.forEach(r => {
+          if(String(r.id) in originalTaxDisplayMap){
+            r.tax_display = originalTaxDisplayMap[String(r.id)];
+          }
+        });
+        Object.values(groupedByMonth).forEach(rows => {
+          rows.forEach(r => {
+            if(String(r.id) in originalTaxDisplayMap){
+              r.tax_display = originalTaxDisplayMap[String(r.id)];
+            }
+          });
+        });
+        status.textContent = `บันทึกแล้ว ${updates.length} รายการ`;
+        renderView();
+      }catch(err){
+        console.error(err);
+        alert('บันทึกไม่สำเร็จ: ' + (err?.message || err));
+        status.textContent = 'บันทึกไม่สำเร็จ';
+        updateSummaryCards();
+      }
+    }
+
     const onSearch = debounce(()=>{
       const input = document.getElementById('searchInput');
       if(!input) return;
@@ -1067,16 +1252,13 @@
       onSearch();
       toggleSearch(false);
     });
-
+    document.getElementById('searchInput')?.addEventListener('input', onSearch);
     document.addEventListener('click', (e)=>{
       if(!wrap || !wrap.classList.contains('open')) return;
       const t = e.target;
       if(!(wrap.contains(t))) toggleSearch(false);
     });
 
-    // ===============================
-    // Customer Popup Module
-    // ===============================
     window.customerProfileMap = window.customerProfileMap || {};
     window.allCustomerRecords = window.allCustomerRecords || [];
 
@@ -1103,7 +1285,6 @@
       img.src = src || '';
       m.style.display = 'flex';
     }
-
     function closeImgViewer(){
       const m = document.getElementById('imgViewer');
       const img = document.getElementById('imgViewerImg');
@@ -1118,7 +1299,6 @@
       try{
         const { url, data } = await tryFetchJson(PROFILE_LIST_ENDPOINTS, { credentials:'same-origin' });
         if(!url || !data) return;
-
         const map = {};
         (data || []).forEach(c=>{
           const opd = pad4(c.opd);
@@ -1131,14 +1311,11 @@
           };
         });
         window.customerProfileMap = map;
-      }catch(e){
-        console.warn('loadCustomerProfiles failed:', e);
-      }
+      }catch(e){ console.warn('loadCustomerProfiles failed:', e); }
     }
     window.loadCustomerProfiles = loadCustomerProfiles;
 
     let _pendingUploadOPD = null;
-
     function _validateImageFile(file){
       if(!file) return { ok:false, msg:'ไม่พบไฟล์' };
       const okTypes = ['image/jpeg','image/png','image/webp'];
@@ -1161,14 +1338,11 @@
           return `HTTP ${res.status} ${res.statusText || ''}`.trim();
         }
         return s || `HTTP ${res.status}`;
-      }catch{
-        return `HTTP ${res.status}`;
-      }
+      }catch{ return `HTTP ${res.status}`; }
     }
 
     async function uploadProfilePic(opd, file){
       const opd4 = pad4(opd);
-
       const fd = new FormData();
       fd.append('opd', opd4);
       fd.append('file', file);
@@ -1176,11 +1350,7 @@
       fd.append('profile_pic_file', file);
       fd.append('image', file);
       fd.append('avatar', file);
-
-      const endpoints = [
-        '/api/update_customer_with_image',
-        '/api/customer/profile_pic',
-      ];
+      const endpoints = ['/api/update_customer_with_image','/api/customer/profile_pic'];
 
       async function fetchPicUrlFromCustomers(opdKey){
         const res = await fetch('/api/customers', { credentials:'same-origin' });
@@ -1191,46 +1361,19 @@
       }
 
       let lastErr = null;
-
       for (const url of endpoints) {
         try {
           const res = await fetch(url, { method:'POST', credentials:'same-origin', body: fd });
-
-          if (res.status === 404) {
-            lastErr = new Error(`Not Found: ${url}`);
-            continue;
-          }
-
-          if (!res.ok) {
-            const msg = await _readErrorMessage(res);
-            lastErr = new Error(`อัปโหลดไม่ผ่านที่ ${url} → ${msg}`);
-            continue;
-          }
-
+          if (res.status === 404) { lastErr = new Error(`Not Found: ${url}`); continue; }
+          if (!res.ok) { const msg = await _readErrorMessage(res); lastErr = new Error(`อัปโหลดไม่ผ่านที่ ${url} → ${msg}`); continue; }
           const data = await res.json().catch(()=> ({}));
-          const picUrl =
-            data.profile_pic_url ||
-            data.url ||
-            data.secure_url ||
-            data.path ||
-            data.profile_pic ||
-            data.avatar_url ||
-            (data.customer && (data.customer.profile_pic_url || data.customer.profile_pic || data.customer.avatar_url));
-
+          const picUrl = data.profile_pic_url || data.url || data.secure_url || data.path || data.profile_pic || data.avatar_url || (data.customer && (data.customer.profile_pic_url || data.customer.profile_pic || data.customer.avatar_url));
           if (picUrl) return picUrl;
-
           const fetchedUrl = await fetchPicUrlFromCustomers(opd4);
           if (fetchedUrl) return fetchedUrl;
-
           lastErr = new Error(`อัปโหลดผ่านที่ ${url} แต่ response ไม่มี url`);
-          continue;
-
-        } catch (e) {
-          lastErr = e;
-          continue;
-        }
+        } catch (e) { lastErr = e; }
       }
-
       throw lastErr || new Error('Upload failed: no valid endpoint');
     }
 
@@ -1246,24 +1389,13 @@
     document.getElementById('profileUploadInput')?.addEventListener('change', async function(e){
       const file = e.target.files?.[0];
       if(!file) return;
-
       const check = _validateImageFile(file);
-      if(!check.ok){
-        alert(check.msg);
-        return;
-      }
-
-      if(!_pendingUploadOPD){
-        alert('ไม่พบ OPD สำหรับอัปโหลด');
-        return;
-      }
-
+      if(!check.ok){ alert(check.msg); return; }
+      if(!_pendingUploadOPD){ alert('ไม่พบ OPD สำหรับอัปโหลด'); return; }
       try{
         const url = await uploadProfilePic(_pendingUploadOPD, file);
         const img = document.getElementById('modalProfileImg');
-        if(img){
-          img.src = url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now();
-        }
+        if(img){ img.src = url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now(); }
         await loadCustomerProfiles();
         alert('อัปโหลดรูปสำเร็จ');
       }catch(err){
@@ -1278,42 +1410,25 @@
     function openCustomerModal(key){
       const [name, phone = ''] = String(key).split('|');
       const norm = s => (s || '').trim().toLowerCase();
-
-      const records = (window.allCustomerRecords || []).filter(r =>
-        norm(r.name) === norm(name) &&
-        norm(r.phone || '') === norm(phone)
-      );
-
-      if(!records.length){
-        alert('ไม่พบข้อมูลการซื้อของลูกค้าคนนี้');
-        return;
-      }
-
+      const records = (window.allCustomerRecords || []).filter(r => norm(r.name) === norm(name) && norm(r.phone || '') === norm(phone));
+      if(!records.length){ alert('ไม่พบข้อมูลการซื้อของลูกค้าคนนี้'); return; }
       records.sort((a,b)=> (b.date || '').localeCompare(a.date || ''));
-
       const first = records[0];
       const opd4 = pad4(first.opd);
-
       const profileData = (window.customerProfileMap || {})[opd4] || {};
-      const fallbackPic =
-        'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzZiNzI4MCI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==';
-
+      const fallbackPic = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzZiNzI4MCI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==';
       const hasProfilePic = !!(profileData.profile_pic_url && String(profileData.profile_pic_url).trim());
       const profilePic = hasProfilePic ? profileData.profile_pic_url : fallbackPic;
-
       const vipBadge = profileData.vip ? `<span class="badge-vip">VIP: ${esc(profileData.vip)}</span>` : '';
       const realName = profileData.full_name || first.name || '';
-
       const lastDateStr = (records[0].date || '').slice(0,10);
       const today = new Date();
       const lastDate = new Date(lastDateStr);
       const daysAbsent = isNaN(lastDate) ? 0 : Math.floor((today - lastDate) / (1000*60*60*24));
-
       const paidRecords = records.filter(r => recordAmount(r) > 0);
       const paidVisits = paidRecords.length;
       const totalAmount = paidRecords.reduce((s,r)=> s + recordAmount(r), 0);
       const average = paidVisits ? Math.round(totalAmount / paidVisits) : 0;
-
       const allItems = {};
       records.forEach(r=>{
         (r.items || []).forEach(item=>{
@@ -1324,12 +1439,7 @@
           allItems[itemName] = (allItems[itemName] || 0) + qty;
         });
       });
-
-      const itemSummary = Object.entries(allItems)
-        .sort((a,b)=> b[1]-a[1])
-        .map(([n,q])=> `• ${esc(n)} : ${q}`)
-        .join('<br>') || '-';
-
+      const itemSummary = Object.entries(allItems).sort((a,b)=> b[1]-a[1]).map(([n,q])=> `• ${esc(n)} : ${q}`).join('<br>') || '-';
       const historyHtml = records.map(r=>{
         const items = (r.items || []).map(item=>{
           const m = String(item).match(/\((.*?)\)/);
@@ -1338,11 +1448,7 @@
           const qty = q ? parseInt(q[1],10) : 1;
           return `<li>${esc(itemName)} : ${qty}</li>`;
         }).join('');
-
-        const noteText = r.note
-          ? `<div style="font-size:11px; margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${esc(r.note)}</div>`
-          : '';
-
+        const noteText = r.note ? `<div style="font-size:11px; margin-top:2px; font-style:italic; color:#444;">📝 หมายเหตุ: ${esc(r.note)}</div>` : '';
         return `
           <div style="margin-bottom:14px;">
             <div style="font-weight:600; font-size:12px;">📅 ${formatDate((r.date || '').slice(0,10))}</div>
@@ -1350,8 +1456,7 @@
             <div style="margin-top:4px; color:#0a645a; font-size:11px;">💵 ${Math.round(recordAmount(r)).toLocaleString()} บาท</div>
             ${noteText}
             <hr style="margin:8px auto; border:0; border-top:1px dashed #ddd; width:60%;">
-          </div>
-        `;
+          </div>`;
       }).join('');
 
       document.getElementById("modal-content").innerHTML = `
@@ -1359,42 +1464,28 @@
           <div class="profile-img-box" onclick="openImgViewer('${profilePic}')">
             <img id="modalProfileImg" src="${profilePic}" alt="Profile">
           </div>
-
           <div class="profile-info">
             <h3>${esc(realName)}</h3>
-            <div class="profile-badges">
-              <span class="badge">OPD: ${esc(opd4)}</span>
-              ${vipBadge}
-            </div>
+            <div class="profile-badges"><span class="badge">OPD: ${esc(opd4)}</span>${vipBadge}</div>
             <div style="font-size:12px; margin-top:4px; color:#555;">📞 ${esc(first.phone || '-')}</div>
-
             <div class="profile-actions">
               <button class="btn-mini" type="button" onclick="pickProfileImage('${esc(opd4)}')">📷 เปลี่ยนรูป</button>
               <button class="btn-mini secondary" type="button" onclick="openImgViewer('${profilePic}')">🔍 ดูรูปใหญ่</button>
             </div>
           </div>
         </div>
-
         <div class="profile-summary-grid">
           <div class="profile-summary-box total">💰 ยอดรวม: <strong>${Math.round(totalAmount).toLocaleString()}</strong></div>
           <div class="profile-summary-box avg">💳 เฉลี่ย: <strong>${average.toLocaleString()}</strong></div>
           <div class="profile-summary-box visits">🔁 มาใช้บริการ: <strong>${records.length}</strong> ครั้ง</div>
           <div class="profile-summary-box last">📅 ล่าสุด: ${formatDate(lastDateStr)}<br><span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span></div>
         </div>
-
         <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
-
         <div style="font-weight:600; font-size:13px; margin-bottom:6px; color:#00796b;">📦 สรุปรายการซื้อทั้งหมด:</div>
         <div style="font-size:11px; background:#f9f9f9; padding:10px; border-radius:8px;">${itemSummary}</div>
-
         <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
-
         <div style="font-weight:600; font-size:13px; margin-bottom:6px; color:#00796b;">🧾 ประวัติการซื้อย้อนหลัง:</div>
-        <div style="max-height: 300px; overflow-y: auto;">
-          ${historyHtml}
-        </div>
-      `;
-
+        <div style="max-height: 300px; overflow-y: auto;">${historyHtml}</div>`;
       const modal = document.getElementById("customer-modal");
       if(modal) modal.style.display = 'flex';
     }
@@ -1407,29 +1498,17 @@
       openCustomerModal(key);
     });
 
-    // ===== Excel Export =====
     document.getElementById('downloadExcelBtn')?.addEventListener('click', downloadExcel);
-
     function downloadExcel(){
-      const allMonths = isRangeActive()
-        ? monthsSorted.filter(m=> m >= rangeStart && m <= rangeEnd)
-        : (selectedMonth ? [selectedMonth] : []);
-
+      const allMonths = getCurrentVisibleMonths();
       const recs = allMonths.flatMap(m=> groupedByMonth[m] || []);
-      if(!recs.length){
-        alert('ไม่มีข้อมูลให้ดาวน์โหลด');
-        return;
-      }
-
-      const filename = isRangeActive()
-        ? `ยอดขาย_${rangeStart}_ถึง_${rangeEnd}.xlsx`
-        : `ยอดขาย_${selectedMonth||'ทั้งหมด'}.xlsx`;
-
-      const sortedRecs = recs.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
+      const filtered = recs.filter(r => getRecordTaxDisplay(r) === 'show');
+      if(!filtered.length){ alert('ไม่มีข้อมูลที่เลือกให้ดาวน์โหลด'); return; }
+      const filename = isRangeActive() ? `ยอดขายที่เลือก_${rangeStart}_ถึง_${rangeEnd}.xlsx` : `ยอดขายที่เลือก_${selectedMonth||'ทั้งหมด'}.xlsx`;
+      const sortedRecs = filtered.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
       const ws_data = [];
       let currentDate = '';
       let dailyTotal = 0;
-
       sortedRecs.forEach(r=>{
         const formattedDate = formatDate(r.date);
         const items = (r.items||[]).map(item=>{
@@ -1440,151 +1519,79 @@
           }
           return String(item);
         }).join('\n');
-
         if(formattedDate !== currentDate){
-          if(currentDate !== ''){
-            ws_data.push(['','','','รวมยอดประจำวัน', dailyTotal, '']);
-            ws_data.push([]);
-          }
+          if(currentDate !== ''){ ws_data.push(['','','','','รวมยอดประจำวัน', dailyTotal, '']); ws_data.push([]); }
           currentDate = formattedDate;
           dailyTotal = 0;
           ws_data.push([`วันที่ ${formattedDate}`]);
-          ws_data.push(['OPD','ชื่อ','เบอร์','รายการ','ยอด (บาท)','หมายเหตุ']);
+          ws_data.push(['สถานะ','OPD','ชื่อ','เบอร์','รายการ','ยอด (บาท)','หมายเหตุ']);
         }
-
-        dailyTotal += parseCurrency(r.amount);
-        ws_data.push([ r.opd||'', r.name, r.phone||'', items, parseCurrency(r.amount), r.note||'' ]);
+        dailyTotal += recordAmount(r);
+        ws_data.push(['show', r.opd||'', r.name, r.phone||'', items, recordAmount(r), r.note||'']);
       });
-
-      if(currentDate !== '') ws_data.push(['','','','รวมยอดประจำวัน', dailyTotal, '']);
-
+      if(currentDate !== '') ws_data.push(['','','','','รวมยอดประจำวัน', dailyTotal, '']);
       const worksheet = XLSX.utils.aoa_to_sheet(ws_data);
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'ยอดขายรายวัน');
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'ยอดขายที่เลือก');
       XLSX.writeFile(workbook, filename);
     }
 
-    // ===== PDF Export =====
     document.getElementById('downloadPdfBtn')?.addEventListener('click', openPdfMonthModal);
-
-    function getAvailableMonthsForPdf() {
-      if (isRangeActive()) {
-        return monthsSorted.filter(m => m >= rangeStart && m <= rangeEnd);
-      }
-      return selectedMonth ? [selectedMonth] : monthsSorted.slice();
-    }
-
+    function getAvailableMonthsForPdf() { return getCurrentVisibleMonths(); }
     function openPdfMonthModal() {
       const modal = document.getElementById('pdf-month-modal');
       const select = document.getElementById('pdfMonthSelect');
       if (!modal || !select) return;
-
       const availableMonths = getAvailableMonthsForPdf();
-
-      if (!availableMonths.length) {
-        alert('ไม่มีข้อมูลให้ดาวน์โหลด PDF');
-        return;
-      }
-
+      if (!availableMonths.length) { alert('ไม่มีข้อมูลให้ดาวน์โหลด PDF'); return; }
       select.innerHTML = '';
-
       availableMonths.forEach(monthKey => {
-        const option = document.createElement('option');
-        option.value = monthKey;
-        option.textContent = monthLabel(monthKey);
-        select.appendChild(option);
+        const option = document.createElement('option'); option.value = monthKey; option.textContent = monthLabel(monthKey); select.appendChild(option);
       });
-
-      if (selectedMonth && availableMonths.includes(selectedMonth)) {
-        select.value = selectedMonth;
-      } else {
-        select.value = availableMonths[availableMonths.length - 1];
-      }
-
+      if (selectedMonth && availableMonths.includes(selectedMonth)) select.value = selectedMonth;
+      else select.value = availableMonths[availableMonths.length - 1];
       modal.style.display = 'flex';
     }
-
-    function closePdfMonthModal() {
-      const modal = document.getElementById('pdf-month-modal');
-      if (modal) modal.style.display = 'none';
-    }
-
+    function closePdfMonthModal() { const modal = document.getElementById('pdf-month-modal'); if (modal) modal.style.display = 'none'; }
     async function confirmPdfMonthModal() {
       const select = document.getElementById('pdfMonthSelect');
-      if (!select || !select.value) {
-        alert('กรุณาเลือกเดือน');
-        return;
-      }
-
+      if (!select || !select.value) { alert('กรุณาเลือกเดือน'); return; }
       await generateMonthPdf(select.value);
       closePdfMonthModal();
     }
-
     document.getElementById('pdfMonthCloseBtn')?.addEventListener('click', closePdfMonthModal);
     document.getElementById('pdfMonthCancelBtn')?.addEventListener('click', closePdfMonthModal);
     document.getElementById('pdfMonthOkBtn')?.addEventListener('click', confirmPdfMonthModal);
-
-    document.getElementById('pdf-month-modal')?.addEventListener('click', (e) => {
-      if (e.target && e.target.id === 'pdf-month-modal') closePdfMonthModal();
-    });
+    document.getElementById('pdf-month-modal')?.addEventListener('click', (e) => { if (e.target && e.target.id === 'pdf-month-modal') closePdfMonthModal(); });
 
     function buildPdfRows(monthKey){
-      const recs = (groupedByMonth[monthKey] || [])
-        .slice()
-        .sort((a,b)=> new Date(a.date) - new Date(b.date));
-
+      const recs = (groupedByMonth[monthKey] || []).filter(r => getRecordTaxDisplay(r) === 'show').slice().sort((a,b)=> new Date(a.date) - new Date(b.date));
       let runningTotal = 0;
-
       return recs.map((r, index) => {
         const itemText = (r.items || []).map(item => {
           const parsed = parseLine(String(item));
-          if (parsed) {
-            return parsed.sub
-              ? `${parsed.main} (${parsed.sub}) - ${parsed.qty} ชิ้น`
-              : `${parsed.main} - ${parsed.qty} ชิ้น`;
-          }
+          if (parsed) return parsed.sub ? `${parsed.main} (${parsed.sub}) - ${parsed.qty} ชิ้น` : `${parsed.main} - ${parsed.qty} ชิ้น`;
           return normalizeText(item);
         }).join('\n');
-
         const amount = recordAmount(r);
         runningTotal += amount;
-
-        return {
-          no: index + 1,
-          date: formatDate(r.date || ''),
-          name: r.name || '',
-          items: itemText || '-',
-          amount,
-          runningTotal
-        };
+        return { no: index + 1, date: formatDate(r.date || ''), name: r.name || '', items: itemText || '-', amount, runningTotal };
       });
     }
-
     function splitPdfRows(rows, firstPageLimit = 14, nextPageLimit = 16){
-      const chunks = [];
-      if (!rows.length) return chunks;
-
-      chunks.push(rows.slice(0, firstPageLimit));
-      let i = firstPageLimit;
-      while (i < rows.length) {
-        chunks.push(rows.slice(i, i + nextPageLimit));
-        i += nextPageLimit;
-      }
-      return chunks;
+      const chunks = []; if (!rows.length) return chunks; chunks.push(rows.slice(0, firstPageLimit)); let i = firstPageLimit; while (i < rows.length) { chunks.push(rows.slice(i, i + nextPageLimit)); i += nextPageLimit; } return chunks;
     }
-
     function buildPdfHtml(monthKey){
       const rows = buildPdfRows(monthKey);
       const pages = splitPdfRows(rows, 14, 16);
       const title = `รายการขายประจำเดือน ${monthLabel(monthKey)}`;
       const monthTotal = rows.reduce((sum, r) => sum + (r.amount || 0), 0);
-
       return pages.map((pageRows, pageIndex) => `
         <div class="pdf-page">
           <div class="pdf-header">
             <div class="pdf-header-left">
               <div class="pdf-title">${escapeHtml(title)}</div>
-              <div class="pdf-subtitle">รายการขายเฉพาะเดือนที่เลือก</div>
+              <div class="pdf-subtitle">เฉพาะรายการที่เลือกแสดง</div>
             </div>
             <div class="pdf-header-right">
               <div class="pdf-count">จำนวนบิลทั้งหมด: ${rows.length} รายการ</div>
@@ -1592,7 +1599,6 @@
               <div class="pdf-page-no">หน้า ${pageIndex + 1} / ${pages.length}</div>
             </div>
           </div>
-
           <table class="pdf-table">
             <thead>
               <tr>
@@ -1613,67 +1619,35 @@
                   <td class="pdf-items">${escapeHtml(r.items)}</td>
                   <td class="pdf-amount">${Number(r.amount || 0).toLocaleString()}</td>
                   <td class="pdf-running">${Number(r.runningTotal || 0).toLocaleString()}</td>
-                </tr>
-              `).join('')}
+                </tr>`).join('')}
             </tbody>
           </table>
-
-          <div class="pdf-footer">
-            <div>ระบบสรุปรายการขายประจำเดือน</div>
-            <div>ออกรายงานเมื่อ ${new Date().toLocaleDateString('th-TH')}</div>
-          </div>
-        </div>
-      `).join('');
+          <div class="pdf-footer"><div>ระบบสรุปรายการขายประจำเดือน</div><div>ออกรายงานเมื่อ ${new Date().toLocaleDateString('th-TH')}</div></div>
+        </div>`).join('');
     }
-
     async function generateMonthPdf(monthKey) {
-      const recs = (groupedByMonth[monthKey] || []).slice();
-      if (!recs.length) {
-        alert(`ไม่มีข้อมูลของเดือน ${monthLabel(monthKey)}`);
-        return;
-      }
-
+      const recs = (groupedByMonth[monthKey] || []).filter(r => getRecordTaxDisplay(r) === 'show').slice();
+      if (!recs.length) { alert(`ไม่มีข้อมูลที่เลือกของเดือน ${monthLabel(monthKey)}`); return; }
       const pdfArea = document.getElementById('pdf-print-area');
-      if (!pdfArea) {
-        alert('ไม่พบพื้นที่สร้าง PDF');
-        return;
-      }
-
+      if (!pdfArea) { alert('ไม่พบพื้นที่สร้าง PDF'); return; }
       pdfArea.innerHTML = buildPdfHtml(monthKey);
-
-      await document.fonts.ready;
-      await new Promise(resolve => setTimeout(resolve, 300));
-
+      await document.fonts.ready; await new Promise(resolve => setTimeout(resolve, 300));
       const pages = Array.from(pdfArea.querySelectorAll('.pdf-page'));
-      if (!pages.length) {
-        alert('ไม่สามารถสร้างหน้า PDF ได้');
-        return;
-      }
-
+      if (!pages.length) { alert('ไม่สามารถสร้างหน้า PDF ได้'); return; }
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF('l', 'mm', 'a4');
-
       for (let i = 0; i < pages.length; i++) {
-        const canvas = await html2canvas(pages[i], {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#ffffff'
-        });
-
+        const canvas = await html2canvas(pages[i], { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
         const imgData = canvas.toDataURL('image/jpeg', 1.0);
-        const pageWidth = 297;
-        const pageHeight = 210;
-
+        const pageWidth = 297; const pageHeight = 210;
         if (i > 0) doc.addPage();
         doc.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight);
       }
-
       const safeMonth = monthKey.replace('-', '_');
-      doc.save(`รายการขาย_${safeMonth}.pdf`);
+      doc.save(`รายการขายที่เลือก_${safeMonth}.pdf`);
       pdfArea.innerHTML = '';
     }
 
-    // ===== Month Range Modal =====
     function openMonthModal(){
       const mm = document.getElementById('month-modal');
       const inputStart = document.getElementById('monthStart');
@@ -1682,12 +1656,7 @@
       if (inputEnd) inputEnd.value = rangeEnd || selectedMonth || '';
       if (mm) mm.style.display = 'flex';
     }
-
-    function closeMonthModal(){
-      const m = document.getElementById('month-modal');
-      if (m) m.style.display = 'none';
-    }
-
+    function closeMonthModal(){ const m = document.getElementById('month-modal'); if (m) m.style.display = 'none'; }
     function confirmMonthModal(){
       let s = (document.getElementById('monthStart').value||'').trim();
       let e = (document.getElementById('monthEnd').value||'').trim();
@@ -1695,35 +1664,20 @@
       if(s && !e) e = s;
       if(e && !s) s = e;
       if (s > e){ const t=s; s=e; e=t; }
-
-      rangeStart = s;
-      rangeEnd = e;
-      selectedMonth = s;
-      updateRangeBadge();
-      renderView();
-      updateMonthButtons();
-      closeMonthModal();
+      rangeStart = s; rangeEnd = e; selectedMonth = s; updateRangeBadge(); renderView(); updateMonthButtons(); closeMonthModal();
     }
-
-    document.getElementById('month-modal')?.addEventListener('click', (e)=>{
-      if (e.target && e.target.id === 'month-modal') closeMonthModal();
-    });
+    document.getElementById('month-modal')?.addEventListener('click', (e)=>{ if (e.target && e.target.id === 'month-modal') closeMonthModal(); });
     document.getElementById('month-modal-box')?.addEventListener('click', (e)=>{ e.stopPropagation(); });
     document.getElementById('monthCloseBtn')?.addEventListener('click', closeMonthModal);
     document.getElementById('monthCancelBtn')?.addEventListener('click', closeMonthModal);
     document.getElementById('monthOkBtn')?.addEventListener('click', confirmMonthModal);
 
-    // ESC ปิด modal
     document.addEventListener('keydown', (e)=>{
       if(e.key === 'Escape'){
-        closeCustomerModal();
-        closeMonthModal();
-        closePdfMonthModal();
-        closeImgViewer();
+        closeCustomerModal(); closeMonthModal(); closePdfMonthModal(); closeImgViewer();
       }
     });
 
-    // expose
     window.openMonthModal = openMonthModal;
     window.closeMonthModal = closeMonthModal;
     window.confirmMonthModal = confirmMonthModal;
