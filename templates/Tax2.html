@@ -6,7 +6,6 @@
   <meta name="format-detection" content="telephone=no">
   <title>สรุปยอดขายประจำเดือน</title>
 
-  <!-- ฟอนต์ -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap&subset=thai" rel="stylesheet" />
@@ -295,30 +294,59 @@
       .profile-info h3{ font-size:16px; }
     }
 
+    /* ----------------------------------------------------
+       การจัดรูปแบบสำหรับ PDF Export (A4 แนวตั้ง - Portrait)
+       ---------------------------------------------------- */
     #pdf-print-area{
-      position: fixed; left: -99999px; top: 0; width: 1123px;
-      background: #fff; color: #1f2937; padding: 0; box-sizing: border-box; z-index: -1;
+      position: fixed; left: -99999px; top: 0; width: 794px; /* ความกว้าง A4 96dpi */
+      background: #fff; color: #111827; padding: 0; box-sizing: border-box; z-index: -1;
     }
-    .pdf-page{ width: 1123px; min-height: 794px; background: #fff; box-sizing: border-box; page-break-after: always; padding: 22px 26px; }
+    .pdf-page{
+      width: 794px; min-height: 1123px; /* ความสูง A4 96dpi */
+      background: #fff; box-sizing: border-box; page-break-after: always;
+      padding: 40px; /* ระยะขอบกระดาษเสมือนจริง */
+      position: relative;
+    }
     .pdf-page:last-child{ page-break-after: auto; }
-    .pdf-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 14px; gap: 16px; }
-    .pdf-header-left{ flex:1; }
-    .pdf-title{ font-size: 30px; font-weight: 700; color: #00695c; margin-bottom: 4px; line-height: 1.2; }
-    .pdf-subtitle{ font-size: 15px; color: #6b7280; }
-    .pdf-header-right{ text-align:right; min-width: 260px; }
-    .pdf-count,.pdf-total,.pdf-page-no{ font-size: 14px; color: #374151; margin-bottom: 4px; }
-    .pdf-total strong{ color:#b45309; font-size: 18px; }
-    .pdf-table{ width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; }
+    
+    /* โครงสร้างส่วนหัวเอกสาร 3 ชั้น */
+    .pdf-header-top{ text-align: center; margin-bottom: 15px; }
+    .pdf-clinic-name{ font-size: 22px; font-weight: 700; color: #111827; }
+    .pdf-doc-title{ font-size: 18px; font-weight: 600; color: #374151; margin-top: 5px; }
+    
+    .pdf-header-info{
+      display: flex; justify-content: space-between; align-items: flex-end;
+      border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 15px;
+      font-size: 13px; color: #4b5563;
+    }
+    .pdf-info-left{ line-height: 1.5; }
+    .pdf-info-right{ text-align: right; line-height: 1.5; }
+    .pdf-net-total{ font-size: 16px; font-weight: 700; color: #111827; margin-top: 4px; }
+
+    /* ตาราง PDF ทางการ */
+    .pdf-table{ width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
     .pdf-table thead{ display: table-header-group !important; }
-    .pdf-table th{ background: #00897b; color: #fff; font-weight: 700; text-align: center; padding: 10px 8px; border: 2px solid #d1d5db; position: static !important; line-height: 1.3; }
-    .pdf-table td{ border: 1px solid #d1d5db; padding: 8px 10px; vertical-align: top; word-break: break-word; white-space: pre-wrap; line-height: 1.45; }
-    .pdf-table tbody tr:nth-child(even){ background: #f9fafb; }
-    .pdf-table tbody tr:hover{ background: transparent; }
-    .pdf-num,.pdf-date{ text-align:center; }
-    .pdf-amount,.pdf-running{ text-align:right; font-weight:600; }
-    .pdf-name{ font-weight:600; }
-    .pdf-items{ font-size: 13px; line-height: 1.5; }
-    .pdf-footer{ margin-top: 10px; display:flex; justify-content:space-between; align-items:center; font-size: 12px; color:#6b7280; }
+    .pdf-table th{
+      background: #f3f4f6; color: #111827; font-weight: 600; text-align: center;
+      padding: 8px 6px; border: 1px solid #9ca3af; line-height: 1.3;
+    }
+    .pdf-table td{
+      border: 1px solid #d1d5db; padding: 6px 8px; vertical-align: top;
+      word-break: break-word; line-height: 1.4; color: #111827;
+    }
+    .pdf-num, .pdf-date{ text-align: center; }
+    .pdf-amount{ text-align: right; font-weight: 500; }
+    .pdf-items{ font-size: 12px; color: #374151; }
+    
+    /* Footer */
+    .pdf-footer{
+      position: absolute; bottom: 40px; left: 40px; right: 40px;
+      display: flex; justify-content: space-between; align-items: flex-end;
+      font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 10px;
+    }
+    .pdf-sign-box{ text-align: center; width: 150px; }
+    .pdf-sign-line{ border-bottom: 1px dotted #9ca3af; height: 30px; margin-bottom: 5px; }
+
   </style>
 </head>
 <body>
@@ -1505,12 +1533,19 @@
       const filtered = recs.filter(r => getRecordTaxDisplay(r) === 'show');
       if(!filtered.length){ alert('ไม่มีข้อมูลที่เลือกให้ดาวน์โหลด'); return; }
       const filename = isRangeActive() ? `ยอดขายที่เลือก_${rangeStart}_ถึง_${rangeEnd}.xlsx` : `ยอดขายที่เลือก_${selectedMonth||'ทั้งหมด'}.xlsx`;
-      const sortedRecs = filtered.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
+      
+      // เรียงจากเก่าไปใหม่ เพื่อให้ยอดสะสมถูกต้องตามลำดับเวลา
+      const sortedRecs = filtered.slice().sort((a,b)=> new Date(a.date) - new Date(b.date));
       const ws_data = [];
       let currentDate = '';
       let dailyTotal = 0;
+      let runningTotal = 0;
+      
       sortedRecs.forEach(r=>{
         const formattedDate = formatDate(r.date);
+        const amount = recordAmount(r);
+        runningTotal += amount;
+        
         const items = (r.items||[]).map(item=>{
           const m = String(item).match(/^(.*?) ?(?:\((.*?)\))? - (\d+) ชิ้น/);
           if(m){
@@ -1519,17 +1554,19 @@
           }
           return String(item);
         }).join('\n');
+        
         if(formattedDate !== currentDate){
-          if(currentDate !== ''){ ws_data.push(['','','','','รวมยอดประจำวัน', dailyTotal, '']); ws_data.push([]); }
+          if(currentDate !== ''){ ws_data.push(['','','','','รวมยอดประจำวัน', dailyTotal, '', '']); ws_data.push([]); }
           currentDate = formattedDate;
           dailyTotal = 0;
           ws_data.push([`วันที่ ${formattedDate}`]);
-          ws_data.push(['สถานะ','OPD','ชื่อ','เบอร์','รายการ','ยอด (บาท)','หมายเหตุ']);
+          ws_data.push(['สถานะ','OPD','ชื่อ','เบอร์','รายการ','ยอด (บาท)','ยอดสะสม (บาท)','หมายเหตุ']);
         }
-        dailyTotal += recordAmount(r);
-        ws_data.push(['show', r.opd||'', r.name, r.phone||'', items, recordAmount(r), r.note||'']);
+        dailyTotal += amount;
+        ws_data.push(['show', r.opd||'', r.name, r.phone||'', items, amount, runningTotal, r.note||'']);
       });
-      if(currentDate !== '') ws_data.push(['','','','','รวมยอดประจำวัน', dailyTotal, '']);
+      if(currentDate !== '') ws_data.push(['','','','','รวมยอดประจำวัน', dailyTotal, '', '']);
+      
       const worksheet = XLSX.utils.aoa_to_sheet(ws_data);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'ยอดขายที่เลือก');
@@ -1564,50 +1601,81 @@
     document.getElementById('pdfMonthOkBtn')?.addEventListener('click', confirmPdfMonthModal);
     document.getElementById('pdf-month-modal')?.addEventListener('click', (e) => { if (e.target && e.target.id === 'pdf-month-modal') closePdfMonthModal(); });
 
+    // ----------------------------------------------------
+    // ฟังก์ชันสร้าง PDF ฉบับปรับปรุง (A4 แนวตั้ง, มีคอลัมน์ยอดสะสม)
+    // ----------------------------------------------------
     function buildPdfRows(monthKey){
       const recs = (groupedByMonth[monthKey] || []).filter(r => getRecordTaxDisplay(r) === 'show').slice().sort((a,b)=> new Date(a.date) - new Date(b.date));
-      let runningTotal = 0;
+      let runningTotal = 0; 
       return recs.map((r, index) => {
         const itemText = (r.items || []).map(item => {
           const parsed = parseLine(String(item));
-          if (parsed) return parsed.sub ? `${parsed.main} (${parsed.sub}) - ${parsed.qty} ชิ้น` : `${parsed.main} - ${parsed.qty} ชิ้น`;
-          return normalizeText(item);
-        }).join('\n');
+          if (parsed) return `${parsed.main} × ${parsed.qty}`;
+          let raw = normalizeText(item);
+          return raw.length > 25 ? raw.substring(0, 25) + '...' : raw;
+        }).join(', ');
+        
         const amount = recordAmount(r);
-        runningTotal += amount;
-        return { no: index + 1, date: formatDate(r.date || ''), name: r.name || '', items: itemText || '-', amount, runningTotal };
+        runningTotal += amount; 
+        return { 
+          no: index + 1, 
+          date: formatDate(r.date || ''), 
+          name: r.name || '', 
+          items: itemText || '-', 
+          amount,
+          runningTotal 
+        };
       });
     }
-    function splitPdfRows(rows, firstPageLimit = 14, nextPageLimit = 16){
-      const chunks = []; if (!rows.length) return chunks; chunks.push(rows.slice(0, firstPageLimit)); let i = firstPageLimit; while (i < rows.length) { chunks.push(rows.slice(i, i + nextPageLimit)); i += nextPageLimit; } return chunks;
+
+    function splitPdfRows(rows, firstPageLimit = 22, nextPageLimit = 28){
+      const chunks = []; 
+      if (!rows.length) return chunks; 
+      chunks.push(rows.slice(0, firstPageLimit)); 
+      let i = firstPageLimit; 
+      while (i < rows.length) { 
+        chunks.push(rows.slice(i, i + nextPageLimit)); 
+        i += nextPageLimit; 
+      } 
+      return chunks;
     }
+
     function buildPdfHtml(monthKey){
       const rows = buildPdfRows(monthKey);
-      const pages = splitPdfRows(rows, 14, 16);
-      const title = `รายการขายประจำเดือน ${monthLabel(monthKey)}`;
+      const pages = splitPdfRows(rows, 22, 28);
       const monthTotal = rows.reduce((sum, r) => sum + (r.amount || 0), 0);
+      
       return pages.map((pageRows, pageIndex) => `
         <div class="pdf-page">
-          <div class="pdf-header">
-            <div class="pdf-header-left">
-              <div class="pdf-title">${escapeHtml(title)}</div>
-              <div class="pdf-subtitle">เฉพาะรายการที่เลือกแสดง</div>
-            </div>
-            <div class="pdf-header-right">
-              <div class="pdf-count">จำนวนบิลทั้งหมด: ${rows.length} รายการ</div>
-              <div class="pdf-total">ยอดรวมทั้งเดือน: <strong>${monthTotal.toLocaleString()} บาท</strong></div>
-              <div class="pdf-page-no">หน้า ${pageIndex + 1} / ${pages.length}</div>
-            </div>
+          ${pageIndex === 0 ? `
+          <div class="pdf-header-top">
+            <div class="pdf-clinic-name">Doctor Palmy Clinic</div>
+            <div class="pdf-doc-title">รายงานสรุปรายการขายเพื่อประกอบภาษี</div>
           </div>
+          <div class="pdf-header-info">
+            <div class="pdf-info-left">
+              <div>ประจำเดือน: <strong>${monthLabel(monthKey)}</strong></div>
+              <div>วันที่พิมพ์: ${new Date().toLocaleDateString('th-TH')}</div>
+            </div>
+            <div class="pdf-info-right">
+              <div>จำนวนบิล: ${rows.length} รายการ</div>
+              <div class="pdf-net-total">ยอดรวมสุทธิ: ${monthTotal.toLocaleString()} บาท</div>
+            </div>
+          </div>` : `
+          <div class="pdf-header-info" style="margin-top: 10px;">
+             <div class="pdf-info-left">รายงานสรุปรายการขาย - ${monthLabel(monthKey)} (ต่อ)</div>
+          </div>
+          `}
+          
           <table class="pdf-table">
             <thead>
               <tr>
-                <th style="width:5%;">ลำดับ</th>
-                <th style="width:10%;">วันที่</th>
-                <th style="width:18%;">ชื่อ</th>
-                <th style="width:39%;">รายการ</th>
-                <th style="width:12%;">ยอด/บิล</th>
-                <th style="width:16%;">ยอดรวมสะสม</th>
+                <th style="width:7%;">ลำดับ</th>
+                <th style="width:11%;">วันที่</th>
+                <th style="width:21%;">ชื่อลูกค้า</th>
+                <th style="width:31%;">รายการ</th>
+                <th style="width:15%;">จำนวนเงิน</th>
+                <th style="width:15%;">ยอดสะสม</th>
               </tr>
             </thead>
             <tbody>
@@ -1618,33 +1686,52 @@
                   <td class="pdf-name">${escapeHtml(r.name)}</td>
                   <td class="pdf-items">${escapeHtml(r.items)}</td>
                   <td class="pdf-amount">${Number(r.amount || 0).toLocaleString()}</td>
-                  <td class="pdf-running">${Number(r.runningTotal || 0).toLocaleString()}</td>
+                  <td class="pdf-amount">${Number(r.runningTotal || 0).toLocaleString()}</td>
                 </tr>`).join('')}
             </tbody>
           </table>
-          <div class="pdf-footer"><div>ระบบสรุปรายการขายประจำเดือน</div><div>ออกรายงานเมื่อ ${new Date().toLocaleDateString('th-TH')}</div></div>
+          
+          <div class="pdf-footer">
+            <div>พิมพ์จากระบบการจัดการคลินิก | หน้า ${pageIndex + 1} / ${pages.length}</div>
+            ${pageIndex === pages.length - 1 ? `
+            <div class="pdf-sign-box">
+               <div class="pdf-sign-line"></div>
+               <div>ผู้จัดทำ / ผู้ตรวจสอบ</div>
+            </div>` : ''}
+          </div>
         </div>`).join('');
     }
+
     async function generateMonthPdf(monthKey) {
       const recs = (groupedByMonth[monthKey] || []).filter(r => getRecordTaxDisplay(r) === 'show').slice();
       if (!recs.length) { alert(`ไม่มีข้อมูลที่เลือกของเดือน ${monthLabel(monthKey)}`); return; }
+      
       const pdfArea = document.getElementById('pdf-print-area');
       if (!pdfArea) { alert('ไม่พบพื้นที่สร้าง PDF'); return; }
+      
       pdfArea.innerHTML = buildPdfHtml(monthKey);
-      await document.fonts.ready; await new Promise(resolve => setTimeout(resolve, 300));
+      await document.fonts.ready; 
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       const pages = Array.from(pdfArea.querySelectorAll('.pdf-page'));
       if (!pages.length) { alert('ไม่สามารถสร้างหน้า PDF ได้'); return; }
+      
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF('l', 'mm', 'a4');
+      const doc = new jsPDF('p', 'mm', 'a4');
+      
       for (let i = 0; i < pages.length; i++) {
         const canvas = await html2canvas(pages[i], { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
         const imgData = canvas.toDataURL('image/jpeg', 1.0);
-        const pageWidth = 297; const pageHeight = 210;
+        
+        const pageWidth = 210; 
+        const pageHeight = 297;
+        
         if (i > 0) doc.addPage();
         doc.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight);
       }
+      
       const safeMonth = monthKey.replace('-', '_');
-      doc.save(`รายการขายที่เลือก_${safeMonth}.pdf`);
+      doc.save(`รายงานการขาย_DoctorPalmy_${safeMonth}.pdf`);
       pdfArea.innerHTML = '';
     }
 
