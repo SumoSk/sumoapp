@@ -1393,35 +1393,50 @@
 
       const [yy, mm] = String(monthKey).split('-').map(Number);
       const currentLimit = daysToCompareForMonth(yy, mm);
-      const prevLimit = Math.min(currentLimit, daysInMonth(yy - 1, mm));
+      const prevSameLimit = Math.min(currentLimit, daysInMonth(yy - 1, mm));
+      const prevFullLimit = daysInMonth(yy - 1, mm);
+
+      // ยอดเทียบช่วงวันเดียวกัน: เดือนปัจจุบันถึงวันที่มีข้อมูลจริง เทียบกับปีที่แล้วช่วงวันเดียวกัน
       const currentPeriod = getMonthToDayTotal(monthKey, currentLimit);
-      const prevPeriod = getMonthToDayTotal(prevYearMonth, prevLimit);
-      const diffPeriod = currentPeriod - prevPeriod;
+      const prevSamePeriod = getMonthToDayTotal(prevYearMonth, prevSameLimit);
+      const diffPeriod = currentPeriod - prevSamePeriod;
+
+      // ยอดเต็มเดือนของปีที่แล้ว: ใช้เป็นภาพรวมว่าปีก่อนทั้งเดือนปิดที่เท่าไหร่
+      const prevFullMonth = getMonthTotal(prevYearMonth);
+      const prevRemainingAfterSamePeriod = Math.max(0, prevFullMonth - prevSamePeriod);
+
       const currentCustomers = customerCountForMonthToDay(monthKey, currentLimit);
-      const prevCustomers = customerCountForMonthToDay(prevYearMonth, prevLimit);
+      const prevCustomers = customerCountForMonthToDay(prevYearMonth, prevSameLimit);
+      const customerDiff = currentCustomers - prevCustomers;
 
       const currentDaily = buildDailyTotals(monthKey);
       const prevDaily = buildDailyTotals(prevYearMonth);
-      const maxDay = Math.max(currentLimit, prevLimit);
+      const maxDay = Math.max(currentLimit, prevFullLimit);
       const rows = [];
       for(let day = 1; day <= maxDay; day++){
-        const cur = day <= currentLimit ? (currentDaily[day] || 0) : 0;
-        const old = day <= prevLimit ? (prevDaily[day] || 0) : 0;
-        if(cur === 0 && old === 0) continue;
-        const diff = cur - old;
+        const isCurrentComparableDay = day <= currentLimit;
+        const cur = isCurrentComparableDay ? (currentDaily[day] || 0) : null;
+        const old = day <= prevFullLimit ? (prevDaily[day] || 0) : 0;
+
+        // แสดงข้อมูลปีที่แล้วจนจบเดือน แม้วันของปีนี้ยังไม่ถึง
+        if((cur === null || cur === 0) && old === 0) continue;
+
+        const diff = cur === null ? null : (cur - old);
         rows.push(`
           <tr>
             <td>${day}</td>
-            <td>${cur.toLocaleString()}</td>
+            <td>${cur === null ? '<span class="year-compare-neutral">-</span>' : cur.toLocaleString()}</td>
             <td>${old.toLocaleString()}</td>
-            <td class="${diffTextClass(diff)}">${formatDiffBaht(diff)}</td>
+            <td class="${diff === null ? 'year-compare-neutral' : diffTextClass(diff)}">${diff === null ? '-' : formatDiffBaht(diff)}</td>
           </tr>
         `);
       }
 
       box.innerHTML = `
         <div class="year-compare-title">เทียบ ${monthLabel(monthKey)} กับ ${monthLabel(prevYearMonth)}</div>
-        <div class="year-compare-sub">คำนวณเฉพาะช่วงวันที่ 1-${currentLimit} เทียบกับปีก่อนช่วงวันที่ 1-${prevLimit} เพื่อไม่เอายอดเต็มเดือนของปีก่อนมาปนกับเดือนที่ยังไม่จบ</div>
+        <div class="year-compare-sub">
+          ยอดเปรียบเทียบหลักใช้วันที่ 1-${currentLimit} เทียบกับปีก่อนวันที่ 1-${prevSameLimit} และตารางด้านล่างแสดงประวัติปีที่แล้วจนจบเดือน
+        </div>
 
         <div class="year-compare-cards">
           <div class="year-compare-card">
@@ -1429,28 +1444,29 @@
             <div class="value">${currentPeriod.toLocaleString()} บาท</div>
           </div>
           <div class="year-compare-card">
-            <div class="label">ยอด ${monthLabel(prevYearMonth)} วันที่ 1-${prevLimit}</div>
-            <div class="value">${prevPeriod.toLocaleString()} บาท</div>
+            <div class="label">ยอด ${monthLabel(prevYearMonth)} วันที่ 1-${prevSameLimit}</div>
+            <div class="value">${prevSamePeriod.toLocaleString()} บาท</div>
           </div>
           <div class="year-compare-card diff ${diffClass(diffPeriod)}">
             <div class="label">ส่วนต่างช่วงวันเดียวกัน</div>
             <div class="value">${formatDiffBaht(diffPeriod)}</div>
-            <div style="font-size:11px;color:#64748b;margin-top:4px;">${percentText(currentPeriod, prevPeriod)}</div>
+            <div style="font-size:11px;color:#64748b;margin-top:4px;">${percentText(currentPeriod, prevSamePeriod)}</div>
           </div>
         </div>
 
         <div class="year-compare-cards" style="margin-top:10px;">
-          <div class="year-compare-card">
-            <div class="label">จำนวนลูกค้าช่วงนี้</div>
-            <div class="value">${currentCustomers.toLocaleString()} คน</div>
+          <div class="year-compare-card diff ${diffClass(customerDiff)}">
+            <div class="label">จำนวนลูกค้า ปีนี้ / ปีที่แล้ว</div>
+            <div class="value">${currentCustomers.toLocaleString()} / ${prevCustomers.toLocaleString()} คน</div>
+            <div style="font-size:11px;color:#64748b;margin-top:4px;">ส่วนต่าง ${customerDiff > 0 ? '+' : ''}${customerDiff.toLocaleString()} คน</div>
           </div>
           <div class="year-compare-card">
-            <div class="label">จำนวนลูกค้าปีก่อนช่วงเดียวกัน</div>
-            <div class="value">${prevCustomers.toLocaleString()} คน</div>
+            <div class="label">ยอดเต็มเดือน ${monthLabel(prevYearMonth)}</div>
+            <div class="value">${prevFullMonth.toLocaleString()} บาท</div>
           </div>
-          <div class="year-compare-card diff ${diffClass(currentCustomers - prevCustomers)}">
-            <div class="label">ส่วนต่างจำนวนลูกค้า</div>
-            <div class="value">${currentCustomers - prevCustomers > 0 ? '+' : ''}${(currentCustomers - prevCustomers).toLocaleString()} คน</div>
+          <div class="year-compare-card">
+            <div class="label">ยอดปีที่แล้วหลังวันที่ ${prevSameLimit}</div>
+            <div class="value">${prevRemainingAfterSamePeriod.toLocaleString()} บาท</div>
           </div>
         </div>
 
@@ -1460,7 +1476,7 @@
               <tr>
                 <th>วันที่</th>
                 <th>${monthLabel(monthKey)}</th>
-                <th>${monthLabel(prevYearMonth)}</th>
+                <th>${monthLabel(prevYearMonth)} ทั้งเดือน</th>
                 <th>ส่วนต่าง</th>
               </tr>
             </thead>

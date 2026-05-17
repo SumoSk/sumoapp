@@ -363,26 +363,29 @@
       font-size:10px !important;
     }
 
-    /* ✅ ตารางต้องบีบได้ก่อน และค่อยเลื่อนเมื่อจำเป็น */
+    /* ✅ ตารางคิวทั้งหมดแบบ compact: ไม่ยืดคอลัมน์จนห่างเกินไป */
     .tableWrap{
       overflow-x:auto;
       -webkit-overflow-scrolling:touch;
     }
 
-    /* ให้ตารางมีความกว้างขั้นต่ำ เพื่อไม่บีบคอลัมน์จนทับกัน */
     table.qTable{
-      width:100%;
-      min-width:650px;
+      width:auto;
+      min-width:560px;
+      max-width:100%;
       table-layout:fixed;
+      font-size:10px;
     }
+    table.qTable th{ padding:7px 6px; }
+    table.qTable td{ padding:7px 6px; }
 
     /* ตารางคิวทั้งหมด: เอาคอลัมน์สถานะออก แล้วใช้สีที่แถบชื่อลูกค้าแทน */
-    table.qTable th:nth-child(1), table.qTable td:nth-child(1){ width:60px;  white-space:nowrap; }  /* เวลา */
-    table.qTable th:nth-child(2), table.qTable td:nth-child(2){ width:90px;  white-space:nowrap; }  /* ช่อง */
-    table.qTable th:nth-child(3), table.qTable td:nth-child(3){ width:170px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } /* ลูกค้า */
-    table.qTable th:nth-child(4), table.qTable td:nth-child(4){ width:190px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } /* หัตถการ */
-    table.qTable th:nth-child(5), table.qTable td:nth-child(5){ width:110px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } /* เบอร์โทร */
-    table.qTable th:nth-child(6), table.qTable td:nth-child(6){ width:70px;  white-space:nowrap; }  /* ประเภท */
+    table.qTable th:nth-child(1), table.qTable td:nth-child(1){ width:52px;  white-space:nowrap; }  /* เวลา */
+    table.qTable th:nth-child(2), table.qTable td:nth-child(2){ width:66px;  white-space:nowrap; }  /* ช่อง */
+    table.qTable th:nth-child(3), table.qTable td:nth-child(3){ width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } /* ลูกค้า */
+    table.qTable th:nth-child(4), table.qTable td:nth-child(4){ width:160px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } /* หัตถการ */
+    table.qTable th:nth-child(5), table.qTable td:nth-child(5){ width:92px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } /* เบอร์โทร */
+    table.qTable th:nth-child(6), table.qTable td:nth-child(6){ width:48px;  white-space:nowrap; }  /* ประเภท */
 
     .qTable td.nameCell{ padding:0 !important; }
     .nameStatusBand{
@@ -403,24 +406,69 @@
     .btn{ max-width: 100%; }
 
     /* ===== Queue filters & safety polish ===== */
+    .mqHeaderActions{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+    }
+    .filterToggleBtn{
+      border:1px solid #cbd5e1;
+      background:#ffffff;
+      color:#0f766e;
+      box-shadow:0 4px 12px rgba(15,118,110,.08);
+    }
+    .filterToggleBtn.active{
+      border-color:#0d9488;
+      background:#ecfdf5;
+      color:#064e3b;
+    }
+    .filterDot{
+      display:none;
+      width:7px;
+      height:7px;
+      border-radius:999px;
+      background:#f59e0b;
+      box-shadow:0 0 0 3px rgba(245,158,11,.16);
+    }
+    .filterToggleBtn.has-filter .filterDot{ display:inline-block; }
     .mqFilters{
-      display:grid;
-      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      display:none;
+      grid-template-columns: 120px 132px 130px 120px minmax(180px, 1fr) auto;
       gap:8px;
       padding:10px;
       border-top:1px solid #e2e8f0;
       background:#fbfdff;
+      align-items:center;
     }
+    .mqFilters.is-open{ display:grid; }
     .mqFilters .ipt{ padding:7px 9px; font-size:10px; }
+    .mqFilterReset{ padding:7px 10px; white-space:nowrap; }
     .apptStack{ display:flex; flex-direction:column; gap:4px; }
     .apptCard + .apptCard{ margin-top:4px; }
     .slotConflictNote{ color:#b91c1c; font-weight:900; margin-top:6px; }
-    @media (max-width:720px){
+    @media (max-width:900px){
       .mqFilters{ grid-template-columns:1fr 1fr; }
+      .mqFilterReset{ grid-column:1/-1; }
     }
     @media (max-width:460px){
       .mqFilters{ grid-template-columns:1fr; }
+      .mqHeaderActions{ justify-content:flex-start; }
     }
+
+    /* ✅ ตารางรายวัน compact ขึ้น: คอลัมน์ไม่กระจายห่างเกินไป */
+    table.clean{
+      width:auto;
+      min-width:500px;
+      max-width:100%;
+    }
+    table.clean th.timeCell,
+    table.clean td.timeCell{ width:46px; }
+    table.clean th:nth-child(2), table.clean td:nth-child(2),
+    table.clean th:nth-child(3), table.clean td:nth-child(3){ width:120px; }
+    table.clean th:nth-child(4), table.clean td:nth-child(4){ width:110px; }
+    table.clean th:nth-child(5), table.clean td:nth-child(5){ width:78px; }
 
   </style>
 </head>
@@ -471,10 +519,15 @@
             </div>
           </div>
 
-          <label class="toggleMini" title="ซ่อนวันที่ไม่มีคิว">
-            <input type="checkbox" id="hideEmptyDays" onchange="MonthQueue.renderFromCache()" checked>
-            ซ่อนวันไม่มีคิว
-          </label>
+          <div class="mqHeaderActions">
+            <button type="button" id="btnToggleFilters" class="btn filterToggleBtn" onclick="MonthQueue.toggleFilters()">
+              🔎 ฟิลเตอร์ <span class="filterDot" aria-hidden="true"></span>
+            </button>
+            <label class="toggleMini" title="ซ่อนวันที่ไม่มีคิว">
+              <input type="checkbox" id="hideEmptyDays" onchange="MonthQueue.renderFromCache()" checked>
+              ซ่อนวันไม่มีคิว
+            </label>
+          </div>
         </div>
 
         <div class="mqFilters" id="mqFilters">
@@ -504,6 +557,7 @@
             <option value="new">ลูกค้าใหม่</option>
           </select>
           <input class="ipt" id="mqFilterText" placeholder="ค้นหาชื่อ / เบอร์ / หัตถการ" oninput="MonthQueue.renderFromCache()">
+          <button type="button" class="btn btn-ghost mqFilterReset" onclick="MonthQueue.resetFilters()">ล้างฟิลเตอร์</button>
         </div>
 
         <div class="mqList" id="mqList">
@@ -1203,7 +1257,53 @@
         }
       },
 
-      renderFromCache(){ this.render(); },
+      renderFromCache(){
+        this.updateFilterButtonState();
+        this.render();
+      },
+
+      toggleFilters(force){
+        const box = $('mqFilters');
+        const btn = $('btnToggleFilters');
+        if(!box) return;
+        const open = (typeof force === 'boolean') ? force : !box.classList.contains('is-open');
+        box.classList.toggle('is-open', open);
+        if(btn) btn.classList.toggle('active', open);
+        if(open){
+          setTimeout(()=> $('mqFilterText')?.focus(), 40);
+        }
+      },
+
+      resetFilters(){
+        const range = $('mqFilterRange');
+        const status = $('mqFilterStatus');
+        const column = $('mqFilterColumn');
+        const type = $('mqFilterType');
+        const text = $('mqFilterText');
+        const oldRange = range?.value || 'default';
+
+        if(range) range.value = 'default';
+        if(status) status.value = 'all';
+        if(column) column.value = 'all';
+        if(type) type.value = 'all';
+        if(text) text.value = '';
+
+        this.updateFilterButtonState();
+        if(oldRange !== 'default') this.onRangeFilterChange();
+        else this.renderFromCache();
+      },
+
+      hasActiveFilters(){
+        return (($('mqFilterStatus')?.value || 'all') !== 'all') ||
+          (($('mqFilterColumn')?.value || 'all') !== 'all') ||
+          (($('mqFilterType')?.value || 'all') !== 'all') ||
+          !!trim($('mqFilterText')?.value || '');
+      },
+
+      updateFilterButtonState(){
+        const btn = $('btnToggleFilters');
+        if(btn) btn.classList.toggle('has-filter', this.hasActiveFilters());
+      },
 
       resolveDisplayName(a){
         return trim(a.customer_name) || trim(a.guest_name) || trim(a.display_name) || trim(a.opd) || 'ไม่ระบุชื่อ';
@@ -1263,6 +1363,7 @@
       },
 
       async onRangeFilterChange(){
+        this.updateFilterButtonState();
         const mode = this.selectedRangeMode();
         if(mode === 'all' && this._cacheData.length > 0) {
           this.renderFromCache();
@@ -1498,6 +1599,7 @@
       },
 
       render() {
+        this.updateFilterButtonState();
         const hideEmpty = $('hideEmptyDays')?.checked ?? true;
         const todayStr = toYMD(new Date());
         const filters = this.getFilters();
