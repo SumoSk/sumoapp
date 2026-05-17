@@ -335,6 +335,210 @@
       background:#ffffff;
     }
 
+
+
+    /* =========================
+       Two-tab customer workspace
+       ========================= */
+    .tabs-shell{
+      display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;
+    }
+    .tab-btn-main{
+      border:1px solid var(--line);
+      background:#fff;
+      color:#334155;
+      border-radius:999px;
+      padding:10px 16px;
+      cursor:pointer;
+      font-family:inherit;
+      font-size:13px;
+      font-weight:600;
+      box-shadow:0 4px 12px rgba(2,6,23,.04);
+      transition:.15s;
+    }
+    .tab-btn-main:hover{ border-color:var(--primary); color:var(--primary); }
+    .tab-btn-main.active{
+      background:var(--primary);
+      border-color:var(--primary);
+      color:#fff;
+      box-shadow:0 8px 18px rgba(15,118,110,.18);
+    }
+    .tab-page{ display:none; }
+    .tab-page.active{ display:block; }
+    .entry-form-card{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      padding:16px 14px;
+      overflow:hidden;
+    }
+    .entry-opd-box{
+      border:1px solid #bae6fd;
+      background:linear-gradient(180deg,#f0f9ff 0%,#ffffff 100%);
+      border-radius:16px;
+      padding:12px;
+      margin:0 0 14px;
+      display:grid;
+      grid-template-columns: minmax(150px, 260px) 1fr auto;
+      gap:10px;
+      align-items:end;
+    }
+    .entry-status{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      padding:9px 12px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:#f8fafc;
+      color:#475569;
+      font-weight:600;
+      min-height:39px;
+    }
+    .entry-status.found{ background:#ecfdf5; border-color:#bbf7d0; color:#047857; }
+    .entry-status.new{ background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
+    .entry-status.error{ background:#fef2f2; border-color:#fecaca; color:#b91c1c; }
+    .entry-status.checking{ background:#f0f9ff; border-color:#bae6fd; color:#0369a1; }
+    .entry-mode-badge{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:7px 12px; border-radius:999px;
+      font-size:12px; font-weight:600;
+      background:#f1f5f9; color:#475569;
+      border:1px solid var(--line);
+      margin-top:8px;
+    }
+    .entry-mode-badge.new{ background:#ecfeff; color:#0f766e; border-color:#99f6e4; }
+    .entry-mode-badge.edit{ background:#fffbeb; color:#92400e; border-color:#fde68a; }
+    .entry-mode-badge.locked{ background:#f8fafc; color:#64748b; border-color:#e2e8f0; }
+    .entry-form-card.is-locked .entry-data-area{
+      opacity:.48;
+      filter:grayscale(.1);
+    }
+    .entry-form-card.is-locked .entry-lock-hint{ display:flex; }
+    .entry-lock-hint{
+      display:none;
+      align-items:center;
+      gap:8px;
+      margin:0 0 12px;
+      padding:10px 12px;
+      border-radius:12px;
+      background:#fff7ed;
+      border:1px solid #fed7aa;
+      color:#9a3412;
+      font-weight:600;
+    }
+    .btn:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+      box-shadow:none;
+      transform:none;
+    }
+    .entry-form-card .modal-header{ margin-bottom:14px; }
+    .entry-form-card .modal-footer{ border-top:1px solid var(--line); padding-top:12px; }
+    .entry-form-card .modal-title{ font-size:18px; }
+    .entry-form-card .modal-sub{ font-size:12px; }
+    .entry-form-card .modal-box{ max-width:none; }
+
+
+
+    /* =========================
+       Customer statistics dashboard
+       ========================= */
+    .stats-grid{
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0, 1fr));
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .stats-card{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      box-shadow:0 8px 20px rgba(2,6,23,.04);
+    }
+    .stats-card .label{
+      color:#64748b;
+      font-size:11px;
+      font-weight:600;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      margin-bottom:6px;
+    }
+    .stats-card .value{
+      font-size:24px;
+      line-height:1.15;
+      color:#0f766e;
+      font-weight:700;
+    }
+    .stats-card .sub{
+      color:#94a3b8;
+      font-size:10px;
+      margin-top:4px;
+    }
+    .stats-layout{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      align-items:start;
+    }
+    .stats-panel{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      box-shadow:0 8px 20px rgba(2,6,23,.04);
+      overflow:hidden;
+    }
+    .stats-panel-title{
+      font-size:13px;
+      font-weight:700;
+      color:#0f766e;
+      margin-bottom:10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+    }
+    .stats-bars{ display:grid; gap:8px; }
+    .stat-bar-row{
+      display:grid;
+      grid-template-columns:96px 1fr 58px;
+      gap:8px;
+      align-items:center;
+      font-size:11px;
+    }
+    .stat-bar-row.clickable{
+      cursor:pointer;
+      border-radius:10px;
+      padding:4px 5px;
+      margin:-4px -5px;
+      transition:background .15s, transform .12s;
+    }
+    .stat-bar-row.clickable:hover{ background:#f0fdfa; }
+    .stat-bar-row.clickable:active{ transform:scale(.995); }
+    .stat-bar-row.clickable .stat-bar-label{ color:#0f766e; }
+    .stats-detail-list{ max-height:58vh; overflow:auto; border:1px solid var(--line); border-radius:14px; }
+    .stats-detail-table{ width:100%; border-collapse:collapse; min-width:520px; font-size:12px; }
+    .stats-detail-table th{ background:#f8fafc; color:#64748b; position:sticky; top:0; z-index:1; cursor:default; font-weight:700; padding:9px 8px; border-bottom:1px solid var(--line); }
+    .stats-detail-table td{ padding:9px 8px; border-bottom:1px solid #f1f5f9; vertical-align:top; }
+    .stats-detail-table tr{ cursor:pointer; }
+    .stats-detail-table tr:hover td{ background:#f0fdfa; }
+    .stat-bar-label{ color:#334155; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .stat-bar-track{ height:10px; border-radius:999px; background:#f1f5f9; overflow:hidden; border:1px solid #e2e8f0; }
+    .stat-bar-fill{ height:100%; border-radius:999px; background:linear-gradient(90deg,#0d9488,#14b8a6); width:0%; min-width:0; }
+    .stat-bar-value{ text-align:right; color:#64748b; font-weight:700; }
+    .stats-mini-table{ width:100%; border-collapse:collapse; min-width:0; font-size:11px; }
+    .stats-mini-table th,
+    .stats-mini-table td{ padding:8px 6px; border-bottom:1px solid #f1f5f9; vertical-align:top; }
+    .stats-mini-table th{ background:#f8fafc; color:#64748b; font-weight:700; position:static; cursor:default; }
+    .stats-mini-table tr:hover td{ background:#f8fafc; }
+    .stats-alert{ color:#b45309; background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:10px; font-weight:600; }
+    .stats-ok{ color:#047857; background:#ecfdf5; border:1px solid #bbf7d0; border-radius:12px; padding:10px; font-weight:600; }
+
     @media (max-width: 768px){
       .container{ margin-top:10px; padding:0 10px; }
       .toolbar{ gap:8px; padding:10px; }
@@ -350,6 +554,10 @@
       .kv{ grid-template-columns: 96px 1fr; }
       .thumb{ width:78px; height:78px; }
       .avatar{ width:58px; height:58px; border-radius:16px; }
+      .entry-opd-box{ grid-template-columns:1fr; }
+      .stats-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+      .stats-layout{ grid-template-columns:1fr; }
+      .stat-bar-row{ grid-template-columns:86px 1fr 48px; }
     }
   </style>
 </head>
@@ -360,68 +568,24 @@
       <div class="title">📖 ทะเบียนลูกค้า</div>
       <div class="grow"></div>
       <button id="refreshBtn" class="btn btn-ghost">⟳ รีเฟรช</button>
-      <button id="openAddModalBtn" class="btn btn-primary">➕ เพิ่มลูกค้า</button>
+      <button id="openAddModalBtn" class="btn btn-primary">📝 บันทึกข้อมูล</button>
     </div>
   </header>
 
   <div class="container">
-    <div class="card">
-      <div class="toolbar">
-        <div class="search">
-          <span class="icon">🔎</span>
-          <input id="searchInput" type="text" placeholder="ค้นหา: OPD, ชื่อ, บัตร, FB, ที่อยู่, โปรไฟล์, หมายเหตุ...">
-          <span id="clearSearch" class="clear" style="display:none;">✖</span>
-        </div>
-
-        <select id="monthFilter" class="month-filter">
-          <option value="">📅 เดือนเกิด: ทั้งหมด</option>
-          <option value="01">มกราคม</option><option value="02">กุมภาพันธ์</option><option value="03">มีนาคม</option>
-          <option value="04">เมษายน</option><option value="05">พฤษภาคม</option><option value="06">มิถุนายน</option>
-          <option value="07">กรกฎาคม</option><option value="08">สิงหาคม</option><option value="09">กันยายน</option>
-          <option value="10">ตุลาคม</option><option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
-        </select>
-
-        <div class="grow"></div>
-        <div class="chip" id="totalChip">0 คน</div>
-        <button id="bulkDeleteBtn" class="btn btn-ghost btn-icon" style="color:var(--danger);" title="ลบที่เลือก">🗑️</button>
-        <button id="exportBtn" class="btn btn-ghost btn-icon" title="ส่งออก CSV">📥</button>
-      </div>
-
-      <div class="table-wrap">
-        <table id="customerTable">
-          <thead>
-            <tr>
-              <th class="sel-col"><input type="checkbox" id="selectAll"></th>
-              <th data-key="opd">OPD ↕</th>
-              <th data-key="name">ชื่อเล่น ↕</th>
-              <th data-key="vip">VIP ↕</th>
-              <th data-key="birthMonth">เดือน ↕</th>
-              <th data-key="age">อายุ ↕</th>
-              <th data-key="birth_th_ddmmyyyy">วันเกิด(ไทย) ↕</th>
-              <th data-key="facebook_name">Facebook ↕</th>
-              <th data-key="profile">📝 โปรไฟล์ ↕</th>
-              <th data-key="note">หมายเหตุ ↕</th>
-              <th>จัดการ</th>
-            </tr>
-          </thead>
-          <tbody id="tbody">
-            <tr><td colspan="11"><div style="padding:20px">
-              <div class="skeleton" style="margin-bottom:10px"></div>
-              <div class="skeleton" style="width:80%"></div>
-            </div></td></tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="tabs-shell">
+      <button id="tabEntryBtn" class="tab-btn-main active" type="button">บันทึกข้อมูล</button>
+      <button id="tabListBtn" class="tab-btn-main" type="button">ข้อมูลลูกค้าทั้งหมด</button>
+      <button id="tabStatsBtn" class="tab-btn-main" type="button">สถิติลูกค้า</button>
     </div>
-  </div>
 
-  <div id="addModal" class="modal">
-    <div class="modal-backdrop" onclick="closeModal('addModal')"></div>
-    <div class="modal-box">
+    <section id="tabEntry" class="tab-page active">
+    <div id="addModal" class="entry-form-card">
       <div class="modal-header" style="align-items: flex-start;">
         <div style="flex:1;">
-          <div class="modal-title" id="formModalTitle">➕ เพิ่มลูกค้าใหม่</div>
-          <div class="modal-sub" id="formModalSub">บันทึกเข้าฐาน (ตาราง customers)</div>
+          <div class="modal-title" id="formModalTitle">📝 บันทึกข้อมูลลูกค้า</div>
+          <div class="modal-sub" id="formModalSub">เริ่มจากกรอก OPD หรือกดเลขใหม่ ระบบจะเช็กข้อมูลเดิมให้อัตโนมัติ</div>
+          <div id="entryModeBadge" class="entry-mode-badge locked">🔒 ยังไม่พร้อมบันทึก: กรุณาใส่ OPD ก่อน</div>
 
           <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
 
@@ -430,12 +594,12 @@
                    src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2cbdjVlIj48cGF0aCBkPSZNMTIgMTJjMi4yMSAwIDQtMS43OSA0LTRzLTEuNzktNC00LTQtNCAxLjc5LTQgNCAxLjc5IDQgNCA0em0wIDJjLTIuNjcgMC04IDEuMzQtOCA0djJoMTZ2LTJjMC0yLjY2LTUuMzMtNC04LTR6Ii8+PC9zdmc+"
                    style="width:100%; height:100%; object-fit:cover; border-radius:50%; border:2px solid #e2e8f0; background:#f1f5f9;">
 
-              <button onclick="$('#profileInput').click()" title="อัปรูปใหม่"
+              <button id="profilePickBtn" type="button" onclick="$('#profileInput').click()" title="อัปรูปใหม่"
                       style="position:absolute; bottom:-5px; right:-5px; background:var(--primary); color:#fff; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.2); z-index:2;">
                 📷
               </button>
 
-              <button onclick="openPickerGallery()" type="button" title="เลือกจากคลัง"
+              <button id="pickerGalleryBtn" onclick="openPickerGallery()" type="button" title="เลือกจากคลัง"
                       style="position:absolute; bottom:-5px; left:-5px; background:#fff; color:#333; border:1px solid #ddd; border-radius:50%; width:28px; height:28px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.1); z-index:2;">
                 📂
               </button>
@@ -448,23 +612,33 @@
               <span style="font-size:20px;">🪪</span>
               <div style="flex:1;">
                 <div style="font-weight:600; color:#0369a1; font-size:13px;">สแกนบัตร (AI)</div>
-                <div style="font-size:10px; color:#64748b;">อ่านชื่ออัตโนมัติ</div>
+                <div style="font-size:10px; color:#64748b;">อ่านข้อมูลบัตร แล้วค่อยเก็บรูปเมื่อสำเร็จ</div>
               </div>
               <input type="file" id="idCardInput" accept="image/*" style="display:none" onchange="processIDCard(this)">
-              <button class="btn btn-primary" style="padding:6px 10px; font-size:11px;" onclick="$('#idCardInput').click()">📸 สแกน</button>
+              <button id="idCardScanBtn" type="button" class="btn btn-primary" style="padding:6px 10px; font-size:11px;" onclick="$('#idCardInput').click()">📸 สแกน</button>
             </div>
           </div>
         </div>
-        <button class="btn btn-ghost btn-icon" onclick="closeModal('addModal')">✕</button>
+        <button class="btn btn-ghost" type="button" onclick="resetEntryForm()">ล้างฟอร์ม</button>
       </div>
 
       <input type="hidden" id="formMode" value="add">
 
-      <div class="grid">
-        <div class="field-group col-3">
+      <div class="entry-opd-box">
+        <div class="field-group">
           <label>OPD (4 หลัก) *</label>
-          <input id="f_opd" type="text" maxlength="4" placeholder="เช่น 0123" style="font-family:monospace; letter-spacing:1px;">
+          <input id="f_opd" type="text" maxlength="4" placeholder="เช่น 0123" style="font-family:monospace; letter-spacing:1px; font-weight:700; font-size:16px;" inputmode="numeric" autocomplete="off">
         </div>
+        <div id="opdLookupStatus" class="entry-status">กรอก OPD เพื่อเช็กข้อมูลลูกค้าเดิม</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+          <button id="nextOpdBtn" class="btn btn-ghost" type="button" title="หาเลข OPD ถัดไปสำหรับลูกค้าใหม่">เลขใหม่</button>
+          <button id="checkOpdBtn" class="btn btn-primary" type="button">เช็ก OPD</button>
+        </div>
+      </div>
+
+      <div class="entry-lock-hint">🔒 กรุณากรอก OPD หรือกด “เลขใหม่” ก่อน ระบบจึงจะปลดล็อกช่องกรอกข้อมูลอื่น ๆ</div>
+
+      <div class="grid entry-data-area">
         <div class="field-group col-3">
           <label>เดือนเกิด (01-12)</label>
           <input id="f_birthMonth" type="text" maxlength="2" placeholder="01-12">
@@ -526,11 +700,122 @@
       <div class="modal-footer">
         <div class="muted" id="formHint">✨ กรอกข้อมูลแล้วกดบันทึก</div>
         <div style="display:flex; gap:8px; width:100%; justify-content:flex-end;">
-          <button class="btn btn-ghost" onclick="closeModal('addModal')">ยกเลิก</button>
-          <button id="saveCustomerBtn" class="btn btn-primary">บันทึก</button>
+          <button class="btn btn-ghost" type="button" onclick="resetEntryForm()">ล้างฟอร์ม</button>
+          <button id="saveCustomerBtn" class="btn btn-primary" type="button">บันทึก</button>
         </div>
       </div>
     </div>
+    </section>
+
+    <section id="tabList" class="tab-page">
+    <div class="card">
+      <div class="toolbar">
+        <div class="search">
+          <span class="icon">🔎</span>
+          <input id="searchInput" type="text" placeholder="ค้นหา: OPD, ชื่อ, บัตร, FB, ที่อยู่, โปรไฟล์, หมายเหตุ...">
+          <span id="clearSearch" class="clear" style="display:none;">✖</span>
+        </div>
+
+        <select id="monthFilter" class="month-filter">
+          <option value="">📅 เดือนเกิด: ทั้งหมด</option>
+          <option value="01">มกราคม</option><option value="02">กุมภาพันธ์</option><option value="03">มีนาคม</option>
+          <option value="04">เมษายน</option><option value="05">พฤษภาคม</option><option value="06">มิถุนายน</option>
+          <option value="07">กรกฎาคม</option><option value="08">สิงหาคม</option><option value="09">กันยายน</option>
+          <option value="10">ตุลาคม</option><option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
+        </select>
+
+        <div class="grow"></div>
+        <div class="chip" id="totalChip">0 คน</div>
+        <button id="bulkDeleteBtn" class="btn btn-ghost btn-icon" style="color:var(--danger);" title="ลบที่เลือก">🗑️</button>
+        <button id="exportBtn" class="btn btn-ghost btn-icon" title="ส่งออก CSV">📥</button>
+      </div>
+
+      <div class="table-wrap">
+        <table id="customerTable">
+          <thead>
+            <tr>
+              <th class="sel-col"><input type="checkbox" id="selectAll"></th>
+              <th data-key="opd">OPD ↕</th>
+              <th data-key="name">ชื่อเล่น ↕</th>
+              <th data-key="vip">VIP ↕</th>
+              <th data-key="birthMonth">เดือน ↕</th>
+              <th data-key="age">อายุ ↕</th>
+              <th data-key="birth_th_ddmmyyyy">วันเกิด(ไทย) ↕</th>
+              <th data-key="facebook_name">Facebook ↕</th>
+              <th data-key="profile">📝 โปรไฟล์ ↕</th>
+              <th data-key="note">หมายเหตุ ↕</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="11"><div style="padding:20px">
+              <div class="skeleton" style="margin-bottom:10px"></div>
+              <div class="skeleton" style="width:80%"></div>
+            </div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    </section>
+
+    <section id="tabStats" class="tab-page">
+      <div class="stats-grid">
+        <div class="stats-card">
+          <div class="label">👥 ลูกค้าทั้งหมด</div>
+          <div class="value" id="statTotalCustomers">0</div>
+          <div class="sub">จำนวน OPD ที่อยู่ในทะเบียน</div>
+        </div>
+        <div class="stats-card">
+          <div class="label">📞 มีเบอร์โทร</div>
+          <div class="value" id="statHasPhone">0</div>
+          <div class="sub" id="statHasPhonePct">0%</div>
+        </div>
+        <div class="stats-card">
+          <div class="label">🎂 มีวันเกิด</div>
+          <div class="value" id="statHasBirth">0</div>
+          <div class="sub" id="statHasBirthPct">0%</div>
+        </div>
+        <div class="stats-card">
+          <div class="label">🖼️ มีรูปโปรไฟล์</div>
+          <div class="value" id="statHasProfilePic">0</div>
+          <div class="sub" id="statHasProfilePicPct">0%</div>
+        </div>
+      </div>
+
+      <div class="stats-layout">
+        <div class="stats-panel">
+          <div class="stats-panel-title">📊 ช่วงอายุลูกค้า <span class="muted">กดแต่ละช่วงเพื่อดูรายชื่อ</span></div>
+          <div id="ageStatsBars" class="stats-bars"></div>
+        </div>
+
+        <div class="stats-panel">
+          <div class="stats-panel-title">🎂 เดือนเกิดลูกค้า <span class="muted">กดแต่ละเดือนเพื่อดูรายชื่อ</span></div>
+          <div id="birthMonthStatsBars" class="stats-bars"></div>
+        </div>
+
+        <div class="stats-panel">
+          <div class="stats-panel-title">⭐ ระดับ VIP</div>
+          <div id="vipStatsBars" class="stats-bars"></div>
+        </div>
+
+        <div class="stats-panel">
+          <div class="stats-panel-title">🧩 ความครบถ้วนของข้อมูล</div>
+          <div id="dataCompletenessTable"></div>
+        </div>
+
+        <div class="stats-panel">
+          <div class="stats-panel-title">⚠️ ข้อมูลที่อาจซ้ำ <span class="muted">เบอร์/เลขบัตร</span></div>
+          <div id="duplicateStatsTable"></div>
+        </div>
+
+        <div class="stats-panel">
+          <div class="stats-panel-title">🆕 ลูกค้าใหม่ล่าสุด <span class="muted">เรียงตาม OPD สูงสุด</span></div>
+          <div id="recentCustomersTable"></div>
+        </div>
+      </div>
+    </section>
+
   </div>
 
   <div id="galleryModal" class="modal">
@@ -647,6 +932,24 @@
     </div>
   </div>
 
+  <div id="statsDetailModal" class="modal">
+    <div class="modal-backdrop" onclick="closeModal('statsDetailModal')"></div>
+    <div class="modal-box" style="max-width:820px;">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="statsDetailTitle">รายละเอียดลูกค้า</div>
+          <div class="modal-sub" id="statsDetailSub">เลือกจากสถิติลูกค้า</div>
+        </div>
+        <button class="btn btn-ghost btn-icon" onclick="closeModal('statsDetailModal')">✕</button>
+      </div>
+      <div id="statsDetailBody"></div>
+      <div class="modal-footer">
+        <div class="muted">แตะรายชื่อเพื่อเปิดข้อมูลลูกค้า</div>
+        <button class="btn btn-ghost" onclick="closeModal('statsDetailModal')">ปิด</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toastWrap" class="toast-wrap"></div>
 
   {% include 'floating_menu.html' %}
@@ -659,12 +962,41 @@
     // =========================
     const $ = (s) => document.querySelector(s);
     const $$ = (s, root=document) => Array.from(root.querySelectorAll(s));
-    const pad4 = (s) => String(s ?? '').trim().padStart(4,'0');
-    const pad2 = (s) => String(s ?? '').trim().padStart(2,'0');
+    window.$ = $;
+    window.$$ = $$;
+    function normalizeOPD(v){
+      const digits = String(v ?? '').replace(/\D/g, '').trim();
+      if (!digits) return '';
+      return digits.padStart(4, '0').slice(-4);
+    }
+    const pad4 = normalizeOPD;
+    function normalizeBirthMonth(v){
+      const digits = String(v ?? '').replace(/\D/g, '').trim();
+      if (!digits) return '';
+      const n = parseInt(digits, 10);
+      return (n >= 1 && n <= 12) ? String(n).padStart(2, '0') : '';
+    }
+    const pad2 = normalizeBirthMonth;
     const esc = (s) => (s ?? '').toString()
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
     const DEFAULT_AVATAR_SVG = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2cbdjVlIj48cGF0aCBkPSZNMTIgMTJjMi4yMSAwIDQtMS43OSA0LTRzLTEuNzktNC00LTQtNCAxLjc5LTQgNCAxLjc5IDQgNCA0em0wIDJjLTIuNjcgMC04IDEuMzQtOCA0djJoMTZ2LTJjMC0yLjY2LTUuMzMtNC04LTR6Ii8+PC9zdmc+';
+
+
+    function validateImageFile(file){
+      if (!file) return { ok:false, msg:'ไม่พบไฟล์' };
+      const okType = /^image\//.test(file.type || '');
+      const okExt = /\.(jpg|jpeg|png|webp|heic|heif)$/i.test(file.name || '');
+      if (!okType && !okExt) return { ok:false, msg:'รองรับเฉพาะไฟล์รูปภาพเท่านั้น' };
+      const maxMB = 8;
+      if (file.size > maxMB * 1024 * 1024) return { ok:false, msg:`ไฟล์ใหญ่เกิน ${maxMB}MB` };
+      return { ok:true };
+    }
+
+    function safeJsonArray(data){
+      return Array.isArray(data) ? data : [];
+    }
+
 
     const showToast = (msg, type='ok') => {
       const el = document.createElement('div');
@@ -677,11 +1009,216 @@
     function openModal(id){ $('#'+id).classList.add('open'); }
     function closeModal(id){ $('#'+id).classList.remove('open'); }
 
+
+    function switchTab(name){
+      const isEntry = name === 'entry';
+      const isList = name === 'list';
+      const isStats = name === 'stats';
+      $('#tabEntry')?.classList.toggle('active', isEntry);
+      $('#tabList')?.classList.toggle('active', isList);
+      $('#tabStats')?.classList.toggle('active', isStats);
+      $('#tabEntryBtn')?.classList.toggle('active', isEntry);
+      $('#tabListBtn')?.classList.toggle('active', isList);
+      $('#tabStatsBtn')?.classList.toggle('active', isStats);
+      if (isEntry) setTimeout(() => $('#f_opd')?.focus(), 30);
+      if (isStats) renderCustomerStats();
+    }
+
+    function updateEntryStatus(msg, type='idle'){
+      const el = $('#opdLookupStatus');
+      if (!el) return;
+      el.className = `entry-status ${type === 'idle' ? '' : type}`.trim();
+      el.textContent = msg || '';
+    }
+
+    const ENTRY_FIELD_IDS = [
+      'f_birthMonth','f_birth_th','f_name','f_full_name','f_phone','f_facebook_name',
+      'f_national_id','f_vip','f_address','f_profile','f_note'
+    ];
+
+    function setEntryUnlocked(unlocked){
+      const card = $('#addModal');
+      card?.classList.toggle('is-locked', !unlocked);
+      ENTRY_FIELD_IDS.forEach(id => {
+        const el = $('#'+id);
+        if (el) el.disabled = !unlocked;
+      });
+      ['profilePickBtn','pickerGalleryBtn','idCardScanBtn','saveCustomerBtn'].forEach(id => {
+        const el = $('#'+id);
+        if (el) el.disabled = !unlocked;
+      });
+    }
+
+    function updateModeBadge(mode, opd=''){
+      const badge = $('#entryModeBadge');
+      if (!badge) return;
+      badge.className = `entry-mode-badge ${mode || 'locked'}`.trim();
+      if (mode === 'edit') badge.textContent = `✏️ โหมดแก้ไขลูกค้าเดิม OPD ${opd}`;
+      else if (mode === 'new') badge.textContent = `🆕 โหมดลูกค้าใหม่ OPD ${opd}`;
+      else badge.textContent = '🔒 ยังไม่พร้อมบันทึก: กรุณาใส่ OPD ก่อน';
+    }
+
+    function normDigits(v){ return String(v ?? '').replace(/\D/g, ''); }
+    function normPhone(v){ return normDigits(v); }
+    function normNationalId(v){ return normDigits(v); }
+
+    function hasMergeValue(v){
+      return v !== null && v !== undefined && String(v).trim() !== '';
+    }
+
+    function mergeLoadedCustomersByOPD(records){
+      const map = new Map();
+
+      (records || []).forEach(src => {
+        const opd = normalizeOPD(src?.opd);
+        if (!opd || opd === '0000') return;
+
+        const r = {
+          ...src,
+          opd,
+          birthMonth: normalizeBirthMonth(src?.birthMonth ?? '')
+        };
+
+        if (!map.has(opd)) {
+          map.set(opd, r);
+          return;
+        }
+
+        // ถ้า API ส่ง OPD เดิมมาซ้ำ ให้รวมเป็นลูกค้าคนเดียว
+        // โดยเติมเฉพาะช่องที่ record แรกยังว่าง เพื่อไม่ให้สถิติ/ตารางมองเป็นลูกค้าซ้ำปลอม
+        const base = map.get(opd);
+        Object.keys(r).forEach(k => {
+          if (!hasMergeValue(base[k]) && hasMergeValue(r[k])) base[k] = r[k];
+        });
+      });
+
+      return Array.from(map.values());
+    }
+
+    function getNextOPD(){
+      let maxNo = 0;
+      rawData.forEach(r => {
+        const n = parseInt(normDigits(r.opd), 10);
+        if (Number.isFinite(n) && n > maxNo) maxNo = n;
+      });
+      const next = maxNo + 1;
+      if (next > 9999) return '';
+      return String(next).padStart(4, '0');
+    }
+
+    function useNextOPD(){
+      if (!dataLoaded) return showToast('กรุณารอให้โหลดข้อมูลลูกค้าก่อน', 'warn');
+      const next = getNextOPD();
+      if (!next) return showToast('ไม่สามารถสร้างเลขใหม่ได้: OPD เกิน 9999', 'error');
+      clearForm();
+      $('#f_opd').value = next;
+      lookupFormOPD(true);
+      setTimeout(() => $('#f_name')?.focus(), 50);
+    }
+
+    function duplicateWarningsForCurrentForm(opd){
+      const warnings = [];
+      const phone = normPhone($('#f_phone')?.value || '');
+      const nid = normNationalId($('#f_national_id')?.value || '');
+      const current = normalizeOPD(opd);
+
+      const phoneMatches = phone
+        ? rawData.filter(r => normalizeOPD(r.opd) !== current && normPhone(r.phone) === phone)
+        : [];
+      const nidMatches = nid
+        ? rawData.filter(r => normalizeOPD(r.opd) !== current && normNationalId(r.national_id) === nid)
+        : [];
+
+      if (phoneMatches.length){
+        warnings.push('พบเบอร์โทรนี้อยู่แล้วใน: ' + phoneMatches.map(r => `OPD ${r.opd} ${r.name || r.full_name || ''}`.trim()).join(', '));
+      }
+      if (nidMatches.length){
+        warnings.push('พบเลขบัตรประชาชนนี้อยู่แล้วใน: ' + nidMatches.map(r => `OPD ${r.opd} ${r.name || r.full_name || ''}`.trim()).join(', '));
+      }
+      return warnings;
+    }
+
+    function findCustomerByOPD(opd){
+      const k = normalizeOPD(opd);
+      if (!k) return null;
+      return rawData.find(x => normalizeOPD(x.opd) === k) || null;
+    }
+
+    function fillFormFromRecord(r){
+      if (!r) return;
+      $('#f_opd').value = normalizeOPD(r.opd || '');
+      $('#f_birthMonth').value = r.birthMonth || '';
+      $('#f_birth_th').value = r.birth_th_ddmmyyyy || '';
+      $('#f_name').value = r.name || '';
+      $('#f_full_name').value = r.full_name || '';
+      $('#f_phone').value = r.phone || '';
+      $('#f_facebook_name').value = r.facebook_name || '';
+      $('#f_national_id').value = r.national_id || '';
+      $('#f_vip').value = r.vip || '';
+      $('#f_address').value = r.address || '';
+      $('#f_profile').value = r.profile || '';
+      $('#f_note').value = r.note || '';
+      $('#previewProfile').src = r.profile_pic_url || DEFAULT_AVATAR_SVG;
+      $('#profileInput').value = '';
+      $('#selectedGalleryUrl').value = r.profile_pic_url || '';
+    }
+
+    let opdLookupTimer = null;
+    function scheduleOPDLookup(){
+      clearTimeout(opdLookupTimer);
+      opdLookupTimer = setTimeout(() => lookupFormOPD(false), 250);
+    }
+
+    function lookupFormOPD(force=false){
+      const raw = $('#f_opd')?.value || '';
+      const opd = normalizeOPD(raw);
+      if (!opd){
+        setFormMode('add');
+        setEntryUnlocked(false);
+        updateModeBadge('locked');
+        updateEntryStatus('กรอก OPD เพื่อเช็กข้อมูลลูกค้าเดิม', 'idle');
+        return null;
+      }
+      if (raw !== opd && (force || raw.replace(/\D/g,'').length >= 1)) $('#f_opd').value = opd;
+      if (opd.length !== 4){
+        setEntryUnlocked(false);
+        updateModeBadge('locked');
+        updateEntryStatus('OPD ต้องเป็นตัวเลข 4 หลัก', 'error');
+        return null;
+      }
+      updateEntryStatus('กำลังเช็กข้อมูล...', 'checking');
+      const found = findCustomerByOPD(opd);
+      if (found){
+        fillFormFromRecord(found);
+        setFormMode('edit');
+        setEntryUnlocked(true);
+        updateModeBadge('edit', opd);
+        updateEntryStatus(`พบลูกค้าเดิม OPD ${opd} — แก้ไขข้อมูลแล้วกดบันทึกได้เลย`, 'found');
+        return found;
+      }
+      setFormMode('add');
+      setEntryUnlocked(true);
+      updateModeBadge('new', opd);
+      updateEntryStatus(`ยังไม่มี OPD ${opd} — กรอกข้อมูลเพื่อสร้างลูกค้าใหม่`, 'new');
+      return null;
+    }
+
+    function resetEntryForm(){
+      clearForm();
+      setFormMode('add');
+      setEntryUnlocked(false);
+      updateModeBadge('locked');
+      updateEntryStatus('กรอก OPD เพื่อเช็กข้อมูลลูกค้าเดิม', 'idle');
+      switchTab('entry');
+      setTimeout(() => $('#f_opd')?.focus(), 30);
+    }
+
     // =========================
     // State
     // =========================
     let rawData = [];
     let viewData = [];
+    let dataLoaded = false;
     let selected = new Set();
     let sortConfig = { key: 'opd', asc: true };
     let currentGalleryOpd = null;
@@ -738,20 +1275,39 @@
     }
 
     // =========================
-    // ✅ Gallery Functions
+    // ✅ Unified Gallery Functions
     // =========================
+    function currentFormOPD(){
+      return normalizeOPD($('#f_opd').value);
+    }
+
+    function imageTypeLabel(type){
+      const map = {
+        profile: 'โปรไฟล์',
+        id_card: 'บัตร',
+        before: 'Before',
+        after: 'After',
+        document: 'เอกสาร',
+        gallery: 'รูปทั่วไป'
+      };
+      return map[type || 'gallery'] || 'รูปทั่วไป';
+    }
+
     function openGallery(opd) {
       isPickingMode = false;
-      currentGalleryOpd = opd;
-      $('#g_opd_chip').textContent = `OPD ${opd}`;
+      currentGalleryOpd = normalizeOPD(opd);
+      if (!currentGalleryOpd) return showToast('OPD ไม่ถูกต้อง', 'error');
+
+      $('#g_opd_chip').textContent = `OPD ${currentGalleryOpd}`;
       $('#galleryGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:#94a3b8;">กำลังโหลดรูป...</div>';
       openModal('galleryModal');
-      loadGalleryImages(opd);
+      loadGalleryImages(currentGalleryOpd);
     }
 
     function openPickerGallery() {
-      const opd = $('#f_opd').value.trim();
-      if (!opd || opd.length !== 4) return alert('กรุณากรอก OPD ก่อนเพื่อดึงรูป');
+      const opd = currentFormOPD();
+      if (!opd || opd.length !== 4) return alert('กรุณากรอก OPD 4 หลักก่อนเลือกจากคลังรูป');
+      if (!findCustomerByOPD(opd)) return alert('ยังไม่มีลูกค้านี้ในระบบ กรุณาบันทึกข้อมูลลูกค้าก่อนเลือกจากคลังรูป');
 
       isPickingMode = true;
       currentGalleryOpd = opd;
@@ -762,13 +1318,15 @@
     }
 
     async function loadGalleryImages(opd) {
+      opd = normalizeOPD(opd);
       try {
-        const r = await fetch(`/api/get_gallery?opd=${opd}`);
-        const images = await r.json();
+        const r = await fetch(`/api/get_gallery?opd=${encodeURIComponent(opd)}`, { credentials:'same-origin' });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const images = safeJsonArray(await r.json().catch(()=>[]));
         renderGalleryGrid(images);
       } catch (err) {
         console.error(err);
-        $('#galleryGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; color:crimson;">โหลดรูปไม่สำเร็จ</div>';
+        $('#galleryGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; color:crimson; padding:20px;">โหลดรูปไม่สำเร็จ</div>';
       }
     }
 
@@ -779,15 +1337,27 @@
         return;
       }
 
-      grid.innerHTML = dataList.map(item => `
-        <div class="gallery-item" onclick="onGalleryItemClick('${item.image_url}')">
-          <img src="${item.image_url}" loading="lazy">
-          ${!isPickingMode ? `<div class="del-btn" onclick="deleteGalleryImage(${item.id}); event.stopPropagation();">×</div>` : ''}
-        </div>
-      `).join('');
+      grid.innerHTML = dataList.map(item => {
+        const url = esc(item.image_url || '');
+        const type = item.image_type || 'gallery';
+        const id = item.id;
+        const tag = imageTypeLabel(type);
+        const profileMark = item.is_profile ? '⭐ ' : '';
+        return `
+          <div class="gallery-item" onclick="onGalleryItemClick('${url}', ${id ? `'${id}'` : 'null'})">
+            <img src="${url}" loading="lazy" onerror="this.style.opacity=.25">
+            <div style="position:absolute;left:6px;bottom:6px;background:rgba(255,255,255,.88);border:1px solid #e2e8f0;border-radius:999px;padding:2px 7px;font-size:10px;color:#334155;max-width:calc(100% - 12px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${profileMark}${esc(tag)}</div>
+            ${!isPickingMode ? `
+              <button class="del-btn" type="button" onclick="deleteGalleryImage(${id}); event.stopPropagation();" title="ลบรูป">×</button>
+              <button type="button" onclick="setAsProfileImage('${url}', ${id ? `'${id}'` : 'null'}); event.stopPropagation();" title="ตั้งเป็นโปรไฟล์" style="position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;border:1px solid #e2e8f0;background:rgba(255,255,255,.92);cursor:pointer;font-size:12px;box-shadow:0 2px 4px rgba(0,0,0,.16);">⭐</button>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
     }
 
-    function onGalleryItemClick(url) {
+    function onGalleryItemClick(url, id=null) {
+      if (!url) return;
       if (isPickingMode) {
         $('#previewProfile').src = url;
         $('#selectedGalleryUrl').value = url;
@@ -799,48 +1369,93 @@
       }
     }
 
+    async function setAsProfileImage(url, id=null){
+      const opd = currentGalleryOpd || currentFormOPD();
+      if (!opd || !url) return showToast('ไม่พบ OPD หรือรูปภาพ', 'error');
+      try{
+        const r = await fetch('/api/set_profile_image', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          credentials:'same-origin',
+          body: JSON.stringify({ opd, image_url:url, id })
+        });
+        const out = await r.json().catch(()=>({}));
+        if (!r.ok) throw new Error(out.error || 'set_profile_failed');
+        $('#previewProfile').src = url;
+        $('#selectedGalleryUrl').value = url;
+        showToast('ตั้งรูปโปรไฟล์แล้ว');
+        await loadData();
+        if (currentGalleryOpd) loadGalleryImages(currentGalleryOpd);
+      }catch(err){
+        console.error(err);
+        showToast('ตั้งรูปโปรไฟล์ไม่สำเร็จ', 'error');
+      }
+    }
+
     async function uploadGalleryImages(input) {
       if (!input.files || input.files.length === 0) return;
+      const opd = normalizeOPD(currentGalleryOpd || currentFormOPD());
+      if (!opd) return showToast('กรุณาระบุ OPD ก่อนอัปโหลดรูป', 'error');
+      if (!findCustomerByOPD(opd)) { input.value = ''; return showToast('กรุณาบันทึกลูกค้าก่อนอัปโหลดรูปเข้าคลัง', 'warn'); }
 
-      showToast('กำลังอัปโหลด...', 'warn');
-      const fd = new FormData();
-      fd.append('opd', currentGalleryOpd);
-      for (const file of input.files) {
-        fd.append('images', file);
+      const files = Array.from(input.files);
+      for (const f of files){
+        const check = validateImageFile(f);
+        if (!check.ok){
+          input.value = '';
+          return alert(check.msg);
+        }
       }
 
-      try {
-        const r = await fetch('/api/upload_gallery', { method:'POST', body: fd });
-        if(!r.ok) throw new Error('Upload failed');
+      showToast('กำลังอัปโหลดรูป...', 'warn');
+      const fd = new FormData();
+      fd.append('opd', opd);
+      fd.append('image_type', 'gallery');
+      for (const file of files) fd.append('images', file);
 
-        showToast('อัปโหลดเรียบร้อย');
+      try {
+        const r = await fetch('/api/upload_gallery', { method:'POST', credentials:'same-origin', body: fd });
+        const out = await r.json().catch(()=>({}));
+        if(!r.ok) throw new Error(out.error || 'upload_failed');
+
+        showToast(`อัปโหลดเรียบร้อย ${out.count || files.length} รูป`);
         input.value = '';
-        loadGalleryImages(currentGalleryOpd);
+        loadGalleryImages(opd);
+        await loadData();
       } catch (err) {
+        console.error(err);
         showToast('อัปโหลดไม่สำเร็จ', 'error');
       }
     }
 
     window.deleteGalleryImage = async (id) => {
+      if(!id) return;
       if(!confirm('ต้องการลบรูปนี้?')) return;
       try {
-        await fetch('/api/delete_gallery_image', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({id: id})
+        const r = await fetch('/api/delete_gallery_image', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          credentials:'same-origin',
+          body: JSON.stringify({id})
         });
+        const out = await r.json().catch(()=>({}));
+        if (!r.ok) throw new Error(out.error || 'delete_failed');
         showToast('ลบรูปแล้ว');
         loadGalleryImages(currentGalleryOpd);
+        await loadData();
       } catch(err) {
+        console.error(err);
         showToast('ลบไม่สำเร็จ', 'error');
       }
-    }
+    };
 
     // =========================
     // ✅ Form helpers
     // =========================
     function previewImage(input) {
       if (input.files && input.files[0]) {
+        const check = validateImageFile(input.files[0]);
+        if (!check.ok){ alert(check.msg); input.value=''; return; }
         const reader = new FileReader();
         reader.onload = function(e) {
             $('#previewProfile').src = e.target.result;
@@ -863,50 +1478,34 @@
     function setFormMode(mode){
       $('#formMode').value = mode;
       if (mode === 'add'){
-        $('#formModalTitle').textContent = '➕ เพิ่มลูกค้าใหม่';
-        $('#formModalSub').textContent = 'บันทึกเข้าฐาน (ตาราง customers)';
+        $('#formModalTitle').textContent = '📝 บันทึกข้อมูลลูกค้า';
+        $('#formModalSub').textContent = 'OPD ใหม่: กรอกข้อมูลแล้วกดบันทึกเพื่อสร้างลูกค้า';
         $('#f_opd').readOnly = false;
         $('#f_opd').style.background = '#fff';
       } else {
         $('#formModalTitle').textContent = '✏️ แก้ไขข้อมูลลูกค้า';
-        $('#formModalSub').textContent = 'แก้ไขข้อมูลแล้วกดบันทึก';
-        $('#f_opd').readOnly = true;
-        $('#f_opd').style.background = '#f8fafc';
+        $('#formModalSub').textContent = 'พบข้อมูลเดิมแล้ว แก้ไขข้อมูลแล้วกดบันทึก';
+        $('#f_opd').readOnly = false;
+        $('#f_opd').style.background = '#fff';
       }
     }
 
     function openAddForm(){
-      clearForm();
-      setFormMode('add');
-      openModal('addModal');
-      setTimeout(() => $('#f_opd').focus(), 50);
+      resetEntryForm();
     }
 
     function openEditForm(opd){
-      const r = rawData.find(x => x.opd === opd);
-      if (!r) return;
+      const key = normalizeOPD(opd);
+      const r = findCustomerByOPD(key);
+      if (!r) return showToast('ไม่พบข้อมูลลูกค้านี้', 'error');
 
       clearForm();
+      fillFormFromRecord(r);
       setFormMode('edit');
-
-      $('#f_opd').value = r.opd || '';
-      $('#f_birthMonth').value = r.birthMonth || '';
-      $('#f_birth_th').value = r.birth_th_ddmmyyyy || '';
-      $('#f_name').value = r.name || '';
-      $('#f_full_name').value = r.full_name || '';
-      $('#f_phone').value = r.phone || '';
-      $('#f_facebook_name').value = r.facebook_name || '';
-      $('#f_national_id').value = r.national_id || '';
-      $('#f_vip').value = r.vip || '';
-      $('#f_address').value = r.address || '';
-      $('#f_profile').value = r.profile || '';
-      $('#f_note').value = r.note || '';
-
-      if (r.profile_pic_url) {
-        $('#previewProfile').src = r.profile_pic_url;
-      }
-
-      openModal('addModal');
+      setEntryUnlocked(true);
+      updateModeBadge('edit', key);
+      updateEntryStatus(`พบลูกค้าเดิม OPD ${key} — แก้ไขข้อมูลแล้วกดบันทึกได้เลย`, 'found');
+      switchTab('entry');
     }
 
     // =========================
@@ -1017,6 +1616,277 @@
       openModal('viewModal');
     }
 
+
+
+    // =========================
+    // Customer Statistics
+    // =========================
+    const thaiMonthsShort = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+    function pct(part, total){
+      if (!total) return '0%';
+      return `${Math.round((part / total) * 100)}%`;
+    }
+
+    function hasValue(v){
+      return v !== null && v !== undefined && String(v).trim() !== '';
+    }
+
+    function getBirthMonthNumber(r){
+      const direct = parseInt(normDigits(r?.birthMonth), 10);
+      if (direct >= 1 && direct <= 12) return direct;
+      const m = String(r?.birth_th_ddmmyyyy || '').match(/^\d{1,2}\/(\d{1,2})\/\d{4}$/);
+      if (m) {
+        const fromDate = parseInt(m[1], 10);
+        if (fromDate >= 1 && fromDate <= 12) return fromDate;
+      }
+      return null;
+    }
+
+    const statsDetailGroups = {};
+
+    function registerStatsDetail(key, title, records){
+      if (!key) return;
+      statsDetailGroups[key] = { title, records: Array.isArray(records) ? records : [] };
+    }
+
+    function renderBars(containerId, rows){
+      const box = $('#'+containerId);
+      if (!box) return;
+      const max = Math.max(1, ...rows.map(r => r.value || 0));
+      box.innerHTML = rows.map(r => {
+        const w = Math.round(((r.value || 0) / max) * 100);
+        const clickable = !!r.detailKey;
+        const openAttr = clickable ? ` onclick="openStatsDetailByKey('${r.detailKey}')" title="กดดูรายชื่อลูกค้ากลุ่ม ${esc(r.label)}"` : '';
+        return `
+          <div class="stat-bar-row ${clickable ? 'clickable' : ''}"${openAttr}>
+            <div class="stat-bar-label" title="${esc(r.label)}">${esc(r.label)}</div>
+            <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${w}%;"></div></div>
+            <div class="stat-bar-value">${Number(r.value || 0).toLocaleString()}</div>
+          </div>
+        `;
+      }).join('') || '<div class="muted" style="padding:10px;">ไม่มีข้อมูล</div>';
+    }
+
+    function openStatsDetailByKey(key){
+      const group = statsDetailGroups[key];
+      if (!group) return;
+
+      const records = (group.records || []).slice()
+        .sort((a,b) => (parseInt(normDigits(a.opd), 10) || 0) - (parseInt(normDigits(b.opd), 10) || 0));
+
+      $('#statsDetailTitle').textContent = group.title || 'รายละเอียดลูกค้า';
+      $('#statsDetailSub').textContent = `พบ ${records.length.toLocaleString()} คน`;
+
+      const body = $('#statsDetailBody');
+      if (!records.length) {
+        body.innerHTML = '<div class="empty-gallery">ไม่พบรายชื่อในกลุ่มนี้</div>';
+        openModal('statsDetailModal');
+        return;
+      }
+
+      body.innerHTML = `
+        <div class="stats-detail-list">
+          <table class="stats-detail-table">
+            <thead>
+              <tr>
+                <th style="width:80px;">OPD</th>
+                <th>ชื่อ</th>
+                <th style="width:120px;">เบอร์</th>
+                <th style="width:90px;">อายุ</th>
+                <th style="width:90px;">เดือนเกิด</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${records.map(r => {
+                const age = calcAgeFromThaiDate(r.birth_th_ddmmyyyy);
+                const ageText = age === null ? '-' : `${age} ปี`;
+                const bm = getBirthMonthNumber(r);
+                const bmText = bm ? thaiMonthsShort[bm - 1] : '-';
+                return `
+                  <tr onclick="openViewPopup('${esc(r.opd)}')">
+                    <td style="font-weight:700;color:#0f766e;">${esc(r.opd)}</td>
+                    <td>${esc(r.name || r.full_name || '-')}</td>
+                    <td>${esc(r.phone || '-')}</td>
+                    <td>${esc(ageText)}</td>
+                    <td>${esc(bmText)}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+      openModal('statsDetailModal');
+    }
+    window.openStatsDetailByKey = openStatsDetailByKey;
+
+    function countDuplicateGroups(records, field, normalizer){
+      const groups = new Map();
+
+      records.forEach(r => {
+        const key = normalizer(r[field]);
+        const opd = normalizeOPD(r.opd);
+        if (!key || !opd) return;
+
+        if (!groups.has(key)) groups.set(key, new Map());
+
+        // นับซ้ำเฉพาะกรณีข้อมูลเดียวกันอยู่คนละ OPD
+        // ถ้า API/ฐานข้อมูลส่ง OPD เดิมซ้ำ จะไม่นับเป็นลูกค้าซ้ำ
+        const byOpd = groups.get(key);
+        if (!byOpd.has(opd)) byOpd.set(opd, r);
+      });
+
+      return Array.from(groups.entries())
+        .map(([key, byOpd]) => [key, Array.from(byOpd.values())])
+        .filter(([_, list]) => list.length > 1);
+    }
+
+    function renderCustomerStats(){
+      const total = rawData.length;
+      const hasPhone = rawData.filter(r => hasValue(r.phone)).length;
+      const hasBirth = rawData.filter(r => hasValue(r.birth_th_ddmmyyyy)).length;
+      const hasProfilePic = rawData.filter(r => hasValue(r.profile_pic_url)).length;
+
+      if ($('#statTotalCustomers')) $('#statTotalCustomers').textContent = total.toLocaleString();
+      if ($('#statHasPhone')) $('#statHasPhone').textContent = hasPhone.toLocaleString();
+      if ($('#statHasPhonePct')) $('#statHasPhonePct').textContent = pct(hasPhone, total);
+      if ($('#statHasBirth')) $('#statHasBirth').textContent = hasBirth.toLocaleString();
+      if ($('#statHasBirthPct')) $('#statHasBirthPct').textContent = pct(hasBirth, total);
+      if ($('#statHasProfilePic')) $('#statHasProfilePic').textContent = hasProfilePic.toLocaleString();
+      if ($('#statHasProfilePicPct')) $('#statHasProfilePicPct').textContent = pct(hasProfilePic, total);
+
+      Object.keys(statsDetailGroups).forEach(k => delete statsDetailGroups[k]);
+
+      const ageBuckets = [
+        { label:'< 20 ปี', detailKey:'age_under20', test:a => a !== null && a < 20, value:0, records:[] },
+        { label:'20-29 ปี', detailKey:'age_20_29', test:a => a !== null && a >= 20 && a <= 29, value:0, records:[] },
+        { label:'30-39 ปี', detailKey:'age_30_39', test:a => a !== null && a >= 30 && a <= 39, value:0, records:[] },
+        { label:'40-49 ปี', detailKey:'age_40_49', test:a => a !== null && a >= 40 && a <= 49, value:0, records:[] },
+        { label:'50-59 ปี', detailKey:'age_50_59', test:a => a !== null && a >= 50 && a <= 59, value:0, records:[] },
+        { label:'60 ปีขึ้นไป', detailKey:'age_60_plus', test:a => a !== null && a >= 60, value:0, records:[] },
+        { label:'ไม่ระบุ', detailKey:'age_unknown', test:a => a === null, value:0, records:[] },
+      ];
+      rawData.forEach(r => {
+        const age = calcAgeFromThaiDate(r.birth_th_ddmmyyyy);
+        const bucket = ageBuckets.find(b => b.test(age));
+        if (bucket) {
+          bucket.value += 1;
+          bucket.records.push(r);
+        }
+      });
+      ageBuckets.forEach(b => registerStatsDetail(b.detailKey, `ช่วงอายุ ${b.label}`, b.records));
+      renderBars('ageStatsBars', ageBuckets);
+
+      const monthRows = Array.from({length:12}, (_, i) => ({
+        label: thaiMonthsShort[i],
+        detailKey: `birth_month_${String(i + 1).padStart(2, '0')}`,
+        value:0,
+        records:[]
+      }));
+      const unknownMonthRow = { label:'ไม่ระบุ', detailKey:'birth_month_unknown', value:0, records:[] };
+      rawData.forEach(r => {
+        const m = getBirthMonthNumber(r);
+        if (m >= 1 && m <= 12) {
+          monthRows[m - 1].value += 1;
+          monthRows[m - 1].records.push(r);
+        } else {
+          unknownMonthRow.value += 1;
+          unknownMonthRow.records.push(r);
+        }
+      });
+      monthRows.forEach((m, idx) => registerStatsDetail(m.detailKey, `เดือนเกิด ${thaiMonthsShort[idx]}`, m.records));
+      registerStatsDetail(unknownMonthRow.detailKey, 'เดือนเกิด ไม่ระบุ', unknownMonthRow.records);
+      renderBars('birthMonthStatsBars', [...monthRows, unknownMonthRow]);
+
+      const vipCounts = new Map();
+      rawData.forEach(r => {
+        const key = hasValue(r.vip) ? String(r.vip).trim() : 'ไม่ระบุ';
+        vipCounts.set(key, (vipCounts.get(key) || 0) + 1);
+      });
+      const vipRows = Array.from(vipCounts.entries())
+        .map(([label, value]) => ({ label, value }))
+        .sort((a,b) => b.value - a.value || a.label.localeCompare(b.label));
+      renderBars('vipStatsBars', vipRows);
+
+      const missingRows = [
+        { label:'ไม่มีเบอร์โทร', count: rawData.filter(r => !hasValue(r.phone)).length },
+        { label:'ไม่มีวันเกิดไทย', count: rawData.filter(r => !hasValue(r.birth_th_ddmmyyyy)).length },
+        { label:'ไม่มีชื่อเต็ม', count: rawData.filter(r => !hasValue(r.full_name)).length },
+        { label:'ไม่มีเลขบัตร', count: rawData.filter(r => !hasValue(r.national_id)).length },
+        { label:'ไม่มีรูปโปรไฟล์', count: rawData.filter(r => !hasValue(r.profile_pic_url)).length },
+        { label:'ไม่มี Facebook', count: rawData.filter(r => !hasValue(r.facebook_name)).length },
+      ];
+      const completenessBox = $('#dataCompletenessTable');
+      if (completenessBox) {
+        completenessBox.innerHTML = `
+          <table class="stats-mini-table">
+            <thead><tr><th>รายการ</th><th style="text-align:right;">จำนวน</th><th style="text-align:right;">สัดส่วน</th></tr></thead>
+            <tbody>
+              ${missingRows.map(r => `
+                <tr>
+                  <td>${esc(r.label)}</td>
+                  <td style="text-align:right;font-weight:700;">${r.count.toLocaleString()}</td>
+                  <td style="text-align:right;color:#64748b;">${pct(r.count, total)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      }
+
+      const phoneDups = countDuplicateGroups(rawData, 'phone', normPhone);
+      const nidDups = countDuplicateGroups(rawData, 'national_id', normNationalId);
+      const dupBox = $('#duplicateStatsTable');
+      if (dupBox) {
+        const dupRows = [];
+        phoneDups.slice(0, 8).forEach(([key, list]) => dupRows.push({ type:'เบอร์ซ้ำ', key, list }));
+        nidDups.slice(0, 8).forEach(([key, list]) => dupRows.push({ type:'เลขบัตรซ้ำ', key, list }));
+        dupBox.innerHTML = `
+          <div class="${(phoneDups.length || nidDups.length) ? 'stats-alert' : 'stats-ok'}" style="margin-bottom:10px;">
+            เบอร์ซ้ำ ${phoneDups.length} กลุ่ม | เลขบัตรซ้ำ ${nidDups.length} กลุ่ม
+            <div style="font-size:10px; font-weight:500; margin-top:4px; opacity:.85;">นับเฉพาะข้อมูลซ้ำที่อยู่คนละ OPD</div>
+          </div>
+          ${dupRows.length ? `
+            <table class="stats-mini-table">
+              <thead><tr><th>ชนิด</th><th>ข้อมูล</th><th>OPD ที่พบ</th></tr></thead>
+              <tbody>
+                ${dupRows.map(r => `
+                  <tr>
+                    <td>${esc(r.type)}</td>
+                    <td class="mono">${esc(r.key)}</td>
+                    <td>${r.list.map(x => `OPD ${esc(x.opd)} ${esc(x.name || x.full_name || '')}`).join('<br>')}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          ` : '<div class="muted" style="padding:10px;">ยังไม่พบข้อมูลซ้ำจากเบอร์หรือเลขบัตร</div>'}
+        `;
+      }
+
+      const recent = rawData.slice()
+        .sort((a,b) => (parseInt(normDigits(b.opd), 10) || 0) - (parseInt(normDigits(a.opd), 10) || 0))
+        .slice(0, 12);
+      const recentBox = $('#recentCustomersTable');
+      if (recentBox) {
+        recentBox.innerHTML = `
+          <table class="stats-mini-table">
+            <thead><tr><th>OPD</th><th>ชื่อ</th><th>เบอร์</th></tr></thead>
+            <tbody>
+              ${recent.map(r => `
+                <tr style="cursor:pointer;" onclick="openViewPopup('${esc(r.opd)}')">
+                  <td style="font-weight:700;color:#0f766e;">${esc(r.opd)}</td>
+                  <td>${esc(r.name || r.full_name || '-')}</td>
+                  <td>${esc(r.phone || '-')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      }
+    }
+
+
     // =========================
     // Load + Render
     // =========================
@@ -1025,17 +1895,16 @@
 
       try{
         const data = await apiGetCustomers();
-        rawData = data.map(r => ({
-          ...r,
-          opd: pad4(r.opd ?? ''),
-          birthMonth: pad2(r.birthMonth ?? '')
-        })).filter(r => r.opd && r.opd !== '0000');
+        dataLoaded = true;
+        rawData = mergeLoadedCustomersByOPD(data);
 
         $('#totalChip').textContent = `${rawData.length} คน`;
         render();
+        if ($('#f_opd')?.value) lookupFormOPD(false);
         showToast('อัปเดตข้อมูลล่าสุดแล้ว');
 
       }catch(err){
+        dataLoaded = false;
         console.error("load error:", err);
         tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:crimson; padding:20px;">โหลดข้อมูลไม่สำเร็จ</td></tr>`;
       }
@@ -1285,15 +2154,37 @@
     // =========================
     // Add/Edit Save (ใช้ FormData + Picker)
     // =========================
-    $('#openAddModalBtn').onclick = openAddForm;
+    $('#openAddModalBtn').onclick = () => switchTab('entry');
+    $('#tabEntryBtn')?.addEventListener('click', () => switchTab('entry'));
+    $('#tabListBtn')?.addEventListener('click', () => switchTab('list'));
+    $('#tabStatsBtn')?.addEventListener('click', () => switchTab('stats'));
+    $('#nextOpdBtn')?.addEventListener('click', useNextOPD);
+    $('#checkOpdBtn')?.addEventListener('click', () => lookupFormOPD(true));
+    $('#f_opd')?.addEventListener('input', () => {
+      setEntryUnlocked(false);
+      updateModeBadge('locked');
+      scheduleOPDLookup();
+    });
+    $('#f_opd')?.addEventListener('blur', () => lookupFormOPD(true));
 
     $('#saveCustomerBtn').onclick = async () => {
-      const opd = pad4($('#f_opd').value.trim());
+      const opd = currentFormOPD();
       if (!opd || opd.length !== 4) return alert('กรุณากรอกเลข OPD 4 หลัก');
+      $('#f_opd').value = opd;
+
+      if ($('#saveCustomerBtn')?.disabled) {
+        return alert('กรุณากรอก OPD และรอให้ระบบเช็กข้อมูลก่อน');
+      }
+
+      const dupWarnings = duplicateWarningsForCurrentForm(opd);
+      if (dupWarnings.length) {
+        const ok = confirm(dupWarnings.join('\n') + '\n\nต้องการบันทึกต่อหรือไม่?');
+        if (!ok) return;
+      }
 
       const fd = new FormData();
       fd.append('opd', opd);
-      fd.append('birthMonth', pad2($('#f_birthMonth').value.trim()));
+      fd.append('birthMonth', normalizeBirthMonth($('#f_birthMonth').value.trim()));
       fd.append('birth_th_ddmmyyyy', $('#f_birth_th').value.trim());
       fd.append('name', $('#f_name').value.trim());
       fd.append('full_name', $('#f_full_name').value.trim());
@@ -1315,7 +2206,11 @@
         fd.append('existing_profile_url', galleryUrl);
       }
 
-      const mode = $('#formMode').value;
+      let mode = $('#formMode').value;
+      if (mode === 'add' && findCustomerByOPD(opd)) {
+        mode = 'edit';
+        $('#formMode').value = 'edit';
+      }
       try {
         if (mode === 'add') {
           await apiAddCustomerFull(fd);
@@ -1328,8 +2223,11 @@
            if (!r.ok) throw new Error('Update failed');
            showToast('บันทึกการแก้ไขสำเร็จ');
         }
-        closeModal('addModal');
         await loadData();
+        const saved = findCustomerByOPD(opd);
+        if (saved) { fillFormFromRecord(saved); setFormMode('edit'); setEntryUnlocked(true); updateModeBadge('edit', opd); }
+        updateEntryStatus(`บันทึก OPD ${opd} เรียบร้อย`, 'found');
+        switchTab('entry');
       } catch (err) {
         console.error(err);
         alert('บันทึกไม่สำเร็จ');
@@ -1366,52 +2264,50 @@
     };
     $('#scrollTop').onclick = () => window.scrollTo({top:0, behavior:'smooth'});
 
+    setEntryUnlocked(false);
+    updateModeBadge('locked');
     loadData();
 
     // =========================
-    // ✅ 🪪 OCR Function (แบบใหม่อัปโหลดก่อน)
+    // ✅ 🪪 OCR Function (อ่านก่อน ค่อยบันทึกรูปเมื่อสำเร็จ)
     // =========================
     async function processIDCard(input) {
-      const file = input.files[0];
+      const file = input.files?.[0];
       if (!file) return;
 
-      const opd = $('#f_opd').value.trim();
-      if (!opd || opd.length !== 4) {
-        alert('⚠️ กรุณากรอกเลข OPD 4 หลักก่อนสแกน\n(ระบบต้องใช้ OPD เพื่อสร้างอัลบั้มรูป)');
+      const check = validateImageFile(file);
+      if (!check.ok){
+        alert(check.msg);
         input.value = '';
         return;
       }
 
-      showToast('1/2 กำลังอัปโหลดรูปบัตร...', 'warn');
+      const opd = currentFormOPD();
+      if (!opd || opd.length !== 4) {
+        alert('⚠️ กรุณากรอกเลข OPD 4 หลักก่อนสแกน\nระบบจะเก็บรูปบัตรเข้าคลังเฉพาะเมื่อ AI อ่านสำเร็จ');
+        input.value = '';
+        return;
+      }
+
+      showToast('AI กำลังอ่านข้อมูลจากบัตร...', 'warn');
       const btn = input.nextElementSibling;
       const oldText = btn ? btn.innerText : '';
-      if (btn) { btn.innerText = '⏳ กำลังอัป...'; btn.disabled = true; }
+      if (btn) { btn.innerText = '🤖 AI อ่าน...'; btn.disabled = true; }
 
       try {
         const fd = new FormData();
+        const customerExists = !!findCustomerByOPD(opd);
         fd.append('opd', opd);
-        fd.append('images', file);
+        fd.append('file', file);
+        fd.append('save_image', customerExists ? 'true' : 'false');
 
-        const upRes = await fetch('/api/upload_gallery', { method: 'POST', body: fd });
-        const upData = await upRes.json();
-
-        if (!upRes.ok || !upData.urls || upData.urls.length === 0) {
-            throw new Error('Upload failed');
-        }
-
-        const cloudUrl = upData.urls[0];
-        console.log("Uploaded ID Card:", cloudUrl);
-
-        showToast('2/2 AI กำลังอ่านข้อมูล...', 'warn');
-        if (btn) btn.innerText = '🤖 AI อ่าน...';
-
-        const ocrRes = await fetch('/api/idcard_extract', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ image_url: cloudUrl })
+        const ocrRes = await fetch('/api/idcard_extract_upload', {
+          method: 'POST',
+          credentials:'same-origin',
+          body: fd
         });
 
-        const out = await ocrRes.json();
+        const out = await ocrRes.json().catch(()=>({}));
         if (!ocrRes.ok) throw new Error(out.error || 'OCR failed');
 
         const title = (out.title_th || '').trim();
@@ -1424,25 +2320,51 @@
         if (birth) {
           $('#f_birth_th').value = birth;
           const parts = birth.split('/');
-          if (parts.length > 1 && /^\d{2}$/.test(parts[1])) $('#f_birthMonth').value = parts[1];
+          if (parts.length > 1) $('#f_birthMonth').value = normalizeBirthMonth(parts[1]);
         }
 
-        const idNo = (out.id_number || '').trim();
+        const idNo = (out.id_number || '').replace(/\D/g, '').trim();
         if (idNo) $('#f_national_id').value = idNo;
 
         const addr = (out.address || '').trim();
         if (addr) $('#f_address').value = addr;
 
-        showToast('✅ อ่านบัตรสำเร็จ + เก็บรูปเข้าคลังแล้ว', 'ok');
+        showToast(out.image_url ? 'อ่านบัตรสำเร็จ และเก็บรูปเข้าคลังแล้ว' : 'อ่านบัตรสำเร็จ กรุณาบันทึกลูกค้าก่อน รูปบัตรจึงจะไม่ถูกเก็บค้าง', 'ok');
+        if (out.image_url) {
+          currentGalleryOpd = opd;
+          // ไม่ตั้งรูปบัตรเป็น profile อัตโนมัติ แค่เก็บในคลังประเภท id_card
+          if ($('#galleryModal')?.classList.contains('open')) loadGalleryImages(opd);
+        }
 
       } catch (err) {
         console.error(err);
-        showToast('เกิดข้อผิดพลาด ลองใหม่อีกครั้ง', 'error');
+        showToast('อ่านบัตรไม่สำเร็จ รูปจะไม่ถูกเก็บซ้ำในคลัง', 'error');
       } finally {
         input.value = '';
         if (btn) { btn.innerText = oldText; btn.disabled = false; }
       }
     }
+
+    // Expose functions used by inline HTML handlers
+    Object.assign(window, {
+      openModal,
+      closeModal,
+      openGallery,
+      openPickerGallery,
+      loadGalleryImages,
+      uploadGalleryImages,
+      onGalleryItemClick,
+      setAsProfileImage,
+      previewImage,
+      switchTab,
+      resetEntryForm,
+      lookupFormOPD,
+      openAddForm,
+      openEditForm,
+      openViewPopup,
+      processIDCard
+    });
+
   </script>
 </body>
 </html>

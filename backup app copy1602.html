@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 from collections import defaultdict, deque
 from math import isfinite
 from typing import Any, Dict, List, Optional, Tuple
-from pathlib import Path  # ✅ เพิ่มตัวนี้ช่วยหาไฟล์ .env
+from pathlib import Path
 
 from flask import (
     Flask,
@@ -25,6 +25,7 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 from functools import wraps
 
+# --- Libraries for New Features ---
 import cloudinary
 import cloudinary.uploader
 import google.generativeai as genai
@@ -35,7 +36,7 @@ from io import BytesIO
 # =============================================================
 # Environment & App Setup
 # =============================================================
-# ✅ แก้ไข: บังคับโหลด .env จากโฟลเดอร์เดียวกับไฟล์ app.py เสมอ
+# ใช้การโหลด .env แบบใหม่ที่เสถียรกว่า (Pathlib)
 env_path = Path(__file__).resolve().parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
@@ -56,18 +57,30 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# =============================================================
-# ✅ Cloudinary & Gemini Setup (ดึงจาก .env)
-# =============================================================
-# ตั้งค่า Cloudinary
+# --- Cloudinary Setup ---
 cloudinary.config(
   cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"),
   api_key = os.getenv("CLOUDINARY_API_KEY"),
   api_secret = os.getenv("CLOUDINARY_API_SECRET")
 )
 
-# ตั้งค่า Gemini Global
+# --- Gemini Setup ---
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+# =============================================================
+# ✅ Helper: Save Image to Cloud (ฟังก์ชั่นสำคัญสำหรับระบบใหม่)
+# =============================================================
+def save_image_to_cloud(image_file):
+    """
+    รับไฟล์รูป -> ส่งไป Cloudinary -> คืนค่าเป็น URL
+    """
+    try:
+        # folder='clinic_customers' คือตั้งชื่อโฟลเดอร์ใน cloud ให้เป็นระเบียบ
+        upload_result = cloudinary.uploader.upload(image_file, folder="clinic_customers")
+        return upload_result['secure_url']
+    except Exception as e:
+        print(f"Upload failed: {e}")
+        return None
 
 # =============================================================
 # Simple rate limiters (in-memory)
@@ -132,7 +145,7 @@ def _utc_now_iso() -> str:
 
 
 # =============================================================
-# Helpers: Bulletproof Data Handlers
+# ✅ Helpers: Bulletproof Data Handlers (จาก Code เก่าที่เสถียร)
 # =============================================================
 def _ensure_items(val: Any) -> Any:
     try:
@@ -164,6 +177,7 @@ def _to_int(v: Any, default: int = 1) -> int:
     except Exception:
         return default
 
+
 def _item_obj_to_text(x: Any) -> str:
     if x is None:
         return ""
@@ -174,6 +188,7 @@ def _item_obj_to_text(x: Any) -> str:
         name = (x.get("name") or x.get("product") or x.get("title") or "").strip()
         category = (x.get("category") or x.get("group") or "").strip()
         qty = _to_int(x.get("qty") or x.get("quantity") or x.get("count"), default=1)
+
         price = x.get("price") or x.get("unit_price") or x.get("default_price")
 
         if category and name:
@@ -196,6 +211,7 @@ def _item_obj_to_text(x: Any) -> str:
 
 def _coerce_items_to_text_list(val: Any) -> List[str]:
     raw = _ensure_items(val)
+
     if isinstance(raw, list):
         out: List[str] = []
         for it in raw:
@@ -330,6 +346,7 @@ def _ensure_counter_row(year: int) -> None:
 
 def _next_orig_seq_atomic(year: int, max_retries: int = 10) -> int:
     _ensure_counter_row(year)
+
     last_err: Optional[Exception] = None
     for _ in range(max_retries):
         try:
@@ -523,7 +540,50 @@ def appsettings():
         role=session.get("role", ""),
     )
 
+@app.route("/tax2")
+@login_required
+def tax2_page():
+    return render_template("tax2.html", username=session["username"])
 
+
+@app.route("/api/update_customer_global", methods=["POST"])
+@login_required
+def update_customer_global():
+    data = request.get_json(force=True)
+    old_opd = normalize_opd(data.get("old_opd"))
+    new_opd = normalize_opd(data.get("new_opd"))
+    name = (data.get("name") or "").strip()
+    phone = (data.get("phone") or "").strip()
+
+    if not old_opd or not new_opd:
+        return jsonify({"error": "missing_opd"}), 400
+
+    try:
+        # ถ้าเปลี่ยนเลข OPD ต้องเช็กก่อนว่าเลขใหม่มีคนใช้ไปหรือยัง
+        if old_opd != new_opd:
+            check = supabase.table("customers").select("opd").eq("opd", new_opd).execute()
+            if check.data:
+                return jsonify({"error": f"เลข OPD ใหม่ ({new_opd}) มีในระบบแล้ว กรุณาใช้เลขอื่น"}), 400
+
+        # 1. อัปเดตในตาราง customers
+        supabase.table("customers").update({
+            "opd": new_opd,
+            "name": name,
+            "phone": phone
+        }).eq("opd", old_opd).execute()
+
+        # 2. อัปเดตในตาราง sales_records ทุกใบ
+        supabase.table("sales_records").update({
+            "opd": new_opd,
+            "name": name,
+            "phone": phone
+        }).eq("opd", old_opd).execute()
+
+        return jsonify({"message": "อัปเดตข้อมูลลูกค้าและบิลย้อนหลังเรียบร้อยแล้ว"})
+    
+    except Exception as e:
+        app.logger.error(f"Global Update Error: {e}")
+        return jsonify({"error": str(e)}), 500
 # =============================================================
 # API — Health
 # =============================================================
@@ -720,7 +780,7 @@ def delete_customer_and_sales():
 
 
 # =============================================================
-# API — Receipt System (Original & Display Mode)
+# API — Receipt System
 # =============================================================
 @app.route("/api/sales_issue_receipt", methods=["POST"])
 @login_required
@@ -878,7 +938,7 @@ def rebuild_display_receipts():
         return jsonify({"success": False, "error": str(e)}), 500
 
 # =============================================================
-# API — Sales
+# API — Sales (IMPORTANT: Using core logic from old robust code)
 # =============================================================
 @app.route("/api/sales")
 @login_required
@@ -952,6 +1012,7 @@ def save_sales():
                 except Exception:
                     amt = None
 
+            # --- 1. แก้ไขจุดเสี่ยง Upsert ลูกค้า (Logic เก่าที่เสถียร) ---
             if opd_4 and rec.get("name"):
                 customer_data = {
                     "opd": opd_4,
@@ -986,11 +1047,13 @@ def save_sales():
 
             rec_id = rec.get("id")
             
+            # --- กรณีแก้ไข (Update) ---
             if rec_id:
                 supabase.table("sales_records").update(rec_db).eq("id", rec_id).execute()
                 updated_count += 1
                 continue
 
+            # --- 2. แก้ไขจุดเสี่ยงเช็คซ้ำ (Duplicate Check) ---
             dup_q = (
                 supabase.table("sales_records")
                 .select("id")
@@ -1028,28 +1091,90 @@ def delete_sales_record():
         if not record_id:
             return jsonify({"error": "Missing ID"}), 400
 
-        rec = (
-            supabase.table("sales_records")
-            .select("id,orig_no")
-            .eq("id", record_id)
-            .single()
-            .execute()
-        ).data
-        if rec and rec.get("orig_no"):
-            return (
-                jsonify(
-                    {
-                        "error": "cannot_delete_issued_receipt",
-                        "message": "รายการนี้ออกใบเสร็จ (RC) แล้ว ไม่อนุญาตให้ลบ",
-                    }
-                ),
-                400,
-            )
-
+        # ลบได้ทุกกรณี แม้ออกใบเสร็จแล้ว
         supabase.table("sales_records").delete().eq("id", record_id).execute()
         return jsonify({"message": "ลบสำเร็จ"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+
+
+@app.route("/api/rebuild_rc_receipts", methods=["POST"])
+@login_required
+def rebuild_rc_receipts():
+    try:
+        data = request.get_json(silent=True) or {}
+        year = int(data.get("year") or 0)
+        if year < 2000 or year > 2100:
+            return jsonify({"success": False, "error": "Invalid year"}), 400
+
+        # (แนะนำ) จำกัดสิทธิ์เฉพาะ admin กันกดพลาด
+        if (session.get("role") or "") != "admin":
+            return jsonify({"success": False, "error": "forbidden"}), 403
+
+        start_date = f"{year}-01-01"
+        end_date = f"{year}-12-31"
+
+        # ดึงรายการขายทั้งหมดในปีนั้น
+        q = (
+            supabase.table("sales_records")
+            .select("id,date,created_at")
+            .gte("date", start_date)
+            .lte("date", end_date)
+            .order("date", desc=False)
+            .order("created_at", desc=False)
+        )
+
+        all_rows = []
+        start = 0
+        limit = 1000
+        while True:
+            resp = q.range(start, start + limit - 1).execute()
+            batch = resp.data or []
+            all_rows.extend(batch)
+            if len(batch) < limit:
+                break
+            start += limit
+
+        # PASS 1: เคลียร์ orig_no อย่างเดียวพอ (กันชน unique) — ปลอดภัยสุด (ไม่ชน NOT NULL)
+        supabase.table("sales_records").update(
+            {"orig_no": None}
+        ).gte("date", start_date).lte("date", end_date).execute()
+
+        # PASS 2: ใส่เลข RC ใหม่
+        now_iso = _utc_now_iso()
+        seq = 1
+
+        for r in all_rows:
+            rid = r.get("id")
+            if not rid:
+                continue
+
+            new_no = f"RC-{year}-{str(seq).zfill(4)}"
+
+            supabase.table("sales_records").update(
+                {
+                    "orig_year": year,
+                    "orig_seq": seq,
+                    "orig_no": new_no,
+                    "orig_issued_at": now_iso,
+                    "receipt_status": "issued",
+                }
+            ).eq("id", rid).execute()
+
+            seq += 1
+
+        # อัปเดต counter ให้ next_seq ต่อจากตัวล่าสุด
+        supabase.table("receipt_counters_orig").upsert(
+            {"year": year, "next_seq": seq},
+            on_conflict="year"  # ✅ ต้องเป็น string ในหลายเวอร์ชัน
+        ).execute()
+
+        return jsonify({"success": True, "count": len(all_rows)}), 200
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route("/api/cleanup_duplicates")
@@ -2289,44 +2414,7 @@ def api_work_tx():
 
 
 # =============================================================
-# Clinic Time Module — Customers Search (Search on Demand)
-# =============================================================
-@app.route("/api/search_customer")
-@login_required
-def api_search_customer():
-    try:
-        q = (request.args.get("q") or "").strip()
-        if not q or len(q) < 1:
-            return jsonify([])
-
-        limit = 20
-        q_digits = re.sub(r"\D", "", q)
-        is_opd = q_digits.isdigit() and len(q_digits) <= 4
-
-        qry = supabase.table("customers").select("opd,name,phone,profile,note").limit(limit)
-
-        or_parts = []
-        or_parts.append(f"name.ilike.%{q}%")
-        or_parts.append(f"phone.ilike.%{q}%")
-        if is_opd:
-            or_parts.append(f"opd.ilike.%{q_digits.zfill(4)}%")
-
-        qry = qry.or_(",".join(or_parts)).order("opd", desc=False)
-        res = qry.execute()
-        rows = res.data or []
-
-        for r in rows:
-            r["opd"] = normalize_opd(r.get("opd"))
-
-        return jsonify(rows)
-
-    except Exception as e:
-        app.logger.error(f"/api/search_customer error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
-# =============================================================
-# Clinic Time Module — Appointments CRUD (Daily)
+# Clinic Time Module 
 # =============================================================
 @app.route("/api/get_appointments")
 @login_required
@@ -2343,10 +2431,13 @@ def api_get_appointments():
             .order("start_time", desc=False)
             .execute()
         )
+
         return jsonify(res.data or [])
+
     except Exception as e:
         app.logger.error(f"/api/get_appointments error: {e}")
         return jsonify({"error": str(e)}), 500
+
 @app.route("/api/save_appointment", methods=["POST"])
 @login_required
 def api_save_appointment():
@@ -2355,74 +2446,102 @@ def api_save_appointment():
 
         appt_date = safe_date_str(data.get("appt_date"))
         start_time = data.get("start_time")
-        
-        # --- แก้ไข 1: รองรับ end_time ถ้าไม่มีให้ Default เป็น start_time ---
-        # (หรือคุณจะเขียนโค้ดบวกเวลาเพิ่มตรงนี้ก็ได้)
-        end_time = data.get("end_time") 
-        if not end_time and start_time:
-             # ตัวอย่าง: ถ้าไม่ได้ส่งเวลาจบมา ให้ใส่เวลาเดียวกับเวลาเริ่มไปก่อน เพื่อกัน Database Error
-             end_time = start_time 
-
+        end_time = data.get("end_time") or start_time
         column_id = data.get("column_id")
-        guest_name = data.get("guest_name")
-        guest_phone = data.get("guest_phone")
-        
-        # --- แก้ไข 2: รองรับทั้งชื่อ service และ procedure (กันเหนียว) ---
-        service = data.get("service") or data.get("procedure") 
-        
-        status = data.get("status") or "pending"
+
+        guest_name = (
+            data.get("guest_name")
+            or data.get("customer_name")
+            or data.get("name")
+            or ""
+        ).strip()
+
+        guest_phone = (
+            data.get("guest_phone")
+            or data.get("phone")
+            or ""
+        ).strip()
+
+        service = (data.get("service") or data.get("procedure") or "").strip()
         note = data.get("note")
-        customer_id = data.get("customer_id")
 
-        # Validation
+        # ✅ เพิ่ม customer_type แบบเรียบ
+        allowed_types = {"new", "old"}
+        customer_type = (data.get("customer_type") or "new").strip().lower()
+        if customer_type not in allowed_types:
+            customer_type = "new"
+
+        allowed_status = {"pending", "confirmed", "cancelled"}
+        status = (data.get("status") or "pending").strip().lower()
+        if status not in allowed_status:
+            status = "pending"
+
         if not appt_date or not start_time or not column_id or not service:
-            return jsonify({"error": "missing_required_fields", "detail": "Date, Time, Column, Service are required"}), 400
+            return jsonify({"error": "missing_required_fields"}), 400
 
-        # ... (code ส่วนจัดการ guest_name เหมือนเดิม) ...
-        if not guest_name: guest_name = None
-        if not guest_phone: guest_phone = None
-        
-        # Payload เข้า DB
         payload = {
             "appt_date": appt_date,
             "start_time": start_time,
-            "end_time": end_time,  # ต้องมีค่าส่งไป DB
-            "column_id": int(column_id), # แปลงเป็น int ให้ชัวร์
-            "guest_name": guest_name,
-            "guest_phone": guest_phone,
+            "end_time": end_time,
+            "column_id": int(column_id),
+            "guest_name": guest_name if guest_name else None,
+            "guest_phone": guest_phone if guest_phone else None,
             "service": service,
             "status": status,
+            "customer_type": customer_type,  # ✅ บันทึกเฉย ๆ
             "note": note,
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
 
-        if customer_id:
-            payload["customer_id"] = customer_id
+        supabase.table("appointments").insert(payload).execute()
 
-        res = supabase.table("appointments").insert(payload).execute()
-
-        return jsonify({"success": True, "message": "Saved."}), 200
+        return jsonify({"success": True}), 200
 
     except Exception as e:
         app.logger.error(f"Save Appt Error: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route("/api/search_customer_simple")
+@login_required
+def api_search_customer_simple():
+    try:
+        q = (request.args.get("q") or "").strip()
 
+        if not q or len(q) < 1:
+            return jsonify([])
+
+        res = (
+            supabase.table("customers")
+            .select("opd,name,full_name,phone")
+            .or_(f"name.ilike.%{q}%,full_name.ilike.%{q}%")
+            .limit(10)
+            .execute()
+        )
+
+        rows = res.data or []
+
+        for r in rows:
+            display_name = (r.get("name") or "").strip()
+
+            r["display_name"] = display_name
+
+        return jsonify(rows)
+
+    except Exception as e:
+        app.logger.error(f"Search customer error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/delete_appointment", methods=["POST"])
 @login_required
 def api_delete_appointment():
     try:
-        # รับค่า ID ที่ส่งมาจากหน้าเว็บ
         data = request.get_json(silent=True) or {}
         appt_id = data.get("id")
-        
-        # ถ้าไม่มี ID ส่งมา ให้แจ้ง Error กลับไป
+
         if not appt_id:
             return jsonify({"error": "missing_id"}), 400
 
-        # สั่งลบข้อมูลในตาราง appointments ที่มี id ตรงกัน
         supabase.table("appointments").delete().eq("id", appt_id).execute()
 
         return jsonify({"success": True})
@@ -2431,55 +2550,202 @@ def api_delete_appointment():
         app.logger.error(f"Delete Appt Error: {e}")
         return jsonify({"error": str(e)}), 500
 
+_ALLOWED_APPT_STATUS = {"pending", "confirmed", "cancelled"}
+
+def _normalize_appt_status(s):
+    s = (s or "").strip().lower()
+    return s if s in _ALLOWED_APPT_STATUS else "pending"
 
 
-
-
-
-
-@app.route('/api/add_customer_v2', methods=['POST'])
+@app.route("/api/set_appointment_status", methods=["POST"])
 @login_required
-def add_customer_v2():
+def api_set_appointment_status():
     try:
-        data = request.form
-        
-        profile_file = request.files.get('profile_pic')
-        profile_url = None
+        data = request.get_json(silent=True) or {}
+        appt_id = data.get("id")
+        status = _normalize_appt_status(data.get("status"))
 
-        if profile_file:
-            profile_url = save_image_to_cloud(profile_file) 
-            pass
+        if not appt_id:
+            return jsonify({"success": False, "error": "missing_id"}), 400
 
-        customer_data = {
-            "opd": data.get('opd'),
-            "birthMonth": data.get('birthMonth'),
-            "birth_th_ddmmyyyy": data.get('birth_th_ddmmyyyy'),
-            "name": data.get('name'),
-            "full_name": data.get('full_name'),
-            "phone": data.get('phone'),
-            "facebook_name": data.get('facebook_name'),
-            "national_id": data.get('national_id'),
-            "vip": data.get('vip'),
-            "address": data.get('address'),
-            "profile": data.get('profile'),
-            "note": data.get('note'),
-            "profile_pic_url": profile_url
-        }
+        patch = {"status": status}
 
-        for k, v in customer_data.items():
-            if v == '': customer_data[k] = None
+        # ✅ อัปเดต (ห้าม chain .select/.single)
+        upd = (
+            supabase.table("appointments")
+            .update(patch)
+            .eq("id", appt_id)
+            .execute()
+        )
 
-        supabase.table('customers').insert(customer_data).execute()
+        # (optional) ถ้าอยากส่ง row กลับไป ก็ query อีกรอบ
+        row = (
+            supabase.table("appointments")
+            .select("*")
+            .eq("id", appt_id)
+            .single()
+            .execute()
+        ).data
 
-        return jsonify({"status": "success"})
+        return jsonify({"success": True, "row": row}), 200
 
     except Exception as e:
-        print(f"Error adding customer v2: {e}")
+        app.logger.error(f"Set Appt Status Error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+
+
+# =============================================================
+# STAFF MANAGEMENT API
+# =============================================================
+@app.route("/api/staffs", methods=["GET", "POST", "DELETE"])
+@login_required
+def api_staffs_mgmt():
+    try:
+        if request.method == "GET":
+            res = supabase.table("staffs").select("*").order("id").execute()
+            return jsonify(res.data or [])
+
+        if request.method == "POST":
+            data = request.get_json(silent=True) or {}
+            
+            payload = {
+                "name": data.get("name"),
+                "role": data.get("role"),
+                "color_code": data.get("color_code"),
+                "is_active": True
+            }
+
+            if data.get("id"):
+                staff_id = data.get("id")
+                supabase.table("staffs").update(payload).eq("id", staff_id).execute()
+            else:
+                supabase.table("staffs").insert(payload).execute()
+            
+            return jsonify({"success": True})
+
+        if request.method == "DELETE":
+            staff_id = request.args.get("id")
+            if not staff_id:
+                data = request.get_json(silent=True) or {}
+                staff_id = data.get("id")
+            
+            if not staff_id:
+                return jsonify({"error": "Missing ID"}), 400
+
+            supabase.table("staffs").delete().eq("id", staff_id).execute()
+            return jsonify({"success": True})
+
+    except Exception as e:
+        print(f"Staff API Error: {e}")
         return jsonify({"error": str(e)}), 500
 
 
 # =============================================================
-# Gallery Management (Upload & List)
+# ROSTER API
+# =============================================================
+
+@app.route("/api/get_roster")
+@login_required
+def api_get_roster():
+    try:
+        month = request.args.get("month") # รูปแบบ YYYY-MM
+        if not month: return jsonify([])
+        
+        start_date = f"{month}-01"
+        year, mnth = map(int, month.split('-'))
+        if mnth == 12:
+            next_month = f"{year+1}-01-01"
+        else:
+            next_month = f"{year}-{mnth+1:02d}-01"
+
+        roster_res = (
+            supabase.table("work_schedules")
+            .select("*")
+            .gte("date", start_date)
+            .lt("date", next_month)
+            .execute()
+        )
+        rosters = roster_res.data or []
+
+        staff_res = supabase.table("staffs").select("id,name,role,color_code").execute()
+        staff_map = {s['id']: s for s in staff_res.data or []}
+
+        for r in rosters:
+            sid = r.get('staff_id')
+            if sid in staff_map:
+                r['staff_name'] = staff_map[sid]['name']
+                r['staff_role'] = staff_map[sid]['role']
+                r['staff_color'] = staff_map[sid]['color_code']
+            else:
+                r['staff_name'] = 'Unknown'
+                r['staff_role'] = '-'
+                r['staff_color'] = '#cbd5e1'
+
+        return jsonify(rosters)
+    except Exception as e:
+        print(f"Get Roster Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/save_roster", methods=["POST"])
+@login_required
+def api_save_roster():
+    try:
+        data = request.get_json(silent=True) or {}
+        
+        payload = {
+            "staff_id": data.get("staff_id"),
+            "date": data.get("date"),
+            "work_type": data.get("work_type", "work"), 
+            "start_time": data.get("start_time"),
+            "end_time": data.get("end_time"),
+            "note": data.get("note", ""),
+            
+        }
+
+        if payload["work_type"] == "leave":
+            payload["start_time"] = None
+            payload["end_time"] = None
+        else:
+            if not payload["start_time"]: payload["start_time"] = "11:00"
+            if not payload["end_time"]: payload["end_time"] = "20:00"
+
+        if data.get("id"):
+            roster_id = data.get("id")
+            supabase.table("work_schedules").update(payload).eq("id", roster_id).execute()
+        else:
+            supabase.table("work_schedules").insert(payload).execute()
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print(f"Save Roster Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/delete_roster", methods=["POST"])
+@login_required
+def api_delete_roster():
+    try:
+        data = request.get_json(silent=True) or {}
+        rid = data.get("id")
+        
+        if not rid:
+            return jsonify({"error": "Missing ID"}), 400
+
+        supabase.table("work_schedules").delete().eq("id", rid).execute()
+        
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print(f"Delete Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# =============================================================
+# Gallery Management
 # =============================================================
 @app.route('/api/get_gallery')
 @login_required
@@ -2563,6 +2829,7 @@ def update_customer_with_image():
 
         profile_file = request.files.get('profile_pic')
         if profile_file:
+            # เรียกใช้ helper function ที่เราประกาศไว้ด้านบน
             url = save_image_to_cloud(profile_file)
             patch["profile_pic_url"] = url
         
@@ -2582,6 +2849,47 @@ def update_customer_with_image():
         print(f"Update Image Error: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/add_customer_v2', methods=['POST'])
+@login_required
+def add_customer_v2():
+    try:
+        data = request.form
+        
+        profile_file = request.files.get('profile_pic')
+        profile_url = None
+
+        if profile_file:
+            # เรียกใช้ helper function ได้อย่างถูกต้องแล้ว
+            profile_url = save_image_to_cloud(profile_file) 
+            pass
+
+        customer_data = {
+            "opd": data.get('opd'),
+            "birthMonth": data.get('birthMonth'),
+            "birth_th_ddmmyyyy": data.get('birth_th_ddmmyyyy'),
+            "name": data.get('name'),
+            "full_name": data.get('full_name'),
+            "phone": data.get('phone'),
+            "facebook_name": data.get('facebook_name'),
+            "national_id": data.get('national_id'),
+            "vip": data.get('vip'),
+            "address": data.get('address'),
+            "profile": data.get('profile'),
+            "note": data.get('note'),
+            "profile_pic_url": profile_url
+        }
+
+        for k, v in customer_data.items():
+            if v == '': customer_data[k] = None
+
+        supabase.table('customers').insert(customer_data).execute()
+
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        print(f"Error adding customer v2: {e}")
+        return jsonify({"error": str(e)}), 500
+
 
 # =============================================================
 # Gemini AI - ID Card Extract
@@ -2589,10 +2897,6 @@ def update_customer_with_image():
 @app.route('/api/idcard_extract', methods=['POST'])
 @login_required
 def api_idcard_extract():
-    import google.generativeai as genai
-    import requests
-    from PIL import Image
-    from io import BytesIO
     import json
 
     try:
@@ -2600,19 +2904,15 @@ def api_idcard_extract():
         image_url = data.get('image_url')
 
         if not image_url:
-            return jsonify({"error": "No image URL provided. (Check upload_gallery return)"}), 400
+            return jsonify({"error": "No image URL provided."}), 400
 
         print(f"🤖 Gemini reading form: {image_url}")
         response = requests.get(image_url)
         img_bytes = BytesIO(response.content)
         img = Image.open(img_bytes)
 
-        # ✅ ดึงคีย์จาก env เสมอ
-        gemini_key = os.getenv("GEMINI_API_KEY")
-        if not gemini_key:
-             return jsonify({"error": "Missing GEMINI_API_KEY in .env"}), 500
-        
-        genai.configure(api_key=gemini_key) 
+        # ใช้โมเดลล่าสุด
+        model = genai.GenerativeModel('models/gemini-2.0-flash') 
         
         prompt = """
         Task: Extract Thai National ID Card data into JSON.
@@ -2629,7 +2929,6 @@ def api_idcard_extract():
         If a field is unclear or missing, use null.
         """
 
-        model = genai.GenerativeModel('models/gemini-2.0-flash') # หรือ gemini-1.5-flash
         result = model.generate_content([prompt, img])
         
         text_response = result.text.strip()
@@ -2648,171 +2947,192 @@ def api_idcard_extract():
 if __name__ == "__main__":
     app.run(debug=True)
 
+    # =============================================================
+# TAX DISPLAY ADDITIONS (เพิ่มใน app.py)
+# สำหรับคอลัมน์ sales_records.tax_display = 'show' / 'noshow'
+# อ้างอิงจาก app.py เดิมที่มี /api/sales ใช้งาน select('*') อยู่แล้ว
+# ดังนั้น /api/sales จะส่ง tax_display กลับมาให้อัตโนมัติหลังเพิ่มคอลัมน์ใน Supabase
+# =============================================================
 
-# =============================================================
-# 🚀 STAFF MANAGEMENT API (จัดการพนักงาน: เพิ่ม/ลบ/แก้ไข)
-# =============================================================
-@app.route("/api/staffs", methods=["GET", "POST", "DELETE"])
+# -----------------------------
+# Helper: normalize tax_display
+# วางไว้แถว Helpers อื่น ๆ ใน app.py
+# -----------------------------
+def _normalize_tax_display(v: Any) -> str:
+    s = str(v or "").strip().lower()
+    return s if s in {"show", "noshow"} else "show"
+
+
+# -----------------------------
+# API: save tax_display แบบหลายบิลพร้อมกัน
+# ใช้ตอนหน้าเว็บกดปุ่ม "บันทึก"
+# รับ payload แบบ:
+# {
+#   "updates": [
+#     {"id": 1, "tax_display": "show"},
+#     {"id": 2, "tax_display": "noshow"}
+#   ]
+# }
+# -----------------------------
+@app.route("/api/save_tax_display", methods=["POST"])
 @login_required
-def api_staffs_mgmt():
-    try:
-        # 1. GET: ดึงรายชื่อพนักงานทั้งหมด
-        if request.method == "GET":
-            # ดึงข้อมูลเรียงตาม ID
-            res = supabase.table("staffs").select("*").order("id").execute()
-            return jsonify(res.data or [])
-
-        # 2. POST: เพิ่ม หรือ แก้ไข พนักงาน
-        if request.method == "POST":
-            data = request.get_json(silent=True) or {}
-            
-            payload = {
-                "name": data.get("name"),
-                "role": data.get("role"),         # doctor, nurse, etc.
-                "color_code": data.get("color_code"), # เช่น #ff0000
-                "is_active": True
-            }
-
-            # ตรวจสอบว่าเป็นการ "แก้ไข" (มี ID) หรือ "เพิ่มใหม่" (ไม่มี ID)
-            if data.get("id"):
-                staff_id = data.get("id")
-                supabase.table("staffs").update(payload).eq("id", staff_id).execute()
-            else:
-                supabase.table("staffs").insert(payload).execute()
-            
-            return jsonify({"success": True})
-
-        # 3. DELETE: ลบพนักงาน
-        if request.method == "DELETE":
-            # รับ ID จาก Query String (?id=1) หรือ Body
-            staff_id = request.args.get("id")
-            if not staff_id:
-                data = request.get_json(silent=True) or {}
-                staff_id = data.get("id")
-            
-            if not staff_id:
-                return jsonify({"error": "Missing ID"}), 400
-
-            supabase.table("staffs").delete().eq("id", staff_id).execute()
-            return jsonify({"success": True})
-
-    except Exception as e:
-        print(f"Staff API Error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
-# =============================================================
-# 📅 ROSTER API (จัดการตารางเวร: เพิ่ม/ลบ/แก้ไข + แยกสี)
-# =============================================================
-
-# 1. ดึงตารางเวรตามเดือน (Join ข้อมูลพนักงานให้ด้วย)
-@app.route("/api/get_roster")
-@login_required
-def api_get_roster():
-    try:
-        month = request.args.get("month") # รูปแบบ YYYY-MM
-        if not month: return jsonify([])
-        
-        # คำนวณวันเริ่มต้น-สิ้นสุดเดือน
-        start_date = f"{month}-01"
-        year, mnth = map(int, month.split('-'))
-        if mnth == 12:
-            next_month = f"{year+1}-01-01"
-        else:
-            next_month = f"{year}-{mnth+1:02d}-01"
-
-        # 1. ดึงข้อมูลเวร (Roster)
-        roster_res = (
-            supabase.table("work_schedules")
-            .select("*")
-            .gte("date", start_date)
-            .lt("date", next_month)
-            .execute()
-        )
-        rosters = roster_res.data or []
-
-        # 2. ดึงข้อมูลพนักงาน (Staffs) มาทำ Map (เพื่อความชัวร์และเร็ว)
-        staff_res = supabase.table("staffs").select("id,name,role,color_code").execute()
-        staff_map = {s['id']: s for s in staff_res.data or []}
-
-        # 3. ผสมข้อมูล (เอาชื่อและสีพนักงานใส่เข้าไปใน object เวร)
-        for r in rosters:
-            sid = r.get('staff_id')
-            if sid in staff_map:
-                r['staff_name'] = staff_map[sid]['name']
-                r['staff_role'] = staff_map[sid]['role']
-                r['staff_color'] = staff_map[sid]['color_code']
-            else:
-                r['staff_name'] = 'Unknown'
-                r['staff_role'] = '-'
-                r['staff_color'] = '#cbd5e1' # สีเทาถ้าไม่เจอ
-
-        return jsonify(rosters)
-    except Exception as e:
-        print(f"Get Roster Error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
-# 2. บันทึกเวร (รองรับทั้ง เพิ่มใหม่ และ แก้ไข)
-@app.route("/api/save_roster", methods=["POST"])
-@login_required
-def api_save_roster():
+def api_save_tax_display():
     try:
         data = request.get_json(silent=True) or {}
-        
-        # เตรียมข้อมูลลงฐานข้อมูล
-        payload = {
-            "staff_id": data.get("staff_id"),
-            "date": data.get("date"),
-            "work_type": data.get("work_type", "work"), # work หรือ leave
-            "start_time": data.get("start_time"),
-            "end_time": data.get("end_time"),
-            "note": data.get("note", ""),
-            
-        }
+        updates = data.get("updates") or []
 
-        # ถ้าเป็น "วันลา" (leave) ให้เคลียร์เวลาออก เพื่อไม่ให้สับสน
-        if payload["work_type"] == "leave":
-            payload["start_time"] = None
-            payload["end_time"] = None
-        else:
-            # ถ้าเป็นงาน ต้องมีเวลา ถ้าไม่มีให้ใส่ค่า Default หรือปล่อย Null ตามดีไซน์
-            if not payload["start_time"]: payload["start_time"] = "11:00"
-            if not payload["end_time"]: payload["end_time"] = "20:00"
+        if not isinstance(updates, list) or not updates:
+            return jsonify({"error": "updates_required"}), 400
 
-        # ตรวจสอบว่ามี ID ส่งมาไหม?
-        if data.get("id"):
-            # --- CASE UPDATE (แก้ไขรายการเดิม) ---
-            roster_id = data.get("id")
-            supabase.table("work_schedules").update(payload).eq("id", roster_id).execute()
-        else:
-            # --- CASE INSERT (เพิ่มรายการใหม่) ---
-            supabase.table("work_schedules").insert(payload).execute()
+        updated_count = 0
+        errors = []
 
-        return jsonify({"success": True})
+        for idx, row in enumerate(updates):
+            if not isinstance(row, dict):
+                errors.append({"index": idx, "error": "invalid_row"})
+                continue
+
+            record_id = row.get("id")
+            if not record_id:
+                errors.append({"index": idx, "error": "missing_id"})
+                continue
+
+            tax_display = _normalize_tax_display(row.get("tax_display"))
+
+            try:
+                res = (
+                    supabase.table("sales_records")
+                    .update({"tax_display": tax_display})
+                    .eq("id", record_id)
+                    .execute()
+                )
+                if res.data:
+                    updated_count += 1
+                else:
+                    errors.append({"index": idx, "id": record_id, "error": "not_found_or_not_updated"})
+            except Exception as inner_e:
+                errors.append({"index": idx, "id": record_id, "error": str(inner_e)})
+
+        return jsonify({
+            "success": True,
+            "updated": updated_count,
+            "errors": errors,
+        }), 200
 
     except Exception as e:
-        print(f"Save Roster Error: {e}")
+        app.logger.error(f"/api/save_tax_display error: {e}")
         return jsonify({"error": str(e)}), 500
 
 
-# 3. ลบเวร
-@app.route("/api/delete_roster", methods=["POST"])
+# -----------------------------
+# API: เลือกทั้งหมด / ยกเลิกทั้งหมด ตามช่วงวันที่หรือเดือน
+# ใช้กับปุ่ม "เลือกทั้งหมด" หรือ "ยกเลิกทั้งหมด"
+# รับ payload ได้ 2 แบบ
+# แบบเดือนเดียว:
+# {
+#   "month": "2026-04",
+#   "tax_display": "show"
+# }
+#
+# แบบช่วงวันที่:
+# {
+#   "start_date": "2026-04-01",
+#   "end_date": "2026-04-30",
+#   "tax_display": "noshow"
+# }
+#
+# optional: ใส่ opd หรือ date เพิ่มได้ ถ้าจะกรองเฉพาะบางกลุ่ม
+# -----------------------------
+@app.route("/api/set_all_tax_display", methods=["POST"])
 @login_required
-def api_delete_roster():
+def api_set_all_tax_display():
     try:
         data = request.get_json(silent=True) or {}
-        rid = data.get("id")
-        
-        # ตรวจสอบว่าส่ง ID มาไหม
-        if not rid:
-            return jsonify({"error": "Missing ID"}), 400
+        tax_display = _normalize_tax_display(data.get("tax_display"))
 
-        # สั่งลบข้อมูลใน Supabase
-        supabase.table("work_schedules").delete().eq("id", rid).execute()
-        
-        return jsonify({"success": True})
+        month = (data.get("month") or "").strip()
+        date = safe_date_str(data.get("date")) if data.get("date") else ""
+        start_date = safe_date_str(data.get("start_date")) if data.get("start_date") else ""
+        end_date = safe_date_str(data.get("end_date")) if data.get("end_date") else ""
+        opd = normalize_opd(data.get("opd")) if data.get("opd") else ""
+
+        # ถ้าส่ง month มา แต่ไม่ได้ส่ง start/end ให้แปลงเป็นช่วงวันของเดือนนั้น
+        if month and not start_date and not end_date:
+            m = re.match(r"^(\d{4})-(\d{2})$", month)
+            if not m:
+                return jsonify({"error": "invalid_month_format_use_YYYY_MM"}), 400
+
+            y = int(m.group(1))
+            mo = int(m.group(2))
+            if mo < 1 or mo > 12:
+                return jsonify({"error": "invalid_month_value"}), 400
+
+            start_date = f"{y}-{str(mo).zfill(2)}-01"
+            if mo == 12:
+                next_month = datetime(y + 1, 1, 1)
+            else:
+                next_month = datetime(y, mo + 1, 1)
+            end_date = (next_month - timedelta(days=1)).strftime("%Y-%m-%d")
+
+        q = supabase.table("sales_records").update({"tax_display": tax_display})
+
+        has_filter = False
+        if opd:
+            q = q.eq("opd", opd)
+            has_filter = True
+        if date:
+            q = q.eq("date", date)
+            has_filter = True
+        if start_date:
+            q = q.gte("date", start_date)
+            has_filter = True
+        if end_date:
+            q = q.lte("date", end_date)
+            has_filter = True
+
+        if not has_filter:
+            return jsonify({"error": "at_least_one_filter_required"}), 400
+
+        res = q.execute()
+        affected = len(res.data or [])
+
+        return jsonify({
+            "success": True,
+            "tax_display": tax_display,
+            "affected": affected,
+            "month": month or None,
+            "date": date or None,
+            "start_date": start_date or None,
+            "end_date": end_date or None,
+            "opd": opd or None,
+        }), 200
 
     except Exception as e:
-        print(f"Delete Error: {e}") # ปริ้นท์ Error ลง Terminal เผื่อดู
-        return jsonify({"error": str(e)}), 500    
+        app.logger.error(f"/api/set_all_tax_display error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# -----------------------------
+# OPTIONAL (แนะนำ): ถ้าอยากให้ของเก่าที่เป็น NULL ถูกอ่านเป็น show ชัด ๆ
+# แก้ใน /api/sales ตอน loop for r in all_data:
+# -----------------------------
+# เพิ่มบรรทัดนี้ใน for r in all_data:
+#     r["tax_display"] = _normalize_tax_display(r.get("tax_display"))
+#
+# ตัวอย่างบริเวณใน /api/sales:
+#
+#        for r in all_data:
+#            r["opd"] = normalize_opd(r.get("opd"))
+#            r["tax_display"] = _normalize_tax_display(r.get("tax_display"))
+#
+#            raw_item = r.get("item")
+#            if raw_item is None and r.get("items") is not None:
+#                raw_item = r.get("items")
+#
+#            normalized_item_list = _ensure_item_list(raw_item)
+#            r["item"] = normalized_item_list
+#            r["items"] = _coerce_items_to_text_list(normalized_item_list)
+#
+# แบบนี้ frontend จะได้ค่า show/noshow แน่นอนเสมอ
+# -----------------------------
+

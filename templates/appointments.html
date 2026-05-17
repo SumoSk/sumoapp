@@ -276,16 +276,16 @@
     .apptCard{
       background:#fff;
       border:1px solid #e2e8f0;
-      border-left:3px solid var(--teal-600); 
       border-radius:6px; 
       padding:4px; 
       cursor:pointer;
       overflow:hidden;
       line-height:1.1; 
     }
-    .apptCard.pending{ border-left-color:var(--warning); background:#fff7ed; border-color:#fed7aa; }
-    .apptCard.confirmed{ border-left-color:var(--success); background:#ecfdf5; border-color:#bbf7d0; }
-    .apptCard.cancelled{ border-left-color:var(--danger); background:#fef2f2; border-color:#fecaca; }
+    /* สีสถานะอยู่ที่แถบของชื่อลูกค้า: pending ไม่มีสี, confirmed เขียวอ่อน, cancelled แดงอ่อน */
+    .apptCard.pending{ background:#fff; border-color:#e2e8f0; }
+    .apptCard.confirmed{ background:#ecfdf5; border-color:#bbf7d0; }
+    .apptCard.cancelled{ background:#fef2f2; border-color:#fecaca; }
     .apptCard .name{ font-weight:900; color:#1e293b; margin-bottom:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .apptCard .meta{ color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:7.5px; } 
     .apptCard .svc{ color:#334155; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
@@ -372,21 +372,56 @@
     /* ให้ตารางมีความกว้างขั้นต่ำ เพื่อไม่บีบคอลัมน์จนทับกัน */
     table.qTable{
       width:100%;
-      min-width:760px;
+      min-width:650px;
       table-layout:fixed;
     }
 
-    /* ตั้งกติกาแต่ละคอลัมน์ใหม่ (7 คอลัมน์) ย้ายสถานะมาก่อนเบอร์โทร */
+    /* ตารางคิวทั้งหมด: เอาคอลัมน์สถานะออก แล้วใช้สีที่แถบชื่อลูกค้าแทน */
     table.qTable th:nth-child(1), table.qTable td:nth-child(1){ width:60px;  white-space:nowrap; }  /* เวลา */
     table.qTable th:nth-child(2), table.qTable td:nth-child(2){ width:90px;  white-space:nowrap; }  /* ช่อง */
-    table.qTable th:nth-child(3), table.qTable td:nth-child(3){ width:160px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } /* ลูกค้า */
-    table.qTable th:nth-child(4), table.qTable td:nth-child(4){ width:170px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } /* หัตถการ */
-    table.qTable th:nth-child(5), table.qTable td:nth-child(5){ width:110px; white-space:nowrap; } /* สถานะ */
-    table.qTable th:nth-child(6), table.qTable td:nth-child(6){ width:110px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } /* เบอร์โทร */
-    table.qTable th:nth-child(7), table.qTable td:nth-child(7){ width:70px;  white-space:nowrap; }  /* ประเภท */
+    table.qTable th:nth-child(3), table.qTable td:nth-child(3){ width:170px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } /* ลูกค้า */
+    table.qTable th:nth-child(4), table.qTable td:nth-child(4){ width:190px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } /* หัตถการ */
+    table.qTable th:nth-child(5), table.qTable td:nth-child(5){ width:110px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } /* เบอร์โทร */
+    table.qTable th:nth-child(6), table.qTable td:nth-child(6){ width:70px;  white-space:nowrap; }  /* ประเภท */
+
+    .qTable td.nameCell{ padding:0 !important; }
+    .nameStatusBand{
+      display:block;
+      width:100%;
+      padding:8px 6px;
+      min-height:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      border-radius:0;
+    }
+    .nameStatusBand.pending{ background:transparent; color:#0f172a; }
+    .nameStatusBand.confirmed{ background:#dcfce7; color:#14532d; }
+    .nameStatusBand.cancelled{ background:#fee2e2; color:#7f1d1d; }
 
     .pill{ max-width: 100%; }
     .btn{ max-width: 100%; }
+
+    /* ===== Queue filters & safety polish ===== */
+    .mqFilters{
+      display:grid;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      gap:8px;
+      padding:10px;
+      border-top:1px solid #e2e8f0;
+      background:#fbfdff;
+    }
+    .mqFilters .ipt{ padding:7px 9px; font-size:10px; }
+    .apptStack{ display:flex; flex-direction:column; gap:4px; }
+    .apptCard + .apptCard{ margin-top:4px; }
+    .slotConflictNote{ color:#b91c1c; font-weight:900; margin-top:6px; }
+    @media (max-width:720px){
+      .mqFilters{ grid-template-columns:1fr 1fr; }
+    }
+    @media (max-width:460px){
+      .mqFilters{ grid-template-columns:1fr; }
+    }
+
   </style>
 </head>
 
@@ -406,11 +441,12 @@
     <div class="panel active" id="panel-monthqueue">
       <div class="mqTopBar">
         <div class="mqTitle">
-          <span>คิวทั้งหมด (เดือนปัจจุบันเป็นต้นไป)</span>
+          <span>คิวทั้งหมด</span>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="btnLoadPrevious" class="btn btn-ghost" onclick="MonthQueue.loadPrevious()">⬆️ ดูคิวก่อนหน้า</button>
           <button class="btn btn-ghost" onclick="MonthQueue.goToday()">ไปวันนี้</button>
-          <button class="btn btn-primary" onclick="MonthQueue.load(true)">รีเฟรช</button>
+          <button class="btn btn-primary" onclick="MonthQueue.refreshLoadedRange()">รีเฟรช</button>
         </div>
       </div>
 
@@ -439,6 +475,35 @@
             <input type="checkbox" id="hideEmptyDays" onchange="MonthQueue.renderFromCache()" checked>
             ซ่อนวันไม่มีคิว
           </label>
+        </div>
+
+        <div class="mqFilters" id="mqFilters">
+          <select class="ipt" id="mqFilterRange" onchange="MonthQueue.onRangeFilterChange()">
+            <option value="default" selected>ค่าเริ่มต้น</option>
+            <option value="month">เดือนนี้</option>
+            <option value="year">ปีนี้</option>
+            <option value="all">ทั้งหมด</option>
+          </select>
+          <select class="ipt" id="mqFilterStatus" onchange="MonthQueue.renderFromCache()">
+            <option value="all">สถานะ: ทั้งหมด</option>
+            <option value="pending">รอคอนเฟิร์ม</option>
+            <option value="confirmed">คอนเฟิร์มแล้ว</option>
+            <option value="cancelled">ยกเลิกแล้ว</option>
+          </select>
+          <select class="ipt" id="mqFilterColumn" onchange="MonthQueue.renderFromCache()">
+            <option value="all">ช่อง: ทั้งหมด</option>
+            <option value="doctor">แพทย์ 1 + แพทย์ 2</option>
+            <option value="1">แพทย์ 1</option>
+            <option value="2">แพทย์ 2</option>
+            <option value="3">Treat</option>
+            <option value="4">IV</option>
+          </select>
+          <select class="ipt" id="mqFilterType" onchange="MonthQueue.renderFromCache()">
+            <option value="all">ลูกค้า: ทั้งหมด</option>
+            <option value="old">ลูกค้าเก่า</option>
+            <option value="new">ลูกค้าใหม่</option>
+          </select>
+          <input class="ipt" id="mqFilterText" placeholder="ค้นหาชื่อ / เบอร์ / หัตถการ" oninput="MonthQueue.renderFromCache()">
         </div>
 
         <div class="mqList" id="mqList">
@@ -675,6 +740,19 @@
       return m[Number(c)] || `ช่อง ${c}`;
     };
 
+    const escapeHtml = (v) => safeText(v)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+    const normalizePhone = (v) => safeText(v).replace(/\D/g, '');
+    const normalizeTime = (v) => {
+      const s = trim(v);
+      return s.length >= 5 ? s.slice(0,5) : s;
+    };
+
     const api = async (url, method='GET', body=null) => {
       const opts = { method, headers: {'Content-Type': 'application/json'} };
       if(body) opts.body = JSON.stringify(body);
@@ -700,10 +778,7 @@
         return data;
       } catch(e) {
         console.warn('API Fetch Error:', e);
-        if(url.includes('get_appointments')) return [];
-        if(url.includes('get_roster')) return [];
-        Toast.show('Connection Error', 'error');
-        return null;
+        return { __http_ok:false, __status:0, __error:'เชื่อมต่อระบบไม่สำเร็จ', __data:null };
       }
     };
 
@@ -713,7 +788,7 @@
         const c = $('toast-container');
         const el = document.createElement('div');
         el.className = `toast ${type}`;
-        el.innerHTML = `<span>${msg}</span> <span style="cursor:pointer;font-weight:900;" onclick="this.parentElement.remove()">×</span>`;
+        el.innerHTML = `<span>${escapeHtml(msg)}</span> <span style="cursor:pointer;font-weight:900;" onclick="this.parentElement.remove()">×</span>`;
         c.appendChild(el);
         setTimeout(() => { el.remove(); }, 2500);
       }
@@ -753,7 +828,7 @@
 
             $('searchCustInput').value = data.customer_name || data.guest_name || data.opd || '';
             $('guestPhone').value = data.guest_phone || data.phone || '';
-            $('apptCustId').value = data.customer_id || '';
+            $('apptCustId').value = data.customer_id || data.opd || '';
           } else {
             $('apptModalTitle').innerText = 'ลงนัดหมายใหม่';
             $('apptStatus').value = 'pending';
@@ -838,7 +913,12 @@
 
     // --- Daily ---
     const Daily = {
+      _loadedAppts: [],
+      _inited: false,
+
       init() {
+        if(this._inited) return;
+        this._inited = true;
         const today = new Date().toISOString().split('T')[0];
         $('dailyDatepicker').value = today;
         $('dailyDatepicker').addEventListener('change', () => this.load());
@@ -870,10 +950,12 @@
 
         const appts = await api(`/api/get_appointments?date=${date}`);
         if(appts && appts.__http_ok === false) {
-          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:16px;">โหลดไม่สำเร็จ: ${appts.__error}</td></tr>`;
+          this._loadedAppts = [];
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:16px;">โหลดไม่สำเร็จ: ${escapeHtml(appts.__error)}</td></tr>`;
           return;
         }
-        this.renderTable(appts || []);
+        this._loadedAppts = Array.isArray(appts) ? appts : [];
+        this.renderTable(this._loadedAppts);
       },
 
       normalizeStatus(s){
@@ -883,14 +965,32 @@
         return 'pending';
       },
 
-      timeKey(t){
-        const s = trim(t);
-        if(!s) return '';
-        return s.length >= 5 ? s.substring(0,5) : s;
-      },
+      timeKey(t){ return normalizeTime(t); },
 
       resolveDisplayName(a){
-        return trim(a.customer_name) || trim(a.guest_name) || trim(a.opd) || 'ไม่ระบุชื่อ';
+        return trim(a.customer_name) || trim(a.guest_name) || trim(a.display_name) || trim(a.opd) || 'ไม่ระบุชื่อ';
+      },
+
+      isSameSlot(a, appt_date, start_time, column_id){
+        return safeText(a.appt_date) === safeText(appt_date)
+          && this.timeKey(a.start_time) === this.timeKey(start_time)
+          && String(a.column_id) === String(column_id)
+          && this.normalizeStatus(a.status) !== 'cancelled';
+      },
+
+      async hasSlotConflict(appt_date, start_time, column_id, selfId=''){
+        let rows = this._loadedAppts;
+        if($('dailyDatepicker').value !== appt_date) {
+          const res = await api(`/api/get_appointments?date=${encodeURIComponent(appt_date)}`);
+          if(res && res.__http_ok === false) return { blocked:true, error:res.__error };
+          rows = Array.isArray(res) ? res : [];
+        }
+
+        const conflict = rows.find(a =>
+          this.isSameSlot(a, appt_date, start_time, column_id)
+          && String(a.id || '') !== String(selfId || '')
+        );
+        return { blocked: !!conflict, row: conflict || null };
       },
 
       renderTable(appts) {
@@ -906,7 +1006,8 @@
         const idx = new Map();
         (appts || []).forEach(a => {
           const k = `${this.timeKey(a.start_time)}|${String(a.column_id)}`;
-          idx.set(k, a);
+          if(!idx.has(k)) idx.set(k, []);
+          idx.get(k).push(a);
         });
 
         times.forEach(t => {
@@ -918,21 +1019,30 @@
 
           for(let c=1; c<=4; c++) {
             const td = document.createElement('td');
-            const found = idx.get(`${t}|${String(c)}`);
+            const foundList = idx.get(`${t}|${String(c)}`) || [];
 
-            if(found) {
-              const nameDisplay = this.resolveDisplayName(found);
-              const st = this.normalizeStatus(found.status);
+            if(foundList.length) {
+              const stack = document.createElement('div');
+              stack.className = 'apptStack';
 
-              const div = document.createElement('div');
-              div.className = `apptCard ${st}`;
-              div.innerHTML = `
-                <div class="name" title="${nameDisplay}">${nameDisplay}</div>
-                <div class="meta" title="${found.guest_phone || found.phone || ''}">${found.guest_phone || found.phone || ''}</div>
-                <div class="svc" title="${found.service || found.procedure || '-'}">${found.service || found.procedure || '-'}</div>
-              `;
-              div.onclick = () => Modal.openAppt(found);
-              td.appendChild(div);
+              foundList.forEach(found => {
+                const nameDisplay = this.resolveDisplayName(found);
+                const st = this.normalizeStatus(found.status);
+                const phone = found.guest_phone || found.phone || '';
+                const service = found.service || found.procedure || '-';
+
+                const div = document.createElement('div');
+                div.className = `apptCard ${st}`;
+                div.innerHTML = `
+                  <div class="name" title="${escapeHtml(nameDisplay)}">${escapeHtml(nameDisplay)}</div>
+                  <div class="meta" title="${escapeHtml(phone)}">${escapeHtml(phone)}</div>
+                  <div class="svc" title="${escapeHtml(service)}">${escapeHtml(service)}</div>
+                `;
+                div.onclick = () => Modal.openAppt(found);
+                stack.appendChild(div);
+              });
+
+              td.appendChild(stack);
             } else {
               const div = document.createElement('div');
               div.className = 'slotEmpty';
@@ -956,6 +1066,7 @@
         const customer_name = trim($('searchCustInput').value);
         const guest_phone = trim($('guestPhone').value);
         const customer_type = $('customerTypeSelect').value;
+        const customer_id = trim($('apptCustId').value);
 
         if(!customer_name) return Toast.show('กรุณากรอกชื่อลูกค้า', 'error');
         if(!appt_date) return Toast.show('กรุณาเลือกวันที่', 'error');
@@ -963,9 +1074,26 @@
         if(!column_id) return Toast.show('กรุณาเลือกช่อง', 'error');
         if(!service) return Toast.show('กรุณากรอกหัตถการ', 'error');
 
+        const conflict = await this.hasSlotConflict(appt_date, start_time, column_id, id);
+        if(conflict.error) return Toast.show(`ตรวจคิวซ้ำไม่สำเร็จ: ${conflict.error}`, 'error');
+        if(conflict.blocked) {
+          const who = this.resolveDisplayName(conflict.row);
+          return Toast.show(`ช่องนี้มีคิวแล้ว: ${who}`, 'error');
+        }
+
         const payload = {
-          appt_date, start_time, end_time: start_time, column_id,
-          service, note, status, customer_name, guest_phone: guest_phone || null, customer_type
+          appt_date,
+          start_time,
+          end_time: start_time,
+          column_id,
+          service,
+          note,
+          status,
+          customer_name,
+          guest_phone: guest_phone || null,
+          customer_type,
+          customer_id: customer_id || null,
+          opd: customer_id || null
         };
 
         if(id) payload.id = id;
@@ -973,12 +1101,13 @@
         const res = await api('/api/save_appointment', 'POST', payload);
 
         if(res && res.success) {
-          Toast.show('บันทึกสำเร็จ');
+          Toast.show(id ? 'อัปเดตนัดสำเร็จ' : 'บันทึกสำเร็จ');
           Modal.close('apptModal');
           this.load();
           MonthQueue.reloadCurrentRange();
         } else {
-          Toast.show('เกิดข้อผิดพลาด', 'error');
+          const msg = res && res.__http_ok === false ? res.__error : (res && res.error) || 'เกิดข้อผิดพลาด';
+          Toast.show(msg, 'error');
         }
       },
 
@@ -1044,6 +1173,7 @@
       _loading: false,
       _cacheData: [],
       _rowMap: {},
+      _currentStartDate: null,
       _currentEndDate: null,
 
       normalizeStatus(s){
@@ -1064,69 +1194,178 @@
         if(a) Modal.openAppt(a);
       },
 
-      async confirmFromRow(id){
-        const r = await Daily.setStatus(id, 'confirmed');
-        if(r.ok){
-          Toast.show('คอนเฟิร์มแล้ว', 'success');
-          this.reloadCurrentRange();
-        } else {
-          Toast.show(`คอนเฟิร์มไม่สำเร็จ: ${r.error || 'unknown'}`, 'error');
-        }
-      },
-
       goToday(){
         const el = document.querySelector('[data-mq-today="1"]');
         if(el) {
           el.scrollIntoView({ behavior:'smooth', block:'start' });
         } else {
-          Toast.show('กำลังเลื่อนไปบนสุด', 'success');
           $('mqWrap').scrollIntoView({ behavior:'smooth', block:'start' });
         }
       },
 
-      renderFromCache(){
-        this.render();
-      },
+      renderFromCache(){ this.render(); },
 
       resolveDisplayName(a){
-        return trim(a.customer_name) || trim(a.guest_name) || trim(a.opd) || 'ไม่ระบุชื่อ';
+        return trim(a.customer_name) || trim(a.guest_name) || trim(a.display_name) || trim(a.opd) || 'ไม่ระบุชื่อ';
+      },
+
+      refreshLoadedRange(){ return this.load(true); },
+
+      selectedRangeMode(){
+        return $('mqFilterRange')?.value || 'default';
+      },
+
+      setRangeMode(mode){
+        const el = $('mqFilterRange');
+        if(el) el.value = mode;
+      },
+
+      rangeForMode(mode){
+        const now = new Date();
+
+        // ค่าเริ่มต้น = แบบเดิม: เริ่มจากวันนี้ ไล่ไปจนถึงสิ้นเดือน
+        if(mode === 'default') {
+          return {
+            startD: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+            endD: new Date(now.getFullYear(), now.getMonth() + 1, 0)
+          };
+        }
+
+        // เดือนนี้ = ตั้งแต่วันที่ 1 ถึงสิ้นเดือนปัจจุบัน
+        if(mode === 'month') {
+          return {
+            startD: new Date(now.getFullYear(), now.getMonth(), 1),
+            endD: new Date(now.getFullYear(), now.getMonth() + 1, 0)
+          };
+        }
+
+        // ปีนี้ = ตั้งแต่ 1 ม.ค. ถึง 31 ธ.ค. ปีปัจจุบัน
+        if(mode === 'year') {
+          return {
+            startD: new Date(now.getFullYear(), 0, 1),
+            endD: new Date(now.getFullYear(), 11, 31)
+          };
+        }
+
+        // ทั้งหมด = ช่วงข้อมูลที่กำลังโหลดอยู่ตอนนี้
+        // กดดูคิวก่อนหน้า / โหลดเดือนถัดไป เพื่อขยายช่วงทั้งหมดได้
+        if(mode === 'all' && this._currentStartDate && this._currentEndDate) {
+          return {
+            startD: new Date(this._currentStartDate + 'T00:00:00'),
+            endD: new Date(this._currentEndDate + 'T00:00:00')
+          };
+        }
+
+        return {
+          startD: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+          endD: new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        };
+      },
+
+      async onRangeFilterChange(){
+        const mode = this.selectedRangeMode();
+        if(mode === 'all' && this._cacheData.length > 0) {
+          this.renderFromCache();
+          return;
+        }
+        this._cacheData = [];
+        await this.load(true);
+      },
+
+      getFilters(){
+        return {
+          status: $('mqFilterStatus')?.value || 'all',
+          column: $('mqFilterColumn')?.value || 'all',
+          type: $('mqFilterType')?.value || 'all',
+          text: trim($('mqFilterText')?.value || '').toLowerCase()
+        };
+      },
+
+      itemPassesFilters(a, f){
+        const st = this.normalizeStatus(a.status);
+        if(f.status !== 'all' && st !== f.status) return false;
+
+        const col = String(a.column_id || '');
+        if(f.column === 'doctor') {
+          if(col !== '1' && col !== '2') return false;
+        } else if(f.column !== 'all' && col !== f.column) {
+          return false;
+        }
+
+        const typ = (a.customer_type === 'old') ? 'old' : 'new';
+        if(f.type !== 'all' && typ !== f.type) return false;
+
+        if(f.text) {
+          const hay = [
+            this.resolveDisplayName(a),
+            a.guest_phone || a.phone || '',
+            a.service || a.procedure || '',
+            a.opd || '',
+            colName(a.column_id)
+          ].join(' ').toLowerCase();
+          if(!hay.includes(f.text) && !normalizePhone(hay).includes(normalizePhone(f.text))) return false;
+        }
+
+        return true;
       },
 
       async load(force=false){
         if(this._loading) return;
-        this._loading = true;
-
-        if(force) {
-          this._cacheData = [];
-          this._currentEndDate = null;
-        }
 
         if(!force && this._cacheData.length > 0) {
           this.render();
-          this._loading = false;
           return;
         }
 
+        this._loading = true;
         const list = $('mqList');
-        if(this._cacheData.length === 0) {
-          list.innerHTML = `<div style="padding:16px; text-align:center; color:#64748b;">กำลังโหลดคิว...</div>`;
-        }
+        list.innerHTML = `<div style="padding:16px; text-align:center; color:#64748b;">กำลังโหลดคิว...</div>`;
 
         try {
-          const now = new Date();
-          const startD = now;
-          const y = now.getFullYear();
-          const m = now.getMonth();
-          const endD = new Date(y, m + 1, 0);
+          let startD;
+          let endD;
 
-          await this.fetchAndAppendRange(startD, endD);
+          const selectedMode = this.selectedRangeMode();
+          const range = this.rangeForMode(selectedMode);
+          startD = range.startD;
+          endD = range.endD;
 
+          await this.fetchAndAppendRange(startD, endD, 'replace');
         } catch(e) {
           console.warn(e);
           if (this._cacheData.length === 0) {
-            list.innerHTML = `<div style="padding:16px; text-align:center; color:#ef4444;">โหลดไม่สำเร็จ</div>`;
+            const msg = (e && e.message === 'range_api_required')
+              ? 'เลือกช่วงยาวต้องใช้ API ช่วงวันที่ กรุณาวางไฟล์ apppy.py เวอร์ชันใหม่ก่อน'
+              : 'โหลดคิวไม่สำเร็จ กรุณารีเฟรช';
+            list.innerHTML = `<div style="padding:16px; text-align:center; color:#ef4444; font-weight:900;">${msg}</div>`;
           }
         } finally {
+          this._loading = false;
+        }
+      },
+
+      async loadPrevious() {
+        if(this._loading) return;
+        this.setRangeMode('all');
+
+        const anchorStr = this._currentStartDate || toYMD(new Date());
+        const endD = new Date(anchorStr + 'T00:00:00');
+        endD.setDate(endD.getDate() - 1);
+
+        const startD = new Date(endD.getFullYear(), endD.getMonth(), 1);
+
+        this._loading = true;
+        const btn = $('btnLoadPrevious');
+        if(btn) btn.innerHTML = '<span style="color:#94a3b8;">กำลังโหลดคิวย้อนหลัง...</span>';
+
+        try {
+          await this.fetchAndAppendRange(startD, endD, 'prepend');
+          Toast.show(`โหลดคิวย้อนหลังถึง ${this.formatMonthTH(startD)} แล้ว`, 'success');
+        } catch(e) {
+          console.warn(e);
+          Toast.show('โหลดคิวก่อนหน้าไม่สำเร็จ', 'error');
+        } finally {
+          if(btn) btn.innerHTML = '⬆️ ดูคิวก่อนหน้า';
           this._loading = false;
         }
       },
@@ -1134,6 +1373,7 @@
       async loadMore() {
         if(this._loading) return;
         if(!this._currentEndDate) return;
+        this.setRangeMode('all');
 
         this._loading = true;
         const btn = $('btnLoadMore');
@@ -1147,7 +1387,7 @@
           const m = startD.getMonth();
           const endD = new Date(y, m + 1, 0);
 
-          await this.fetchAndAppendRange(startD, endD);
+          await this.fetchAndAppendRange(startD, endD, 'append');
         } catch(e) {
           console.warn(e);
           Toast.show('โหลดคิวเดือนถัดไปไม่สำเร็จ', 'error');
@@ -1158,13 +1398,14 @@
       },
 
       async reloadCurrentRange() {
-        if(!this._currentEndDate) return this.load(true);
+        if(!this._currentStartDate || !this._currentEndDate) return this.load(true);
+        if(this._loading) return;
+
         this._loading = true;
         try {
-          const startD = new Date();
+          const startD = new Date(this._currentStartDate + 'T00:00:00');
           const endD = new Date(this._currentEndDate + 'T00:00:00');
-          this._cacheData = []; 
-          await this.fetchAndAppendRange(startD, endD);
+          await this.fetchAndAppendRange(startD, endD, 'replace');
         } catch(e) {
           console.warn(e);
         } finally {
@@ -1172,44 +1413,86 @@
         }
       },
 
-      async fetchAndAppendRange(startD, endD) {
-        const startStr = toYMD(startD);
-        const endStr = toYMD(endD);
+      formatMonthTH(dateObj) {
+        return dateObj.toLocaleDateString('th-TH', { month:'long', year:'numeric' });
+      },
+
+      buildDateBlocks(startStr, endStr, rows){
+        const byDate = {};
+        (rows || []).forEach(a => {
+          const ds = safeText(a.appt_date).slice(0,10);
+          if(!ds) return;
+          const row = { ...a, appt_date: ds };
+          if(!byDate[ds]) byDate[ds] = [];
+          byDate[ds].push(row);
+        });
+
+        Object.keys(byDate).forEach(ds => {
+          byDate[ds].sort((x,y) => trim(x.start_time).localeCompare(trim(y.start_time)) || String(x.column_id).localeCompare(String(y.column_id)));
+        });
 
         const dates = [];
         const d = new Date(startStr + 'T00:00:00');
         const endDObj = new Date(endStr + 'T00:00:00');
         while(d <= endDObj){
-          dates.push(toYMD(d));
+          const ds = toYMD(d);
+          dates.push({ date: ds, items: byDate[ds] || [] });
           d.setDate(d.getDate()+1);
         }
+        return dates;
+      },
 
-        const results = await Promise.all(
-          dates.map(ds => api(`/api/get_appointments?date=${ds}`))
-        );
+      async fetchRangeRows(startStr, endStr){
+        const rangeUrl = `/api/get_appointments_range?start=${encodeURIComponent(startStr)}&end=${encodeURIComponent(endStr)}`;
+        const rangeRes = await api(rangeUrl);
+        if(Array.isArray(rangeRes)) return rangeRes;
 
-        const byDate = {};
-        results.forEach((res, i) => {
-          const ds = dates[i];
-          if(res && res.__http_ok === false) return;
-          (res || []).forEach(a => {
-            const row = { ...a, appt_date: a.appt_date || ds };
-            if(!byDate[ds]) byDate[ds] = [];
-            byDate[ds].push(row);
-          });
-        });
+        // ถ้า backend ยังไม่มี API range และเลือกช่วงยาว เช่น ปีนี้
+        // ห้าม fallback ยิงทีละวัน เพราะจะรอนานมาก
+        const startD = new Date(startStr + 'T00:00:00');
+        const endD = new Date(endStr + 'T00:00:00');
+        const dayCount = Math.floor((endD - startD) / 86400000) + 1;
+        if(dayCount > 45) {
+          throw new Error('range_api_required');
+        }
 
-        Object.keys(byDate).forEach(ds => {
-          byDate[ds].sort((x,y) => (trim(x.start_time).localeCompare(trim(y.start_time))));
-        });
+        // fallback เฉพาะช่วงสั้น ๆ เช่น ค่าเริ่มต้น / เดือนนี้
+        console.warn('Range API unavailable, fallback to per-day loading', rangeRes);
+        const rows = [];
+        const d = new Date(startStr + 'T00:00:00');
+        const endDObj = new Date(endStr + 'T00:00:00');
+        while(d <= endDObj){
+          const ds = toYMD(d);
+          const res = await api(`/api/get_appointments?date=${encodeURIComponent(ds)}`);
+          if(res && res.__http_ok === false) throw new Error(res.__error || 'load_failed');
+          (res || []).forEach(a => rows.push({ ...a, appt_date: a.appt_date || ds }));
+          d.setDate(d.getDate()+1);
+        }
+        return rows;
+      },
 
-        const newBlocks = dates.map(ds => ({
-          date: ds,
-          items: byDate[ds] || []
-        }));
+      async fetchAndAppendRange(startD, endD, mode='append') {
+        const startStr = toYMD(startD);
+        const endStr = toYMD(endD);
 
-        this._cacheData = [...this._cacheData, ...newBlocks];
-        this._currentEndDate = endStr;
+        const rows = await this.fetchRangeRows(startStr, endStr);
+        const newBlocks = this.buildDateBlocks(startStr, endStr, rows);
+
+        if(mode === 'replace') {
+          this._cacheData = [...newBlocks];
+        } else if(mode === 'prepend') {
+          this._cacheData = [...newBlocks, ...this._cacheData];
+        } else {
+          this._cacheData = [...this._cacheData, ...newBlocks];
+        }
+
+        if(this._cacheData.length > 0) {
+          this._currentStartDate = this._cacheData[0].date;
+          this._currentEndDate = this._cacheData[this._cacheData.length - 1].date;
+        } else {
+          this._currentStartDate = startStr;
+          this._currentEndDate = endStr;
+        }
 
         this.render();
       },
@@ -1217,16 +1500,22 @@
       render() {
         const hideEmpty = $('hideEmptyDays')?.checked ?? true;
         const todayStr = toYMD(new Date());
+        const filters = this.getFilters();
 
         let todayCount = 0;
         let remainCount = 0;
         let pendingCount = 0;
         let confirmedCount = 0;
 
-        this._cacheData.forEach(b => {
+        const visibleBlocks = this._cacheData.map(b => {
+          const items = (b.items || []).filter(a => this.itemPassesFilters(a, filters));
+          return { date:b.date, items };
+        });
+
+        visibleBlocks.forEach(b => {
           const items = b.items || [];
           const n = items.length;
-          
+
           if(b.date === todayStr) todayCount += n;
           remainCount += n;
 
@@ -1246,18 +1535,17 @@
         let kCounter = 0;
         let html = '';
         let any = false;
-
         let currentMonthName = '';
 
-        this._cacheData.forEach(block => {
+        visibleBlocks.forEach(block => {
           const ds = block.date;
           const items = block.items || [];
-          
           const dObj = new Date(ds + 'T00:00:00');
           const mName = dObj.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+
           if (mName !== currentMonthName) {
             currentMonthName = mName;
-            html += `<div style="padding:10px 16px; margin: 16px 0 10px; background:#f1f5f9; border-radius:10px; font-weight:900; color:#475569; font-size:12px; border-left:4px solid #0f766e;">📅 ${mName}</div>`;
+            html += `<div style="padding:10px 16px; margin: 16px 0 10px; background:#f1f5f9; border-radius:10px; font-weight:900; color:#475569; font-size:12px; border-left:4px solid #0f766e;">📅 ${escapeHtml(mName)}</div>`;
           }
 
           if(hideEmpty && items.length === 0) return;
@@ -1267,7 +1555,7 @@
             html += `
               <div class="dayBlock">
                 <div class="dayHdr">
-                  <div class="dayTitle">${ds === todayStr ? '📌 ' : ''}${th}</div>
+                  <div class="dayTitle">${ds === todayStr ? '📌 ' : ''}${escapeHtml(th)}</div>
                   <div class="dayCount">(0 เคส)</div>
                 </div>
                 <div style="padding:10px; color:#94a3b8; text-align:center; font-weight:800;">- ไม่มีคิว -</div>
@@ -1283,7 +1571,7 @@
           html += `
             <div class="dayBlock" ${isToday ? 'data-mq-today="1"' : ''}>
               <div class="dayHdr">
-                <div class="dayTitle">${isToday ? '📌 ' : ''}${th} (${ds})</div>
+                <div class="dayTitle">${isToday ? '📌 ' : ''}${escapeHtml(th)} (${escapeHtml(ds)})</div>
                 <div class="dayCount">(${items.length} เคส)</div>
               </div>
 
@@ -1295,7 +1583,6 @@
                       <th style="text-align:left;">ช่อง</th>
                       <th style="text-align:left;">ลูกค้า</th>
                       <th style="text-align:left;">หัตถการ</th>
-                      <th style="text-align:left;">สถานะ</th>
                       <th style="text-align:left;">เบอร์โทร</th>
                       <th style="text-align:left;">ประเภท</th>
                     </tr>
@@ -1305,7 +1592,7 @@
 
           items.forEach(a => {
             const st = this.normalizeStatus(a.status);
-            const time = (trim(a.start_time) || '').slice(0,5) || '-';
+            const time = normalizeTime(a.start_time) || '-';
             const col = colName(a.column_id);
             const nameDisplay = this.resolveDisplayName(a);
             const svc = a.service || a.procedure || '-';
@@ -1314,17 +1601,16 @@
 
             const customerType = a.customer_type === 'old' ? 'เก่า' : 'ใหม่';
             const phone = a.guest_phone || a.phone || '-';
+            const nameBandClass = st === 'confirmed' ? 'confirmed' : (st === 'cancelled' ? 'cancelled' : 'pending');
 
-            // จัดเรียงข้อมูลใหม่ตามหัวตาราง: เวลา, ช่อง, ลูกค้า, หัตถการ, สถานะ, เบอร์โทร, ประเภท
             html += `
               <tr class="rowClickable" onclick="MonthQueue.openByKey('${key}')">
-                <td>${time}</td>
-                <td>${col}</td>
-                <td title="${nameDisplay}">${nameDisplay}</td>
-                <td title="${svc}">${svc}</td>
-                <td>${this.pillStatus(st)}</td>
-                <td>${phone}</td>
-                <td>${customerType}</td>
+                <td>${escapeHtml(time)}</td>
+                <td>${escapeHtml(col)}</td>
+                <td class="nameCell" title="${escapeHtml(nameDisplay)}"><span class="nameStatusBand ${nameBandClass}">${escapeHtml(nameDisplay)}</span></td>
+                <td title="${escapeHtml(svc)}">${escapeHtml(svc)}</td>
+                <td>${escapeHtml(phone)}</td>
+                <td>${escapeHtml(customerType)}</td>
               </tr>
             `;
           });
@@ -1342,9 +1628,11 @@
         }
 
         html += `
-          <button id="btnLoadMore" class="btn btn-ghost" style="width:100%; margin-top:10px; padding:12px; border: 1px dashed #cbd5e1; background: #f8fafc; color: #475569; font-weight:900;" onclick="MonthQueue.loadMore()">
-            ⬇️ โหลดข้อมูลเดือนถัดไป
-          </button>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+            <button id="btnLoadMore" class="btn btn-ghost" style="flex:1 1 240px; padding:12px; border: 1px dashed #cbd5e1; background: #f8fafc; color: #475569; font-weight:900;" onclick="MonthQueue.loadMore()">
+              ⬇️ โหลดข้อมูลเดือนถัดไป
+            </button>
+          </div>
         `;
 
         $('mqList').innerHTML = html;
@@ -1355,14 +1643,22 @@
     const Roster = {
       staffs: [],
       currentShifts: [],
+      _inited: false,
 
       init() {
+        if(this._inited) return;
+        this._inited = true;
         const d = new Date();
         $('monthPicker').value = `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
         $('monthPicker').addEventListener('change', ()=>this.load());
         this.loadStaffs();
       },
-      goToday() { this.init(); this.load(); },
+
+      goToday() {
+        const d = new Date();
+        $('monthPicker').value = `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+        this.load();
+      },
 
       async loadStaffs() {
         this.staffs = await api('/api/staffs');
@@ -1374,51 +1670,60 @@
           return;
         }
 
-        if(this.staffs) {
+        if(Array.isArray(this.staffs)) {
           this.staffs.forEach(s => {
-            sel.innerHTML += `<option value="${s.id}">${s.name} (${s.role})</option>`;
+            sel.innerHTML += `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)} (${escapeHtml(s.role)})</option>`;
           });
         }
       },
 
       async load() {
         const ym = $('monthPicker').value;
+        if(!ym) return;
         const [y, m] = ym.split('-');
         $('monthTitle').innerText = new Date(y, m-1, 1).toLocaleDateString('th-TH', {month:'long', year:'numeric'});
         $('monthGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:#64748b;font-weight:800;">โหลดตารางเวร...</div>';
 
-        const shifts = await api(`/api/get_roster?month=${ym}`);
+        const shifts = await api(`/api/get_roster?month=${encodeURIComponent(ym)}`);
 
         if(shifts && shifts.__http_ok === false) {
-          $('monthGrid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:16px;color:#ef4444;font-weight:800;">โหลดไม่สำเร็จ: ${shifts.__error}</div>`;
+          $('monthGrid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:16px;color:#ef4444;font-weight:800;">โหลดไม่สำเร็จ: ${escapeHtml(shifts.__error)}</div>`;
           return;
         }
 
-        this.renderCalendar(y, m, shifts||[]);
+        this.renderCalendar(Number(y), Number(m), Array.isArray(shifts) ? shifts : []);
       },
 
       renderCalendar(y, m, shifts) {
         const grid = $('monthGrid'); grid.innerHTML='';
         const firstDay = new Date(y, m-1, 1).getDay();
         const daysInMonth = new Date(y, m, 0).getDate();
+        const shiftsByDate = new Map();
+
+        (shifts || []).forEach(s => {
+          const ds = safeText(s.date).slice(0,10);
+          if(!shiftsByDate.has(ds)) shiftsByDate.set(ds, []);
+          shiftsByDate.get(ds).push(s);
+        });
 
         for(let i=0; i<firstDay; i++) grid.innerHTML+=`<div class="iosDay" style="background:#f8fafc;"></div>`;
 
         const today = new Date().toISOString().split('T')[0];
         for(let d=1; d<=daysInMonth; d++) {
           const dateStr = `${y}-${pad2(m)}-${pad2(d)}`;
-          const dayShifts = shifts.filter(s => s.date === dateStr);
+          const dayShifts = shiftsByDate.get(dateStr) || [];
 
           let html = `<div class="iosDay ${today===dateStr?'today':''}" onclick="Roster.openModal('${dateStr}')"><div class="num">${d}</div>`;
 
           dayShifts.forEach(s => {
             const isLeave = s.work_type === 'leave';
+            const color = s.staff_color || '#0f766e';
             const style = isLeave ? 'background:#fee2e2; color:#b91c1c;' :
-              (s.staff_color ? `background:${s.staff_color}20; color:${s.staff_color}; border-left:2px solid ${s.staff_color};` : 'background:#ccfbf1; color:#0f766e;');
+              (s.staff_color ? `background:${color}20; color:${color}; border-left:2px solid ${color};` : 'background:#ccfbf1; color:#0f766e;');
             const txt = isLeave ? `ลา(${s.staff_name})` : `${s.staff_name}`;
-            const tm = isLeave ? '' : `<span style="opacity:0.7;">${(s.start_time||'').slice(0,5)}</span>`;
+            const tm = isLeave ? '' : `<span style="opacity:0.7;">${escapeHtml((s.start_time||'').slice(0,5))}</span>`;
 
-            html += `<div class="eventPill" style="${style}">${txt} ${tm}</div>`;
+            html += `<div class="eventPill" style="${style}">${escapeHtml(txt)} ${tm}</div>`;
           });
 
           grid.innerHTML += html + `</div>`;
@@ -1431,21 +1736,22 @@
         $('rosterDateTitle').innerText = `จัดการเวรวันที่ ${new Date(date).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}`;
 
         const list = $('rosterList'); list.innerHTML = '';
-        const existing = this.currentShifts.filter(s => s.date === date);
+        const existing = this.currentShifts.filter(s => safeText(s.date).slice(0,10) === date);
 
         if(existing.length === 0) list.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:12px;font-weight:800;">- ยังไม่มีรายการ -</div>';
         else existing.forEach(s => {
           const isLeave = s.work_type === 'leave';
           const div = document.createElement('div');
           div.className = `shift-row ${isLeave?'leave':'work'}`;
-          const timeInfo = isLeave ? '<b>ลาหยุด</b>' : `${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)}`;
+          const timeInfo = isLeave ? '<b>ลาหยุด</b>' : `${escapeHtml((s.start_time||'').slice(0,5))} - ${escapeHtml((s.end_time||'').slice(0,5))}`;
+          const note = s.note ? `(${escapeHtml(s.note)})` : '';
 
           div.innerHTML = `
             <div>
-              <strong style="font-weight:900;">${s.staff_name}</strong> <small style="color:#64748b; font-weight:800;">(${s.staff_role})</small><br>
-              <span style="color:#334155; font-weight:800;">${timeInfo} ${s.note?`(${s.note})`:''}</span>
+              <strong style="font-weight:900;">${escapeHtml(s.staff_name)}</strong> <small style="color:#64748b; font-weight:800;">(${escapeHtml(s.staff_role)})</small><br>
+              <span style="color:#334155; font-weight:800;">${timeInfo} ${note}</span>
             </div>
-            <button class="btn btn-sm btn-danger" onclick="Roster.deleteShift('${s.id}')">ลบ</button>
+            <button class="btn btn-sm btn-danger" onclick="Roster.deleteShift('${escapeHtml(s.id)}')">ลบ</button>
           `;
           list.appendChild(div);
         });
@@ -1526,10 +1832,10 @@
           div.style.cssText = "padding:10px 12px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; gap:10px;";
           div.innerHTML = `
             <div style="display:flex; gap:10px; align-items:center; min-width:0;">
-              <div style="width:26px; height:26px; border-radius:50%; background:${s.color_code||'#ccc'}; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:900;">${(s.name||'?').charAt(0)}</div>
+              <div style="width:26px; height:26px; border-radius:50%; background:${escapeHtml(s.color_code||'#ccc')}; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:900;">${escapeHtml((s.name||'?').charAt(0))}</div>
               <div style="min-width:0;">
-                <div style="font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${s.name}</div>
-                <div style="color:#64748b; font-weight:800;">${s.role}</div>
+                <div style="font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(s.name)}</div>
+                <div style="color:#64748b; font-weight:800;">${escapeHtml(s.role)}</div>
               </div>
             </div>
             <button class="btn btn-sm btn-ghost" style="color:#ef4444;" onclick="Settings.del(${s.id})">ลบ</button>

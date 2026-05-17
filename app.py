@@ -377,6 +377,127 @@ def _next_orig_seq_atomic(year: int, max_retries: int = 10) -> int:
     raise RuntimeError("failed_to_increment_counter")
 
 
+
+
+def _receipt_fields_for_sale_record(date_s: str, opd_4: str, amount: Any, payment_method: Any, items: Any, status: str = "recorded") -> Dict[str, Any]:
+    """Create receipt numbering fields for every saved sales record.
+
+    RC is the original immutable number. RB is the display number and can be rebuilt
+    later for neat year ordering. This helper is intentionally used by /api/save_sales
+    so every sales save has a receipt/bill number even if the user does not press
+    the receipt button.
+    """
+    year = _parse_year_from_date(date_s)
+    if not year or year < 2000 or year > 2100:
+        return {}
+
+    seq = _next_orig_seq_atomic(year)
+    orig_no = f"RC-{year}-{_pad4(seq)}"
+    disp_no = f"RB-{year}-{_pad4(seq)}"
+
+    try:
+        amt = float(amount or 0)
+    except Exception:
+        amt = 0.0
+
+    return {
+        "orig_year": year,
+        "orig_seq": seq,
+        "orig_no": orig_no,
+        "orig_issued_at": _utc_now_iso(),
+        "disp_year": year,
+        "disp_seq": seq,
+        "disp_no": disp_no,
+        "receipt_status": status or "recorded",
+        "idempotency_key": make_idempotency_key(
+            date=date_s,
+            opd=opd_4,
+            amount=amt,
+            payment_method=payment_method,
+            items=items,
+        ),
+    }
+
+
+def _sale_row_has_receipt_no(row: Dict[str, Any]) -> bool:
+    return bool((row or {}).get("orig_no") or (row or {}).get("disp_no"))
+
+
+def _ensure_sale_row_receipt_number(row: Dict[str, Any], status: str = "recorded") -> Dict[str, Any]:
+    """If an old row has no receipt/bill number, assign one safely.
+
+    Existing RC/RB numbers are never overwritten here. RB ordering can be rebuilt
+    separately with /api/rebuild_display_receipts.
+    """
+    if not row or not row.get("id") or _sale_row_has_receipt_no(row):
+        return row or {}
+
+    date_s = safe_date_str(row.get("date"))
+    opd_4 = normalize_opd(row.get("opd"))
+    raw_items = row.get("item") if row.get("item") is not None else row.get("items")
+    items = _coerce_items_to_text_list(raw_items)
+    fields = _receipt_fields_for_sale_record(
+        date_s=date_s,
+        opd_4=opd_4,
+        amount=row.get("amount"),
+        payment_method=row.get("payment"),
+        items=items,
+        status=status or row.get("receipt_status") or "recorded",
+    )
+    if not fields:
+        return row
+
+    supabase.table("sales_records").update(fields).eq("id", row.get("id")).execute()
+    out = dict(row)
+    out.update(fields)
+    return out
+
+
+def _fetch_sales_rows_by_date_range(start_date: str, end_date: str) -> List[Dict[str, Any]]:
+    q = (
+        supabase.table("sales_records")
+        .select("*")
+        .gte("date", start_date)
+        .lte("date", end_date)
+        .order("date", desc=False)
+        .order("created_at", desc=False)
+    )
+    all_rows: List[Dict[str, Any]] = []
+    start = 0
+    limit = 1000
+    while True:
+        resp = q.range(start, start + limit - 1).execute()
+        batch = resp.data or []
+        all_rows.extend(batch)
+        if len(batch) < limit:
+            break
+        start += limit
+    return all_rows
+
+
+def _receipt_range_bounds(range_key: str) -> Tuple[str, str, str]:
+    today = datetime.now().date()
+    key = (range_key or "today").strip().lower()
+
+    if key == "year":
+        start_d = today.replace(month=1, day=1)
+        end_d = today.replace(month=12, day=31)
+        label = f"ปี {today.year}"
+    elif key == "month":
+        start_d = today.replace(day=1)
+        if today.month == 12:
+            end_d = today.replace(month=12, day=31)
+        else:
+            next_month = today.replace(month=today.month + 1, day=1)
+            end_d = next_month - timedelta(days=1)
+        label = f"เดือน {today.month:02d}/{today.year}"
+    else:
+        start_d = today
+        end_d = today
+        label = "วันนี้"
+
+    return start_d.isoformat(), end_d.isoformat(), label
+
 # =============================================================
 # Auth Views
 # =============================================================
@@ -825,13 +946,24 @@ def sales_issue_receipt():
         ).data
         if dup:
             row = dup[0]
+            # The sale was already recorded through /api/save_sales. Do not create
+            # a second sales row; just mark it as issued and reuse the same number.
+            try:
+                update_dup = {"receipt_status": "issued"}
+                if data.get("patient_info") is not None:
+                    update_dup["patient_info"] = data.get("patient_info") or ""
+                supabase.table("sales_records").update(update_dup).eq("id", row.get("id")).execute()
+                row.update(update_dup)
+            except Exception as e:
+                app.logger.warning(f"Failed to mark duplicate receipt as issued: {e}")
+
             return jsonify(
                 {
                     "success": True,
                     "id": row.get("id"),
                     "orig_no": row.get("orig_no"),
                     "disp_no": row.get("disp_no"),
-                    "receipt_status": row.get("receipt_status"),
+                    "receipt_status": row.get("receipt_status") or "issued",
                     "idempotency_key": row.get("idempotency_key"),
                     "duplicate": True,
                 }
@@ -853,8 +985,12 @@ def sales_issue_receipt():
             "orig_seq": seq,
             "orig_no": orig_no,
             "orig_issued_at": _utc_now_iso(),
+            "disp_year": year,
+            "disp_seq": seq,
+            "disp_no": f"RB-{year}-{_pad4(seq)}",
             "receipt_status": (data.get("receipt_status") or "issued"),
             "idempotency_key": idempotency_key,
+            "patient_info": data.get("patient_info") or "",
         }
 
         ins = supabase.table("sales_records").insert(insert_payload).execute()
@@ -878,63 +1014,96 @@ def sales_issue_receipt():
 @app.route("/api/rebuild_display_receipts", methods=["POST"])
 @login_required
 def rebuild_display_receipts():
+    """Fill missing RC numbers and rebuild RB display numbers for a whole year.
+
+    Existing RC/original numbers are preserved. Missing old sales rows get an RC
+    number so every saved sale can be shown/exported as a receipt. RB/display
+    numbers are then rebuilt in date order for readability.
+    """
     try:
         data = request.get_json(silent=True) or {}
         year = int(data.get("year") or 0)
-        
+
         if year < 2000 or year > 2100:
             return jsonify({"success": False, "error": "Invalid year"}), 400
 
         start_date = f"{year}-01-01"
         end_date = f"{year}-12-31"
 
-        q = (
-            supabase.table("sales_records")
-            .select("id, date, created_at, disp_no") 
-            .gte("date", start_date)
-            .lte("date", end_date)
-            .eq("receipt_status", "issued")
-            .order("date", desc=False) 
-        )
-        
-        all_rows = []
-        start = 0
-        limit = 1000
-        while True:
-            resp = q.range(start, start + limit - 1).execute()
-            batch = resp.data or []
-            all_rows.extend(batch)
-            if len(batch) < limit: break
-            start += limit
+        all_rows = _fetch_sales_rows_by_date_range(start_date, end_date)
 
         def sort_key(r):
-            d = r.get("date") or ""
-            c = r.get("created_at") or ""
-            i = r.get("id") or 0
-            return (d, c, i)
-        
+            return (r.get("date") or "", r.get("created_at") or "", str(r.get("id") or ""))
+
         all_rows.sort(key=sort_key)
+
+        ensured_rc = 0
+        for i, row in enumerate(all_rows):
+            if not _sale_row_has_receipt_no(row):
+                all_rows[i] = _ensure_sale_row_receipt_number(row, status=row.get("receipt_status") or "recorded")
+                ensured_rc += 1
 
         updated = 0
         seq = 1
-        
-        for r in all_rows:
-            rid = r.get("id")
+        for row in all_rows:
+            rid = row.get("id")
+            if not rid:
+                continue
             new_disp_no = f"RB-{year}-{str(seq).zfill(4)}"
-            
-            supabase.table("sales_records").update({
+            update_payload = {
                 "disp_year": year,
                 "disp_seq": seq,
-                "disp_no": new_disp_no
-            }).eq("id", rid).execute()
-            
+                "disp_no": new_disp_no,
+                "receipt_status": row.get("receipt_status") or "recorded",
+            }
+            supabase.table("sales_records").update(update_payload).eq("id", rid).execute()
             updated += 1
             seq += 1
 
-        return jsonify({"success": True, "count": updated})
+        return jsonify({"success": True, "count": updated, "ensured_rc": ensured_rc})
 
     except Exception as e:
-        print(f"REBUILD ERROR: {e}")
+        app.logger.error(f"/api/rebuild_display_receipts error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/receipt_records_for_pdf")
+@login_required
+def receipt_records_for_pdf():
+    """Return sales rows for bulk receipt PDF export.
+
+    range=today|month|year. Only rows that have an RC/RB number are returned.
+    New saves always have numbers; old rows can be filled by Rebuild Display.
+    """
+    try:
+        range_key = (request.args.get("range") or "today").strip().lower()
+        start_date, end_date, label = _receipt_range_bounds(range_key)
+
+        rows = _fetch_sales_rows_by_date_range(start_date, end_date)
+        out = []
+        for r in rows:
+            if not _sale_row_has_receipt_no(r):
+                continue
+            r["opd"] = normalize_opd(r.get("opd"))
+            raw_item = r.get("item")
+            if raw_item is None and r.get("items") is not None:
+                raw_item = r.get("items")
+            normalized_item_list = _ensure_item_list(raw_item)
+            r["item"] = normalized_item_list
+            r["items"] = _coerce_items_to_text_list(normalized_item_list)
+            out.append(r)
+
+        return jsonify({
+            "success": True,
+            "range": range_key,
+            "label": label,
+            "start_date": start_date,
+            "end_date": end_date,
+            "count": len(out),
+            "rows": out,
+        })
+    except Exception as e:
+        app.logger.error(f"/api/receipt_records_for_pdf error: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 # =============================================================
@@ -985,6 +1154,104 @@ def api_sales():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+def _sales_safe_float(v, default=0.0):
+    try:
+        if v in (None, ""):
+            return default
+        return float(v)
+    except Exception:
+        return default
+
+
+def _sales_safe_int(v, default=0):
+    try:
+        if v in (None, ""):
+            return default
+        return int(float(v))
+    except Exception:
+        return default
+
+
+def _ensure_pending_work_list(v):
+    if v in (None, ""):
+        return []
+    if isinstance(v, str):
+        try:
+            v = json.loads(v)
+        except Exception:
+            return []
+    if not isinstance(v, list):
+        return []
+
+    out = []
+    for x in v:
+        if not isinstance(x, dict):
+            continue
+        item = (x.get("item") or x.get("name") or x.get("label") or "").strip()
+        main = (x.get("main") or x.get("category") or "").strip()
+        sub = (x.get("sub") or x.get("subitem") or "").strip()
+        if not item:
+            item = f"{main} ({sub})" if main and sub else main or sub
+        qty = _sales_safe_int(x.get("qty") or x.get("quantity"), 1)
+        unit = (x.get("unit") or "ครั้ง").strip() or "ครั้ง"
+        note = (x.get("note") or "").strip()
+        if item and qty > 0:
+            out.append({"item": item, "qty": qty, "unit": unit, "note": note, "main": main, "sub": sub})
+    return out
+
+
+def _sync_sales_pending_summary(sale_id, rec_db, rec):
+    """Keep one summary row per sales record for AR / pending work.
+
+    This replaces the old add/pay transaction-style mirror. It stores exactly one
+    row in sale_pending_summary for each sales record that has either:
+      - ar_amount > 0
+      - pending_work has at least one item
+
+    No phone number is stored here. name is the short/nickname from the sales form.
+    Receipt issuing is not touched by this function.
+    """
+    if not sale_id:
+        return
+
+    sale_id_txt = str(sale_id)
+
+    # Always replace the summary for this sale_id so editing a queued/old record
+    # cannot create duplicate pending rows.
+    try:
+        supabase.table("sale_pending_summary").delete().eq("sale_id", sale_id_txt).execute()
+    except Exception as e:
+        print(f"Warning: clear sale_pending_summary failed for sale_id={sale_id_txt}: {e}")
+
+    opd = normalize_opd(rec_db.get("opd"))
+    sale_date = safe_date_str(rec_db.get("date"))
+    if not opd or not sale_date:
+        return
+
+    ar_amount = _sales_safe_float(
+        rec.get("ar_amount") or rec.get("unpaid_amount") or rec_db.get("ar_amount"),
+        0.0
+    )
+    pending = _ensure_pending_work_list(rec.get("pending_work") or rec_db.get("pending_work"))
+
+    # Nothing pending for this sales row, so no summary row is needed.
+    if not (ar_amount and ar_amount > 0) and not pending:
+        return
+
+    payload = {
+        "sale_id": sale_id_txt,
+        "opd": opd,
+        "name": (rec_db.get("name") or rec.get("name") or "").strip(),
+        "sale_date": sale_date,
+        "ar_amount": float(ar_amount or 0),
+        "pending_work": pending,
+        "note": (rec.get("note") or rec_db.get("note") or "").strip(),
+        "source": "sales_record",
+    }
+
+    supabase.table("sale_pending_summary").insert(payload).execute()
+
 @app.route("/api/save_sales", methods=["POST"])
 @login_required
 def save_sales():
@@ -1034,6 +1301,9 @@ def save_sales():
                 items_in = rec.get("item")
             items = _coerce_items_to_text_list(items_in)
 
+            ar_amount = _sales_safe_float(rec.get("ar_amount") or rec.get("unpaid_amount"), 0.0)
+            pending_work = _ensure_pending_work_list(rec.get("pending_work"))
+
             rec_db = {
                 "date": date,
                 "opd": opd_4,
@@ -1043,20 +1313,62 @@ def save_sales():
                 "payment": rec.get("payment"),
                 "note": rec.get("note", ""),
                 "item": items,
+                "ar_amount": ar_amount,
+                "pending_work": pending_work,
             }
 
             rec_id = rec.get("id")
-            
+
             # --- กรณีแก้ไข (Update) ---
             if rec_id:
+                existing_rows = (
+                    supabase.table("sales_records")
+                    .select("*")
+                    .eq("id", rec_id)
+                    .limit(1)
+                    .execute()
+                ).data or []
+                existing = existing_rows[0] if existing_rows else {}
+
+                # Old rows may not have receipt numbers yet. Give them a number once,
+                # but never overwrite an existing RC/RB number during edit.
+                if not _sale_row_has_receipt_no(existing):
+                    rec_db.update(_receipt_fields_for_sale_record(
+                        date_s=date,
+                        opd_4=opd_4,
+                        amount=amt or 0,
+                        payment_method=rec.get("payment"),
+                        items=items,
+                        status=existing.get("receipt_status") or "recorded",
+                    ))
+                else:
+                    # Keep existing status unless it is blank.
+                    if not existing.get("receipt_status"):
+                        rec_db["receipt_status"] = "recorded"
+                    rec_db["idempotency_key"] = make_idempotency_key(
+                        date=date, opd=opd_4, amount=amt or 0, payment_method=rec.get("payment"), items=items
+                    )
+
                 supabase.table("sales_records").update(rec_db).eq("id", rec_id).execute()
+                _sync_sales_pending_summary(rec_id, rec_db, rec)
                 updated_count += 1
                 continue
+
+            # New sale saves get receipt/bill numbers immediately, even if the user
+            # never presses the receipt button.
+            rec_db.update(_receipt_fields_for_sale_record(
+                date_s=date,
+                opd_4=opd_4,
+                amount=amt or 0,
+                payment_method=rec.get("payment"),
+                items=items,
+                status="recorded",
+            ))
 
             # --- 2. แก้ไขจุดเสี่ยงเช็คซ้ำ (Duplicate Check) ---
             dup_q = (
                 supabase.table("sales_records")
-                .select("id")
+                .select("*")
                 .eq("opd", rec_db["opd"])
                 .eq("date", rec_db["date"])
             )
@@ -1070,9 +1382,17 @@ def save_sales():
 
             dup = dup_q.execute().data
             if dup:
+                # If the matching old row predates the receipt-number change, fill it now.
+                try:
+                    _ensure_sale_row_receipt_number(dup[0], status=dup[0].get("receipt_status") or "recorded")
+                except Exception as e:
+                    print(f"Warning: ensure receipt for duplicate failed: {e}")
                 continue
 
-            supabase.table("sales_records").insert(rec_db).execute()
+            ins = supabase.table("sales_records").insert(rec_db).execute()
+            inserted_rows = ins.data or []
+            sale_id = inserted_rows[0].get("id") if inserted_rows else None
+            _sync_sales_pending_summary(sale_id, rec_db, rec)
             inserted_count += 1
 
         return jsonify({"message": "บันทึกสำเร็จ", "inserted": inserted_count, "updated": updated_count})
@@ -1090,6 +1410,13 @@ def delete_sales_record():
         record_id = payload.get("id")
         if not record_id:
             return jsonify({"error": "Missing ID"}), 400
+
+        # ลบสรุปค้างชำระ/ค้างทำที่ผูกกับบิลนี้ก่อน แล้วค่อยลบบิล
+        # ตารางนี้เก็บ 1 แถวต่อ 1 บิลเท่านั้น จึงไม่สร้างรายการซ้ำ
+        try:
+            supabase.table("sale_pending_summary").delete().eq("sale_id", str(record_id)).execute()
+        except Exception as e:
+            print(f"Warning: delete linked sale_pending_summary failed for sale_id={record_id}: {e}")
 
         # ลบได้ทุกกรณี แม้ออกใบเสร็จแล้ว
         supabase.table("sales_records").delete().eq("id", record_id).execute()
@@ -2432,11 +2759,68 @@ def api_get_appointments():
             .execute()
         )
 
-        return jsonify(res.data or [])
+        rows = res.data or []
+        try:
+            rows.sort(key=lambda r: (str(r.get("start_time") or ""), str(r.get("column_id") or ""), str(r.get("id") or "")))
+        except Exception:
+            pass
+        return jsonify(rows)
 
     except Exception as e:
         app.logger.error(f"/api/get_appointments error: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/get_appointments_range")
+@login_required
+def api_get_appointments_range():
+    """ดึงนัดหมายหลายวันในครั้งเดียว เช่น /api/get_appointments_range?start=2026-05-01&end=2026-05-31"""
+    try:
+        start_date = safe_date_str(request.args.get("start") or request.args.get("start_date"))
+        end_date = safe_date_str(request.args.get("end") or request.args.get("end_date"))
+
+        if not start_date or not end_date:
+            return jsonify({"error": "missing_date_range"}), 400
+
+        try:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d").date()
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d").date()
+        except Exception:
+            return jsonify({"error": "invalid_date_format"}), 400
+
+        if end_dt < start_dt:
+            return jsonify({"error": "invalid_date_range"}), 400
+
+        # กันการดึงกว้างเกินไปโดยไม่ตั้งใจ
+        if (end_dt - start_dt).days > 92:
+            return jsonify({"error": "range_too_large", "max_days": 92}), 400
+
+        res = (
+            supabase.table("appointments")
+            .select("*")
+            .gte("appt_date", start_date)
+            .lte("appt_date", end_date)
+            .order("appt_date", desc=False)
+            .execute()
+        )
+
+        rows = res.data or []
+        try:
+            rows.sort(key=lambda r: (
+                str(r.get("appt_date") or ""),
+                str(r.get("start_time") or ""),
+                str(r.get("column_id") or ""),
+                str(r.get("id") or ""),
+            ))
+        except Exception:
+            pass
+
+        return jsonify(rows)
+
+    except Exception as e:
+        app.logger.error(f"/api/get_appointments_range error: {e}")
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route("/api/save_appointment", methods=["POST"])
 @login_required
@@ -2444,10 +2828,15 @@ def api_save_appointment():
     try:
         data = request.get_json(silent=True) or {}
 
+        appt_id = data.get("id")
         appt_date = safe_date_str(data.get("appt_date"))
-        start_time = data.get("start_time")
-        end_time = data.get("end_time") or start_time
-        column_id = data.get("column_id")
+        start_time = (data.get("start_time") or "").strip()
+        end_time = (data.get("end_time") or start_time or "").strip()
+
+        try:
+            column_id = int(data.get("column_id") or 0)
+        except Exception:
+            column_id = 0
 
         guest_name = (
             data.get("guest_name")
@@ -2465,7 +2854,6 @@ def api_save_appointment():
         service = (data.get("service") or data.get("procedure") or "").strip()
         note = data.get("note")
 
-        # ✅ เพิ่ม customer_type แบบเรียบ
         allowed_types = {"new", "old"}
         customer_type = (data.get("customer_type") or "new").strip().lower()
         if customer_type not in allowed_types:
@@ -2476,30 +2864,104 @@ def api_save_appointment():
         if status not in allowed_status:
             status = "pending"
 
-        if not appt_date or not start_time or not column_id or not service:
-            return jsonify({"error": "missing_required_fields"}), 400
+        # frontend ส่งเลข OPD มาได้ แต่บางฐานข้อมูลเก่าอาจยังไม่มีคอลัมน์ customer_id/opd
+        opd_raw = data.get("opd") or data.get("customer_id")
+        opd = normalize_opd(opd_raw) if opd_raw else ""
 
-        payload = {
+        if not guest_name:
+            return jsonify({"success": False, "error": "missing_customer_name"}), 400
+        if not appt_date or not start_time or not column_id or not service:
+            return jsonify({"success": False, "error": "missing_required_fields"}), 400
+
+        # กันคิวซ้ำวันเดียวกัน + เวลาเดียวกัน + ช่องเดียวกัน ยกเว้นรายการที่ cancelled
+        try:
+            dup_res = (
+                supabase.table("appointments")
+                .select("id,start_time,status,guest_name")
+                .eq("appt_date", appt_date)
+                .eq("column_id", column_id)
+                .execute()
+            )
+            for row in dup_res.data or []:
+                if appt_id and str(row.get("id")) == str(appt_id):
+                    continue
+                if (row.get("status") or "pending").lower() == "cancelled":
+                    continue
+                row_time = str(row.get("start_time") or "")[:5]
+                if row_time == start_time[:5]:
+                    return jsonify({
+                        "success": False,
+                        "error": "slot_already_booked",
+                        "message": f"เวลานี้มีคิวแล้ว: {row.get('guest_name') or '-'}",
+                    }), 409
+        except Exception as dup_err:
+            app.logger.warning(f"Duplicate appointment check skipped: {dup_err}")
+
+        base_payload = {
             "appt_date": appt_date,
             "start_time": start_time,
             "end_time": end_time,
-            "column_id": int(column_id),
+            "column_id": column_id,
             "guest_name": guest_name if guest_name else None,
             "guest_phone": guest_phone if guest_phone else None,
             "service": service,
             "status": status,
-            "customer_type": customer_type,  # ✅ บันทึกเฉย ๆ
+            "customer_type": customer_type,
             "note": note,
-            "created_at": datetime.now(timezone.utc).isoformat(),
         }
 
-        supabase.table("appointments").insert(payload).execute()
+        candidate_payloads = []
+        if opd:
+            p = dict(base_payload)
+            p["customer_id"] = opd
+            p["opd"] = opd
+            candidate_payloads.append(p)
 
-        return jsonify({"success": True}), 200
+            p = dict(base_payload)
+            p["customer_id"] = opd
+            candidate_payloads.append(p)
+
+            p = dict(base_payload)
+            p["opd"] = opd
+            candidate_payloads.append(p)
+
+        candidate_payloads.append(dict(base_payload))
+
+        last_err = None
+        saved_res = None
+        for payload in candidate_payloads:
+            try:
+                if appt_id:
+                    saved_res = (
+                        supabase.table("appointments")
+                        .update(payload)
+                        .eq("id", appt_id)
+                        .execute()
+                    )
+                else:
+                    insert_payload = dict(payload)
+                    insert_payload["created_at"] = datetime.now(timezone.utc).isoformat()
+                    saved_res = supabase.table("appointments").insert(insert_payload).execute()
+                last_err = None
+                break
+            except Exception as e:
+                last_err = e
+                msg = str(e).lower()
+                # ถ้าพังเพราะคอลัมน์ customer_id/opd ไม่มี ให้ลอง payload ชุดถัดไป
+                if "customer_id" in msg or "opd" in msg or "schema" in msg or "column" in msg or "could not find" in msg:
+                    continue
+                raise
+
+        if last_err is not None:
+            raise last_err
+
+        row = (saved_res.data or [{}])[0] if getattr(saved_res, "data", None) else {}
+        return jsonify({"success": True, "row": row}), 200
 
     except Exception as e:
         app.logger.error(f"Save Appt Error: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"success": False, "error": str(e)}), 500
+
 
 @app.route("/api/search_customer_simple")
 @login_required
@@ -2745,51 +3207,287 @@ def api_delete_roster():
 
 
 # =============================================================
-# Gallery Management
+# Customer Image / Gallery / OCR System (Unified)
 # =============================================================
+# แนวคิดใหม่:
+# - รูปทุกชนิดเข้า customer_gallery ได้ทางเดียว
+# - รูปโปรไฟล์ใช้ URL จาก gallery เดียวกัน แล้ว update customers.profile_pic_url
+# - OCR อ่านจากไฟล์ก่อน แล้วค่อยบันทึกรูปบัตรเมื่ออ่านสำเร็จ เพื่อลดรูปซ้ำ/รูปค้าง
+# - รองรับ schema เดิมของ customer_gallery ที่มีแค่ opd,image_url และ schema ใหม่ที่มี image_type/cloudinary_public_id/is_profile
+
+CUSTOMER_ALLOWED_PATCH_FIELDS = {
+    "name", "full_name", "phone", "birthMonth", "birth_th_ddmmyyyy",
+    "facebook_name", "national_id", "vip", "address", "profile", "note", "profile_pic_url"
+}
+
+IMAGE_TYPE_ALLOWED = {"gallery", "profile", "id_card", "before", "after", "document"}
+
+
+def _truthy(v: Any) -> bool:
+    return str(v or "").strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _clean_str(v: Any) -> Optional[str]:
+    if v is None:
+        return None
+    s = str(v).strip()
+    return s if s else None
+
+
+def _normalize_birth_month(v: Any) -> Optional[str]:
+    s = str(v or "").strip()
+    if not s:
+        return None
+    s = re.sub(r"\D", "", s)
+    if not s:
+        return None
+    try:
+        n = int(s)
+        if 1 <= n <= 12:
+            return str(n).zfill(2)
+    except Exception:
+        return None
+    return None
+
+
+def _normalize_image_type(v: Any) -> str:
+    s = str(v or "gallery").strip().lower()
+    return s if s in IMAGE_TYPE_ALLOWED else "gallery"
+
+
+def _is_allowed_image_file(file_obj: Any) -> bool:
+    filename = (getattr(file_obj, "filename", "") or "").lower()
+    mimetype = (getattr(file_obj, "mimetype", "") or "").lower()
+    allowed_ext = filename.endswith((".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"))
+    allowed_mime = mimetype.startswith("image/")
+    return bool(allowed_ext or allowed_mime)
+
+
+def _gallery_folder(opd: str, image_type: str) -> str:
+    image_type = _normalize_image_type(image_type)
+    if image_type == "profile":
+        return f"clinic_gallery/{opd}/profile"
+    if image_type == "id_card":
+        return f"clinic_gallery/{opd}/id_card"
+    return f"clinic_gallery/{opd}/{image_type}"
+
+
+def _upload_image_to_cloudinary(file_obj: Any, opd: str, image_type: str = "gallery") -> Dict[str, Any]:
+    if hasattr(file_obj, "seek"):
+        try:
+            file_obj.seek(0)
+        except Exception:
+            pass
+
+    image_type = _normalize_image_type(image_type)
+    result = cloudinary.uploader.upload(
+        file_obj,
+        folder=_gallery_folder(opd, image_type),
+        resource_type="image",
+    )
+    return {
+        "image_url": result.get("secure_url") or result.get("url"),
+        "cloudinary_public_id": result.get("public_id"),
+        "image_type": image_type,
+    }
+
+
+def _insert_gallery_row(opd: str, image_url: str, image_type: str = "gallery", public_id: Optional[str] = None, is_profile: bool = False) -> Optional[Dict[str, Any]]:
+    """Insert gallery row. Supports both old and new table schemas."""
+    if not opd or not image_url:
+        return None
+
+    image_type = _normalize_image_type(image_type)
+    new_row = {
+        "opd": opd,
+        "image_url": image_url,
+        "image_type": image_type,
+        "cloudinary_public_id": public_id,
+        "is_profile": bool(is_profile),
+    }
+
+    try:
+        res = supabase.table("customer_gallery").insert(new_row).execute()
+        return (res.data or [new_row])[0] if isinstance(res.data, list) else new_row
+    except Exception as e:
+        # Fallback สำหรับฐานข้อมูลเดิมที่ยังไม่มี image_type/cloudinary_public_id/is_profile
+        app.logger.warning(f"Gallery insert fallback to legacy schema: {e}")
+        legacy_row = {"opd": opd, "image_url": image_url}
+        try:
+            res = supabase.table("customer_gallery").insert(legacy_row).execute()
+            return (res.data or [legacy_row])[0] if isinstance(res.data, list) else legacy_row
+        except Exception as e2:
+            app.logger.error(f"Gallery insert failed: {e2}")
+            raise
+
+
+def _set_customer_profile_url(opd: str, image_url: Optional[str]) -> None:
+    if not opd:
+        return
+    supabase.table("customers").update({"profile_pic_url": image_url}).eq("opd", opd).execute()
+
+
+def _clean_customer_payload_from_form(form: Any) -> Dict[str, Any]:
+    payload = {
+        "opd": normalize_opd(form.get("opd")),
+        "birthMonth": _normalize_birth_month(form.get("birthMonth")),
+        "birth_th_ddmmyyyy": _clean_str(form.get("birth_th_ddmmyyyy")),
+        "name": _clean_str(form.get("name")),
+        "full_name": _clean_str(form.get("full_name")),
+        "phone": _clean_str(form.get("phone")),
+        "facebook_name": _clean_str(form.get("facebook_name")),
+        "national_id": _clean_str(form.get("national_id")),
+        "vip": _clean_str(form.get("vip")),
+        "address": _clean_str(form.get("address")),
+        "profile": _clean_str(form.get("profile")),
+        "note": _clean_str(form.get("note")),
+    }
+    return {k: v for k, v in payload.items() if v is not None and v != ""}
+
+
+def _try_get_gallery_row(img_id: Any) -> Optional[Dict[str, Any]]:
+    try:
+        res = supabase.table("customer_gallery").select("*").eq("id", img_id).maybe_single().execute()
+        return res.data or None
+    except Exception:
+        try:
+            res = supabase.table("customer_gallery").select("*").eq("id", img_id).execute()
+            rows = res.data or []
+            return rows[0] if rows else None
+        except Exception:
+            return None
+
+
+def _parse_cloudinary_public_id_from_url(url: str) -> Optional[str]:
+    """Best-effort public_id extraction for old rows that don't store cloudinary_public_id."""
+    if not url or "cloudinary" not in url:
+        return None
+    try:
+        # Example: .../upload/v123456/clinic_gallery/0001/gallery/abc.jpg
+        marker = "/upload/"
+        after = url.split(marker, 1)[1]
+        parts = after.split("/")
+        if parts and re.match(r"^v\d+$", parts[0]):
+            parts = parts[1:]
+        public_with_ext = "/".join(parts)
+        return re.sub(r"\.[a-zA-Z0-9]+$", "", public_with_ext)
+    except Exception:
+        return None
+
+
+def _destroy_cloudinary_public_id(public_id: Optional[str]) -> bool:
+    if not public_id:
+        return False
+    try:
+        cloudinary.uploader.destroy(public_id, resource_type="image")
+        return True
+    except Exception as e:
+        app.logger.warning(f"Cloudinary destroy failed for {public_id}: {e}")
+        return False
+
+
 @app.route('/api/get_gallery')
 @login_required
 def get_gallery():
-    opd = request.args.get('opd')
-    if not opd: return jsonify([])
-    try:
-        res = supabase.table("customer_gallery").select("*").eq("opd", opd).order("created_at", desc=True).execute()
-        return jsonify(res.data or [])
-    except Exception as e:
+    opd = normalize_opd(request.args.get('opd'))
+    image_type = request.args.get('image_type')
+    if not opd:
         return jsonify([])
+    try:
+        q = supabase.table("customer_gallery").select("*").eq("opd", opd)
+        if image_type:
+            q = q.eq("image_type", _normalize_image_type(image_type))
+        try:
+            res = q.order("created_at", desc=True).execute()
+        except Exception:
+            res = q.execute()
+        rows = res.data or []
+        return jsonify(rows)
+    except Exception as e:
+        app.logger.error(f"get_gallery error: {e}")
+        return jsonify([])
+
 
 @app.route('/api/upload_gallery', methods=['POST'])
 @login_required
 def upload_gallery():
     try:
-        opd = request.form.get('opd')
-        images = request.files.getlist('images')
+        opd = normalize_opd(request.form.get('opd'))
+        image_type = _normalize_image_type(request.form.get('image_type'))
+        set_profile = _truthy(request.form.get('set_profile')) or image_type == "profile"
 
+        if not opd or len(opd) != 4:
+            return jsonify({"error": "invalid_opd"}), 400
+
+        images = request.files.getlist('images') or request.files.getlist('image') or request.files.getlist('profile_pic')
         if not images:
-            return jsonify({"error": "No images"}), 400
+            return jsonify({"error": "no_images"}), 400
 
         saved_rows = []
         uploaded_urls = []
 
         for img in images:
-            res = cloudinary.uploader.upload(img, folder=f"clinic_gallery/{opd}")
-            url = res['secure_url']
-            
-            data = {"opd": opd, "image_url": url}
-            supabase.table("customer_gallery").insert(data).execute()
-            
-            saved_rows.append(data)
+            if not img or not _is_allowed_image_file(img):
+                continue
+            uploaded = _upload_image_to_cloudinary(img, opd, image_type)
+            url = uploaded.get("image_url")
+            if not url:
+                continue
+
+            row = _insert_gallery_row(
+                opd=opd,
+                image_url=url,
+                image_type=image_type,
+                public_id=uploaded.get("cloudinary_public_id"),
+                is_profile=set_profile,
+            )
+            saved_rows.append(row or {"opd": opd, "image_url": url})
             uploaded_urls.append(url)
 
-        return jsonify({
-            "status": "success", 
-            "count": len(saved_rows), 
-            "urls": uploaded_urls 
-        })
+        if not uploaded_urls:
+            return jsonify({"error": "no_valid_images"}), 400
+
+        if set_profile:
+            _set_customer_profile_url(opd, uploaded_urls[-1])
+
+        return jsonify({"status": "success", "count": len(uploaded_urls), "urls": uploaded_urls, "rows": saved_rows})
 
     except Exception as e:
-        print(f"Gallery upload error: {e}")
+        app.logger.error(f"Gallery upload error: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/set_profile_image', methods=['POST'])
+@login_required
+def set_profile_image():
+    try:
+        data = request.get_json(silent=True) or {}
+        opd = normalize_opd(data.get('opd'))
+        image_url = _clean_str(data.get('image_url'))
+        image_id = data.get('id')
+
+        if image_id and not image_url:
+            row = _try_get_gallery_row(image_id)
+            if row:
+                image_url = row.get('image_url')
+                opd = opd or normalize_opd(row.get('opd'))
+
+        if not opd or not image_url:
+            return jsonify({"error": "missing_opd_or_image"}), 400
+
+        _set_customer_profile_url(opd, image_url)
+        try:
+            supabase.table("customer_gallery").update({"is_profile": False}).eq("opd", opd).execute()
+            if image_id:
+                supabase.table("customer_gallery").update({"is_profile": True, "image_type": "profile"}).eq("id", image_id).execute()
+        except Exception:
+            pass
+
+        return jsonify({"status": "success", "profile_pic_url": image_url})
+    except Exception as e:
+        app.logger.error(f"set_profile_image error: {e}")
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/delete_gallery_image', methods=['POST'])
 @login_required
@@ -2797,11 +3495,28 @@ def delete_gallery_image():
     try:
         data = request.get_json(silent=True) or {}
         img_id = data.get('id')
-        if not img_id: return jsonify({"error": "missing_id"}), 400
-        
+        if not img_id:
+            return jsonify({"error": "missing_id"}), 400
+
+        row = _try_get_gallery_row(img_id)
+        image_url = (row or {}).get('image_url')
+        opd = normalize_opd((row or {}).get('opd'))
+        public_id = (row or {}).get('cloudinary_public_id') or _parse_cloudinary_public_id_from_url(image_url or "")
+
+        # ลบ DB ก่อนเพื่อให้ UI ไม่เห็นแล้ว แม้ cloud delete จะ fail ก็ไม่ block ผู้ใช้
         supabase.table("customer_gallery").delete().eq("id", img_id).execute()
+        _destroy_cloudinary_public_id(public_id)
+
+        if opd and image_url:
+            try:
+                # ถ้ารูปนี้เป็น profile อยู่ ให้เคลียร์ออก เพื่อไม่ชี้ URL ที่ลบแล้ว
+                supabase.table("customers").update({"profile_pic_url": None}).eq("opd", opd).eq("profile_pic_url", image_url).execute()
+            except Exception:
+                pass
+
         return jsonify({"status": "deleted"})
     except Exception as e:
+        app.logger.error(f"delete_gallery_image error: {e}")
         return jsonify({"error": str(e)}), 500
 
 
@@ -2809,87 +3524,177 @@ def delete_gallery_image():
 @login_required
 def update_customer_with_image():
     try:
-        data = request.form
-        opd = normalize_opd(data.get("opd"))
-        if not opd: return jsonify({"error": "missing_opd"}), 400
+        form = request.form
+        opd = normalize_opd(form.get("opd"))
+        if not opd:
+            return jsonify({"error": "missing_opd"}), 400
 
-        patch = {
-            "name": data.get("name"),
-            "full_name": data.get("full_name"),
-            "phone": data.get("phone"),
-            "facebook_name": data.get("facebook_name"),
-            "national_id": data.get("national_id"),
-            "vip": data.get("vip"),
-            "address": data.get("address"),
-            "profile": data.get("profile"),
-            "note": data.get("note"),
-            "birthMonth": data.get("birthMonth"),
-            "birth_th_ddmmyyyy": data.get("birth_th_ddmmyyyy"),
-        }
+        patch = _clean_customer_payload_from_form(form)
+        patch.pop("opd", None)
 
         profile_file = request.files.get('profile_pic')
-        if profile_file:
-            # เรียกใช้ helper function ที่เราประกาศไว้ด้านบน
-            url = save_image_to_cloud(profile_file)
-            patch["profile_pic_url"] = url
-        
-        elif data.get("existing_profile_url"):
-            patch["profile_pic_url"] = data.get("existing_profile_url")
+        existing_url = _clean_str(form.get("existing_profile_url"))
 
-        clean_patch = {k: v for k, v in patch.items() if v is not None and v != ""}
-        
-        if "birthMonth" in clean_patch and not clean_patch["birthMonth"]:
-            del clean_patch["birthMonth"]
+        if profile_file and _is_allowed_image_file(profile_file):
+            uploaded = _upload_image_to_cloudinary(profile_file, opd, "profile")
+            profile_url = uploaded.get("image_url")
+            if profile_url:
+                _insert_gallery_row(
+                    opd=opd,
+                    image_url=profile_url,
+                    image_type="profile",
+                    public_id=uploaded.get("cloudinary_public_id"),
+                    is_profile=True,
+                )
+                patch["profile_pic_url"] = profile_url
+        elif existing_url:
+            patch["profile_pic_url"] = existing_url
 
-        supabase.table("customers").update(clean_patch).eq("opd", opd).execute()
+        if patch:
+            supabase.table("customers").update(patch).eq("opd", opd).execute()
 
-        return jsonify({"status": "success"})
+        return jsonify({"status": "success", "profile_pic_url": patch.get("profile_pic_url")})
 
     except Exception as e:
-        print(f"Update Image Error: {e}")
+        app.logger.error(f"Update Image Error: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/add_customer_v2', methods=['POST'])
 @login_required
 def add_customer_v2():
     try:
-        data = request.form
-        
+        form = request.form
+        opd = normalize_opd(form.get('opd'))
+        if not opd or len(opd) != 4:
+            return jsonify({"error": "invalid_opd"}), 400
+
+        existing = supabase.table("customers").select("opd").eq("opd", opd).execute()
+        if existing.data:
+            return jsonify({"error": "duplicate_opd", "message": "มีเลข OPD นี้ในระบบแล้ว"}), 400
+
+        customer_data = _clean_customer_payload_from_form(form)
+        customer_data["opd"] = opd
+
         profile_file = request.files.get('profile_pic')
-        profile_url = None
+        existing_profile_url = _clean_str(form.get("existing_profile_url"))
 
-        if profile_file:
-            # เรียกใช้ helper function ได้อย่างถูกต้องแล้ว
-            profile_url = save_image_to_cloud(profile_file) 
-            pass
-
-        customer_data = {
-            "opd": data.get('opd'),
-            "birthMonth": data.get('birthMonth'),
-            "birth_th_ddmmyyyy": data.get('birth_th_ddmmyyyy'),
-            "name": data.get('name'),
-            "full_name": data.get('full_name'),
-            "phone": data.get('phone'),
-            "facebook_name": data.get('facebook_name'),
-            "national_id": data.get('national_id'),
-            "vip": data.get('vip'),
-            "address": data.get('address'),
-            "profile": data.get('profile'),
-            "note": data.get('note'),
-            "profile_pic_url": profile_url
-        }
-
-        for k, v in customer_data.items():
-            if v == '': customer_data[k] = None
+        uploaded_profile = None
+        if profile_file and _is_allowed_image_file(profile_file):
+            uploaded_profile = _upload_image_to_cloudinary(profile_file, opd, "profile")
+            if uploaded_profile.get("image_url"):
+                customer_data["profile_pic_url"] = uploaded_profile["image_url"]
+        elif existing_profile_url:
+            customer_data["profile_pic_url"] = existing_profile_url
 
         supabase.table('customers').insert(customer_data).execute()
 
-        return jsonify({"status": "success"})
+        if uploaded_profile and uploaded_profile.get("image_url"):
+            _insert_gallery_row(
+                opd=opd,
+                image_url=uploaded_profile["image_url"],
+                image_type="profile",
+                public_id=uploaded_profile.get("cloudinary_public_id"),
+                is_profile=True,
+            )
+
+        return jsonify({"status": "success", "profile_pic_url": customer_data.get("profile_pic_url")})
 
     except Exception as e:
-        print(f"Error adding customer v2: {e}")
+        app.logger.error(f"Error adding customer v2: {e}")
         return jsonify({"error": str(e)}), 500
 
+
+def _parse_gemini_json(text_response: str) -> Dict[str, Any]:
+    text_response = (text_response or "").strip()
+    if text_response.startswith("```"):
+        text_response = text_response.replace("```json", "").replace("```", "").strip()
+    try:
+        return json.loads(text_response)
+    except Exception:
+        # Best-effort: extract {...}
+        m = re.search(r"\{.*\}", text_response, flags=re.S)
+        if m:
+            return json.loads(m.group(0))
+        raise
+
+
+def _extract_idcard_from_pil_image(img: Image.Image) -> Dict[str, Any]:
+    prompt = """
+Task: Extract Thai National ID Card data into JSON.
+Output MUST be pure JSON only. No markdown formatting.
+
+Fields:
+- id_number (string, 13 digits only)
+- title_th (string, e.g., นาย, นาง, นางสาว)
+- first_name_th (string)
+- last_name_th (string)
+- birth_date (string, format: dd/mm/yyyy in Thai Year BE 25xx)
+- address (string, full address in Thai)
+
+If a field is unclear or missing, use null.
+"""
+    model_names = [
+        os.getenv("GEMINI_MODEL", "").strip(),
+        "models/gemini-2.0-flash",
+        "gemini-2.0-flash",
+        "models/gemini-1.5-flash",
+        "gemini-1.5-flash",
+    ]
+    last_err = None
+    for model_name in [m for m in model_names if m]:
+        try:
+            model = genai.GenerativeModel(model_name)
+            result = model.generate_content([prompt, img])
+            return _parse_gemini_json(result.text)
+        except Exception as e:
+            last_err = e
+            app.logger.warning(f"Gemini OCR failed with {model_name}: {e}")
+            continue
+    raise last_err or RuntimeError("gemini_ocr_failed")
+
+
+@app.route('/api/idcard_extract_upload', methods=['POST'])
+@login_required
+def api_idcard_extract_upload():
+    """OCR จากไฟล์โดยตรง: อ่านสำเร็จแล้วค่อยเก็บรูปเป็น image_type=id_card"""
+    try:
+        opd = normalize_opd(request.form.get('opd'))
+        save_image = _truthy(request.form.get('save_image') or 'true')
+        file_obj = request.files.get('file') or request.files.get('image') or request.files.get('id_card')
+
+        if not file_obj:
+            return jsonify({"error": "no_file"}), 400
+        if not _is_allowed_image_file(file_obj):
+            return jsonify({"error": "invalid_image_type"}), 400
+
+        img = Image.open(file_obj.stream)
+        extracted = _extract_idcard_from_pil_image(img)
+
+        # ถ้า OCR ไม่ได้ข้อมูลอะไรเลย ไม่บันทึกรูป เพื่อลดรูปค้างในระบบ
+        meaningful = any(extracted.get(k) for k in ["id_number", "first_name_th", "last_name_th", "birth_date", "address"])
+        if not meaningful:
+            return jsonify({"error": "no_data_extracted", "data": extracted}), 422
+
+        image_url = None
+        if save_image and opd and len(opd) == 4:
+            uploaded = _upload_image_to_cloudinary(file_obj, opd, "id_card")
+            image_url = uploaded.get("image_url")
+            if image_url:
+                _insert_gallery_row(
+                    opd=opd,
+                    image_url=image_url,
+                    image_type="id_card",
+                    public_id=uploaded.get("cloudinary_public_id"),
+                    is_profile=False,
+                )
+
+        extracted["image_url"] = image_url
+        return jsonify(extracted)
+
+    except Exception as e:
+        app.logger.error(f"idcard_extract_upload error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 # =============================================================
 # Gemini AI - ID Card Extract

@@ -76,7 +76,7 @@
       border-bottom:1px solid #f1f5f9; border-left:none; border-right:none;
     }
     td { border:none; border-bottom:1px solid #f0f0f0; }
-    thead th:nth-child(4), tbody td:nth-child(4){ width:45%; }
+    thead th:nth-child(3), tbody td:nth-child(3){ width:45%; }
 
     tbody tr{ transition: background 0.1s; }
     tbody tr:hover{ background: #f9fafb; }
@@ -88,6 +88,31 @@
     .day-total td{
       background: #fff8e1; color: #b45309;
       font-weight:bold; text-align:right; border-bottom: 2px solid #fef3c7;
+    }
+
+    .customer-name-line{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      flex-wrap:wrap;
+    }
+    .new-customer-badge{
+      display:inline-flex;
+      align-items:center;
+      padding:1px 7px;
+      border-radius:999px;
+      background:#dcfce7;
+      color:#166534;
+      border:1px solid #bbf7d0;
+      font-size:9.5px;
+      font-weight:600;
+      line-height:1.4;
+      white-space:nowrap;
+    }
+    .customer-opd-line{
+      font-size:10px;
+      color:#777;
+      margin-top:1px;
     }
 
     .month-summary{
@@ -235,6 +260,175 @@
       .profile-info h3{ font-size:16px; }
     }
 
+
+    /* ===============================
+       Year Compare Popup
+       =============================== */
+    .year-compare-trigger{
+      display:inline-flex; align-items:center; justify-content:center; gap:6px;
+      margin-top:6px; padding:5px 12px; border-radius:999px;
+      background:#f8fafc; border:1px solid #dbeafe;
+      color:#075985; cursor:pointer; font-size:12px;
+      transition:background .15s ease, transform .1s ease;
+    }
+    .year-compare-trigger:hover{ background:#eff6ff; }
+    .year-compare-trigger:active{ transform:scale(.98); }
+    .year-compare-trigger.muted{ color:#6b7280; border-color:#e5e7eb; background:#f9fafb; cursor:default; }
+
+    #yearCompareModal{
+      display:none; position:fixed; inset:0; z-index:10002;
+      background:rgba(0,0,0,.5); justify-content:center; align-items:center; padding:16px;
+    }
+    .year-compare-box{
+      width:min(94vw,760px); max-height:90vh; overflow:auto;
+      background:#fff; border-radius:16px; padding:16px; box-sizing:border-box;
+      box-shadow:0 20px 60px rgba(0,0,0,.25); position:relative;
+    }
+    .year-compare-close{
+      position:absolute; top:10px; right:12px; border:none; background:#f3f4f6;
+      width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:18px;
+    }
+    .year-compare-title{ font-size:16px; font-weight:600; color:#00695c; padding-right:36px; }
+    .year-compare-sub{ font-size:11px; color:#6b7280; margin-top:2px; }
+    .year-compare-cards{
+      display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px;
+    }
+    .year-compare-card{
+      background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px;
+    }
+    .year-compare-card .label{ font-size:11px; color:#64748b; }
+    .year-compare-card .value{ font-size:18px; font-weight:600; color:#0f766e; margin-top:4px; }
+    .year-compare-card.diff.good .value{ color:#15803d; }
+    .year-compare-card.diff.bad .value{ color:#dc2626; }
+    .year-compare-card.diff.neutral .value{ color:#64748b; }
+    .year-compare-table-wrap{ margin-top:14px; border:1px solid #e2e8f0; border-radius:12px; overflow:auto; }
+    .year-compare-table{ width:100%; border-collapse:collapse; font-size:11px; margin:0; }
+    .year-compare-table thead{ display:table-header-group !important; }
+    .year-compare-table th,
+    .year-compare-table td{ padding:8px; border-bottom:1px solid #f1f5f9; text-align:right; white-space:nowrap; }
+    .year-compare-table th{ background:#f8fafc; color:#475569; font-weight:600; position:static; }
+    .year-compare-table th:first-child,
+    .year-compare-table td:first-child{ text-align:center; }
+    .year-compare-good{ color:#15803d; }
+    .year-compare-bad{ color:#dc2626; }
+    .year-compare-neutral{ color:#64748b; }
+
+    @media (max-width:600px){
+      .year-compare-cards{ grid-template-columns:1fr; }
+      .year-compare-card .value{ font-size:16px; }
+    }
+
+
+    /* ===============================
+       Summary Tabs + Pending Summary
+       =============================== */
+    .summary-tabs{
+      display:flex; justify-content:center; gap:8px; flex-wrap:wrap;
+      margin:0 0 14px;
+    }
+    .summary-tab-btn{
+      border:1px solid #a7e1da; background:#fff; color:#0b7660;
+      border-radius:999px; padding:8px 16px; font-size:13px; font-weight:600;
+      cursor:pointer; box-shadow:var(--shadow-sm); transition:all .16s ease;
+    }
+    .summary-tab-btn:hover{ background:#f0fdfa; }
+    .summary-tab-btn.active{ background:var(--primary); border-color:var(--primary); color:#fff; }
+    .summary-tab-panel{ display:none; }
+    .summary-tab-panel.active{ display:block; }
+
+    .pending-wrap{ margin-top:8px; }
+    .pending-toolbar{
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+      background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px;
+      padding:10px; margin-bottom:12px;
+    }
+    .pending-toolbar input,
+    .pending-toolbar select{
+      border:1px solid #d1d5db; border-radius:10px; padding:9px 10px;
+      font-family:'Prompt',sans-serif; font-size:12px; background:#fff;
+    }
+    .pending-toolbar input{ flex:1; min-width:220px; }
+    .pending-kpi-grid{
+      display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:10px 0 12px;
+    }
+    .pending-kpi{
+      background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:10px;
+      box-shadow:var(--shadow-sm);
+    }
+    .pending-kpi .k{ font-size:11px; color:#64748b; font-weight:500; }
+    .pending-kpi .v{ margin-top:4px; font-size:18px; color:#0f766e; font-weight:600; }
+    .pending-kpi.danger .v{ color:#dc2626; }
+    .pending-kpi.todo .v{ color:#92400e; }
+    .pending-table-wrap{
+      border:1px solid #e2e8f0;
+      border-radius:14px;
+      overflow:auto;
+      background:#fff;
+    }
+    .pending-table{
+      width:100%;
+      min-width:920px;
+      border-collapse:collapse;
+      margin:0;
+      font-size:12px;
+      table-layout:fixed;
+    }
+    .pending-table thead{ display:table-header-group !important; }
+    .pending-table th{
+      position:static;
+      background:#f8fafc;
+      color:#475569;
+      font-weight:600;
+      padding:12px 10px;
+      border-bottom:1px solid #e2e8f0;
+      text-align:left;
+      white-space:nowrap;
+      word-break:normal;
+    }
+    .pending-table td{
+      padding:12px 10px;
+      border-bottom:1px solid #f1f5f9;
+      vertical-align:top;
+      word-break:normal;
+      overflow-wrap:break-word;
+      line-height:1.5;
+    }
+    .pending-table tbody tr:hover{ background:#f9fafb; }
+    .pending-name{ color:#00897b; font-weight:600; cursor:pointer; white-space:normal; }
+    .pending-name:hover{ text-decoration:underline; }
+    .pending-money{ color:#dc2626; font-weight:600; white-space:nowrap; }
+    .pending-work-cell{ min-width:300px; }
+    .pending-work-list{
+      margin:0;
+      padding:0;
+      list-style:none;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .pending-work-list li{
+      display:flex;
+      align-items:flex-start;
+      gap:8px;
+      margin:0;
+      padding:7px 9px;
+      border:1px solid #fed7aa;
+      background:#fff7ed;
+      border-radius:10px;
+      color:#7c2d12;
+      line-height:1.45;
+    }
+    .pending-work-name{ flex:1; min-width:0; overflow-wrap:anywhere; }
+    .pending-work-qty{ flex:0 0 auto; white-space:nowrap; font-weight:600; color:#92400e; }
+    .pending-note{ color:#64748b; font-size:11px; margin-top:2px; }
+    .pending-empty{ text-align:center; padding:22px; color:#94a3b8; }
+
+    @media (max-width:700px){
+      .pending-kpi-grid{ grid-template-columns:1fr 1fr; }
+      .pending-table{ min-width:860px; }
+      .pending-toolbar input{ min-width:100%; }
+    }
+
     /* ===============================
        PDF Print Area (Landscape / Readable)
        =============================== */
@@ -366,24 +560,79 @@
 
 </h2>
 
-    <div class="month-nav">
-      <button id="btnPrev" class="month-btn" type="button" title="เดือนก่อนหน้า">← เดือนก่อนหน้า</button>
-      <button id="btnPick" class="month-btn" type="button" title="เลือกช่วงเวลา">เลือกช่วงเวลา</button>
-      <button id="btnClear" class="month-btn ghost" type="button" title="ล้างช่วง">ล้างช่วง</button>
-      <button id="btnNext" class="month-btn" type="button" title="เดือนถัดไป">เดือนถัดไป →</button>
-      <span id="rangeBadge" class="current-range" style="display:none;"></span>
-      <input type="month" id="monthPicker" />
+    <div class="summary-tabs" role="tablist" aria-label="สรุปการขาย">
+      <button id="tabBtnSales" type="button" class="summary-tab-btn active" onclick="switchSummaryTab('sales')">สรุปยอดขาย</button>
+      <button id="tabBtnPending" type="button" class="summary-tab-btn" onclick="switchSummaryTab('pending')">ค้างชำระ/ค้างทำ</button>
     </div>
 
-    <div id="reviewSection">กำลังโหลดข้อมูล...</div>
+    <div id="salesTabPanel" class="summary-tab-panel active" role="tabpanel" aria-label="สรุปยอดขาย">
+      <div class="month-nav">
+        <button id="btnPrev" class="month-btn" type="button" title="เดือนก่อนหน้า">← เดือนก่อนหน้า</button>
+        <button id="btnPick" class="month-btn" type="button" title="เลือกช่วงเวลา">เลือกช่วงเวลา</button>
+        <button id="btnClear" class="month-btn ghost" type="button" title="ล้างช่วง">ล้างช่วง</button>
+        <button id="btnNext" class="month-btn" type="button" title="เดือนถัดไป">เดือนถัดไป →</button>
+        <span id="rangeBadge" class="current-range" style="display:none;"></span>
+        <input type="month" id="monthPicker" />
+      </div>
 
-    <div style="text-align:center; margin-top:8px;">
-      <button id="downloadExcelBtn" class="btn" type="button" style="background:#00796b;" disabled>⬇️ โหลด Excel</button>
-      <button id="downloadPdfBtn" class="btn" type="button" style="background:#c62828; margin-left:8px;" disabled>📄 โหลด PDF</button>
+      <div id="reviewSection">กำลังโหลดข้อมูล...</div>
+
+      <div style="text-align:center; margin-top:8px;">
+        <button id="downloadExcelBtn" class="btn" type="button" style="background:#00796b;" disabled>⬇️ โหลด Excel</button>
+        <button id="downloadPdfBtn" class="btn" type="button" style="background:#c62828; margin-left:8px;" disabled>📄 โหลด PDF</button>
+      </div>
+    </div>
+
+    <div id="pendingTabPanel" class="summary-tab-panel" role="tabpanel" aria-label="ค้างชำระและค้างทำ">
+      <div class="pending-wrap">
+        <div class="pending-toolbar">
+          <input id="pendingSearch" type="text" placeholder="ค้นหา OPD / ชื่อ / รายการค้างทำ">
+          <select id="pendingRange" title="ช่วงเวลา">
+            <option value="all">ทั้งหมด</option>
+            <option value="month">เดือนนี้</option>
+            <option value="year">ปีนี้</option>
+          </select>
+          <button type="button" class="month-btn primary-action" onclick="loadPendingSummary(true)">รีเฟรช</button>
+        </div>
+
+        <div class="pending-kpi-grid">
+          <div class="pending-kpi danger"><div class="k">ค้างชำระรวม</div><div class="v" id="pendingDebtTotal">0 บาท</div></div>
+          <div class="pending-kpi"><div class="k">รายการค้างชำระ</div><div class="v" id="pendingDebtCount">0</div></div>
+          <div class="pending-kpi todo"><div class="k">ค้างทำรวม</div><div class="v" id="pendingWorkTotal">0</div></div>
+          <div class="pending-kpi"><div class="k">ลูกค้าที่มีค้าง</div><div class="v" id="pendingCustomerCount">0</div></div>
+        </div>
+
+        <div class="pending-table-wrap">
+          <table class="pending-table">
+            <colgroup>
+              <col style="width:90px;">
+              <col style="width:70px;">
+              <col style="width:150px;">
+              <col style="width:125px;">
+              <col style="width:auto;">
+              <col style="width:130px;">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>วันที่</th>
+                <th>OPD</th>
+                <th>ชื่อ</th>
+                <th>ค้างชำระ</th>
+                <th>ค้างทำ</th>
+                <th>หมายเหตุ</th>
+              </tr>
+            </thead>
+            <tbody id="pendingTableBody">
+              <tr><td colspan="6" class="pending-empty">กำลังโหลดข้อมูล...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
-  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <!-- Customer Modal -->
@@ -391,6 +640,14 @@
     <div id="customer-modal-box">
       <button class="close-x" type="button" onclick="closeCustomerModal()" aria-label="ปิด">&times;</button>
       <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Year Compare Modal -->
+  <div id="yearCompareModal" onclick="if(event.target.id==='yearCompareModal') closeYearCompareModal()">
+    <div class="year-compare-box" onclick="event.stopPropagation()">
+      <button class="year-compare-close" type="button" onclick="closeYearCompareModal()" aria-label="ปิด">×</button>
+      <div id="yearCompareContent"></div>
     </div>
   </div>
 
@@ -530,8 +787,51 @@
       return String(s || '').replace(/\s+/g,' ').trim();
     }
 
+    function normalizePhone(s){
+      return String(s || '').replace(/\D/g, '');
+    }
+
+    function normalizeOpdKey(s){
+      const digits = String(s || '').replace(/\D/g, '').trim();
+      if(!digits) return '';
+      const opd = digits.padStart(4, '0');
+      return opd === '0000' ? '' : opd;
+    }
+
     function pad4(s){
-      return String(s || '').replace(/\D/g, '').padStart(4, '0');
+      return normalizeOpdKey(s);
+    }
+
+    function jsString(str){
+      return JSON.stringify(String(str || ''));
+    }
+
+    function safeParseItems(items){
+      if(Array.isArray(items)) return items;
+      if(items == null) return [];
+      if(typeof items === 'string'){
+        const s = items.trim();
+        if(!s) return [];
+        try{
+          const parsed = JSON.parse(s);
+          if(Array.isArray(parsed)) return parsed;
+          if(parsed && typeof parsed === 'object') return [parsed];
+          return [s];
+        }catch{
+          return [s];
+        }
+      }
+      if(typeof items === 'object') return [items];
+      return [String(items)];
+    }
+
+    function customerKeyOf(r){
+      const opd = normalizeOpdKey(r?.opd);
+      if(opd) return `opd:${opd}`;
+
+      const name = normalizeText(r?.name).toLowerCase();
+      const phone = normalizePhone(r?.phone);
+      return `np:${name}|${phone}`;
     }
 
     function recordAmount(r){
@@ -557,6 +857,12 @@
     let rangeStart = null;
     let rangeEnd = null;
     let chartInstance = null;
+    let activeSummaryTab = 'sales';
+    let pendingSummaryRows = [];
+    let pendingSummaryLoaded = false;
+    let pendingSummaryError = '';
+    let customerFirstSeenMap = new Map();
+    let recordsByCustomerKey = new Map();
 
     const isRangeActive = () => !!(rangeStart && rangeEnd);
 
@@ -590,13 +896,14 @@
           return;
         }
 
-        const records = data.map(rec => ({
+        const records = (Array.isArray(data) ? data : []).map(rec => ({
           ...rec,
-          items: typeof rec.items === 'string' ? JSON.parse(rec.items) : (rec.items||[])
+          items: safeParseItems(rec.items)
         }));
 
         saveAllRecords(records);
         await loadCustomerProfiles();
+        await loadPendingSummary(false);
 
         setupMonthState();
         renderView();
@@ -611,19 +918,43 @@
       });
 
     function saveAllRecords(records){
-      allCustomerRecords = records;
+      allCustomerRecords = (records || []).map(rec => ({
+        ...rec,
+        amount: parseCurrency(rec.amount),
+        items: safeParseItems(rec.items)
+      }));
       window.allCustomerRecords = allCustomerRecords;
 
       groupedByMonth = {};
-      records.forEach(rec => {
-        const d = rec.date && /^\d{4}-\d{2}-\d{2}$/.test(rec.date) ? rec.date : null;
+      customerFirstSeenMap = new Map();
+      recordsByCustomerKey = new Map();
+
+      allCustomerRecords.forEach(rec => {
+        const d = rec.date && /^\d{4}-\d{2}-\d{2}/.test(rec.date) ? String(rec.date).slice(0,10) : null;
         if(!d) return;
+
         const month = d.slice(0,7);
-        (groupedByMonth[month] ??= []).push({
+        const normalizedRecord = {
           ...rec,
+          date: d,
           amount: parseCurrency(rec.amount),
-          items: Array.isArray(rec.items) ? rec.items : []
-        });
+          items: safeParseItems(rec.items)
+        };
+
+        (groupedByMonth[month] ??= []).push(normalizedRecord);
+
+        const key = customerKeyOf(normalizedRecord);
+        if(!recordsByCustomerKey.has(key)) recordsByCustomerKey.set(key, []);
+        recordsByCustomerKey.get(key).push(normalizedRecord);
+
+        const first = customerFirstSeenMap.get(key);
+        if(!first || d < first.date){
+          customerFirstSeenMap.set(key, { date: d, month });
+        }
+      });
+
+      recordsByCustomerKey.forEach(list => {
+        list.sort((a,b)=> (b.date || '').localeCompare(a.date || ''));
       });
 
       monthsSorted = Object.keys(groupedByMonth).sort((a,b)=>{
@@ -631,6 +962,17 @@
         const [by, bm] = b.split('-').map(Number);
         return ay === by ? am - bm : ay - by;
       });
+    }
+
+    function isNewCustomerRecord(r){
+      const key = customerKeyOf(r);
+      const first = customerFirstSeenMap.get(key);
+      const rowMonth = String(r?.date || '').slice(0,7);
+      return !!(first && rowMonth && first.month === rowMonth);
+    }
+
+    function getCustomerRecordsByKey(key){
+      return (recordsByCustomerKey.get(key) || []).slice();
     }
 
     function setupMonthState(){
@@ -651,6 +993,191 @@
       }
     }
 
+
+    // ===== Main tabs + Pending Summary =====
+    function switchSummaryTab(tab){
+      activeSummaryTab = tab === 'pending' ? 'pending' : 'sales';
+
+      const salesBtn = document.getElementById('tabBtnSales');
+      const pendingBtn = document.getElementById('tabBtnPending');
+      const salesPanel = document.getElementById('salesTabPanel');
+      const pendingPanel = document.getElementById('pendingTabPanel');
+
+      salesBtn?.classList.toggle('active', activeSummaryTab === 'sales');
+      pendingBtn?.classList.toggle('active', activeSummaryTab === 'pending');
+      salesPanel?.classList.toggle('active', activeSummaryTab === 'sales');
+      pendingPanel?.classList.toggle('active', activeSummaryTab === 'pending');
+
+      if(activeSummaryTab === 'pending'){
+        renderPendingSummary();
+      }
+    }
+    window.switchSummaryTab = switchSummaryTab;
+
+    function normalizePendingWork(v){
+      if(v == null || v === '') return [];
+      if(typeof v === 'string'){
+        try{ v = JSON.parse(v); }catch{ return []; }
+      }
+      if(!Array.isArray(v)) return [];
+      return v.map(x => {
+        if(!x || typeof x !== 'object') return null;
+        const item = normalizeText(x.item || x.name || x.label || x.sub || x.main || '');
+        const qty = Math.max(0, parseInt(x.qty || x.quantity || 0, 10) || 0);
+        const unit = normalizeText(x.unit || 'ครั้ง') || 'ครั้ง';
+        const note = normalizeText(x.note || '');
+        return item && qty > 0 ? { item, qty, unit, note } : null;
+      }).filter(Boolean);
+    }
+
+    function normalizePendingRow(r){
+      const saleDate = String(r.sale_date || r.date || '').slice(0,10);
+      const opd = normalizeOpdKey(r.opd);
+      const pendingWork = normalizePendingWork(r.pending_work);
+      return {
+        id: r.id || '',
+        sale_id: r.sale_id || '',
+        sale_date: saleDate,
+        opd,
+        name: normalizeText(r.name || ''),
+        ar_amount: parseCurrency(r.ar_amount),
+        pending_work: pendingWork,
+        note: normalizeText(r.note || '')
+      };
+    }
+
+    function derivePendingSummaryFromSales(){
+      return (allCustomerRecords || []).map(r => normalizePendingRow({
+        id: '',
+        sale_id: r.id || '',
+        sale_date: r.date,
+        opd: r.opd,
+        name: r.name,
+        ar_amount: r.ar_amount || 0,
+        pending_work: r.pending_work || [],
+        note: r.note || ''
+      })).filter(r => (r.ar_amount || 0) > 0 || (r.pending_work || []).length > 0);
+    }
+
+    async function loadPendingSummary(force){
+      if(pendingSummaryLoaded && !force){
+        renderPendingSummary();
+        return;
+      }
+
+      pendingSummaryError = '';
+      const tbody = document.getElementById('pendingTableBody');
+      if(tbody){
+        tbody.innerHTML = '<tr><td colspan="6" class="pending-empty">กำลังโหลดข้อมูล...</td></tr>';
+      }
+
+      try{
+        const res = await fetch('/api/sale_pending_summary', { credentials:'same-origin' });
+        const data = await res.json().catch(()=> ({}));
+        if(!res.ok || !Array.isArray(data)){
+          throw new Error(data.error || 'โหลดข้อมูลค้างไม่สำเร็จ');
+        }
+        pendingSummaryRows = data.map(normalizePendingRow)
+          .filter(r => (r.ar_amount || 0) > 0 || (r.pending_work || []).length > 0);
+        pendingSummaryLoaded = true;
+      }catch(err){
+        console.warn('loadPendingSummary fallback:', err);
+        pendingSummaryRows = derivePendingSummaryFromSales();
+        pendingSummaryLoaded = true;
+        pendingSummaryError = pendingSummaryRows.length
+          ? 'ใช้ข้อมูลค้างจาก sales_records ชั่วคราว เพราะ API sale_pending_summary ยังโหลดไม่ได้'
+          : (err?.message || 'โหลดข้อมูลค้างไม่สำเร็จ');
+      }
+
+      renderPendingSummary();
+    }
+    window.loadPendingSummary = loadPendingSummary;
+
+    function pendingRangeMatch(row){
+      const range = document.getElementById('pendingRange')?.value || 'all';
+      if(range === 'all') return true;
+      const d = String(row.sale_date || '').slice(0,10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return false;
+      const now = new Date();
+      const y = String(now.getFullYear());
+      const m = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      if(range === 'year') return d.slice(0,4) === y;
+      if(range === 'month') return d.slice(0,7) === m;
+      return true;
+    }
+
+    function pendingSearchMatch(row){
+      const q = (document.getElementById('pendingSearch')?.value || '').trim().toLowerCase();
+      if(!q) return true;
+      const text = [
+        row.opd,
+        row.name,
+        row.note,
+        ...(row.pending_work || []).map(x => `${x.item} ${x.qty} ${x.unit} ${x.note || ''}`)
+      ].join(' ').toLowerCase();
+      return text.includes(q);
+    }
+
+    function pendingWorkHtml(list){
+      if(!list || list.length === 0) return '<span class="muted">-</span>';
+      return `<ul class="pending-work-list">${list.map(x => `
+        <li>
+          <span class="pending-work-name">${esc(x.item)}</span>
+          <span class="pending-work-qty">${Number(x.qty || 0).toLocaleString()} ${esc(x.unit)}</span>
+          ${x.note ? `<span class="pending-note">${esc(x.note)}</span>` : ''}
+        </li>
+      `).join('')}</ul>`;
+    }
+
+    function renderPendingSummary(){
+      const tbody = document.getElementById('pendingTableBody');
+      if(!tbody) return;
+
+      const rows = (pendingSummaryRows || [])
+        .filter(pendingRangeMatch)
+        .filter(pendingSearchMatch)
+        .sort((a,b)=> String(b.sale_date || '').localeCompare(String(a.sale_date || '')) || String(b.sale_id || '').localeCompare(String(a.sale_id || '')));
+
+      const debtRows = rows.filter(r => (r.ar_amount || 0) > 0);
+      const debtTotal = debtRows.reduce((s,r)=> s + (r.ar_amount || 0), 0);
+      const workQtyTotal = rows.reduce((s,r)=> s + (r.pending_work || []).reduce((ss,x)=> ss + (Number(x.qty) || 0), 0), 0);
+      const customerCount = new Set(rows.map(r => r.opd || `name:${r.name}`).filter(Boolean)).size;
+
+      const setText = (id, text) => { const el = document.getElementById(id); if(el) el.textContent = text; };
+      setText('pendingDebtTotal', `${Math.round(debtTotal).toLocaleString()} บาท`);
+      setText('pendingDebtCount', debtRows.length.toLocaleString());
+      setText('pendingWorkTotal', `${workQtyTotal.toLocaleString()} ครั้ง/ชิ้น`);
+      setText('pendingCustomerCount', customerCount.toLocaleString());
+
+      if(rows.length === 0){
+        const msg = pendingSummaryError
+          ? `ไม่พบรายการค้างในช่วงนี้ (${esc(pendingSummaryError)})`
+          : 'ไม่พบรายการค้างในช่วงนี้';
+        tbody.innerHTML = `<tr><td colspan="6" class="pending-empty">${msg}</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = rows.map(r => {
+        const key = r.opd ? `opd:${r.opd}` : customerKeyOf(r);
+        const debt = (r.ar_amount || 0) > 0
+          ? `<span class="pending-money">${Math.round(r.ar_amount).toLocaleString()} บาท</span>`
+          : '<span class="muted">-</span>';
+        return `
+          <tr>
+            <td>${esc(formatDate(r.sale_date))}</td>
+            <td>${esc(r.opd || '-')}</td>
+            <td><span class="pending-name" onclick="openCustomerModal(${jsString(key)})">${esc(r.name || '-')}</span></td>
+            <td>${debt}</td>
+            <td class="pending-work-cell">${pendingWorkHtml(r.pending_work)}</td>
+            <td>${r.note ? esc(r.note) : '<span class="muted">-</span>'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('pendingSearch')?.addEventListener('input', debounce(renderPendingSummary, 150));
+    document.getElementById('pendingRange')?.addEventListener('change', renderPendingSummary);
+
     // ===== Rendering =====
     function renderView(){
       if (isRangeActive()) renderSelectedRange();
@@ -669,6 +1196,7 @@
     }
 
     function renderSelectedRange(){
+      destroyChart();
       const reviewSection = document.getElementById('reviewSection');
       reviewSection.innerHTML = '';
 
@@ -706,7 +1234,7 @@
         const tr=document.createElement('tr');
         tr.className='day-header';
         const td=document.createElement('td');
-        td.colSpan=5;
+        td.colSpan=4;
         td.textContent=`📅 วันที่ ${dateStr}`;
         tr.appendChild(td);
         tbody.appendChild(tr);
@@ -716,7 +1244,7 @@
         const tr=document.createElement('tr');
         tr.className='day-total';
         const td=document.createElement('td');
-        td.colSpan=5;
+        td.colSpan=4;
         td.innerHTML=`รวมยอด ${dailyTotal.toLocaleString()} บาท`;
         tr.appendChild(td);
         tbody.appendChild(tr);
@@ -780,7 +1308,181 @@
       }
     }
 
+    function monthKeyOffset(monthKey, yearDelta){
+      const [yy, mm] = String(monthKey || '').split('-').map(n => parseInt(n, 10));
+      if(!yy || !mm) return '';
+      return `${yy + yearDelta}-${String(mm).padStart(2,'0')}`;
+    }
+
+    function getMonthRecords(monthKey){
+      return (groupedByMonth[monthKey] || []).slice();
+    }
+
+    function getMonthTotal(monthKey){
+      return getMonthRecords(monthKey).reduce((sum, r) => sum + parseCurrency(r.amount), 0);
+    }
+
+    function getMonthToDayTotal(monthKey, limitDay){
+      return getMonthRecords(monthKey)
+        .filter(r => {
+          const day = parseInt(String(r.date || '').split('-')[2] || '0', 10) || 0;
+          return day > 0 && day <= limitDay;
+        })
+        .reduce((sum, r) => sum + parseCurrency(r.amount), 0);
+    }
+
+    function buildDailyTotals(monthKey){
+      const out = {};
+      getMonthRecords(monthKey).forEach(r => {
+        const day = parseInt(String(r.date || '').split('-')[2] || '0', 10) || 0;
+        if(!day) return;
+        out[day] = (out[day] || 0) + parseCurrency(r.amount);
+      });
+      return out;
+    }
+
+    function customerCountForMonth(monthKey){
+      const set = new Set();
+      getMonthRecords(monthKey).forEach(r => set.add(customerKeyOf(r)));
+      return set.size;
+    }
+
+    function customerCountForMonthToDay(monthKey, limitDay){
+      const set = new Set();
+      getMonthRecords(monthKey).forEach(r => {
+        const day = parseInt(String(r.date || '').split('-')[2] || '0', 10) || 0;
+        if(day > 0 && day <= limitDay) set.add(customerKeyOf(r));
+      });
+      return set.size;
+    }
+
+    function formatDiffBaht(diff){
+      if(diff > 0) return `+${diff.toLocaleString()} บาท`;
+      if(diff < 0) return `-${Math.abs(diff).toLocaleString()} บาท`;
+      return 'เท่ากัน';
+    }
+
+    function diffClass(diff){
+      return diff > 0 ? 'good' : diff < 0 ? 'bad' : 'neutral';
+    }
+
+    function diffTextClass(diff){
+      return diff > 0 ? 'year-compare-good' : diff < 0 ? 'year-compare-bad' : 'year-compare-neutral';
+    }
+
+    function percentText(current, base){
+      if(!base) return '-';
+      const pct = ((current - base) / base) * 100;
+      const sign = pct > 0 ? '+' : '';
+      return `${sign}${pct.toFixed(1)}%`;
+    }
+
+    function openYearCompareModal(monthKey){
+      const prevYearMonth = monthKeyOffset(monthKey, -1);
+      const currentRecords = getMonthRecords(monthKey);
+      const prevRecords = getMonthRecords(prevYearMonth);
+      const box = document.getElementById('yearCompareContent');
+      const modal = document.getElementById('yearCompareModal');
+      if(!box || !modal) return;
+
+      if(!currentRecords.length){
+        box.innerHTML = '<div class="year-compare-title">ไม่พบข้อมูลเดือนนี้</div>';
+        modal.style.display = 'flex';
+        return;
+      }
+
+      const [yy, mm] = String(monthKey).split('-').map(Number);
+      const currentLimit = daysToCompareForMonth(yy, mm);
+      const prevLimit = Math.min(currentLimit, daysInMonth(yy - 1, mm));
+      const currentPeriod = getMonthToDayTotal(monthKey, currentLimit);
+      const prevPeriod = getMonthToDayTotal(prevYearMonth, prevLimit);
+      const diffPeriod = currentPeriod - prevPeriod;
+      const currentCustomers = customerCountForMonthToDay(monthKey, currentLimit);
+      const prevCustomers = customerCountForMonthToDay(prevYearMonth, prevLimit);
+
+      const currentDaily = buildDailyTotals(monthKey);
+      const prevDaily = buildDailyTotals(prevYearMonth);
+      const maxDay = Math.max(currentLimit, prevLimit);
+      const rows = [];
+      for(let day = 1; day <= maxDay; day++){
+        const cur = day <= currentLimit ? (currentDaily[day] || 0) : 0;
+        const old = day <= prevLimit ? (prevDaily[day] || 0) : 0;
+        if(cur === 0 && old === 0) continue;
+        const diff = cur - old;
+        rows.push(`
+          <tr>
+            <td>${day}</td>
+            <td>${cur.toLocaleString()}</td>
+            <td>${old.toLocaleString()}</td>
+            <td class="${diffTextClass(diff)}">${formatDiffBaht(diff)}</td>
+          </tr>
+        `);
+      }
+
+      box.innerHTML = `
+        <div class="year-compare-title">เทียบ ${monthLabel(monthKey)} กับ ${monthLabel(prevYearMonth)}</div>
+        <div class="year-compare-sub">คำนวณเฉพาะช่วงวันที่ 1-${currentLimit} เทียบกับปีก่อนช่วงวันที่ 1-${prevLimit} เพื่อไม่เอายอดเต็มเดือนของปีก่อนมาปนกับเดือนที่ยังไม่จบ</div>
+
+        <div class="year-compare-cards">
+          <div class="year-compare-card">
+            <div class="label">ยอด ${monthLabel(monthKey)} วันที่ 1-${currentLimit}</div>
+            <div class="value">${currentPeriod.toLocaleString()} บาท</div>
+          </div>
+          <div class="year-compare-card">
+            <div class="label">ยอด ${monthLabel(prevYearMonth)} วันที่ 1-${prevLimit}</div>
+            <div class="value">${prevPeriod.toLocaleString()} บาท</div>
+          </div>
+          <div class="year-compare-card diff ${diffClass(diffPeriod)}">
+            <div class="label">ส่วนต่างช่วงวันเดียวกัน</div>
+            <div class="value">${formatDiffBaht(diffPeriod)}</div>
+            <div style="font-size:11px;color:#64748b;margin-top:4px;">${percentText(currentPeriod, prevPeriod)}</div>
+          </div>
+        </div>
+
+        <div class="year-compare-cards" style="margin-top:10px;">
+          <div class="year-compare-card">
+            <div class="label">จำนวนลูกค้าช่วงนี้</div>
+            <div class="value">${currentCustomers.toLocaleString()} คน</div>
+          </div>
+          <div class="year-compare-card">
+            <div class="label">จำนวนลูกค้าปีก่อนช่วงเดียวกัน</div>
+            <div class="value">${prevCustomers.toLocaleString()} คน</div>
+          </div>
+          <div class="year-compare-card diff ${diffClass(currentCustomers - prevCustomers)}">
+            <div class="label">ส่วนต่างจำนวนลูกค้า</div>
+            <div class="value">${currentCustomers - prevCustomers > 0 ? '+' : ''}${(currentCustomers - prevCustomers).toLocaleString()} คน</div>
+          </div>
+        </div>
+
+        <div class="year-compare-table-wrap">
+          <table class="year-compare-table">
+            <thead>
+              <tr>
+                <th>วันที่</th>
+                <th>${monthLabel(monthKey)}</th>
+                <th>${monthLabel(prevYearMonth)}</th>
+                <th>ส่วนต่าง</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.length ? rows.join('') : '<tr><td colspan="4" style="text-align:center;color:#64748b;">ไม่มีข้อมูลรายวันให้เทียบ</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      modal.style.display = 'flex';
+    }
+
+    function closeYearCompareModal(){
+      const modal = document.getElementById('yearCompareModal');
+      if(modal) modal.style.display = 'none';
+    }
+    window.openYearCompareModal = openYearCompareModal;
+    window.closeYearCompareModal = closeYearCompareModal;
+
     function renderSelectedMonth(){
+      destroyChart();
       const reviewSection = document.getElementById('reviewSection');
       reviewSection.innerHTML = '';
 
@@ -826,6 +1528,29 @@
         : diff<0
           ? `📉 น้อยกว่าเดือนก่อน <span style="color:red;font-weight:bold;">${diff.toLocaleString()}</span> บาท (เทียบวันที่ 1-${limitDayCurr})`
           : `📊 เท่ากับเดือนก่อนหน้า`;
+
+      const prevYearMonth = monthKeyOffset(selectedMonth, -1);
+      const prevYearRecs = groupedByMonth[prevYearMonth] || [];
+      const limitDayPrevYear = Math.min(limitDayCurr, daysInMonth(y - 1, m));
+      const prevYearToDateTotal = getMonthToDayTotal(prevYearMonth, limitDayPrevYear);
+      const yearDiff = currToDateTotal - prevYearToDateTotal;
+
+      const yearCompareLine = document.createElement('div');
+      if(prevYearRecs.length){
+        yearCompareLine.className = 'year-compare-trigger';
+        yearCompareLine.innerHTML = yearDiff > 0
+          ? `📅 เทียบเดือนเดียวกันปีที่แล้ว <span style="color:green;font-weight:bold;">+${yearDiff.toLocaleString()}</span> บาท (กดดู)`
+          : yearDiff < 0
+            ? `📅 เทียบเดือนเดียวกันปีที่แล้ว <span style="color:red;font-weight:bold;">-${Math.abs(yearDiff).toLocaleString()}</span> บาท (กดดู)`
+            : `📅 เทียบเดือนเดียวกันปีที่แล้ว ยอดเท่ากัน (กดดู)`;
+        yearCompareLine.onclick = () => openYearCompareModal(selectedMonth);
+      }else{
+        yearCompareLine.className = 'year-compare-trigger muted';
+        yearCompareLine.textContent = `📅 ยังไม่มีข้อมูล ${monthLabel(prevYearMonth)} สำหรับเทียบปีที่แล้ว`;
+      }
+
+      compareDiv.appendChild(document.createElement('br'));
+      compareDiv.appendChild(yearCompareLine);
       reviewSection.appendChild(compareDiv);
 
       const tableWrapper = document.createElement('div');
@@ -845,7 +1570,7 @@
         const tr=document.createElement('tr');
         tr.className='day-header';
         const td=document.createElement('td');
-        td.colSpan=5;
+        td.colSpan=4;
         td.textContent=`📅 วันที่ ${dateStr}`;
         tr.appendChild(td);
         tbody.appendChild(tr);
@@ -855,7 +1580,7 @@
         const tr=document.createElement('tr');
         tr.className='day-total';
         const td=document.createElement('td');
-        td.colSpan=5;
+        td.colSpan=4;
         td.innerHTML=`รวมยอด ${dailyTotal.toLocaleString()} บาท`;
         tr.appendChild(td);
         tbody.appendChild(tr);
@@ -924,33 +1649,31 @@
       tr.appendChild(tdIndex);
 
       const tdName = document.createElement('td');
+      const customerKey = customerKeyOf(r);
+      const opdDisplay = normalizeOpdKey(r.opd) || '-';
+      const isNew = isNewCustomerRecord(r);
       tdName.innerHTML = `
         <div>
-          <strong class="open-customer"
-            style="cursor:pointer;color:#008080;"
-            data-key="${encodeURIComponent((r.name||'')+'|'+(r.phone||''))}">
-            ${escapeHtml(r.name||'')}
-          </strong>
-          <div style="font-size:10px;color:#777;">${escapeHtml(r.opd||'-')}</div>
+          <div class="customer-name-line">
+            <strong class="open-customer"
+              style="cursor:pointer;color:#008080;"
+              data-key="${encodeURIComponent(customerKey)}">
+              ${escapeHtml(r.name || '')}
+            </strong>
+            ${isNew ? '<span class="new-customer-badge">ลูกค้าใหม่</span>' : ''}
+          </div>
+          <div class="customer-opd-line">${escapeHtml(opdDisplay)}</div>
         </div>`;
       tr.appendChild(tdName);
 
-      const tdPhone = document.createElement('td');
-      const phoneSafe = escapeAttr(r.phone || '');
-      tdPhone.innerHTML = `<span style="cursor:pointer;color:#0288d1;"
-        onclick="if(this.dataset.showing==='true'){this.innerText='📞';this.dataset.showing='false';}else{this.innerText='${phoneSafe}';this.dataset.showing='true';}"
-        oncontextmenu="navigator.clipboard?.writeText('${phoneSafe}'); event.preventDefault(); this.title='คัดลอกแล้ว';"
-        title="คลิกเพื่อแสดง/ซ่อน, คลิกขวาเพื่อคัดลอก"
-        data-showing='false'>📞</span>`;
-      tr.appendChild(tdPhone);
-
       const itemsUl = (r.items||[]).map(item=>{
-        const m = String(item).match(/^(.*?) ?(?:\((.*?)\))? - (\d+) ชิ้น/);
+        const text = typeof item === 'string' ? item : _itemObjToText(item);
+        const m = String(text).match(/^(.*?) ?(?:\((.*?)\))? - (\d+) ชิ้น/);
         if(m){
           const main=m[1], sub=m[2], qty=m[3];
           return `<li>${sub ? `${escapeHtml(main)} (${escapeHtml(sub)})` : escapeHtml(main)} - ${qty} ชิ้น</li>`;
         }
-        return `<li>${escapeHtml(item)}</li>`;
+        return `<li>${escapeHtml(text)}</li>`;
       }).join('');
 
       const tdItems = document.createElement('td');
@@ -969,6 +1692,21 @@
       tr.appendChild(tdAmt);
 
       return tr;
+    }
+
+    function _itemObjToText(x){
+      if(x == null) return '';
+      if(typeof x === 'string') return x;
+      if(typeof x === 'object'){
+        const name = x.name || x.product || x.title || '';
+        const category = x.category || x.group || '';
+        const qty = x.qty || x.quantity || x.count || 1;
+        const price = x.price || x.unit_price || x.default_price || '';
+        const base = category && name ? `${category} (${name})` : (name || category || '');
+        if(!base) return JSON.stringify(x);
+        return price !== '' ? `${base} - ${qty} ชิ้น x ${price}` : `${base} - ${qty} ชิ้น`;
+      }
+      return String(x);
     }
 
     // ===== Month Nav =====
@@ -1278,23 +2016,23 @@
     });
 
     function openCustomerModal(key){
-      const [name, phone = ''] = String(key).split('|');
-      const norm = s => (s || '').trim().toLowerCase();
-
-      const records = (window.allCustomerRecords || []).filter(r =>
-        norm(r.name) === norm(name) &&
-        norm(r.phone || '') === norm(phone)
-      );
+      const customerKey = String(key || '');
+      const records = getCustomerRecordsByKey(customerKey).slice();
 
       if(!records.length){
         alert('ไม่พบข้อมูลการซื้อของลูกค้าคนนี้');
         return;
       }
 
-      records.sort((a,b)=> (b.date || '').localeCompare(a.date || ''));
+      records.sort((a,b)=> String(b.date || '').localeCompare(String(a.date || '')));
 
-      const first = records[0];
-      const opd4 = pad4(first.opd);
+      const first = records[0] || {};
+      const opd4 = normalizeOpdKey(first.opd) || '-';
+      const salesInfo = {
+        name: first.name || '-',
+        phone: first.phone || '-',
+        opd: opd4
+      };
 
       const profileData = (window.customerProfileMap || {})[opd4] || {};
       const fallbackPic =
@@ -1302,42 +2040,82 @@
 
       const hasProfilePic = !!(profileData.profile_pic_url && String(profileData.profile_pic_url).trim());
       const profilePic = hasProfilePic ? profileData.profile_pic_url : fallbackPic;
+      const profilePicForAttr = escapeAttr(profilePic);
+      const opdForAttr = escapeAttr(opd4 || '');
 
       const vipBadge = profileData.vip ? `<span class="badge-vip">VIP: ${esc(profileData.vip)}</span>` : '';
-      const realName = profileData.full_name || first.name || '';
+      const realName = profileData.full_name || salesInfo.name;
 
       const lastDateStr = (records[0].date || '').slice(0,10);
       const today = new Date();
-      const lastDate = new Date(lastDateStr);
+      const lastDate = new Date(lastDateStr + 'T00:00:00');
       const daysAbsent = isNaN(lastDate) ? 0 : Math.floor((today - lastDate) / (1000*60*60*24));
-
+      const totalVisits = records.length;
       const paidRecords = records.filter(r => recordAmount(r) > 0);
       const paidVisits = paidRecords.length;
       const totalAmount = paidRecords.reduce((s,r)=> s + recordAmount(r), 0);
-      const average = paidVisits ? Math.round(totalAmount / paidVisits) : 0;
+      const average = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
+
+      function itemTextForModal(item){
+        return typeof item === 'string' ? item : _itemObjToText(item);
+      }
+
+      function itemNameForModal(item){
+        const text = itemTextForModal(item);
+        const m = String(text).match(/\((.*?)\)/);
+        return (m ? m[1] : String(text).split(' - ')[0]).trim() || '-';
+      }
+
+      function itemQtyForModal(item){
+        const text = itemTextForModal(item);
+        const q = String(text).match(/-\s*(\d+)\s*ชิ้น/);
+        return q ? parseInt(q[1], 10) : 1;
+      }
 
       const allItems = {};
       records.forEach(r=>{
         (r.items || []).forEach(item=>{
-          const m = String(item).match(/\((.*?)\)/);
-          const itemName = m ? m[1] : String(item).split(' - ')[0];
-          const q = String(item).match(/- (\d+)\s*ชิ้น/);
-          const qty = q ? parseInt(q[1],10) : 1;
+          const itemName = itemNameForModal(item);
+          const qty = itemQtyForModal(item);
           allItems[itemName] = (allItems[itemName] || 0) + qty;
         });
       });
 
-      const itemSummary = Object.entries(allItems)
-        .sort((a,b)=> b[1]-a[1])
-        .map(([n,q])=> `• ${esc(n)} : ${q}`)
-        .join('<br>') || '-';
+      const categoryMap = {
+        "โบทอค": ["Aestox 50 u", "Aestox 100 u", "Allergan 50 u", "Allergan 100 u", "เฉพาะจุด", "แบ่งไว้แล้ว", "Nabota"],
+        "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q ระบุสีด้วย", "E.P.T.Q", "Restylane ระบุสีด้วย", "Restylane", "Ex-Filler"],
+        "Fat/Hifu": ["Bromi", "Sisi", "HIFU", "HIFU แถม"],
+        "งานผิว": ["Meso Chanel", "P - Cell", "Aquatic", "Hestina", "Exosome", "Rejuran", "Belotero Revive", "Sculptra", "Juvelook", "Aesthefill", "PRP", "Mesowink", "สะกิดหน้าใส", "Alphaarbutin", "Transamine", "Biocollagen"],
+        "ดริปผิว": ["Snow White", "Super Aurawhite", "Vitamin Mix", "Brain Booster", "Energy Booster"],
+        "ทรีทเม้นท์": ["ทรีทเมนต์หน้าใส", "ทรีทเมนต์สิว", "ทรีทเมนต์ฝ้า", "ผลักวิตามิน", "ปั่น RF", "กดสิว", "subcisionสิว"],
+        "อื่นๆ": ["ยาฉีดสลายฝ้า", "ครีมทาฝ้า", "ยาทานฝ้า", "ไหมลิฟท์กรอบหน้า", "ไหม PDO", "ไหม Collagen", "จ่ายเงิน/จองสินค้า", "สลายฟิลเลอร์", "PRPผม", "จี้ไฝ"],
+        "โปรโมชั่น/อีเว้นพิเศษ": []
+      };
+
+      const categorizedItems = {};
+      for (const [cat, names] of Object.entries(categoryMap)) {
+        names.forEach(n => {
+          if (allItems[n]) {
+            (categorizedItems[cat] ||= []).push(`${esc(n)} : ${allItems[n]}`);
+            delete allItems[n];
+          }
+        });
+      }
+      if (Object.keys(allItems).length) {
+        (categorizedItems["อื่นๆ"] ||= []).push(...Object.entries(allItems).map(([n,q]) => `${esc(n)} : ${q}`));
+      }
+
+      const itemSummary = Object.entries(categorizedItems)
+        .map(([cat, items]) => `
+          <div style="margin-bottom:4px;">
+            <strong>${esc(cat)}</strong>: ${items.join(" | ")}
+          </div>
+        `).join('') || '-';
 
       const historyHtml = records.map(r=>{
         const items = (r.items || []).map(item=>{
-          const m = String(item).match(/\((.*?)\)/);
-          const itemName = m ? m[1] : String(item).split(' - ')[0];
-          const q = String(item).match(/- (\d+)\s*ชิ้น/);
-          const qty = q ? parseInt(q[1],10) : 1;
+          const itemName = itemNameForModal(item);
+          const qty = itemQtyForModal(item);
           return `<li>${esc(itemName)} : ${qty}</li>`;
         }).join('');
 
@@ -1348,7 +2126,7 @@
         return `
           <div style="margin-bottom:14px;">
             <div style="font-weight:600; font-size:12px;">📅 ${formatDate((r.date || '').slice(0,10))}</div>
-            <ul style="padding-left:16px; margin:0; font-size:11px;">${items}</ul>
+            <ul style="padding-left:16px; margin:0; font-size:11px;">${items || '<li>-</li>'}</ul>
             <div style="margin-top:4px; color:#0a645a; font-size:11px;">💵 ${Math.round(recordAmount(r)).toLocaleString()} บาท</div>
             ${noteText}
             <hr style="margin:8px auto; border:0; border-top:1px dashed #ddd; width:60%;">
@@ -1356,23 +2134,25 @@
         `;
       }).join('');
 
+      const daysAbsentText = `<span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span>`;
+
       document.getElementById("modal-content").innerHTML = `
         <div class="profile-header">
-          <div class="profile-img-box" onclick="openImgViewer('${profilePic}')">
-            <img id="modalProfileImg" src="${profilePic}" alt="Profile">
+          <div class="profile-img-box" onclick="openImgViewer('${profilePicForAttr}')">
+            <img id="modalProfileImg" src="${profilePicForAttr}" alt="Profile">
           </div>
 
           <div class="profile-info">
             <h3>${esc(realName)}</h3>
             <div class="profile-badges">
-              <span class="badge">OPD: ${esc(opd4)}</span>
+              <span class="badge">OPD: ${esc(salesInfo.opd)}</span>
               ${vipBadge}
             </div>
-            <div style="font-size:12px; margin-top:4px; color:#555;">📞 ${esc(first.phone || '-')}</div>
+            <div style="font-size:12px; margin-top:4px; color:#555;">📞 ${esc(salesInfo.phone)}</div>
 
             <div class="profile-actions">
-              <button class="btn-mini" type="button" onclick="pickProfileImage('${esc(opd4)}')">📷 เปลี่ยนรูป</button>
-              <button class="btn-mini secondary" type="button" onclick="openImgViewer('${profilePic}')">🔍 ดูรูปใหญ่</button>
+              <button class="btn-mini" type="button" onclick="pickProfileImage('${opdForAttr}')">📷 เปลี่ยนรูป</button>
+              <button class="btn-mini secondary" type="button" onclick="openImgViewer(document.getElementById('modalProfileImg')?.src || '${profilePicForAttr}')">🔍 ดูรูปใหญ่</button>
             </div>
           </div>
         </div>
@@ -1380,8 +2160,8 @@
         <div class="profile-summary-grid">
           <div class="profile-summary-box total">💰 ยอดรวม: <strong>${Math.round(totalAmount).toLocaleString()}</strong></div>
           <div class="profile-summary-box avg">💳 เฉลี่ย: <strong>${average.toLocaleString()}</strong></div>
-          <div class="profile-summary-box visits">🔁 มาใช้บริการ: <strong>${records.length}</strong> ครั้ง</div>
-          <div class="profile-summary-box last">📅 ล่าสุด: ${formatDate(lastDateStr)}<br><span style="color:red;">(ไม่ได้มาแล้ว: ${daysAbsent} วัน)</span></div>
+          <div class="profile-summary-box visits">🔁 มาใช้บริการ: <strong>${totalVisits}</strong> ครั้ง</div>
+          <div class="profile-summary-box last">📅 ล่าสุด: ${formatDate(lastDateStr)}<br>${daysAbsentText}</div>
         </div>
 
         <hr style="margin:14px 0; border:0; border-top:1px solid #ccc;">
@@ -1721,6 +2501,7 @@
         closeCustomerModal();
         closeMonthModal();
         closePdfMonthModal();
+        closeYearCompareModal();
         closeImgViewer();
       }
     });
@@ -1730,6 +2511,7 @@
     window.closeMonthModal = closeMonthModal;
     window.confirmMonthModal = confirmMonthModal;
     window.closePdfMonthModal = closePdfMonthModal;
+    window.closeYearCompareModal = closeYearCompareModal;
   });
   </script>
 </body>

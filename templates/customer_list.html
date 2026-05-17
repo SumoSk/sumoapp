@@ -177,8 +177,9 @@
 
     /* Tables */
     .table-card{padding:0}
-    .table-wrap{padding:14px}
+    .table-wrap{padding:14px;overflow:auto}
     table{width:100%;border-collapse:separate;border-spacing:0;background:#fff}
+    #finalCustTable{min-width:760px}
     th,td{border-bottom:1px solid var(--line);padding:10px 10px;font-size:12px;vertical-align:top}
     thead th{
       position:sticky; top:0; z-index: 5;
@@ -321,13 +322,7 @@
     .sub-muted { font-size: 8px; }
     .chip { font-size: 10px; }
     .ipt { font-size: 10px; }
-    #finalCustTable th:nth-child(12),
-    #finalCustTable td:nth-child(12) {
-      font-size: 8px;
-      line-height: 1.25;
-      color: #334155;
-      white-space: normal;
-    }
+    /* ตารางรายชื่อถูกลดคอลัมน์ให้เหมาะกับมือถือ จึงไม่มีช่องแก้ Profile inline แล้ว */
   </style>
 </head>
 
@@ -337,9 +332,9 @@
     <!-- TOP BAR -->
     <div class="topbar">
       <div class="brand">
-        <p class="title">Customer Insight Dashboard</p>
+        <p class="title">วิเคราะห์ลูกค้า</p>
         <div class="sub">
-          มุมมองสรุป RFM, ABC, Recency, Spend Bands และรายชื่อลูกค้าในช่วงที่เลือก
+          ดูภาพรวมลูกค้า คัดกลุ่มลูกค้า และเปิดประวัติจากยอดขายในช่วงที่เลือก
         </div>
       </div>
       <div class="actions">
@@ -410,14 +405,14 @@
                 <span class="chip" data-range="abs:0-30">0–30</span>
                 <span class="chip" data-range="abs:31-60">31–60</span>
                 <span class="chip" data-range="abs:61-90">61–90</span>
-                <span class="chip" data-range="abs:90-180">90–180</span>
+                <span class="chip" data-range="abs:91-180">91–180</span>
                 <span class="chip" data-range="abs:181-365">181–365</span>
                 <span class="chip" data-range="abs:365+">1 ปี+</span>
               </div>
 
               <div style="margin-top:12px">
-                <label>ค้นหาในตาราง (ชื่อ/OPD)</label>
-                <input type="text" id="qSearch" class="ipt" placeholder="พิมพ์คำเพื่อกรองตารางที่แสดง">
+                <label>ค้นหาลูกค้า (ชื่อ/OPD)</label>
+                <input type="text" id="qSearch" class="ipt" placeholder="พิมพ์ชื่อหรือ OPD เพื่อกรองข้อมูลจริง">
               </div>
 
               <div id="appliedBanner" class="applied-banner"></div>
@@ -493,7 +488,7 @@
         <div class="split2">
           <div class="card table-card">
             <div class="hd">
-              <p class="h1">RFM Segments</p>
+              <p class="h1">กลุ่มลูกค้า</p>
               <div class="hint sub-muted">คลิก 👁 เพื่อดูรายชื่อ</div>
             </div>
             <div class="table-wrap">
@@ -510,8 +505,8 @@
 
           <div class="card table-card">
             <div class="hd">
-              <p class="h1">ABC / Pareto</p>
-              <div class="hint sub-muted">A = รายได้หลัก</div>
+              <p class="h1">ลูกค้าทำยอดสูง</p>
+              <div class="hint sub-muted">A = กลุ่มทำยอดหลัก</div>
             </div>
             <div class="table-wrap">
               <table id="abcTable">
@@ -528,8 +523,8 @@
         <div class="split2">
           <div class="card table-card">
             <div class="hd">
-              <p class="h1">Recency Distribution</p>
-              <div class="hint sub-muted">ความห่างการมาล่าสุด</div>
+              <p class="h1">ไม่ได้มานาน</p>
+              <div class="hint sub-muted">จำนวนวันที่ไม่ได้มา</div>
             </div>
             <div class="table-wrap">
               <table id="recencyTable">
@@ -545,8 +540,8 @@
 
           <div class="card table-card">
             <div class="hd">
-              <p class="h1">Spend Bands</p>
-              <div class="hint sub-muted">ช่วง AOV ต่อบิล</div>
+              <p class="h1">ช่วงยอดเฉลี่ย/บิล</p>
+              <div class="hint sub-muted">แบ่งตามยอดเฉลี่ยต่อบิล</div>
             </div>
             <div class="table-wrap">
               <table id="spendBandTable">
@@ -564,7 +559,7 @@
         <div class="card table-card" id="finalSection">
           <div class="hd">
             <p class="h1">รายชื่อลูกค้า</p>
-            <div class="hint sub-muted">คลิกหัวตารางเพื่อจัดเรียง | คลิกชื่อเพื่อดูรายละเอียด</div>
+            <div class="hint sub-muted">คลิกหัวตารางเพื่อจัดเรียง | คลิกชื่อ/ปุ่มดู เพื่อเปิดประวัติ</div>
           </div>
           <div class="table-wrap">
             <table id="finalCustTable">
@@ -574,15 +569,12 @@
                   <th data-sort="str">OPD</th>
                   <th data-sort="str">ชื่อ</th>
                   <th data-sort="num">จำนวนครั้ง</th>
-                  <th data-sort="num">เฉลี่ย/บิล</th>
                   <th data-sort="num">ยอดรวม</th>
-                  <th data-sort="num">บิลเดี่ยวสูงสุด</th>
+                  <th data-sort="num">เฉลี่ย/บิล</th>
                   <th data-sort="num">ไม่ได้มา (วัน)</th>
-                  <th data-sort="str">RFM</th>
-                  <th data-sort="str">ABC</th>
-                  <th data-sort="num">Pitch ล่าสุด (วัน)</th>
-                  <th data-sort="str">Outcome ล่าสุด</th>
-                  <th data-sort="str">Profile</th>
+                  <th data-sort="str">กลุ่ม</th>
+                  <th data-sort="num">Pitch ล่าสุด</th>
+                  <th>ดู</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -663,7 +655,9 @@
       abcByKey: new Map(),
 
       finalRows: [],
-      finalSort: {col:6, dir:-1},
+      tableSearch: '',
+      searchTimer: null,
+      finalSort: {col:4, dir:-1},
       lastHydrateToken: 0,
     };
 
@@ -683,7 +677,12 @@
       setTimeout(()=>{ t.remove(); }, ms);
     }
 
-    const pad4 = s => String(s||'').replace(/\D/g,'').padStart(4,'0');
+    function normalizeOPD(v){
+      const s = String(v || '').replace(/\D/g, '');
+      if(!s) return '';
+      return s.padStart(4, '0').slice(-4);
+    }
+    const pad4 = normalizeOPD;
     const esc = v => (v==null?'':String(v)).replace(/[&<>\"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\'':'&#39;'}[m]));
     const onlyDigits = s => String(s||'').replace(/\D/g,'');
     const normPhone = s => { let d=onlyDigits(s); if(d.startsWith('66') && d.length>=11) d='0'+d.slice(-9); return d; };
@@ -711,10 +710,52 @@
     };
     const varGold = () => '#b8860b';
 
+    function normalizeItemsArray(raw){
+      if(Array.isArray(raw)) return raw;
+      if(raw == null) return [];
+      if(typeof raw === 'string'){
+        const t = raw.trim();
+        if(!t) return [];
+        try{
+          const parsed = JSON.parse(t);
+          return Array.isArray(parsed) ? parsed : [];
+        }catch(e){
+          return [t];
+        }
+      }
+      return [];
+    }
+
+    function parseSaleItem(item){
+      if(item && typeof item === 'object'){
+        const label = String(item.label || item.name || item.item || '').trim();
+        const qty = Math.max(1, Math.floor(Number(item.qty || item.quantity || 1) || 1));
+        const price = Math.max(0, Math.floor(Number(item.price || item.unit_price || 0) || 0));
+        const m = label.match(/^(.*?) ?(?:\((.*?)\))?$/);
+        const main = (m?.[1] || label).trim();
+        const sub = (m?.[2] || '').trim();
+        const display = sub ? sub : main;
+        return { raw:item, label, main, sub, display, qty, price };
+      }
+      const line = String(item || '').trim();
+      const m = line.match(/^(.*?) ?(?:\((.*?)\))? - (\d+(?:\.\d+)?) ชิ้น x (\d+(?:\.\d+)?) บาท/);
+      if(m){
+        const main = (m[1] || '').trim();
+        const sub = (m[2] || '').trim();
+        const qty = Math.max(1, Math.floor(Number(m[3] || 1) || 1));
+        const price = Math.max(0, Math.floor(Number(m[4] || 0) || 0));
+        return { raw:item, label: sub ? `${main} (${sub})` : main, main, sub, display: sub || main, qty, price };
+      }
+      const plain = line.split(' - ')[0].trim();
+      const m2 = plain.match(/^(.*?) ?\((.*?)\)$/);
+      const main = (m2?.[1] || plain).trim();
+      const sub = (m2?.[2] || '').trim();
+      return { raw:item, label: plain, main, sub, display: sub || main || plain, qty:1, price:0 };
+    }
+
     function parseItemNames(s){
-      const m = String(s).match(/^(.*?) ?(?:\((.*?)\))? - /);
-      if(!m) return {main:String(s).split(' - ')[0].trim(), sub:''};
-      return {main:(m[1]||'').trim(), sub:(m[2]||'').trim()};
+      const it = parseSaleItem(s);
+      return { main: it.main || '', sub: it.sub || '' };
     }
     function keyForCustomer(rec){
       const opd = pad4(rec.opd||'');
@@ -722,13 +763,20 @@
       return 'NP:'+ (rec.name||'').trim().toLowerCase() + '|' + normPhone(rec.phone||'');
     }
     function keyNamePhone(v){ return `${v.name}|${v.phone||''}`; }
+    function modalKeyForCustomer(v){
+      if(v?.key) return v.key;
+      const opd = pad4(v?.opd || '');
+      if(/^\d{4}$/.test(opd) && opd !== '0000') return 'OPD:' + opd;
+      return keyNamePhone(v || {});
+    }
 
     function recordAmount(r){
       const a = parseFloat(r.amount);
       if(!isNaN(a)) return a;
-      let sum=0; (r.items||[]).forEach(s=>{
-        const m = String(s).match(/ - (\d+(?:\.\d+)?) ชิ้น x (\d+(?:\.\d+)?) บาท$/);
-        if(m){ sum += parseFloat(m[1])*parseFloat(m[2]); }
+      let sum=0;
+      normalizeItemsArray(r.items).forEach(item=>{
+        const it = parseSaleItem(item);
+        sum += (Number(it.qty)||0) * (Number(it.price)||0);
       });
       return sum;
     }
@@ -758,7 +806,9 @@
       state.allSales = await r.json() || [];
       state.allSales.forEach(rec=>{
         if(rec.item && !rec.items){
-          try{ rec.items = JSON.parse(rec.item); }catch(e){ rec.items=[]; }
+          rec.items = normalizeItemsArray(rec.item);
+        }else{
+          rec.items = normalizeItemsArray(rec.items);
         }
       });
       state.allCustomerRecords = state.allSales.slice();
@@ -911,7 +961,7 @@
     function customerMatchesProducts(v){
       const conds = getSelectedProductConditions(); if(!conds.length) return true;
       for(const b of v.bills){
-        for(const s of (b.items||[])){
+        for(const s of normalizeItemsArray(b.items)){
           const {main, sub} = parseItemNames(s);
           for(const c of conds){ if(c.cat===main && (!c.sub || c.sub===sub)) return true; }
         }
@@ -962,10 +1012,28 @@
     }
 
     function currentCustomers(){
-      if(!state.selectedKeys) return state.customersMap;
-      const m=new Map();
-      for(const k of state.selectedKeys){ if(state.customersMap.has(k)) m.set(k, state.customersMap.get(k)); }
-      return m;
+      let m = new Map();
+      if(!state.selectedKeys){
+        m = new Map(state.customersMap);
+      }else{
+        for(const k of state.selectedKeys){
+          if(state.customersMap.has(k)) m.set(k, state.customersMap.get(k));
+        }
+      }
+
+      const q = String(state.tableSearch || '').trim().toLowerCase();
+      if(!q) return m;
+
+      const qDigits = onlyDigits(q);
+      const out = new Map();
+      for(const [k,v] of m){
+        const hay = [v.opd || '', v.name || '', v.phone || '', k || ''].join(' ').toLowerCase();
+        const phoneDigits = normPhone(v.phone || '');
+        if(hay.includes(q) || (qDigits && phoneDigits.includes(qDigits))){
+          out.set(k,v);
+        }
+      }
+      return out;
     }
 
     function computeRFM(){
@@ -1034,9 +1102,15 @@
       let cum = 0;
       const tagged = list.map(x=>{ cum += x.rev; return {...x, cumPct: cum/total}; });
 
-      const A = tagged.filter(x=> x.cumPct<=0.8);
-      const B = tagged.filter(x=> x.cumPct>0.8 && x.cumPct<=0.95);
-      const C = tagged.filter(x=> x.cumPct>0.95);
+      const A = [], B = [], C = [];
+      let before = 0;
+      tagged.forEach(x=>{
+        const beforePct = before / total;
+        if(beforePct < 0.80) A.push(x);
+        else if(beforePct < 0.95) B.push(x);
+        else C.push(x);
+        before += x.rev;
+      });
 
       A.forEach(x=> state.abcByKey.set(x.key,'A'));
       B.forEach(x=> state.abcByKey.set(x.key,'B'));
@@ -1053,8 +1127,7 @@
       `;
 
       const topA = A.slice(0,10).map(x=>{
-        const v=x.v; const key=keyNamePhone(v);
-        return `<a class="link" href="javascript:;" onclick="openCustomerModal('${esc(key)}');event.stopPropagation();">${esc(v.name)}</a>`;
+        const v=x.v; return `<a class="link" href="javascript:;" onclick="openCustomerModal('${esc(modalKeyForCustomer(v))}');event.stopPropagation();">${esc(v.name)}</a>`;
       }).join(', ');
       document.getElementById('abcWho').innerHTML = topA ? `ตัวอย่างชั้น A: ${topA}` : '—';
 
@@ -1065,7 +1138,7 @@
       {label:'0–30', min:0, max:30},
       {label:'31–60', min:31, max:60},
       {label:'61–90', min:61, max:90},
-      {label:'90–180', min:90, max:180},
+      {label:'91–180', min:91, max:180},
       {label:'181–365', min:181, max:365},
       {label:'365 ขึ้นไป', min:365, max:Infinity}
     ];
@@ -1183,15 +1256,11 @@
           case 1: return r.v.opd||'';
           case 2: return (r.v.name||'').toLowerCase();
           case 3: return r.visits||0;
-          case 4: return r.avg||0;
-          case 5: return r.total||0;
-          case 6: return r.maxBill||0;
-          case 7: return r.recency||0;
-          case 8: return (r.rfm||'').toLowerCase();
-          case 9: return (r.abc||'').toLowerCase();
-          case 10: return (r.lastPitchDays!=null? r.lastPitchDays : Number.POSITIVE_INFINITY);
-          case 11: return (r.lastOutcomeStr||'').toLowerCase();
-          case 12: return (r.profile||'').toLowerCase();
+          case 4: return r.total||0;
+          case 5: return r.avg||0;
+          case 6: return r.recency||0;
+          case 7: return `${r.rfm||''} ${r.abc||''}`.toLowerCase();
+          case 8: return (r.lastPitchDays!=null? r.lastPitchDays : Number.POSITIVE_INFINITY);
           default: return 0;
         }
       };
@@ -1214,7 +1283,7 @@
 
       const tb = document.querySelector('#finalCustTable tbody');
       tb.innerHTML = state.finalRows.map((r,i)=>{
-        const key = keyNamePhone(r.v);
+        const key = modalKeyForCustomer(r.v);
 
         const pitchText = (r.lastPitchDays==null) ? 'ไม่เคย' : `${r.lastPitchDays} วัน`;
         const latest = (state.pitchSummaryCache.get(r.v.opd)||{}).latest;
@@ -1223,7 +1292,6 @@
           ? `Pitch ล่าสุด: ${formatDate(dd)} • ${latest.content||''}${latest.outcome? ' — '+latest.outcome : ''} • รวม ${r.pitchCount||0} ครั้ง`
           : `— • รวม ${r.pitchCount||0} ครั้ง`;
 
-        // UI badge สำหรับ RFM/ABC แบบไม่ยุ่งตรรกะ (แค่ display)
         const rfmBadge = (() => {
           const s = String(r.rfm||'');
           if(s.includes('แชมป์')) return `<span class="badge b-ok">🏆 ${esc(s)}</span>`;
@@ -1245,19 +1313,14 @@
           <td>${esc(r.v.opd)}</td>
           <td><a class="link" href="javascript:;" onclick="openCustomerModal('${esc(key)}');event.stopPropagation();">${esc(r.v.name)}</a></td>
           <td>${r.visits}</td>
-          <td style="color:${r.avgColor}">${r.avg.toLocaleString()}</td>
           <td style="color:${r.totColor}; ${r.totExtra}">${Math.round(r.total).toLocaleString()}${r.totIcon}</td>
-          <td>${r.maxBill.toLocaleString()}</td>
+          <td style="color:${r.avgColor}">${r.avg.toLocaleString()}</td>
           <td style="color:${r.recColor}">${r.recency}</td>
-          <td>${rfmBadge}</td>
-          <td>${abcBadge}</td>
+          <td>${rfmBadge}<div style="margin-top:4px">${abcBadge}</div></td>
           <td class="lp-cell" title="${esc(pitchTitle)}">${esc(pitchText)}</td>
-          <td class="lp-outcome">${esc(r.lastOutcomeStr || '—')}</td>
-          <td>
-            <textarea class="profile-editor" data-opd="${esc(r.v.opd)}" placeholder="เพิ่มโปรไฟล์…">${esc(r.profile || '')}</textarea>
-          </td>
+          <td><button class="icon-btn" type="button" onclick="openCustomerModal('${esc(key)}')">ดู</button></td>
         </tr>`;
-      }).join('') || `<tr><td colspan="13" class="sub-muted">ไม่มีลูกค้าตามเงื่อนไข</td></tr>`;
+      }).join('') || `<tr><td colspan="10" class="sub-muted">ไม่มีลูกค้าตามเงื่อนไข</td></tr>`;
     }
 
     /* KPI update (ใหม่ แค่แสดงผล ไม่แตะตรรกะฟิลเตอร์) */
@@ -1421,7 +1484,7 @@
     /* Table sort click */
     document.addEventListener('click', (e)=>{
       const th = e.target.closest('#finalCustTable thead th');
-      if(!th) return;
+      if(!th || !th.dataset.sort) return;
       const idx = Array.from(th.parentNode.children).indexOf(th);
       if(idx===0) return;
       state.finalSort.dir = (state.finalSort.col===idx? -state.finalSort.dir : 1);
@@ -1442,70 +1505,18 @@
       openPitchModalForOPD(opd, displayName);
     });
 
-    /* Search */
+    /* Search: กรองข้อมูลจริง ไม่ใช่แค่ซ่อนแถว */
     document.addEventListener('input', (e)=>{
       if(e.target && e.target.id==='qSearch'){
-        const val = e.target.value.trim().toLowerCase();
-        ['finalCustTable','rfmTable','abcTable','recencyTable','spendBandTable'].forEach(id=>{
-          document.querySelectorAll(`#${id} tbody tr`).forEach(tr=>{
-            const txt = tr.textContent.toLowerCase();
-            tr.style.display = txt.includes(val)? '' : 'none';
-          });
-        });
+        state.tableSearch = e.target.value || '';
+        clearTimeout(state.searchTimer);
+        state.searchTimer = setTimeout(()=>{
+          renderAll();
+        }, 220);
       }
     });
 
-    /* Profile autosave */
-    async function saveProfile(opd, value){
-      try{
-        const r = await fetch('/api/update_customer', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({opd:String(opd), field:'profile', value})
-        });
-        const d = await r.json();
-        return !!d.message;
-      }catch{ return false; }
-    }
-    const profileDebounce = new Map();
-    function scheduleProfileSave(opd, ta){
-      clearTimeout(profileDebounce.get(opd));
-      profileDebounce.set(opd, setTimeout(()=> doProfileSave(opd, ta), 800));
-    }
-    async function doProfileSave(opd, ta){
-      const value = ta.value;
-      ta.classList.remove('saved','error');
-      ta.classList.add('saving');
-      const ok = await saveProfile(opd, value);
-      ta.classList.remove('saving');
-      if(ok){
-        ta.classList.add('saved');
-        state.profileByOpd.set(opd, value);
-        const rowObj = state.finalRows.find(r => r.v.opd === opd);
-        if(rowObj) rowObj.profile = value;
-        toast('บันทึกโปรไฟล์แล้ว', 'ok');
-        setTimeout(()=> ta.classList.remove('saved'), 1200);
-      }else{
-        ta.classList.add('error');
-        toast('บันทึกไม่สำเร็จ', 'err');
-        setTimeout(()=> ta.classList.remove('error'), 1500);
-      }
-    }
-    document.addEventListener('input', (e)=>{
-      const ta = e.target && e.target.classList && e.target.classList.contains('profile-editor') ? e.target : null;
-      if(!ta) return;
-      const opd = ta.getAttribute('data-opd');
-      if(!opd) return;
-      scheduleProfileSave(opd, ta);
-    });
-    document.addEventListener('blur', async (e)=>{
-      const ta = e.target && e.target.classList && e.target.classList.contains('profile-editor') ? e.target : null;
-      if(!ta) return;
-      const opd = ta.getAttribute('data-opd');
-      if(!opd) return;
-      clearTimeout(profileDebounce.get(opd));
-      await doProfileSave(opd, ta);
-    }, true);
+    /* Profile inline edit ถูกเอาออกจากหน้านี้ เพื่อลดความเสี่ยงแก้ข้อมูลลูกค้าผิดบนมือถือ */
 
     /* KPI click actions */
     document.getElementById('kpiCustomers')?.addEventListener('click', ()=> scrollToFinal());
@@ -1546,7 +1557,7 @@
         toast('ไม่มีข้อมูลให้ export', 'warn');
         return;
       }
-      const header = ['OPD','ชื่อ','จำนวนครั้ง','เฉลี่ย/บิล','ยอดรวม','บิลเดี่ยวสูงสุด','ไม่ได้มา(วัน)','RFM','ABC','Pitchล่าสุด(วัน)','Outcomeล่าสุด','Profile'];
+      const header = ['OPD','ชื่อ','จำนวนครั้ง','ยอดรวม','เฉลี่ย/บิล','ไม่ได้มา(วัน)','RFM','ABC','Pitchล่าสุด(วัน)'];
       const lines = [header];
 
       for(const r of state.finalRows){
@@ -1554,15 +1565,12 @@
           r.v.opd||'',
           r.v.name||'',
           r.visits||0,
-          r.avg||0,
           Math.round(r.total||0),
-          r.maxBill||0,
+          r.avg||0,
           r.recency||0,
           r.rfm||'',
           r.abc||'',
-          (r.lastPitchDays==null?'ไม่เคย':r.lastPitchDays),
-          r.lastOutcomeStr||'',
-          (r.profile||'').replace(/\r?\n/g,' ')
+          (r.lastPitchDays==null?'ไม่เคย':r.lastPitchDays)
         ]);
       }
 
@@ -1664,21 +1672,30 @@
       let cust = state.customersMap.get(key);
 
       if (!cust) {
-        const [name, phone = ''] = String(key).split('|');
-        const norm = s => (s || '').trim().toLowerCase();
+        const rawKey = String(key || '').trim();
+        let recs = [];
 
-        const recs = state.allSales.filter(r =>
-          norm(r.name) === norm(name) &&
-          norm(r.phone || '') === norm(phone)
-        );
+        if(rawKey.startsWith('OPD:') || /^\d{1,4}$/.test(rawKey)){
+          const opd = pad4(rawKey.replace(/^OPD:/,''));
+          recs = state.allSales.filter(r => pad4(r.opd || '') === opd);
+        }else{
+          const [name, phone = ''] = rawKey.split('|');
+          const norm = s => (s || '').trim().toLowerCase();
+          recs = state.allSales.filter(r =>
+            norm(r.name) === norm(name) &&
+            norm(r.phone || '') === norm(phone)
+          );
+        }
 
         if (!recs.length) return;
 
+        recs.sort((a,b)=> String(a.date||'').localeCompare(String(b.date||'')));
+        const first = recs[0] || {};
         cust = {
-          key,
-          name: recs[0].name,
-          phone: recs[0].phone || '',
-          opd: pad4(recs[0].opd || ''),
+          key: keyForCustomer(first),
+          name: first.name,
+          phone: first.phone || '',
+          opd: pad4(first.opd || ''),
           bills: recs.slice()
         };
       }
@@ -1707,14 +1724,10 @@
 
       const allItems = {};
       records.forEach(r => {
-        (r.items || []).forEach(item => {
-          let name = item;
-          const m = item.match(/\((.*?)\)/);
-          name = m ? m[1] : item.split(" - ")[0];
-
-          const q = item.match(/- (\d+) ชิ้น/);
-          const qty = q ? parseInt(q[1]) : 1;
-
+        normalizeItemsArray(r.items).forEach(item => {
+          const it = parseSaleItem(item);
+          const name = it.display || it.label || '-';
+          const qty = it.qty || 1;
           allItems[name] = (allItems[name] || 0) + qty;
         });
       });
@@ -1764,11 +1777,10 @@
         `).join("");
 
       const historyHtml = records.map(r => {
-        const items = (r.items || []).map(item => {
-          const m = item.match(/\((.*?)\)/);
-          const name = m ? m[1] : item.split(" - ")[0];
-          const q = item.match(/- (\d+) ชิ้น/);
-          const qty = q ? parseInt(q[1]) : 1;
+        const items = normalizeItemsArray(r.items).map(item => {
+          const it = parseSaleItem(item);
+          const name = it.display || it.label || '-';
+          const qty = it.qty || 1;
           return `<li>${esc(name)} : ${qty}</li>`;
         }).join("");
 

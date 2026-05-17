@@ -667,7 +667,7 @@
           <div class="card" style="box-shadow:none;">
             <div class="card-head">
               <div class="card-title">🎯 Top Priority (แนะนำให้โทรก่อน)</div>
-              <div class="card-sub">คำนวณจาก: Recency + Interest signal + Call attempts + Purchase value</div>
+              <div class="card-sub">คำนวณจาก: Recency + Interest signal + Call attempts + Purchase value • และตัดคนที่ซื้อแล้วหลังรอบโทรเดิมออกจากคิวแนะนำ</div>
             </div>
             <div class="card-body">
               <div class="table-wrap">
@@ -1156,22 +1156,38 @@ function calcCustomerAnalytics(opd){
       // ✅ last visit date (ใช้ record ล่าสุด ไม่ว่า amount=0 หรือไม่)
       const lastBuyDate = recList[0]?.date ? iso10(recList[0].date) : '';
 
-      const attempts = pitchList.length;
-      const lastPitch = pitchList[0] || null;
+      // ✅ เก็บ “การโทรล่าสุดทั้งหมด” ไว้แสดงผล
+      const overallAttempts = pitchList.length;
+      const overallLastPitch = pitchList[0] || null;
+      const overallLastPitchDate = overallLastPitch ? iso10(overallLastPitch.created_at||overallLastPitch.date||'') : '';
+      const overallLastOutcome = overallLastPitch?.outcome || '';
+
+      // ✅ ถ้าลูกค้ามีการซื้อแล้ว ให้เริ่มรอบติดตามใหม่หลังวันซื้อล่าสุด
+      //    เพื่อไม่ให้การโทรรอบก่อนการซื้อ ยังดันขึ้น Top Priority อยู่
+      const scoringPitchList = lastBuyDate
+        ? pitchList.filter(p => iso10(p.created_at||p.date||'') > lastBuyDate)
+        : pitchList;
+
+      const attempts = scoringPitchList.length;
+      const lastPitch = scoringPitchList[0] || null;
       const lastPitchDate = lastPitch ? iso10(lastPitch.created_at||lastPitch.date||'') : '';
       const lastOutcome = lastPitch?.outcome || '';
-      const everInterested = pitchList.some(p=> isInterested(p.outcome));
+      const everInterested = scoringPitchList.some(p=> isInterested(p.outcome));
       const lastInterestedDate = (()=> {
-        const f = pitchList.find(p=> isInterested(p.outcome));
+        const f = scoringPitchList.find(p=> isInterested(p.outcome));
         return f ? iso10(f.created_at||f.date||'') : '';
       })();
+
+      const hadPitchBeforeOrOnLastBuy = !!(lastBuyDate && pitchList.some(p => iso10(p.created_at||p.date||'') <= lastBuyDate));
+      const hasPostBuyFollowup = attempts > 0;
 
       const daysSincePitch = lastPitchDate ? daysBetween(lastPitchDate, todayISO()) : null;
       const daysSinceBuy = lastBuyDate ? daysBetween(lastBuyDate, todayISO()) : null;
       const cameRecently = (daysSinceBuy !== null && daysSinceBuy < INACTIVE_DAYS);
 
-      // ✅ มาแล้ว "หลังโทรล่าสุด" (รวมวันเดียวกัน) และมาเมื่อวาน/วันนี้ => กด STOP/priority ต่ำ
-      const visitedAfterPitch = !!(lastPitchDate && lastBuyDate && lastBuyDate >= lastPitchDate);
+      // ✅ ลูกค้าซื้อแล้วหลังรอบโทรเดิม และยังไม่มีการติดตามรอบใหม่ => ซ่อนจาก Top Priority
+      const visitedAfterPitch = hadPitchBeforeOrOnLastBuy;
+      const suppressTopPriority = hadPitchBeforeOrOnLastBuy && !hasPostBuyFollowup;
       const visitedRecently = visitedAfterPitch && (daysSinceBuy !== null && daysSinceBuy <= 1);
 
       let sInterest = 0;
@@ -1228,6 +1244,13 @@ function calcCustomerAnalytics(opd){
       else if(priority >= 50) bucket = 'Warm';
       else bucket = 'Cold';
 
+      // ✅ ถ้าซื้อแล้วหลังรอบโทรเดิม และยังไม่มีการ follow-up รอบใหม่ ให้หยุดแนะนำก่อน
+      if(suppressTopPriority){
+        priority = 0;
+        bucket = 'Stop';
+        recommend = 'ซื้อแล้วหลังโทร';
+      }
+
       // ✅ แบบ B: ถ้ามาแล้วหลังโทรล่าสุด และมาวันนี้/เมื่อวาน => ไม่แนะนำทั้งระบบ
       if(visitedRecently){
         priority = 0;
@@ -1235,13 +1258,15 @@ function calcCustomerAnalytics(opd){
         bucket = 'Stop';
         recommend = 'มาแล้ว (ไม่ต้องโทร)';
       }
-// ✅ RULE ใหม่: ถ้ามาใน 2 เดือนนี้ -> ไม่แนะนำทั้งระบบ (STOP + priority=0)
-if(cameRecently){
-  priority = 0;
-  segment = 'STOP';
-  bucket = 'Stop';
-  recommend = 'มาใน 2 เดือนนี้ (ไม่ต้องโทร)';
-}
+
+      // ✅ RULE ใหม่: ถ้ามาใน 2 เดือนนี้ -> ไม่แนะนำทั้งระบบ (STOP + priority=0)
+      if(cameRecently){
+        priority = 0;
+        segment = 'STOP';
+        bucket = 'Stop';
+        recommend = 'มาใน 2 เดือนนี้ (ไม่ต้องโทร)';
+      }
+
       return {
         opd,
         name: cust.name || opd,
@@ -1251,19 +1276,24 @@ if(cameRecently){
         avgAmount,
         lastBuyDate,
         attempts,
-        lastPitchDate,
-        lastOutcome,
+        overallAttempts,
+        lastPitchDate: overallLastPitchDate,
+        scoringLastPitchDate: lastPitchDate,
+        lastOutcome: overallLastOutcome,
+        scoringLastOutcome: lastOutcome,
         everInterested,
         lastInterestedDate,
         daysSincePitch,
         daysSinceBuy,
-          cameRecently,   
+        cameRecently,
         priority,
         segment,
         bucket,
         recommend,
         visitedAfterPitch,
-        visitedRecently
+        visitedRecently,
+        suppressTopPriority,
+        hasPostBuyFollowup
       };
     }
 
@@ -1338,6 +1368,7 @@ if(cameRecently){
     }
 
     function renderRecommend(a){
+  if(a.suppressTopPriority) return `<span class="badge b-slate">ซื้อแล้วหลังโทร</span>`;
   if(a.cameRecently) return `<span class="badge b-slate">มาใน 2 เดือนนี้</span>`;
   if(a.segment==='STOP') return `<span class="badge b-red">พัก/หยุด</span>`;
   if(a.segment==='VIP') return `<span class="badge b-green">VIP follow-up</span>`;
@@ -1384,7 +1415,7 @@ if(cameRecently){
       buildFunnelChart(analytics);
 
       const filtered = filterAnalyticsForDash(analytics);
-      const top = filtered.slice(0, 30);
+      const top = filtered.filter(a => !a.suppressTopPriority).slice(0, 30);
 
       dashTopTbody.innerHTML = top.map((a, i)=>`
         <tr>
@@ -2075,6 +2106,7 @@ if(cameRecently){
                 ${a.phone ? `<span class="badge b-slate">📞 ${esc(a.phone)}</span>` : `<span class="badge b-slate">📞 —</span>`}
                 <span class="badge b-slate">โทรแล้ว <span class="mono">${a.attempts}</span> ครั้ง</span>
                 ${a.everInterested ? `<span class="badge b-green">เคยสนใจ</span>` : `<span class="badge b-slate">ไม่เคยสนใจ</span>`}
+                ${a.suppressTopPriority ? `<span class="badge b-slate">✅ ซื้อแล้วหลังโทร</span>` : ``}
                 ${a.visitedRecently ? `<span class="badge b-slate">✅ มาแล้ว (ล่าสุด)</span>` : ``}
               </div>
             </div>
@@ -2085,17 +2117,19 @@ if(cameRecently){
               <div style="height:10px;"></div>
               <div style="color:#334155; font-weight:900; margin-bottom:6px;">แนะนำ Next step</div>
               <div style="color:#0f172a;">
-                ${a.visitedRecently
-                  ? 'ลูกค้ามาแล้วหลังโทรล่าสุด (วันนี้/เมื่อวาน) — ไม่ต้องแนะนำให้โทรซ้ำ'
-                  : a.segment==='STOP'
-                    ? 'พักไว้ก่อน (Hard reject/ครบโควตาแล้ว) เพื่อไม่เสียเวลาทีม'
-                    : a.segment==='VIP'
-                      ? 'ลูกค้ามูลค่าสูง: โทร/ไลน์แบบ personal + offer ที่ตรงรายการซื้อ'
-                      : a.bucket==='Hot'
-                        ? 'โทรวันนี้: สัญญาณดี + recency เหมาะ'
-                        : a.bucket==='Warm'
-                          ? 'ตามต่อ: ยังมีโอกาสปิด'
-                          : 'ค่อยโทร: จัดเป็นคิวรอง'}
+                ${a.suppressTopPriority
+                  ? 'ลูกค้ามีการซื้อแล้วหลังรอบโทรเดิม และยังไม่มีการติดตามรอบใหม่ — ไม่ควรขึ้นใน Top Priority'
+                  : a.visitedRecently
+                    ? 'ลูกค้ามาแล้วหลังโทรล่าสุด (วันนี้/เมื่อวาน) — ไม่ต้องแนะนำให้โทรซ้ำ'
+                    : a.segment==='STOP'
+                      ? 'พักไว้ก่อน (Hard reject/ครบโควตาแล้ว) เพื่อไม่เสียเวลาทีม'
+                      : a.segment==='VIP'
+                        ? 'ลูกค้ามูลค่าสูง: โทร/ไลน์แบบ personal + offer ที่ตรงรายการซื้อ'
+                        : a.bucket==='Hot'
+                          ? 'โทรวันนี้: สัญญาณดี + recency เหมาะ'
+                          : a.bucket==='Warm'
+                            ? 'ตามต่อ: ยังมีโอกาสปิด'
+                            : 'ค่อยโทร: จัดเป็นคิวรอง'}
               </div>
             </div>
           </div>

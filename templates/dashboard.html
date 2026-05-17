@@ -55,7 +55,7 @@
     cursor: pointer;
   }
   #mainTitle .month { font-size: 26px; font-weight: 600; color: #004d40; }
-  #mainTitle .total { font-size: 18px; color: #009688; margin-top: 6px; }
+  #mainTitle .total { font-size: 18px; color: #009688; margin-top: 6px; font-weight: 600; }
 
   .top10-box {
     max-width: 1200px; margin: 0 auto 20px; background: #fff; padding: 15px 20px;
@@ -149,8 +149,14 @@
     .floating-dock { bottom: 0; padding-bottom: env(safe-area-inset-bottom); }
   }
 
-  #mainTitle .compare { font-size: 13px; }
-  @media (max-width: 768px) { #mainTitle .compare { font-size: 10px; } }
+  #mainTitle .compare { font-size: 13px; font-weight: 600; }
+  #mainTitle .goal-info { font-size: 12px; color: #00695c; margin-top: 6px; font-weight: 400; line-height: 1.55; }
+  #mainTitle .goal-info .goal-sub { color:#00796b; font-weight:400; }
+  #mainTitle .goal-info .goal-warn { color:#c62828; font-weight:400; }
+  #mainTitle .goal-info .goal-level-good { color:#00796b; font-weight:400; }
+  #mainTitle .goal-info .goal-level-mid { color:#ef6c00; font-weight:400; }
+  #mainTitle .goal-info .goal-level-high { color:#c62828; font-weight:400; }
+  @media (max-width: 768px) { #mainTitle .compare, #mainTitle .goal-info { font-size: 10px; } }
 
   .filter-section {
     max-width: 650px; margin: auto; padding: 20px; background: #fefefe; border: 1px solid #ddd; border-radius: 12px; font-size: 14px;
@@ -452,6 +458,7 @@
 <div id="mainTitle">
   <div class="month">...</div>
   <div class="total">กำลังโหลดข้อมูล...</div>
+  <div class="goal-info" id="doctorTargetInfo"></div>
   <div class="compare" style="margin-top: 6px;"></div>
 </div>
 
@@ -483,11 +490,67 @@
   const dateYM = (s)=> s.slice(0,7);
   const ymNum = (ym)=>{const[a,b]=ym.split('-').map(Number);return a*100+b;}
 
-  // ===== เพิ่ม Helper Functions ที่ขาดหายไป (สำคัญ) =====
-  const pad4 = (s) => String(s||'').padStart(4,'0');
-  const esc = (s) => (s||'').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  // ===== Helper Functions =====
+  // ✅ ใช้ OPD เป็นตัวรวมลูกค้าหลัก เพื่อกันลูกค้าเก่าถูกนับเป็นลูกค้าใหม่เพราะชื่อ/เบอร์เปลี่ยน
+  const normalizeOpdKey = (v) => {
+    const raw = String(v ?? '').trim();
+    if (!raw) return '';
+    const digits = raw.replace(/\D/g, '');
+    if (!digits) return '';
+    const opd = digits.padStart(4, '0').slice(-4);
+    return opd === '0000' ? '' : opd;
+  };
+  const pad4 = (s) => normalizeOpdKey(s);
+  const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   const fmtShortDate = (d) => { if(!d)return'-'; const date=new Date(d); return `${date.getDate()}/${date.getMonth()+1}/${String(date.getFullYear()).slice(-2)}`; };
-  const makeCustomerKey = (opd, name, phone) => `${opd}|${name}|${phone}`;
+  const normCustomerText = (s) => String(s ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+  const normPhone = (s) => String(s ?? '').replace(/\D/g, '');
+  const decodeCustomerKey = (rawKey) => {
+    const s = String(rawKey ?? '');
+    try { return decodeURIComponent(s); } catch { return s; }
+  };
+  const safeJsArg = (s) => encodeURIComponent(String(s ?? ''));
+  const makeCustomerKey = (opd, name, phone) => {
+    const opd4 = normalizeOpdKey(opd);
+    if (opd4) return `opd:${opd4}`;
+    return `np:${normCustomerText(name)}|${normPhone(phone)}`;
+  };
+  const customerKeyOf = (r = {}) => makeCustomerKey(r.opd, r.name, r.phone);
+
+  let allRecordsByCustomerKey = new Map();
+
+  function rebuildCustomerIndex(records = allCustomerRecords) {
+    allRecordsByCustomerKey = new Map();
+    (records || []).forEach(r => {
+      const key = customerKeyOf(r);
+      if (!key) return;
+      if (!allRecordsByCustomerKey.has(key)) allRecordsByCustomerKey.set(key, []);
+      allRecordsByCustomerKey.get(key).push(r);
+    });
+    allRecordsByCustomerKey.forEach(list => {
+      list.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    });
+  }
+
+  function getCustomerRecordsByKey(rawKey) {
+    const key = decodeCustomerKey(rawKey);
+    if (!allRecordsByCustomerKey.size) rebuildCustomerIndex();
+    return allRecordsByCustomerKey.get(key) || [];
+  }
+
+  function getCustomerStats(records = []) {
+    const totalVisits = records.length;
+    const paid = records.filter(r => parseFloat(r.amount || 0) > 0);
+    const paidVisits = paid.length;
+    const totalAmount = paid.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
+    const avg = paidVisits > 0 ? Math.round(totalAmount / paidVisits) : 0;
+    const latestRecord = records[0] || null;
+    const latestDate = latestRecord ? new Date((latestRecord.date || '').slice(0, 10)) : null;
+    const daysSinceLastVisit = latestDate && !isNaN(latestDate)
+      ? Math.floor((new Date() - latestDate) / (1000 * 60 * 60 * 24))
+      : null;
+    return { totalVisits, paid, paidVisits, totalAmount, avg, latestRecord, daysSinceLastVisit };
+  }
 
   function startOfMonth(d) {
     return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -514,6 +577,217 @@
   let fullCustomerList = [];
   let customerProfileMap = {};
   let hasInitializedViewMonth = false;
+
+  // ===== เป้าหมาย 500,000 + วันหมอเข้า + เคสคงเหลือจากตารางนัด/ตารางเวร =====
+  // v2: เพิ่มสีเตือนยอดที่ต้องทำต่อวัน + ใช้ API ดึงนัดแบบช่วงวันที่
+  const MONTHLY_SALES_TARGET = 500000;
+  const doctorGoalCache = { ym: '', data: null, promise: null, ts: 0 };
+  const DOCTOR_GOAL_CACHE_MS = 60 * 1000;
+
+  function toYMDLocal(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function getCurrentMonthRangeFromToday() {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return { ym: formatYM(now), todayStr: toYMDLocal(start), start, end };
+  }
+
+  function makeDateList(start, end) {
+    const dates = [];
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    while (d <= end) {
+      dates.push(toYMDLocal(d));
+      d.setDate(d.getDate() + 1);
+    }
+    return dates;
+  }
+
+  function isDashboardShowingCurrentMonth() {
+    if (monthRange.enabled) return false;
+    return formatYM(viewingDate) === formatYM(new Date());
+  }
+
+  function isDoctorRosterRow(row = {}) {
+    const type = String(row.work_type || '').toLowerCase();
+    const role = String(row.staff_role || row.role || '').toLowerCase();
+    if (type === 'leave') return false;
+    return role === 'doctor' || role.includes('doctor') || role.includes('แพทย์') || role.includes('หมอ');
+  }
+
+  function isActiveAppointment(row = {}) {
+    const st = String(row.status || 'pending').toLowerCase();
+    return !(st === 'cancelled' || st === 'canceled' || st === 'cancel');
+  }
+
+  async function fetchJsonOrEmptyArray(url) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    } catch (err) {
+      console.warn('โหลดข้อมูลเป้าหมาย/เคสไม่สำเร็จ:', url, err);
+      return [];
+    }
+  }
+
+  async function fetchJsonArrayWithStatus(url) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return { ok:false, data:[] };
+      const data = await res.json();
+      return { ok:Array.isArray(data), data:Array.isArray(data) ? data : [] };
+    } catch (err) {
+      console.warn('โหลดข้อมูลแบบช่วงวันที่ไม่สำเร็จ:', url, err);
+      return { ok:false, data:[] };
+    }
+  }
+
+  async function fetchAppointmentsByDateRange(dates, startStr, endStr) {
+    // ใช้ API ใหม่ให้ดึงทั้งช่วงวันที่ครั้งเดียว ลดการยิง /api/get_appointments ทีละวัน
+    const rangeUrl = `/api/get_appointments_range?start=${encodeURIComponent(startStr)}&end=${encodeURIComponent(endStr)}`;
+    const rangeRes = await fetchJsonArrayWithStatus(rangeUrl);
+
+    if (rangeRes.ok) {
+      const byDate = new Map(dates.map(ds => [ds, []]));
+      rangeRes.data.forEach(row => {
+        const ds = String(row.appt_date || row.date || '').slice(0, 10);
+        if (byDate.has(ds)) byDate.get(ds).push(row);
+      });
+      return dates.map(ds => byDate.get(ds) || []);
+    }
+
+    // fallback: ถ้า backend ยังไม่มี API ใหม่ จะกลับไปโหลดแบบเดิมเพื่อไม่ให้หน้าพัง
+    return Promise.all(
+      dates.map(ds => fetchJsonOrEmptyArray(`/api/get_appointments?date=${encodeURIComponent(ds)}`))
+    );
+  }
+
+  async function loadDoctorGoalData() {
+    const { ym, start, end, todayStr } = getCurrentMonthRangeFromToday();
+    const now = Date.now();
+
+    if (doctorGoalCache.ym === ym && doctorGoalCache.data && (now - doctorGoalCache.ts < DOCTOR_GOAL_CACHE_MS)) {
+      return doctorGoalCache.data;
+    }
+    if (doctorGoalCache.ym === ym && doctorGoalCache.promise) {
+      return doctorGoalCache.promise;
+    }
+
+    const promise = (async () => {
+      const dates = makeDateList(start, end);
+      const dateSet = new Set(dates);
+      const rosterRows = await fetchJsonOrEmptyArray(`/api/get_roster?month=${encodeURIComponent(ym)}`);
+
+      const doctorWorkDateSet = new Set();
+      rosterRows.forEach(row => {
+        const ds = String(row.date || '').slice(0, 10);
+        if (!dateSet.has(ds)) return;
+        if (isDoctorRosterRow(row)) doctorWorkDateSet.add(ds);
+      });
+
+      const apptByDate = await fetchAppointmentsByDateRange(
+        dates,
+        toYMDLocal(start),
+        toYMDLocal(end)
+      );
+
+      let todayCases = 0;
+      let remainingDoctorCases = 0;
+      let remainingIvCases = 0;
+
+      apptByDate.forEach((rows, idx) => {
+        const ds = dates[idx];
+        (rows || []).forEach(a => {
+          if (!isActiveAppointment(a)) return;
+          const col = Number(a.column_id || 0);
+          const isDoctorCase = col === 1 || col === 2;
+          const isIvCase = col === 4;
+          if (!isDoctorCase && !isIvCase) return; // Treat ไม่นับ
+
+          if (ds === todayStr) {
+            todayCases += 1;
+          } else if (isDoctorCase) {
+            remainingDoctorCases += 1;
+          } else if (isIvCase) {
+            remainingIvCases += 1;
+          }
+        });
+      });
+
+      return {
+        ym,
+        todayStr,
+        doctorDaysLeft: doctorWorkDateSet.size,
+        todayCases,
+        remainingDoctorCases,
+        remainingIvCases
+      };
+    })();
+
+    doctorGoalCache.ym = ym;
+    doctorGoalCache.promise = promise;
+
+    try {
+      const data = await promise;
+      doctorGoalCache.data = data;
+      doctorGoalCache.ts = Date.now();
+      return data;
+    } finally {
+      doctorGoalCache.promise = null;
+    }
+  }
+
+  function renderDoctorGoalInfo(totalSales, data) {
+    const el = document.getElementById('doctorTargetInfo');
+    if (!el) return;
+
+    const remain = Math.max(0, MONTHLY_SALES_TARGET - Math.round(totalSales || 0));
+    const doctorDays = Number(data?.doctorDaysLeft || 0);
+    const perDoctorDay = doctorDays > 0 ? Math.ceil(remain / doctorDays) : 0;
+
+    let targetText = '';
+    let levelClass = 'goal-level-good';
+    if (perDoctorDay > 40000) levelClass = 'goal-level-high';
+    else if (perDoctorDay > 20000) levelClass = 'goal-level-mid';
+
+    if (remain <= 0) {
+      targetText = `<span class="goal-level-good">ถึงเป้าแล้ว</span>`;
+    } else if (doctorDays > 0) {
+      targetText = `<span class="${levelClass}">ทำอีกวันละ ${perDoctorDay.toLocaleString()} บาท</span>`;
+    } else {
+      targetText = `<span class="goal-warn">ยังขาด ${remain.toLocaleString()} บาท แต่ไม่มีวันหมอเข้าเหลือ</span>`;
+    }
+
+    el.innerHTML = `
+      <div>👨‍⚕️ หมอเข้าอีก ${doctorDays.toLocaleString()} วัน | ${targetText}</div>
+      <div class="goal-sub">📌 เคสวันนี้ ${(data?.todayCases || 0).toLocaleString()} เคส | เคสที่เหลือ แพทย์ ${(data?.remainingDoctorCases || 0).toLocaleString()} เคส | IV ${(data?.remainingIvCases || 0).toLocaleString()} เคส</div>
+    `;
+  }
+
+  function updateDoctorGoalInfo(totalSales) {
+    const el = document.getElementById('doctorTargetInfo');
+    if (!el) return;
+
+    if (!isDashboardShowingCurrentMonth()) {
+      el.innerHTML = '';
+      return;
+    }
+
+    el.innerHTML = `<div style="color:#00796b;">กำลังคำนวณวันหมอเข้าและเคสที่เหลือ...</div>`;
+    loadDoctorGoalData()
+      .then(data => {
+        if (!isDashboardShowingCurrentMonth()) return;
+        renderDoctorGoalInfo(totalSales, data);
+      })
+      .catch(err => {
+        console.warn('คำนวณวันหมอเข้า/เคสไม่สำเร็จ:', err);
+        if (el) el.innerHTML = `<div class="goal-warn">โหลดวันหมอเข้า/เคสที่เหลือไม่สำเร็จ</div>`;
+      });
+  }
 
   async function loadCustomerProfiles() {
     try {
@@ -559,6 +833,7 @@
 
         allSalesRecords = records;
         allCustomerRecords = records;
+        rebuildCustomerIndex(records);
 
         if (!hasInitializedViewMonth) {
           viewingDate = hasMonthData(records, viewingDate)
@@ -706,15 +981,31 @@
       compareEl.appendChild(extraInfo);
     }
 
+    updateDoctorGoalInfo(totalSales);
+
     // --- ส่วนที่ 2: นับจำนวนสินค้า (จุดที่แก้ให้ซูโม่) ---
     const categoryCounts = {}, categoryDetails = {}, customerMap = {};
 
     records.filter(activeFilter).forEach(r => {
-      // เก็บข้อมูลลูกค้า (Customer Map)
-      const key = `${r.name}|${r.phone}`;
-      if (!customerMap[key]) customerMap[key] = { name:r.name, phone:r.phone, opd:r.opd||'-', date:r.date, amount:0 };
-      customerMap[key].amount += parseFloat(r.amount||0);
-      if (r.date > customerMap[key].date) customerMap[key].date = r.date;
+      // เก็บข้อมูลลูกค้า (Customer Map) — ใช้ OPD เป็น key หลัก
+      const key = customerKeyOf(r);
+      if (!customerMap[key]) {
+        customerMap[key] = {
+          key,
+          name: r.name || '-',
+          phone: r.phone || '-',
+          opd: normalizeOpdKey(r.opd) || '-',
+          date: r.date || '',
+          amount: 0
+        };
+      }
+      customerMap[key].amount += parseFloat(r.amount || 0);
+      if (r.date && (!customerMap[key].date || r.date > customerMap[key].date)) {
+        customerMap[key].date = r.date;
+        customerMap[key].name = r.name || customerMap[key].name || '-';
+        customerMap[key].phone = r.phone || customerMap[key].phone || '-';
+        customerMap[key].opd = normalizeOpdKey(r.opd) || customerMap[key].opd || '-';
+      }
 
       // วนลูป items เพื่อแยกประเภทสินค้า
       (r.items || []).forEach(item => {
@@ -749,8 +1040,8 @@
       const items = Object.entries(categoryDetails[cat] || {}).map(([sub, d]) => `• ${sub} ${d.qty}`).join('<br>');
       const sumQty = categoryCounts[cat];
       return `
-        <div class="summary-group" style="cursor:pointer;" onclick="openGroupModalByCategory('${cat}')">
-          <strong>${cat}</strong> รวม ${sumQty} ชิ้น
+        <div class="summary-group" style="cursor:pointer;" onclick="openGroupModalByCategory('${safeJsArg(cat)}')">
+          <strong>${escapeHTML(cat)}</strong> รวม ${sumQty} ชิ้น
           <ul>${items}</ul>
         </div>`;
     }).join('');
@@ -758,17 +1049,9 @@
     // --- ส่วนที่ 4: แสดงผล Top 10 Customers ---
     const top10 = Object.values(customerMap).sort((a,b)=>b.amount-a.amount).slice(0,10);
     document.getElementById('top10List').innerHTML = top10.map((c) => {
-      const key = `${c.name}|${c.phone}`;
-      const allRec = allCustomerRecords.filter(r => `${r.name}|${r.phone}` === key);
-
-      const totalVisits = allRec.length;
-      const paid = allRec.filter(r => parseFloat(r.amount||0) > 0);
-      const paidVisits = paid.length;
-      const totalAmount = paid.reduce((s,r)=>s+parseFloat(r.amount),0);
-      const avg = paidVisits>0 ? Math.round(totalAmount/paidVisits) : 0;
-
-      const latest = allRec.length? new Date(Math.max(...allRec.map(r=>new Date(r.date)))):null;
-      const daysSinceLastVisit = latest? Math.floor((new Date()-latest)/(1000*60*60*24)) : null;
+      const key = c.key;
+      const allRec = getCustomerRecordsByKey(key);
+      const { totalVisits, paidVisits, totalAmount, avg, daysSinceLastVisit } = getCustomerStats(allRec);
 
       let absentColor = 'gray';
       if (daysSinceLastVisit < 30) absentColor = 'green';
@@ -790,13 +1073,14 @@
         ? `<span style="color:${absentColor};">🔚 ไม่มา ${daysSinceLastVisit} วัน</span>` : `<span>🔚 ไม่มีข้อมูล</span>`;
 
       const isNewCustomer = monthRange.enabled
-        ? allRec.filter(r => ymNum(dateYM(r.date)) < ymNum(monthRange.startYM)).length === 0
-        : allRec.filter(r => r.date < `${formatYM(viewingDate)}-01`).length === 0;
+        ? !allRec.some(r => ymNum(dateYM(r.date || '')) < ymNum(monthRange.startYM))
+        : !allRec.some(r => String(r.date || '') < `${formatYM(viewingDate)}-01`);
       const newBadge = isNewCustomer ? `<span style="color:red; font-weight:bold;"> ลูกค้าใหม่</span>` : "";
+      const safeKey = safeJsArg(key);
 
       return `
       <li style="margin-bottom: 8px;">
-        <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">${c.name}${newBadge}</span>
+        <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${safeKey}')">${escapeHTML(c.name)}${newBadge}</span>
         <span class="date">
           (💳 <span style="color:${avgColor};">${avg.toLocaleString()}</span> × ${totalVisits}
            | 💰 <span style="color:${totalColor}; ${totalExtra}">${totalAmount.toLocaleString()}${totalIcon}</span>
@@ -812,7 +1096,8 @@
 
   document.getElementById('mainTitle').addEventListener('click', openMonthlySalesPopup);
 
-  function openGroupModalByCategory(cat) {
+  function openGroupModalByCategory(rawCat) {
+    const cat = decodeCustomerKey(rawCat);
     const summary = {};
     const totalQty = { count: 0 };
 
@@ -830,8 +1115,8 @@
         if (itemCategory !== cat) return;
 
         if (!summary[subItem]) summary[subItem] = {};
-        const key = `${r.name}|${r.phone}`;
-        if (!summary[subItem][key]) summary[subItem][key] = { name: r.name, dates: {} };
+        const key = customerKeyOf(r);
+        if (!summary[subItem][key]) summary[subItem][key] = { name: r.name || '-', dates: {} };
         summary[subItem][key].dates[r.date] = (summary[subItem][key].dates[r.date] || 0) + qty;
 
         totalQty.count += qty;
@@ -896,26 +1181,32 @@
       listEl.style.display = "block";
       const customerMap = {};
       allSalesRecords.filter(activeFilter).forEach(r => {
-        const key = `${r.name}|${r.phone}`;
-        if (!customerMap[key]) customerMap[key] = { name:r.name, phone:r.phone, opd:r.opd||"-", date:r.date, amount:0 };
+        const key = customerKeyOf(r);
+        if (!customerMap[key]) {
+          customerMap[key] = {
+            key,
+            name: r.name || '-',
+            phone: r.phone || '-',
+            opd: normalizeOpdKey(r.opd) || '-',
+            date: r.date || '',
+            amount: 0
+          };
+        }
         customerMap[key].amount += parseFloat(r.amount || 0);
-        if (r.date > customerMap[key].date) customerMap[key].date = r.date;
+        if (r.date && (!customerMap[key].date || r.date > customerMap[key].date)) {
+          customerMap[key].date = r.date;
+          customerMap[key].name = r.name || customerMap[key].name || '-';
+          customerMap[key].phone = r.phone || customerMap[key].phone || '-';
+          customerMap[key].opd = normalizeOpdKey(r.opd) || customerMap[key].opd || '-';
+        }
       });
 
       const customerList = Object.values(customerMap).sort((a,b)=>b.amount-a.amount).slice(10);
 
       listEl.innerHTML = customerList.map((c, i) => {
-        const key = `${c.name}|${c.phone}`;
-        const allRec = allCustomerRecords.filter(r => `${r.name}|${r.phone}` === key);
-
-        const totalVisits = allRec.length;
-        const paid = allRec.filter(r => parseFloat(r.amount||0) > 0);
-        const paidVisits = paid.length;
-        const totalAmount = paid.reduce((s,r)=>s+parseFloat(r.amount),0);
-        const avg = paidVisits>0 ? Math.round(totalAmount/paidVisits) : 0;
-
-        const latest = allRec.length? new Date(Math.max(...allRec.map(r=>new Date(r.date)))):null;
-        const daysSinceLastVisit = latest? Math.floor((new Date()-latest)/(1000*60*60*24)) : null;
+        const key = c.key;
+        const allRec = getCustomerRecordsByKey(key);
+        const { totalVisits, paidVisits, totalAmount, avg, daysSinceLastVisit } = getCustomerStats(allRec);
 
         let absentColor='gray';
         if (daysSinceLastVisit < 30) absentColor='green';
@@ -937,13 +1228,14 @@
           ? `<span style="color:${absentColor};">🔚 ไม่มา ${daysSinceLastVisit} วัน</span>` : `<span>🔚 ไม่มีข้อมูล</span>`;
 
         const isNewCustomer = monthRange.enabled
-          ? allRec.filter(r => ymNum(dateYM(r.date)) < ymNum(monthRange.startYM)).length === 0
-          : allRec.filter(r => r.date < `${formatYM(viewingDate)}-01`).length === 0;
+          ? !allRec.some(r => ymNum(dateYM(r.date || '')) < ymNum(monthRange.startYM))
+          : !allRec.some(r => String(r.date || '') < `${formatYM(viewingDate)}-01`);
         const newBadge = isNewCustomer ? `<span style="color:red; font-weight:bold;"> ลูกค้าใหม่</span>` : "";
+        const safeKey = safeJsArg(key);
 
         return `
         <li style="margin-bottom: 8px;">
-          <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${key}')">${i+11}. ${c.name}${newBadge}</span>
+          <span class="name" style="cursor:pointer;" onclick="openCustomerModal('${safeKey}')">${i+11}. ${escapeHTML(c.name)}${newBadge}</span>
           <span class="date">
             (💳 <span style="color:${avgColor};">${avg.toLocaleString()}</span> × ${totalVisits}
              | 💰 <span style="color:${totalColor}; ${totalExtra}">${totalAmount.toLocaleString()}${totalIcon}</span>
@@ -963,30 +1255,24 @@
   }
   function daysInMonth(y,m){ return new Date(y,m,0).getDate(); }
 
-  function escapeHTML(s=''){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]) );}
+  function escapeHTML(s=''){return String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]) );}
   function closeCustomerModal(){ document.getElementById("customer-modal").style.display = "none"; }
   function formatDate(d){ if(!d) return ''; const [y,m,day]=d.split('-'); return `${day}/${m}/${y.slice(-2)}`; }
 
-  function openCustomerModal(key) {
-    const [name, phone = ''] = String(key).split('|');
-    const norm = s => (s || '').trim().toLowerCase();
-
-    const records = allCustomerRecords.filter(r =>
-      norm(r.name) === norm(name) &&
-      norm(r.phone || '') === norm(phone)
-    );
+  function openCustomerModal(rawKey) {
+    const records = getCustomerRecordsByKey(rawKey).slice();
 
     if (!records.length) {
       alert('ไม่พบข้อมูลการซื้อของลูกค้าคนนี้');
       return;
     }
 
-    records.sort((a, b) => b.date.localeCompare(a.date));
+    records.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
 
     const salesInfo = {
-        name: records[0].name,
+        name: records[0].name || '-',
         phone: records[0].phone || '-',
-        opd: pad4(records[0].opd)
+        opd: normalizeOpdKey(records[0].opd) || '-'
     };
 
     const profileData = customerProfileMap[salesInfo.opd] || {};
@@ -1264,9 +1550,9 @@
     const grouped = {};
     const today = new Date();
 
-    allCustomerRecords.forEach(r => {
-      const key = `${r.name}|${r.phone}`;
-      (grouped[key] ||= []).push(r);
+    if (!allRecordsByCustomerKey.size) rebuildCustomerIndex();
+    allRecordsByCustomerKey.forEach((records, key) => {
+      grouped[key] = records.slice();
     });
 
     const results = Object.entries(grouped).map(([key, records]) => {
@@ -1305,9 +1591,10 @@
 
     const html = results.map(c => {
       const formattedDate = new Date(c.lastVisit).toLocaleDateString('th-TH',{day:'numeric', month:'short', year:'2-digit'});
+      const safeKey = safeJsArg(c.key);
       return `<div>
-        <input type="checkbox" class="selectCustomerCheckbox" value="${c.key}" style="margin-right:6px; vertical-align: middle;">
-        📇 <strong style="cursor:pointer;color:#00796b;" onclick="openCustomerModal('${c.key}')">${c.name}</strong>
+        <input type="checkbox" class="selectCustomerCheckbox" value="${safeKey}" style="margin-right:6px; vertical-align: middle;">
+        📇 <strong style="cursor:pointer;color:#00796b;" onclick="openCustomerModal('${safeKey}')">${escapeHTML(c.name)}</strong>
         💰 ยอด: ${c.totalAmount.toLocaleString()} |
         💳 ${Math.round(c.averageBill).toLocaleString()} |
         🔁 ${c.totalVisits} (${c.paidVisits} จ่าย) |
@@ -1330,14 +1617,17 @@
     if (!checked.length) {
       box.innerHTML = `<div style="padding:12px; color:#888;">ยังไม่ได้เลือกลูกค้า (ติ๊ก checkbox ก่อน)</div>`;
     } else {
-      box.innerHTML = checked.map((key, idx) => {
-        const [name, phone=''] = String(key).split('|');
+      box.innerHTML = checked.map((rawKey, idx) => {
+        const records = getCustomerRecordsByKey(rawKey);
+        const first = records[0] || {};
+        const safeKey = safeJsArg(decodeCustomerKey(rawKey));
         return `
           <div class="customer-entry">
-            <div class="customer-name">${idx+1}. ${escapeHTML(name || '-')}</div>
+            <div class="customer-name">${idx+1}. ${escapeHTML(first.name || '-')}</div>
             <div class="date-info">
-              <span class="date-box">📞 ${escapeHTML(phone || '-')}</span>
-              <span class="date-box" style="cursor:pointer;" onclick="openCustomerModal('${key}')">🔍 เปิดข้อมูล</span>
+              <span class="date-box">OPD: ${escapeHTML(normalizeOpdKey(first.opd) || '-')}</span>
+              <span class="date-box">📞 ${escapeHTML(first.phone || '-')}</span>
+              <span class="date-box" style="cursor:pointer;" onclick="openCustomerModal('${safeKey}')">🔍 เปิดข้อมูล</span>
             </div>
           </div>
         `;
@@ -1406,7 +1696,7 @@
         map[r.date].total   += parseFloat(r.amount||0);
         map[r.date].bills   += 1;
         map[r.date].items   += parseQty(r.items);
-        map[r.date].customers.add(`${r.name}|${r.phone}`);
+        map[r.date].customers.add(customerKeyOf(r));
       });
 
       const rows = Object.entries(map)
