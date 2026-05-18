@@ -4,658 +4,923 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="format-detection" content="telephone=no">
-  <title>คลังเวชภัณฑ์ | Inventory Dashboard</title>
+  <title>คลังเวชภัณฑ์ | Inventory</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
-    :root {
-      --primary: #00897b;
-      --primary-light: #e0f2f1;
-      --primary-dark: #00695c;
-      --text-main: #37474f;
-      --text-light: #78909c;
-      --bg-body: #f0f4f4;
-      --white: #ffffff;
-      --shadow-card: 0 4px 20px rgba(0,0,0,0.06);
-      --radius: 16px;
-      --success: #2e7d32;
-      --danger: #c62828;
+    :root{
+      --primary:#00897b;
+      --primary-dark:#00695c;
+      --primary-soft:#e0f2f1;
+      --bg:#f0f4f4;
+      --card:#ffffff;
+      --text:#263238;
+      --muted:#78909c;
+      --line:#e5e7eb;
+      --danger:#c62828;
+      --warn:#f59e0b;
+      --success:#2e7d32;
+      --shadow:0 10px 28px rgba(15,23,42,.08);
+      --shadow-strong:0 18px 45px rgba(15,23,42,.18);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+    body{
+      margin:0;
+      font-family:'Prompt','Segoe UI',sans-serif;
+      background:
+        radial-gradient(900px 420px at 0% -10%, rgba(0,137,123,.12), transparent 55%),
+        radial-gradient(700px 360px at 110% 0%, rgba(0,150,136,.10), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      padding:14px 12px 140px;
+      font-size:13px;
+    }
+    .wrap{max-width:1180px;margin:0 auto}
+    h2{margin:6px 0 4px;text-align:center;color:var(--primary-dark);font-size:22px;font-weight:800}
+    .subhead{text-align:center;color:var(--muted);font-size:12px;margin-bottom:12px}
+
+    .tabs{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px 0 14px}
+    .tab-btn{
+      border:1px solid #a7e1da;
+      background:#fff;
+      color:#0b7660;
+      border-radius:999px;
+      padding:9px 14px;
+      font-weight:800;
+      cursor:pointer;
+      box-shadow:0 4px 14px rgba(2,8,23,.05);
+      transition:transform .08s ease, box-shadow .12s ease, background .12s ease;
+    }
+    .tab-btn:hover{box-shadow:0 8px 18px rgba(2,8,23,.10)}
+    .tab-btn:active{transform:translateY(1px)}
+    .tab-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .tab-panel{display:none}
+    .tab-panel.active{display:block}
+
+    .toolbar{
+      background:rgba(255,255,255,.92);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:12px;
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:10px;
+      align-items:end;
+      margin-bottom:12px;
+      backdrop-filter:blur(8px);
+    }
+    @media(max-width:820px){.toolbar{grid-template-columns:1fr}}
+    .toolbar-left,.toolbar-right{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+    .toolbar-right{justify-content:flex-end}
+    @media(max-width:820px){.toolbar-right{justify-content:flex-start}}
+
+    .month-nav{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0 14px}
+    .month-label{font-weight:800;color:var(--primary-dark);min-width:110px;text-align:center;font-size:15px}
+
+    button,.btn{font-family:inherit}
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:7px;
+      border:none;border-radius:12px;padding:9px 12px;
+      background:#fff;color:var(--primary-dark);
+      border:1px solid #cfe7e5;
+      font-size:12px;font-weight:800;cursor:pointer;
+      box-shadow:0 3px 10px rgba(2,8,23,.05);
+      transition:transform .08s ease, box-shadow .12s ease, background .12s ease;
+      white-space:nowrap;
+    }
+    .btn:hover{box-shadow:0 8px 20px rgba(2,8,23,.10)}
+    .btn:active{transform:translateY(1px)}
+    .btn-primary{background:linear-gradient(135deg,#0d9488,#00695c);color:#fff;border-color:transparent}
+    .btn-danger{background:#fff;color:var(--danger);border-color:#fecaca}
+    .btn-ghost{background:#f1f5f9;color:#334155;border-color:#e2e8f0}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+
+    input,select,textarea{
+      font-family:inherit;
+      width:100%;
+      border:1px solid #d1d5db;
+      border-radius:12px;
+      padding:9px 10px;
+      font-size:12px;
+      background:#fff;
+      color:#263238;
+    }
+    input:focus,select:focus,textarea:focus{outline:2px solid #94d3ce;border-color:#94d3ce}
+    label{display:block;font-size:11px;color:#607d8b;font-weight:700;margin:0 0 5px}
+    .ipt-sm{width:150px;max-width:100%}
+    .search{min-width:230px;flex:1}
+
+    .status-line{color:var(--muted);font-size:12px;font-weight:700}
+    .pill{display:inline-flex;align-items:center;gap:5px;border:1px solid #cfe7e5;background:#f0fdfa;color:#0f766e;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:800}
+    .pill.off{background:#f8fafc;color:#64748b;border-color:#e2e8f0}
+    .pill.bad{background:#fff7f7;color:#991b1b;border-color:#fecaca}
+
+    .grid-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:14px}
+    .dash-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;box-shadow:var(--shadow)}
+    .dash-title{display:flex;justify-content:space-between;gap:8px;align-items:flex-end;font-weight:800;color:var(--primary-dark);padding-bottom:8px;border-bottom:2px solid var(--primary-soft);margin-bottom:6px}
+    .dash-date{font-size:10px;color:var(--muted);font-weight:600;white-space:nowrap}
+    .dash-row{display:flex;justify-content:space-between;gap:8px;align-items:center;border-bottom:1px dashed #edf2f7;padding:7px 0}
+    .dash-row:last-child{border-bottom:none}
+    .dash-name{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .dash-stat{display:flex;gap:7px;align-items:center;flex:none}
+    .dash-qty{font-weight:900;color:var(--primary-dark);min-width:38px;text-align:right}
+    .trend{font-size:11px;font-weight:800;min-width:45px;text-align:right}
+    .t-up{color:var(--success)}.t-down{color:var(--danger)}.t-flat{color:#9aa0a6}
+
+    .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px}
+    .card-hd{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 14px;background:linear-gradient(180deg,#f6fffe,#fff);border-bottom:1px solid var(--line)}
+    .card-title{font-size:14px;color:var(--primary-dark);font-weight:900;margin:0}
+    .card-sub{font-size:11px;color:var(--muted);font-weight:700}
+    .card-bd{padding:12px}
+
+    .table-wrap{overflow:auto;width:100%}
+    table{width:100%;min-width:620px;border-collapse:separate;border-spacing:0}
+    th,td{border-bottom:1px solid #eef2f7;padding:9px 8px;text-align:center;vertical-align:middle;font-size:12px}
+    thead th{position:sticky;top:0;z-index:5;background:var(--primary);color:#fff;font-weight:800;white-space:nowrap}
+    tbody tr:nth-child(even){background:#fcfcfc}
+    tbody tr:hover{background:#f8fffe}
+    td.name{text-align:left;color:var(--primary-dark);font-weight:800;min-width:170px}
+    .cat-row td{background:var(--primary-soft);color:var(--primary-dark);font-weight:900;text-align:left;border-top:2px solid #fff}
+    .latest-val{font-weight:900;color:#334155}
+    .diff{display:inline-flex;margin-left:4px;font-size:10px;font-weight:900;border-radius:8px;padding:1px 5px}
+    .diff-up{color:#166534;background:#dcfce7}.diff-down{color:#991b1b;background:#fee2e2}.diff-flat{color:#64748b;background:#f1f5f9}
+
+    .count-list{display:grid;gap:8px}
+    .count-cat{margin-top:10px;color:var(--primary-dark);font-size:13px;font-weight:900;background:var(--primary-soft);border:1px solid #bfe7e2;border-radius:14px;padding:8px 10px}
+    .count-row{
+      display:grid;
+      grid-template-columns:minmax(130px,1fr) 116px 74px;
+      gap:8px;
+      align-items:center;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:8px;
+      box-shadow:0 3px 12px rgba(2,8,23,.04);
+    }
+    .count-name{font-weight:900;color:var(--primary-dark);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .count-sub{font-size:10px;color:var(--muted);font-weight:700;margin-top:2px}
+    .num-input{width:100%;text-align:center;font-weight:900;font-size:15px;padding:9px 8px;border-radius:12px}
+    .count-row .btn{padding:9px 7px;font-size:11px}
+    @media(max-width:430px){
+      .count-row{grid-template-columns:minmax(105px,1fr) 96px 62px;gap:6px;padding:7px}
+      .count-name{font-size:12px}
+      .num-input{font-size:14px;padding:8px 6px}
+      .count-row .btn{font-size:10px;padding:8px 4px}
     }
 
-    html { -webkit-text-size-adjust:100%; text-size-adjust:100%; box-sizing: border-box; }
-    *, *:before, *:after { box-sizing: inherit; }
+    .settings-grid{display:grid;grid-template-columns:360px 1fr;gap:12px;align-items:start}
+    @media(max-width:960px){.settings-grid{grid-template-columns:1fr}}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .form-grid .full{grid-column:1/-1}
+    @media(max-width:560px){.form-grid{grid-template-columns:1fr}}
+    .muted{color:var(--muted);font-size:11px}
+    .setting-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .item-row-disabled{opacity:.55}
 
-    body {
-      font-family: 'Prompt', sans-serif;
-      background: var(--bg-body);
-      color: var(--text-main);
-      margin: 0;
-      padding: 20px;
-      padding-bottom: 140px;
-      font-size: 14px;
-      line-height: 1.5;
-    }
+    .toast-wrap{position:fixed;right:12px;bottom:18px;z-index:20000;display:grid;gap:8px;pointer-events:none}
+    .toast{pointer-events:auto;background:#0f172a;color:#fff;border-radius:14px;padding:10px 12px;box-shadow:0 12px 30px rgba(2,8,23,.25);font-size:12px;font-weight:800;max-width:min(380px,calc(100vw - 24px))}
+    .toast.ok{background:#065f46}.toast.err{background:#991b1b}.toast.warn{background:#92400e}
+    .loading{position:fixed;inset:0;background:rgba(255,255,255,.65);display:none;align-items:center;justify-content:center;z-index:18000;backdrop-filter:blur(2px)}
+    .loading .box{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow-strong);padding:14px 18px;font-weight:900;color:var(--primary-dark)}
 
-    h2 {
-      text-align: center;
-      color: var(--primary-dark);
-      margin: 0 0 15px;
-      font-weight: 600;
-      font-size: 1.5rem;
-    }
+    .date-control{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .date-control input{flex:1 1 150px}
+    #inputDate:disabled{background:#f8fafc;color:#334155;font-weight:800;opacity:1;cursor:not-allowed}
+    .date-lock-hint{font-size:10px;color:#64748b;font-weight:700;margin-top:4px}
 
-    /* --- Month Navigation --- */
-    .month-nav {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .nav-btn {
-      background: var(--white);
-      color: var(--primary);
-      border: 1px solid var(--primary);
-      padding: 6px 16px;
-      font-size: 14px;
-      font-weight: 500;
-      border-radius: 50px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    .nav-btn:hover:not(:disabled) {
-      background: var(--primary);
-      color: var(--white);
-      box-shadow: 0 4px 10px rgba(0,121,107,0.3);
-    }
-    .nav-btn[disabled] {
-      opacity: 0.5;
-      cursor: not-allowed;
-      background: #eee;
-      border-color: #ddd;
-      color: #999;
-    }
-    .nav-btn svg { width: 16px; height: 16px; fill: currentColor; }
-    
-    .month-label {
-        font-size: 1.1em; font-weight: 600; color: var(--primary-dark);
-        min-width: 100px; text-align: center;
-    }
+    .pw-modal{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:22000;padding:14px;backdrop-filter:blur(4px)}
+    .pw-box{width:min(420px,100%);background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow-strong);padding:18px}
+    .pw-title{font-size:16px;font-weight:900;color:var(--primary-dark);margin:0 0 6px;text-align:center}
+    .pw-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:14px}
+    .pw-actions{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+    .pw-error{display:none;margin-top:8px;color:#991b1b;background:#fff7f7;border:1px solid #fecaca;border-radius:12px;padding:8px 10px;font-size:12px;font-weight:800;text-align:center}
 
-    /* --- 📊 DASHBOARD GRID LAYOUT --- */
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 16px;
-      margin-bottom: 25px;
+    @media(max-width:640px){
+      body{padding:10px 8px 130px;font-size:12px}
+      h2{font-size:19px}
+      .toolbar-left,.toolbar-right{align-items:stretch}
+      .toolbar-left > *, .toolbar-right > *{flex:1 1 auto}
+      .ipt-sm{width:100%}
+      .btn{padding:9px 10px}
+      .grid-cards{grid-template-columns:1fr}
+      th,td{font-size:11px;padding:8px 6px}
+      table{min-width:560px}
     }
-
-    .dash-cat-card {
-      background: var(--white);
-      border-radius: 12px;
-      padding: 15px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      border: 1px solid rgba(0,0,0,0.03);
-    }
-
-    .dash-cat-title {
-      font-weight: 600;
-      color: var(--primary);
-      margin-bottom: 12px;
-      font-size: 1.1em;
-      border-bottom: 2px solid var(--primary-light);
-      padding-bottom: 6px;
-      display: flex; justify-content: space-between;
-    }
-    .dash-date-hint { font-size: 0.7em; color: #999; font-weight: 400; align-self: flex-end; }
-
-    .dash-item-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px dashed #eee;
-    }
-    .dash-item-row:last-child { border-bottom: none; }
-
-    .dash-name {
-      font-weight: 500;
-      color: #444;
-      flex: 1;
-      padding-right: 10px;
-    }
-    
-    .dash-stats {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .dash-curr {
-      font-weight: 700;
-      font-size: 1.1em;
-      color: var(--primary-dark);
-      min-width: 40px;
-      text-align: right;
-    }
-    .dash-trend {
-      font-size: 0.85em;
-      min-width: 50px;
-      text-align: right;
-    }
-
-    .t-up { color: var(--success); }
-    .t-down { color: var(--danger); }
-    .t-flat { color: #ccc; }
-
-
-    /* --- Table Styles --- */
-    .table-card {
-      background: var(--white);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-card);
-      overflow: hidden;
-      border: 1px solid rgba(0,0,0,0.02);
-    }
-    .table-wrapper { overflow-x: auto; width: 100%; }
-    table { width: 100%; border-collapse: collapse; min-width: 600px; }
-    th, td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; }
-    th {
-      background: var(--primary);
-      color: var(--white);
-      font-weight: 500;
-      white-space: nowrap;
-      position: sticky; top: 0; z-index: 10;
-    }
-    th input[type="date"] {
-      background: rgba(255,255,255,0.2);
-      border: 1px solid rgba(255,255,255,0.4);
-      color: #fff;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-family: inherit;
-      cursor: pointer;
-    }
-    th input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
-
-    td.name { text-align: left; font-weight: 500; color: var(--primary-dark); min-width: 150px; }
-    
-    tr.category-header { background: var(--primary-light); text-align: left; }
-    tr.category-header td {
-      font-weight: 600; color: var(--primary-dark);
-      padding: 8px 15px; font-size: 1em; text-transform: uppercase;
-      letter-spacing: 0.5px; border-top: 2px solid #fff;
-    }
-
-    td input[type="number"] {
-      width: 70px; text-align: center; padding: 6px;
-      border: 1px solid #ddd; border-radius: 8px;
-      font-size: 14px; background: #fafafa;
-    }
-    td input[type="number"]:focus { outline: none; border-color: var(--primary); background: #fff; }
-
-    .btn-single {
-      background: var(--primary-light); color: var(--primary-dark);
-      border: none; padding: 6px 12px; border-radius: 6px;
-      font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
-    }
-    .btn-single:hover { background: var(--primary); color: #fff; }
-
-    /* Logic สีในตาราง */
-    .latest-cell { position: relative; }
-    .latest-val { font-weight: 700; font-size: 1.1em; color: #333; }
-    .latest-val.val-low { color: var(--danger); }
-    .diff-badge {
-      display: inline-block; font-size: 0.8em; margin-left: 4px;
-      padding: 1px 5px; border-radius: 4px; font-weight: 500;
-    }
-    .diff-up { color: var(--success); background: #e8f5e9; }
-    .diff-down { color: var(--danger); background: #ffebee; }
-    .diff-flat { color: #9aa0a6; background: #f1f3f4; }
-
-    /* --- Action Bar --- */
-    .btn-bar { margin-top: 25px; display: flex; justify-content: center; gap: 16px; }
-    .action-btn {
-      border: none; padding: 12px 24px; font-size: 15px; font-weight: 600;
-      border-radius: 50px; cursor: pointer; transition: all 0.2s;
-      display: flex; align-items: center; gap: 8px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    #btnAdd { background: #fff; color: var(--primary); border: 1px solid var(--primary); }
-    #btnAdd:hover { background: #f0fdfc; transform: translateY(-2px); }
-    #btnSaveAll { background: linear-gradient(135deg, #00897b, #004d40); color: #fff; }
-    #btnSaveAll:hover { box-shadow: 0 6px 15px rgba(0,137,123,0.4); transform: translateY(-2px); }
-
-    /* --- Popup & Menu --- */
-    #popupForm {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
-      display: none; justify-content: center; align-items: center; z-index: 9999;
-    }
-    .form-box {
-      background: #fff; padding: 25px; border-radius: 20px;
-      width: 90%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-    }
-    .form-box h3 { text-align: center; color: var(--primary); margin-bottom: 15px; }
-    .form-box input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; }
-    .popup-actions { display: flex; gap: 10px; margin-top: 10px; }
-    .popup-actions button { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
-    .submit-btn { background: var(--primary); color: #fff; }
-    .cancel-btn { background: #f5f5f5; color: #666; }
-
-    
-
   </style>
 </head>
 <body>
-<!-- ✅ floating menu -->
 {% include 'floating_menu.html' %}
+<div class="wrap">
   <h2>📦 คลังเวชภัณฑ์</h2>
+  <div class="subhead">แยกภาพรวม / นับสต๊อก / ตั้งค่ารายการ เพื่อให้คีย์ง่ายและหัวรายการไม่ซ้ำ</div>
 
-  <div class="month-nav">
-    <button class="nav-btn" id="btnPrev" type="button">
-      <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-      เดือนก่อน
-    </button>
-    <div class="month-label" id="monthLabel">loading...</div>
-    <button class="nav-btn" id="btnNext" type="button">
-      เดือนถัดไป
-      <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
-    </button>
+  <div class="tabs" role="tablist">
+    <button type="button" class="tab-btn active" data-tab="overview">1) สรุป/เทียบวัน</button>
+    <button type="button" class="tab-btn" data-tab="count">2) นับสต๊อก</button>
+    <button type="button" class="tab-btn" data-tab="settings">3) ตั้งค่ารายการ</button>
   </div>
 
-  <div id="dashboardGrid" class="dashboard-grid">
-     </div>
-
-  <div class="table-card">
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr id="tableHeader"></tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
+  <section id="tab-overview" class="tab-panel active" role="tabpanel">
+    <div class="month-nav">
+      <button class="btn" id="btnPrev" type="button">‹ เดือนก่อน</button>
+      <div class="month-label" id="monthLabel">loading...</div>
+      <button class="btn" id="btnNext" type="button">เดือนถัดไป ›</button>
     </div>
-  </div>
 
-  <div class="btn-bar">
-    <button class="action-btn" id="btnAdd" type="button">
-      <span style="font-size:1.2em">＋</span> เพิ่มรายการ
-    </button>
-    <button class="action-btn" id="btnSaveAll" type="button">
-      <span style="font-size:1.2em">💾</span> บันทึกทั้งหมด
-    </button>
-  </div>
-
-  <div id="popupForm">
-    <div class="form-box">
-      <h3>✨ เพิ่มเวชภัณฑ์ใหม่</h3>
-      <label>ชื่อเวชภัณฑ์</label>
-      <input type="text" id="newName" placeholder="เช่น Syringe 20ml" />
-      <label>จำนวน</label>
-      <input type="number" id="newQty" min="0" placeholder="0" inputmode="numeric" />
-      <label>วันที่ตรวจนับ</label>
-      <input type="date" id="newDate" />
-      <div class="popup-actions">
-        <button class="cancel-btn" id="popupCancel">ยกเลิก</button>
-        <button class="submit-btn" id="popupSubmit">บันทึก</button>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div class="search">
+          <label for="overviewSearch">ค้นหารายการ</label>
+          <input type="text" id="overviewSearch" placeholder="พิมพ์ชื่อเวชภัณฑ์ / หมวด">
+        </div>
+        <div>
+          <label for="overviewCategoryFilter">หมวด</label>
+          <select id="overviewCategoryFilter" class="ipt-sm"><option value="">ทั้งหมด</option></select>
+        </div>
+      </div>
+      <div class="toolbar-right">
+        <span class="pill" id="overviewCountPill">0 รายการ</span>
       </div>
     </div>
+
+    <div id="statusLine" class="status-line" style="margin:4px 0 10px"></div>
+    <div id="dashboardGrid" class="grid-cards"></div>
+
+    <div class="card">
+      <div class="card-hd">
+        <div>
+          <p class="card-title">ตารางเทียบวันตรวจนับ</p>
+          <div class="card-sub">ดูค่าล่าสุดและเทียบกับวันก่อนหน้าในเดือนเดียวกัน</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr id="historyTableHeader"></tr></thead>
+          <tbody id="historyTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-count" class="tab-panel" role="tabpanel">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div>
+          <label for="inputDate">วันที่จะบันทึก</label>
+          <div class="date-control">
+            <input type="date" id="inputDate" class="ipt-sm" disabled>
+            <button class="btn btn-ghost" id="btnUnlockDate" type="button">🔒 เปลี่ยนวันที่</button>
+          </div>
+          <div class="date-lock-hint" id="dateLockHint">ล็อกเป็นวันที่วันนี้ เพื่อกันคีย์ผิดวัน</div>
+        </div>
+        <div class="search">
+          <label for="countSearch">ค้นหารายการ</label>
+          <input type="text" id="countSearch" placeholder="พิมพ์ชื่อเวชภัณฑ์ / หมวด">
+        </div>
+        <div>
+          <label for="countCategoryFilter">หมวด</label>
+          <select id="countCategoryFilter" class="ipt-sm"><option value="">ทั้งหมด</option></select>
+        </div>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn btn-primary" id="btnSaveAll" type="button">💾 บันทึกทั้งหมด</button>
+        <button class="btn" id="btnGoSettings" type="button">＋ เพิ่ม/แก้รายการ</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd">
+        <div>
+          <p class="card-title">นับสต๊อกวันนี้</p>
+          <div class="card-sub">หัวข้ออยู่ชิดช่องกรอก ลดการเลื่อนหน้าจอ วันเดียวกัน+รายการเดียวกันจะอัปเดตทับ</div>
+        </div>
+        <span class="pill" id="countItemPill">0 รายการ</span>
+      </div>
+      <div class="card-bd">
+        <div id="countList" class="count-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-settings" class="tab-panel" role="tabpanel">
+    <div class="settings-grid">
+      <div class="card">
+        <div class="card-hd">
+          <div>
+            <p class="card-title" id="itemFormTitle">เพิ่มรายการกลาง</p>
+            <div class="card-sub">เพิ่ม/แก้ชื่อหลัก หมวด หน่วย และชื่อที่เคยคีย์ผิด</div>
+          </div>
+        </div>
+        <div class="card-bd">
+          <input type="hidden" id="editItemId">
+          <div class="form-grid">
+            <div class="full">
+              <label for="itemName">ชื่อหลัก</label>
+              <input id="itemName" type="text" placeholder="เช่น B12">
+            </div>
+            <div>
+              <label for="itemCategory">หมวด</label>
+              <input id="itemCategory" type="text" list="categoryList" placeholder="เช่น อื่นๆในคลินิก">
+              <datalist id="categoryList"></datalist>
+            </div>
+            <div>
+              <label for="itemUnit">หน่วย</label>
+              <input id="itemUnit" type="text" placeholder="ชิ้น / ขวด / กล่อง" value="ชิ้น">
+            </div>
+            <div>
+              <label for="itemMinQty">แจ้งเตือนต่ำกว่า</label>
+              <input id="itemMinQty" type="number" min="0" step="1" value="0">
+            </div>
+            <div>
+              <label for="itemSort">ลำดับ</label>
+              <input id="itemSort" type="number" step="1" value="0">
+            </div>
+            <div class="full">
+              <label for="itemAliases">ชื่อเก่า/ชื่อพิมพ์ผิด (คั่นด้วย comma)</label>
+              <textarea id="itemAliases" rows="3" placeholder="เช่น b12, B 12"></textarea>
+              <div class="muted">ระบบจะใช้ alias เพื่อรวมข้อมูลเก่า แต่หน้าบันทึกจะใช้ชื่อหลักเท่านั้น</div>
+            </div>
+            <div class="full">
+              <label><input id="itemActive" type="checkbox" style="width:auto" checked> เปิดใช้งาน</label>
+            </div>
+          </div>
+          <div class="setting-actions">
+            <button class="btn btn-primary" id="btnSaveItem" type="button">บันทึกรายการ</button>
+            <button class="btn btn-ghost" id="btnResetItem" type="button">ล้างฟอร์ม</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <div>
+            <p class="card-title">ทะเบียนรายการกลาง</p>
+            <div class="card-sub">การลบใช้วิธีปิดใช้งาน เพื่อไม่ให้ประวัติเก่าหาย</div>
+          </div>
+          <div style="min-width:220px">
+            <input id="settingsSearch" type="text" placeholder="ค้นหารายการ / หมวด / alias">
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:56px">สถานะ</th>
+                <th>ชื่อหลัก</th>
+                <th>หมวด</th>
+                <th>หน่วย</th>
+                <th>ขั้นต่ำ</th>
+                <th>Alias</th>
+                <th style="width:150px">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="settingsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="loading" id="loading"><div class="box">กำลังโหลดข้อมูล…</div></div>
+<div class="toast-wrap" id="toastWrap"></div>
+
+<div class="pw-modal" id="datePasswordModal" aria-hidden="true">
+  <div class="pw-box" role="dialog" aria-modal="true" aria-label="ปลดล็อกวันที่">
+    <div class="pw-title">ปลดล็อกวันที่บันทึก</div>
+    <div class="pw-sub">ใส่รหัสเพื่อเปลี่ยนวันที่คีย์สต๊อก</div>
+    <input type="password" id="datePasswordInput" inputmode="numeric" placeholder="รหัสผ่าน" autocomplete="off">
+    <div class="pw-error" id="datePasswordError">รหัสไม่ถูกต้อง</div>
+    <div class="pw-actions">
+      <button type="button" class="btn btn-ghost" id="btnCancelDatePassword">ยกเลิก</button>
+      <button type="button" class="btn btn-primary" id="btnConfirmDatePassword">ปลดล็อก</button>
+    </div>
   </div>
+</div>
 
-  
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const state = {
+    items: [],
+    counts: [],
+    countsMap: new Map(),
+    months: [],
+    currentMonthIdx: 0,
+    activeTab: 'overview',
+    dateUnlocked: false,
+  };
 
-  <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    
-    // ===== 1. CATEGORIES (UPDATED) =====
-    // ดักจับทั้ง "B12" และ "b12" และ "ยาฉีดสิว" ทั้งมี/ไม่มี #เข็ม
-    const categories = {
-      "💉 อุปกรณ์ฉีด/เจาะ": [
-        "Syringe 10","Syringe 5","Syringe 3","Syringe 1",
-        "เข็ม 32","เข็ม 30","เข็ม 24","เข็ม 18Gx1","เข็ม 18Gx1 1/2",
-        "Cannula","Medicut","ผีเสื้อ 24","ผีเสื้อ 25","Set IV","หลอด PRR"
-      ],
-      "💧 น้ำเกลือ / ยา / สกินแคร์": [
-        "Nss 1000 ML","Nss 100 ML","Nss 5 ML","SWI 5 ML","Milky","B100","วิตามินซี","ชาแนล #เข็ม","ยานีดฉีดสิว #เข็ม","ทรานสมิน #เข็ม","เมโสวิ้ง",
-        // ของใหม่ (ดักหลายแบบเพื่อความชัวร์)
-        "b12", "B12", "B 12", 
-        "ยาฉีดสิว", "ยาฉีดสิว #เข็ม", "อสิติน",
-        // ของเดิมกลุ่มยาทา
-        "ยาชา (ครีม)","ยาทาฝ้า","ยาทาสิว","อะโลเจล","Scrub","ทรานสมิน"
-      ],
-      "🧤 เวชภัณฑ์สิ้นเปลือง": [
-        "ถุงมือ S","สำลีก้อน","สำลีแผ่น","Swabs","แอลกอฮอล์","ไมโครพอร์ เทปขุ่น IV"
-      ]
-    };
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const norm = v => String(v ?? '').trim().toLowerCase().replace(/\s+/g,' ');
+  const todayIso = () => {
+    const d = new Date();
+    const off = d.getTimezoneOffset() * 60000;
+    return new Date(d - off).toISOString().slice(0,10);
+  };
+  const monthOf = d => String(d || '').slice(0,7);
+  function formatDateTH(dateStr){
+    const d = new Date(String(dateStr || '').slice(0,10) + 'T00:00:00');
+    if(Number.isNaN(d.getTime())) return dateStr || '';
+    return d.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
+  }
+  function formatMonthYearTH(ym){
+    if(!ym) return '-';
+    const [y,m] = ym.split('-');
+    const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    return `${months[Number(m)-1] || m} ${Number(y)+543}`;
+  }
+  function toast(msg, type='ok', ms=2400){
+    const wrap = $('#toastWrap');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    wrap.appendChild(t);
+    setTimeout(()=>{ t.style.opacity = '0.15'; }, Math.max(0, ms-450));
+    setTimeout(()=> t.remove(), ms);
+  }
+  function setLoading(on){ $('#loading').style.display = on ? 'flex' : 'none'; }
 
-    const fixedItemList = Object.values(categories).flat();
-    
-    // Variables
-    let allData = [];
-    let allDates = [];
-    let uniqueMonths = [];
-    let currentMonthIdx = 0;
-    let groupedData = {};
-
-    // Helpers
-    const $ = (sel, root=document) => root.querySelector(sel);
-    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
-    const escapeHtml = s => String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
-    
-    const todayIso = () => {
-        const d = new Date();
-        const offset = d.getTimezoneOffset() * 60000;
-        return (new Date(d - offset)).toISOString().slice(0, 10);
-    };
-
-    const monthOf = d => d.slice(0,7); 
-
-    function formatDateTH(dateStr){
-      const d = new Date(dateStr);
-      if (Number.isNaN(d.getTime())) return dateStr;
-      return d.toLocaleDateString('th-TH', { day:'2-digit', month:'2-digit', year:'2-digit' });
+  function setDateLocked(locked, resetToday=false){
+    const input = $('#inputDate');
+    const btn = $('#btnUnlockDate');
+    const hint = $('#dateLockHint');
+    if(!input || !btn) return;
+    state.dateUnlocked = !locked;
+    if(resetToday || !input.value) input.value = todayIso();
+    input.disabled = locked;
+    btn.textContent = locked ? '🔒 เปลี่ยนวันที่' : '🔓 ล็อกกลับวันนี้';
+    if(hint){
+      hint.textContent = locked
+        ? 'ล็อกเป็นวันที่วันนี้ เพื่อกันคีย์ผิดวัน'
+        : 'ปลดล็อกแล้ว: สามารถเลือกวันที่ย้อนหลังได้';
+      hint.style.color = locked ? '#64748b' : '#92400e';
     }
-    
-    function formatMonthYearTH(ym) {
-        if(!ym) return "";
-        const [y, m] = ym.split('-');
-        const thMonths = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
-        return `${thMonths[parseInt(m)-1]} ${parseInt(y)+543}`;
+    renderCountList();
+  }
+  function openDatePasswordModal(){
+    if(state.dateUnlocked){
+      setDateLocked(true, true);
+      toast('ล็อกวันที่กลับเป็นวันนี้แล้ว', 'ok');
+      return;
     }
+    const modal = $('#datePasswordModal');
+    const input = $('#datePasswordInput');
+    const err = $('#datePasswordError');
+    if(err) err.style.display = 'none';
+    if(input) input.value = '';
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+    setTimeout(()=> input?.focus(), 50);
+  }
+  function closeDatePasswordModal(){
+    const modal = $('#datePasswordModal');
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+  }
+  function confirmDatePassword(){
+    const pass = String($('#datePasswordInput')?.value || '').trim();
+    if(pass !== '1112'){
+      const err = $('#datePasswordError');
+      if(err) err.style.display = 'block';
+      $('#datePasswordInput')?.focus();
+      return;
+    }
+    closeDatePasswordModal();
+    setDateLocked(false, false);
+    toast('ปลดล็อกวันที่แล้ว', 'ok');
+    try{ $('#inputDate')?.showPicker?.(); }catch(e){}
+  }
 
-    function buildGrouped(){
-      groupedData = {};
-      for (const row of allData) {
-        (groupedData[row.item_name] ??= {})[row.date] = Number(row.quantity||0);
+  function countKey(itemId, date){ return `${itemId}|${String(date || '').slice(0,10)}`; }
+  function rebuildCountMap(){
+    state.countsMap = new Map();
+    state.counts.forEach(r => {
+      const itemId = String(r.item_id || '');
+      const date = String(r.date || r.count_date || '').slice(0,10);
+      if(itemId && date){
+        state.countsMap.set(countKey(itemId, date), Number(r.quantity ?? 0));
       }
-    }
-
-    function computeCalendars(){
-      const dateSet = new Set(allData.map(d => d.date));
-      allDates = Array.from(dateSet).sort((a,b) => new Date(b) - new Date(a));
-      const monthSet = new Set(allDates.map(d => monthOf(d)));
-      uniqueMonths = Array.from(monthSet).sort((a,b) => a < b ? 1 : (a > b ? -1 : 0));
-      if (uniqueMonths.length === 0) uniqueMonths = [todayIso().slice(0,7)];
-      currentMonthIdx = 0;
-    }
-
-    function getSelectedMonth(){ return uniqueMonths[currentMonthIdx]; }
-    function getFilteredDates(){
-      const ym = getSelectedMonth();
-      const dates = allDates.filter(d => d.startsWith(ym)).sort();
-      return dates.slice(-3); // Show last 3 days
-    }
-    function defaultInputDateForMonth(){
-      const ym = getSelectedMonth();
-      const dates = allDates.filter(d => d.startsWith(ym)).sort();
-      if (dates.length) return dates[dates.length - 1];
-      return todayIso();
-    }
-    function lowThresholdFor(name){
-      if(name.includes("Syringe")) return 20;
-      if(name.includes("เข็ม")) return 20;
-      if(name.includes("Nss")) return 5;
-      return 10;
-    }
-
-    // ===== 📊 DASHBOARD GRID RENDER (LATEST DAY) =====
-    function renderDashboard() {
-        const grid = $('#dashboardGrid');
-        if(!grid) return;
-        grid.innerHTML = ''; // Clear
-
-        // Get Latest date in current view (Rightmost column)
-        const filteredDates = getFilteredDates();
-        if (filteredDates.length === 0) {
-             grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#aaa;">ไม่มีข้อมูล</div>';
-             return;
-        }
-        
-        const latestDate = filteredDates[filteredDates.length - 1];
-        // Find previous date (for comparison)
-        const prevDate = filteredDates.length >= 2 ? filteredDates[filteredDates.length - 2] : null;
-
-        const displayDateTH = formatDateTH(latestDate);
-
-        // Prepare Display Map (Combine Categories + Others)
-        const allKnownItems = new Set(fixedItemList);
-        const dataItems = new Set(Object.keys(groupedData));
-        const uncategorized = Array.from(dataItems).filter(x => !allKnownItems.has(x)).sort();
-        
-        const displayMap = { ...categories };
-        if(uncategorized.length > 0) displayMap["📦 อื่นๆ (Others)"] = uncategorized;
-
-        // Render Cards
-        let hasContent = false;
-
-        Object.entries(displayMap).forEach(([catName, items]) => {
-            // Filter items that have usage > 0 in latest or prev date
-            const activeItems = items.filter(name => {
-                // Show if it has data today OR it is a fixed item
-                return groupedData[name] !== undefined; 
-            });
-
-            if(activeItems.length === 0) return;
-            hasContent = true;
-
-            const card = document.createElement('div');
-            card.className = 'dash-cat-card';
-            
-            let itemRowsHtml = '';
-            activeItems.forEach(name => {
-                const curr = Number((groupedData[name]?.[latestDate] ?? 0).toFixed(2));
-                const prev = Number((groupedData[name]?.[prevDate] ?? 0).toFixed(2));
-                const diff = Number((curr - prev).toFixed(2));
-                
-                let trendHtml = `<span class="dash-trend t-flat">-</span>`;
-                if(prevDate) {
-                    if(diff > 0) trendHtml = `<span class="dash-trend t-up">▲${diff}</span>`;
-                    else if(diff < 0) trendHtml = `<span class="dash-trend t-down">▼${Math.abs(diff)}</span>`;
-                    else trendHtml = `<span class="dash-trend t-flat">0</span>`;
-                }
-
-                // Show only if value exists or fixed item
-                itemRowsHtml += `
-                    <div class="dash-item-row">
-                        <div class="dash-name">${escapeHtml(name)}</div>
-                        <div class="dash-stats">
-                            <span class="dash-curr">${curr.toLocaleString()}</span>
-                            ${trendHtml}
-                        </div>
-                    </div>
-                `;
-            });
-
-            card.innerHTML = `
-                <div class="dash-cat-title">
-                    ${escapeHtml(catName)}
-                    <span class="dash-date-hint">${displayDateTH}</span>
-                </div>
-                ${itemRowsHtml}
-            `;
-            grid.appendChild(card);
-        });
-
-        if(!hasContent) {
-            grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#aaa; padding:20px;">ไม่มีข้อมูลการใช้ในเดือนนี้</div>';
-        }
-    }
-
-    // ===== Fetch =====
-    async function fetchData(){
-      try{
-        // One-time fetch (Backend handles full data)
-        const res = await fetch('/api/inventory');
-        if (!res.ok) throw new Error('Network err');
-        const rawData = await res.json();
-
-        allData = (Array.isArray(rawData) ? rawData : []).map(r => {
-            let dStr = r.date ? String(r.date) : todayIso();
-            if (dStr.includes('T')) dStr = dStr.split('T')[0];
-            return { item_name: (r.item_name||'').trim(), date: dStr.substring(0, 10), quantity: Number(r.quantity ?? 0) };
-        });
-      }catch(e){ console.error(e); allData = []; }
-      
-      computeCalendars();
-      buildGrouped();
-      renderTable(); // Render Table first to get dates
-      renderDashboard(); // Render Grid Dashboard using dates from table logic
-      updateNavButtons();
-    }
-
-    // ===== Render Table =====
-    function renderTable(){
-      const headerRow = $('#tableHeader');
-      const tbody = $('#tableBody');
-      const label = $('#monthLabel');
-      
-      if(label) label.textContent = formatMonthYearTH(getSelectedMonth());
-
-      if (!headerRow || !tbody) return;
-      const filteredDates = getFilteredDates();
-      const inputDateDefault = defaultInputDateForMonth();
-
-      headerRow.innerHTML =
-        `<th>สินค้า</th>` +
-        filteredDates.map(d => `<th>${formatDateTH(d)}</th>`).join('') +
-        `<th><input type="date" id="inputDate" value="${inputDateDefault}"></th>
-         <th style="width:80px">Action</th>`;
-
-      tbody.innerHTML = '';
-      const allKnownItems = new Set(fixedItemList);
-      const dataItems = new Set(Object.keys(groupedData));
-      const uncategorized = Array.from(dataItems).filter(x => !allKnownItems.has(x)).sort();
-      const displayMap = { ...categories };
-      if(uncategorized.length > 0) displayMap["📦 อื่นๆ (Others)"] = uncategorized;
-
-      Object.entries(displayMap).forEach(([catName, items]) => {
-          const validItems = items.filter(name => fixedItemList.includes(name) || groupedData[name]);
-          if(validItems.length === 0) return;
-
-          const catTr = document.createElement('tr');
-          catTr.className = 'category-header';
-          catTr.innerHTML = `<td colspan="${filteredDates.length + 3}">${escapeHtml(catName)}</td>`;
-          tbody.appendChild(catTr);
-
-          validItems.forEach((name) => {
-              const vals = filteredDates.map(d => groupedData[name]?.[d]);
-              const cells = [];
-              for (let i=0; i<filteredDates.length; i++){
-                  const v = vals[i];
-                  const isLatest = (i === filteredDates.length - 1);
-                  if (!isLatest){
-                      cells.push(`<td>${Number.isFinite(v) ? v : '-'}</td>`);
-                  } else {
-                      const prev = vals.length >= 2 ? vals[filteredDates.length - 2] : undefined;
-                      let diffHtml = `<span class="diff-badge diff-flat">-</span>`;
-                      if (Number.isFinite(v) && Number.isFinite(prev)){
-                          const diff = Number((v - prev).toFixed(2));
-                          if(diff > 0) diffHtml = `<span class="diff-badge diff-up">▲${diff}</span>`;
-                          else if(diff < 0) diffHtml = `<span class="diff-badge diff-down">▼${Math.abs(diff)}</span>`;
-                          else diffHtml = `<span class="diff-badge diff-flat">0</span>`;
-                      }
-                      const thr = lowThresholdFor(name);
-                      const isLow = (Number.isFinite(v) && v < thr);
-                      const valClass = isLow ? 'val-low' : '';
-                      const vText = Number.isFinite(v) ? v : '-';
-                      cells.push(`<td class="latest-cell"><span class="latest-val ${valClass}">${vText}</span>${diffHtml}</td>`);
-                  }
-              }
-              const tr = document.createElement('tr');
-              tr.innerHTML = `<td class="name">${escapeHtml(name)}</td>` + cells.join('') +
-                  `<td><input type="number" min="0" step="1" inputmode="numeric" data-item="${escapeHtml(name)}"></td>` +
-                  `<td><button class="btn-single" type="button" data-item="${escapeHtml(name)}">บันทึก</button></td>`;
-              tbody.appendChild(tr);
-          });
+    });
+  }
+  function getCount(itemId, date){
+    const v = state.countsMap.get(countKey(itemId, date));
+    return Number.isFinite(v) ? v : undefined;
+  }
+  function getAllDates(){
+    return [...new Set(state.counts.map(r => String(r.date || r.count_date || '').slice(0,10)).filter(Boolean))]
+      .sort((a,b)=> new Date(b) - new Date(a));
+  }
+  function computeMonths(){
+    const monthSet = new Set(getAllDates().map(monthOf).filter(Boolean));
+    monthSet.add(todayIso().slice(0,7));
+    state.months = Array.from(monthSet).sort((a,b)=> a < b ? 1 : (a > b ? -1 : 0));
+    if(state.currentMonthIdx >= state.months.length) state.currentMonthIdx = 0;
+  }
+  function selectedMonth(){ return state.months[state.currentMonthIdx] || todayIso().slice(0,7); }
+  function datesInSelectedMonth(){
+    const ym = selectedMonth();
+    return getAllDates().filter(d => d.startsWith(ym)).sort();
+  }
+  function displayDates(){
+    return datesInSelectedMonth().slice(-3);
+  }
+  function groupedItems(includeInactive=false){
+    const out = new Map();
+    state.items
+      .filter(it => includeInactive || it.is_active !== false)
+      .sort((a,b)=> String(a.category||'').localeCompare(String(b.category||''), 'th') || (Number(a.sort_order||0)-Number(b.sort_order||0)) || String(a.name||'').localeCompare(String(b.name||''), 'th'))
+      .forEach(it => {
+        const cat = it.category || 'อื่นๆ';
+        if(!out.has(cat)) out.set(cat, []);
+        out.get(cat).push(it);
       });
-    }
+    return out;
+  }
+  function categories(){
+    return [...new Set(state.items.map(x => x.category || 'อื่นๆ'))].sort((a,b)=> a.localeCompare(b,'th'));
+  }
 
-    function updateNavButtons(){
-      const prev = $('#btnPrev'), next = $('#btnNext');
-      if (prev) prev.disabled = currentMonthIdx >= (uniqueMonths.length - 1);
-      if (next) next.disabled = currentMonthIdx <= 0;
+  async function apiGet(url){
+    const res = await fetch(url, {credentials:'include'});
+    const data = await res.json().catch(()=> ({}));
+    if(!res.ok) throw new Error(data.error || `โหลดข้อมูลไม่สำเร็จ (${res.status})`);
+    return data;
+  }
+  async function apiPost(url, body){
+    const res = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify(body || {})});
+    const data = await res.json().catch(()=> ({}));
+    if(!res.ok) throw new Error(data.error || `บันทึกไม่สำเร็จ (${res.status})`);
+    return data;
+  }
+  async function fetchAll(){
+    setLoading(true);
+    try{
+      const [items, counts] = await Promise.all([
+        apiGet('/api/inventory_items?include_inactive=1'),
+        apiGet('/api/inventory')
+      ]);
+      state.items = Array.isArray(items) ? items.map(normalizeItem) : [];
+      state.counts = Array.isArray(counts) ? counts.map(normalizeCount) : [];
+      rebuildCountMap();
+      computeMonths();
+      const inputDate = $('#inputDate');
+      if(inputDate){
+        if(!state.dateUnlocked) inputDate.value = todayIso();
+        else if(!inputDate.value) inputDate.value = todayIso();
+        inputDate.disabled = !state.dateUnlocked;
+      }
+      renderAll();
+    }catch(err){
+      console.error(err);
+      toast(err.message || 'โหลดข้อมูลไม่สำเร็จ', 'err', 4200);
+    }finally{
+      setLoading(false);
     }
+  }
+  function normalizeItem(x){
+    let aliases = x.aliases || [];
+    if(typeof aliases === 'string'){
+      try{ aliases = JSON.parse(aliases); }catch{ aliases = aliases.split(','); }
+    }
+    if(!Array.isArray(aliases)) aliases = [];
+    return {
+      id: String(x.id || ''),
+      name: String(x.name || '').trim(),
+      category: String(x.category || 'อื่นๆ').trim(),
+      unit: String(x.unit || 'ชิ้น').trim(),
+      min_qty: Number(x.min_qty ?? 0),
+      sort_order: Number(x.sort_order ?? 0),
+      is_active: x.is_active !== false,
+      aliases: aliases.map(a => String(a || '').trim()).filter(Boolean),
+    };
+  }
+  function normalizeCount(x){
+    return {
+      id: x.id,
+      item_id: String(x.item_id || ''),
+      item_name: String(x.item_name || '').trim(),
+      category: String(x.category || '').trim(),
+      date: String(x.date || x.count_date || '').slice(0,10),
+      quantity: Number(x.quantity ?? 0),
+      note: x.note || ''
+    };
+  }
 
-    // ===== Save & Events =====
-    function isDuplicateEntry(itemName, date, qty){
-       return allData.some(entry => entry.item_name === itemName && entry.date === date && Number(entry.quantity) === Number(qty));
-    }
-    async function saveData(payload){
-      try{
-        const res = await fetch('/api/save_inventory', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
-        if(!res.ok) throw new Error('bad status');
-        await res.json();
-        const btn = $('#btnSaveAll'); const oldText = btn.innerHTML;
-        btn.innerHTML = '✅ เรียบร้อย'; btn.style.background = '#43a047';
-        setTimeout(() => { btn.innerHTML = oldText; btn.style.background = ''; }, 2000);
-        await fetchData();
-      }catch(e){ alert('❌ เกิดข้อผิดพลาด'); }
-    }
+  function itemMatchesOverview(item){
+    const q = norm($('#overviewSearch')?.value || '');
+    const cat = $('#overviewCategoryFilter')?.value || '';
+    if(cat && item.category !== cat) return false;
+    if(!q) return true;
+    const hay = norm([item.name, item.category, item.unit, ...(item.aliases||[])].join(' '));
+    return hay.includes(q);
+  }
+  function itemMatchesCount(item){
+    const q = norm($('#countSearch')?.value || '');
+    const cat = $('#countCategoryFilter')?.value || '';
+    if(cat && item.category !== cat) return false;
+    if(!q) return true;
+    const hay = norm([item.name, item.category, item.unit, ...(item.aliases||[])].join(' '));
+    return hay.includes(q);
+  }
 
-    $('#tableBody')?.addEventListener('click', (e) => {
-      const btn = e.target.closest('.btn-single');
-      if (!btn) return;
-      const itemName = btn.dataset.item;
-      const tr = btn.closest('tr');
-      const inputEl = tr ? tr.querySelector('input[type="number"]') : null;
-      const inputDate = $('#inputDate')?.value || '';
-      const qtyStr = inputEl?.value?.trim();
-      if (!inputDate || !qtyStr){ alert('กรุณากรอกข้อมูลให้ครบ'); return; }
-      const nQty = Number(qtyStr);
-      if (Number.isNaN(nQty) || nQty < 0){ alert('จำนวนไม่ถูกต้อง'); return; }
-      if (isDuplicateEntry(itemName, inputDate, nQty)){ if(!confirm(`⚠️ ข้อมูลซ้ำ ยืนยันบันทึกซ้ำ?`)) return; }
-      saveData([{ item_name:itemName, date:inputDate, quantity:nQty }]);
-      inputEl.value = '';
+  function renderAll(){
+    renderControls();
+    renderDashboard();
+    renderHistoryTable();
+    renderCountList();
+    renderSettings();
+  }
+  function renderControls(){
+    $('#monthLabel').textContent = formatMonthYearTH(selectedMonth());
+    $('#btnPrev').disabled = state.currentMonthIdx >= state.months.length - 1;
+    $('#btnNext').disabled = state.currentMonthIdx <= 0;
+
+    const cats = categories();
+    ['overviewCategoryFilter','countCategoryFilter'].forEach(id => {
+      const sel = $('#' + id);
+      const prev = sel.value;
+      sel.innerHTML = '<option value="">ทั้งหมด</option>' + cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+      if(prev && cats.includes(prev)) sel.value = prev;
     });
 
-    $('#btnSaveAll')?.addEventListener('click', () => {
-      const inputDate = $('#inputDate')?.value || '';
-      if (!inputDate){ alert('กรุณาเลือกวันที่ก่อนบันทึก'); return; }
-      const payload = []; const duplicateList = [];
-      $$('#tableBody input[type="number"]').forEach(input => {
-        const val = input.value.trim(); if (val === '') return;
-        const name = input.dataset.item; const qty = Number(val);
-        if (Number.isNaN(qty) || qty < 0) return;
-        if (isDuplicateEntry(name, inputDate, qty)) duplicateList.push(name);
-        else payload.push({ item_name:name, date:inputDate, quantity:qty });
+    const dl = $('#categoryList');
+    dl.innerHTML = cats.map(c => `<option value="${esc(c)}"></option>`).join('');
+
+    const active = state.items.filter(x => x.is_active !== false).length;
+    const hidden = state.items.length - active;
+    $('#statusLine').innerHTML = `รายการเปิดใช้งาน <b>${active.toLocaleString()}</b> รายการ${hidden ? ` • ปิดใช้งาน ${hidden.toLocaleString()} รายการ` : ''}`;
+  }
+  function renderDashboard(){
+    const grid = $('#dashboardGrid');
+    const dates = displayDates();
+    if(!dates.length){
+      grid.innerHTML = `<div class="card" style="padding:18px;text-align:center;color:#94a3b8">ยังไม่มีข้อมูลการตรวจนับ</div>`;
+      $('#overviewCountPill').textContent = '0 รายการ';
+      return;
+    }
+    const latest = dates[dates.length - 1];
+    const prev = dates.length >= 2 ? dates[dates.length - 2] : '';
+    let html = '';
+    let shown = 0;
+    groupedItems(false).forEach((items, cat) => {
+      const activeItems = items.filter(itemMatchesOverview).filter(it => getCount(it.id, latest) !== undefined || getCount(it.id, prev) !== undefined);
+      if(!activeItems.length) return;
+      shown += activeItems.length;
+      const rows = activeItems.map(it => {
+        const curr = getCount(it.id, latest) ?? 0;
+        const pv = prev ? (getCount(it.id, prev) ?? 0) : 0;
+        const diff = Number((curr - pv).toFixed(2));
+        const trend = !prev ? `<span class="trend t-flat">-</span>` : diff > 0 ? `<span class="trend t-up">▲${diff}</span>` : diff < 0 ? `<span class="trend t-down">▼${Math.abs(diff)}</span>` : `<span class="trend t-flat">0</span>`;
+        return `<div class="dash-row">
+          <div class="dash-name" title="${esc(it.name)}">${esc(it.name)}</div>
+          <div class="dash-stat"><span class="dash-qty">${Number(curr).toLocaleString()}</span>${trend}</div>
+        </div>`;
+      }).join('');
+      html += `<div class="dash-card"><div class="dash-title"><span>${esc(cat)}</span><span class="dash-date">${formatDateTH(latest)}</span></div>${rows}</div>`;
+    });
+    grid.innerHTML = html || `<div class="card" style="padding:18px;text-align:center;color:#94a3b8">ไม่มีรายการที่มีข้อมูลตามฟิลเตอร์</div>`;
+    $('#overviewCountPill').textContent = `${shown.toLocaleString()} รายการ`;
+  }
+
+  function renderHistoryTable(){
+    const header = $('#historyTableHeader');
+    const body = $('#historyTableBody');
+    const dates = displayDates();
+    header.innerHTML = `<th style="min-width:190px;text-align:left">สินค้า</th>` +
+      dates.map(d => `<th>${formatDateTH(d)}</th>`).join('');
+
+    let html = '';
+    groupedItems(false).forEach((items, cat) => {
+      const visible = items.filter(itemMatchesOverview);
+      if(!visible.length) return;
+      html += `<tr class="cat-row"><td colspan="${dates.length + 1}">${esc(cat)}</td></tr>`;
+      visible.forEach(it => {
+        const cells = dates.map((d, idx) => {
+          const v = getCount(it.id, d);
+          if(idx !== dates.length - 1){
+            return `<td>${v === undefined ? '-' : Number(v).toLocaleString()}</td>`;
+          }
+          const prev = idx >= 1 ? getCount(it.id, dates[idx-1]) : undefined;
+          let diffHtml = `<span class="diff diff-flat">-</span>`;
+          if(v !== undefined && prev !== undefined){
+            const diff = Number((Number(v) - Number(prev)).toFixed(2));
+            if(diff > 0) diffHtml = `<span class="diff diff-up">▲${diff}</span>`;
+            else if(diff < 0) diffHtml = `<span class="diff diff-down">▼${Math.abs(diff)}</span>`;
+            else diffHtml = `<span class="diff diff-flat">0</span>`;
+          }
+          return `<td><span class="latest-val">${v === undefined ? '-' : Number(v).toLocaleString()}</span>${diffHtml}</td>`;
+        }).join('');
+        html += `<tr><td class="name">${esc(it.name)} <span class="muted">${esc(it.unit || 'ชิ้น')}</span></td>${cells}</tr>`;
       });
-      if (duplicateList.length){ if(!confirm(`มีรายการซ้ำ ${duplicateList.length} รายการ ต้องการบันทึกส่วนที่ไม่ซ้ำหรือไม่?`)) return; }
-      if (!payload.length && !duplicateList.length){ alert('ไม่พบข้อมูลใหม่'); return; }
-      if(payload.length) saveData(payload);
     });
+    body.innerHTML = html || `<tr><td colspan="${dates.length + 1}" style="text-align:center;color:#94a3b8;padding:22px">ไม่พบรายการตามฟิลเตอร์</td></tr>`;
+  }
 
-    const popup = $('#popupForm');
-    $('#btnAdd')?.addEventListener('click', () => {
-       $('#newName').value = ''; $('#newQty').value = ''; $('#newDate').value = $('#inputDate')?.value || todayIso();
-       popup.style.display = 'flex'; setTimeout(() => $('#newName').focus(), 50);
+  function renderCountList(){
+    const list = $('#countList');
+    if(!list) return;
+    const inputDate = $('#inputDate')?.value || todayIso();
+    let html = '';
+    let rowCount = 0;
+    groupedItems(false).forEach((items, cat) => {
+      const visible = items.filter(itemMatchesCount);
+      if(!visible.length) return;
+      html += `<div class="count-cat">${esc(cat)}</div>`;
+      visible.forEach(it => {
+        rowCount++;
+        const existing = getCount(it.id, inputDate);
+        const existingText = existing === undefined ? 'ยังไม่มีข้อมูลวันนี้' : `เดิม ${Number(existing).toLocaleString()} ${esc(it.unit || 'ชิ้น')}`;
+        html += `<div class="count-row">
+          <div>
+            <div class="count-name" title="${esc(it.name)}">${esc(it.name)}</div>
+            <div class="count-sub">${existingText}</div>
+          </div>
+          <input class="num-input" type="number" min="0" step="1" inputmode="numeric" data-item-id="${esc(it.id)}" placeholder="จำนวน">
+          <button class="btn btn-ghost btn-row-save" type="button" data-item-id="${esc(it.id)}">บันทึก</button>
+        </div>`;
+      });
     });
-    const hidePopup = () => popup.style.display = 'none';
-    $('#popupCancel')?.addEventListener('click', hidePopup);
-    popup.addEventListener('click', e => { if(e.target === popup) hidePopup(); });
-    $('#popupSubmit')?.addEventListener('click', () => {
-       const name = $('#newName').value.trim(); const qty = Number($('#newQty').value); const date = $('#newDate').value;
-       if(!name || !date || qty < 0) { alert('ข้อมูลไม่ครบ'); return; }
-       saveData([{ item_name:name, date, quantity:qty }]); hidePopup();
-    });
+    list.innerHTML = html || `<div style="text-align:center;color:#94a3b8;padding:18px">ไม่พบรายการตามฟิลเตอร์</div>`;
+    $('#countItemPill').textContent = `${rowCount.toLocaleString()} รายการ`;
+  }
 
-    $('#btnPrev')?.addEventListener('click', () => {
-      if(currentMonthIdx < uniqueMonths.length - 1){ currentMonthIdx++; renderTable(); renderDashboard(); updateNavButtons(); }
+  function collectPayload(itemId=null){
+    const date = $('#inputDate')?.value || '';
+    if(!date) throw new Error('กรุณาเลือกวันที่');
+    if(date !== todayIso() && !state.dateUnlocked) throw new Error('วันที่ถูกล็อกไว้ กรุณาปลดล็อกก่อนเปลี่ยนวันที่');
+    const inputs = itemId ? $$(`input.num-input[data-item-id="${CSS.escape(itemId)}"]`) : $$('input.num-input');
+    const payload = [];
+    inputs.forEach(inp => {
+      const raw = String(inp.value || '').trim();
+      if(raw === '') return;
+      const qty = Number(raw);
+      if(!Number.isFinite(qty) || qty < 0) return;
+      payload.push({ item_id: inp.dataset.itemId, date, quantity: qty });
     });
-    $('#btnNext')?.addEventListener('click', () => {
-      if(currentMonthIdx > 0){ currentMonthIdx--; renderTable(); renderDashboard(); updateNavButtons(); }
-    });
+    return payload;
+  }
+  async function saveCounts(payload){
+    if(!payload.length){ toast('ยังไม่มีจำนวนที่กรอก', 'warn'); return; }
+    setLoading(true);
+    try{
+      await apiPost('/api/save_inventory', payload);
+      toast(`บันทึกแล้ว ${payload.length} รายการ`, 'ok');
+      await fetchAll();
+    }catch(err){
+      console.error(err);
+      toast(err.message || 'บันทึกไม่สำเร็จ', 'err', 4200);
+    }finally{
+      setLoading(false);
+    }
+  }
 
-    
+  function renderSettings(){
+    const q = norm($('#settingsSearch')?.value || '');
+    const rows = state.items
+      .slice()
+      .sort((a,b)=> (a.is_active===b.is_active ? 0 : a.is_active ? -1 : 1) || String(a.category||'').localeCompare(String(b.category||''),'th') || (Number(a.sort_order||0)-Number(b.sort_order||0)) || String(a.name||'').localeCompare(String(b.name||''),'th'))
+      .filter(it => !q || norm([it.name, it.category, it.unit, ...(it.aliases||[])].join(' ')).includes(q));
+    $('#settingsBody').innerHTML = rows.map(it => `
+      <tr class="${it.is_active ? '' : 'item-row-disabled'}">
+        <td>${it.is_active ? '<span class="pill">ใช้งาน</span>' : '<span class="pill off">ปิด</span>'}</td>
+        <td class="name">${esc(it.name)}</td>
+        <td>${esc(it.category)}</td>
+        <td>${esc(it.unit || 'ชิ้น')}</td>
+        <td>${Number(it.min_qty||0).toLocaleString()}</td>
+        <td style="text-align:left">${(it.aliases||[]).length ? esc(it.aliases.join(', ')) : '<span class="muted">-</span>'}</td>
+        <td>
+          <button class="btn btn-ghost btn-edit-item" type="button" data-id="${esc(it.id)}">แก้</button>
+          <button class="btn ${it.is_active ? 'btn-danger' : ''} btn-toggle-item" type="button" data-id="${esc(it.id)}" data-active="${it.is_active ? '0':'1'}">${it.is_active ? 'ปิด':'เปิด'}</button>
+        </td>
+      </tr>`).join('') || `<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px">ไม่พบรายการ</td></tr>`;
+  }
+  function resetItemForm(){
+    $('#editItemId').value = '';
+    $('#itemName').value = '';
+    $('#itemCategory').value = '';
+    $('#itemUnit').value = 'ชิ้น';
+    $('#itemMinQty').value = '0';
+    $('#itemSort').value = '0';
+    $('#itemAliases').value = '';
+    $('#itemActive').checked = true;
+    $('#itemFormTitle').textContent = 'เพิ่มรายการกลาง';
+  }
+  function fillItemForm(id){
+    const it = state.items.find(x => x.id === id);
+    if(!it) return;
+    $('#editItemId').value = it.id;
+    $('#itemName').value = it.name;
+    $('#itemCategory').value = it.category;
+    $('#itemUnit').value = it.unit || 'ชิ้น';
+    $('#itemMinQty').value = it.min_qty || 0;
+    $('#itemSort').value = it.sort_order || 0;
+    $('#itemAliases').value = (it.aliases || []).join(', ');
+    $('#itemActive').checked = it.is_active !== false;
+    $('#itemFormTitle').textContent = `แก้รายการ: ${it.name}`;
+    switchTab('settings', false);
+    setTimeout(()=> $('#itemName').focus(), 100);
+  }
+  async function saveItem(){
+    const id = $('#editItemId').value.trim();
+    const name = $('#itemName').value.trim();
+    const category = $('#itemCategory').value.trim();
+    const unit = $('#itemUnit').value.trim() || 'ชิ้น';
+    const min_qty = Number($('#itemMinQty').value || 0);
+    const sort_order = Number($('#itemSort').value || 0);
+    const aliases = $('#itemAliases').value.split(',').map(x => x.trim()).filter(Boolean);
+    const is_active = $('#itemActive').checked;
+    if(!name) return toast('กรุณากรอกชื่อหลัก', 'warn');
+    if(!category) return toast('กรุณากรอกหมวด', 'warn');
 
-    fetchData();
+    const dup = state.items.find(x => x.id !== id && norm(x.name) === norm(name));
+    if(dup) return toast(`มีชื่อหลักนี้แล้ว: ${dup.name}`, 'err', 3800);
+
+    setLoading(true);
+    try{
+      await apiPost('/api/save_inventory_item', {id: id || undefined, name, category, unit, min_qty, sort_order, aliases, is_active});
+      toast('บันทึกรายการกลางแล้ว', 'ok');
+      resetItemForm();
+      await fetchAll();
+    }catch(err){
+      console.error(err);
+      toast(err.message || 'บันทึกไม่สำเร็จ', 'err', 4200);
+    }finally{
+      setLoading(false);
+    }
+  }
+  async function toggleItem(id, active){
+    const it = state.items.find(x => x.id === id);
+    if(!it) return;
+    if(!active && !confirm(`ปิดใช้งาน "${it.name}" ใช่ไหม?\nประวัติเก่าจะยังอยู่ แต่จะไม่แสดงในหน้าบันทึก`)) return;
+    setLoading(true);
+    try{
+      await apiPost('/api/toggle_inventory_item', {id, is_active: active});
+      toast(active ? 'เปิดใช้งานแล้ว' : 'ปิดใช้งานแล้ว', 'ok');
+      await fetchAll();
+    }catch(err){
+      toast(err.message || 'อัปเดตไม่สำเร็จ', 'err', 4200);
+    }finally{
+      setLoading(false);
+    }
+  }
+
+  function switchTab(tab, doScroll=true){
+    state.activeTab = tab;
+    $$('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    $$('.tab-panel').forEach(p => p.classList.remove('active'));
+    const panel = $(`#tab-${tab}`);
+    if(panel) panel.classList.add('active');
+    if(doScroll) window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  $$('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+  $('#btnPrev').addEventListener('click', () => { if(state.currentMonthIdx < state.months.length - 1){ state.currentMonthIdx++; renderAll(); } });
+  $('#btnNext').addEventListener('click', () => { if(state.currentMonthIdx > 0){ state.currentMonthIdx--; renderAll(); } });
+  $('#inputDate').value = todayIso();
+  setDateLocked(true, false);
+  $('#inputDate').addEventListener('change', renderCountList);
+  $('#btnUnlockDate').addEventListener('click', openDatePasswordModal);
+  $('#btnCancelDatePassword').addEventListener('click', closeDatePasswordModal);
+  $('#btnConfirmDatePassword').addEventListener('click', confirmDatePassword);
+  $('#datePasswordInput').addEventListener('keydown', e => {
+    if(e.key === 'Enter'){ e.preventDefault(); confirmDatePassword(); }
+    if(e.key === 'Escape'){ e.preventDefault(); closeDatePasswordModal(); }
   });
-  </script>
+  $('#datePasswordModal').addEventListener('click', e => { if(e.target.id === 'datePasswordModal') closeDatePasswordModal(); });
+  $('#overviewSearch').addEventListener('input', () => { renderDashboard(); renderHistoryTable(); });
+  $('#overviewCategoryFilter').addEventListener('change', () => { renderDashboard(); renderHistoryTable(); });
+  $('#countSearch').addEventListener('input', renderCountList);
+  $('#countCategoryFilter').addEventListener('change', renderCountList);
+  $('#btnSaveAll').addEventListener('click', () => {
+    try{ saveCounts(collectPayload()); }catch(err){ toast(err.message, 'warn'); }
+  });
+  $('#btnGoSettings').addEventListener('click', () => switchTab('settings'));
+  $('#countList').addEventListener('click', e => {
+    const btn = e.target.closest('.btn-row-save');
+    if(!btn) return;
+    try{ saveCounts(collectPayload(btn.dataset.itemId)); }catch(err){ toast(err.message, 'warn'); }
+  });
+  $('#btnSaveItem').addEventListener('click', saveItem);
+  $('#btnResetItem').addEventListener('click', resetItemForm);
+  $('#settingsSearch').addEventListener('input', renderSettings);
+  $('#settingsBody').addEventListener('click', e => {
+    const edit = e.target.closest('.btn-edit-item');
+    const toggle = e.target.closest('.btn-toggle-item');
+    if(edit) fillItemForm(edit.dataset.id);
+    if(toggle) toggleItem(toggle.dataset.id, toggle.dataset.active === '1');
+  });
+
+  fetchAll();
+});
+</script>
 </body>
 </html>

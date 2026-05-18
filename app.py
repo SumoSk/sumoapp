@@ -2018,7 +2018,8 @@ def api_reccord_sale():
 
 
 # =============================================================
-# API — Oldsale & Inventory (compat)
+# API — Oldsale & Inventory
+# Inventory v2: fixed item master + one count per item/date
 # =============================================================
 @app.route("/api/oldsaledata")
 @login_required
@@ -2031,33 +2032,269 @@ def api_oldsaledata():
         return jsonify({"error": str(e)}), 500
 
 
+def _clean_inventory_aliases(value):
+    """Return clean alias list from list/string."""
+    if value is None:
+        return []
+    if isinstance(value, list):
+        raw = value
+    elif isinstance(value, str):
+        raw = value.split(",")
+    else:
+        raw = []
+    out = []
+    seen = set()
+    for x in raw:
+        s = str(x or "").strip()
+        if not s:
+            continue
+        k = s.lower()
+        if k in seen:
+            continue
+        seen.add(k)
+        out.append(s)
+    return out
+
+
+def _num_or_zero(value):
+    try:
+        if value is None or value == "":
+            return 0
+        return float(value)
+    except Exception:
+        return 0
+
+
+def _inventory_fetch_items(include_inactive=True):
+    q = supabase.table("inventory_items").select("*")
+    if not include_inactive:
+        q = q.eq("is_active", True)
+    res = q.execute()
+    rows = res.data or []
+    rows.sort(key=lambda x: (
+        str(x.get("category") or ""),
+        int(float(x.get("sort_order") or 0)),
+        str(x.get("name") or "")
+    ))
+    return rows
+
+
+def _inventory_match_item_id(item_name, items_cache=None):
+    name = str(item_name or "").strip()
+    if not name:
+        return None
+    key = name.lower()
+    items = items_cache if items_cache is not None else _inventory_fetch_items(include_inactive=True)
+    for item in items:
+        if str(item.get("name") or "").strip().lower() == key:
+            return item.get("id")
+        aliases = item.get("aliases") or []
+        if isinstance(aliases, str):
+            aliases = _clean_inventory_aliases(aliases)
+        for a in aliases:
+            if str(a or "").strip().lower() == key:
+                return item.get("id")
+    return None
+
+
+@app.route("/api/inventory_items")
+@login_required
+def api_inventory_items():
+    """Fixed inventory item master. Frontend uses this instead of hardcoded item heads."""
+    try:
+        include_inactive = str(request.args.get("include_inactive", "0")).lower() in ("1", "true", "yes")
+        rows = _inventory_fetch_items(include_inactive=include_inactive)
+        return jsonify(rows)
+    except Exception as e:
+        app.logger.error(f"/api/inventory_items error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/save_inventory_item", methods=["POST"])
+@login_required
+def api_save_inventory_item():
+    """Create/update item master. Deletion is intentionally soft via is_active."""
+    try:
+        data = request.get_json(force=True) or {}
+        item_id = str(data.get("id") or "").strip()
+        name = str(data.get("name") or "").strip()
+        category = str(data.get("category") or "").strip()
+        unit = str(data.get("unit") or "ชิ้น").strip() or "ชิ้น"
+        aliases = _clean_inventory_aliases(data.get("aliases"))
+        min_qty = _num_or_zero(data.get("min_qty"))
+        sort_order = int(_num_or_zero(data.get("sort_order")))
+        is_active = bool(data.get("is_active", True))
+
+        if not name:
+            return jsonify({"error": "กรุณากรอกชื่อรายการ"}), 400
+        if not category:
+            return jsonify({"error": "กรุณากรอกหมวด"}), 400
+
+        payload = {
+            "name": name,
+            "category": category,
+            "unit": unit,
+            "min_qty": min_qty,
+            "sort_order": sort_order,
+            "is_active": is_active,
+            "aliases": aliases,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        if item_id:
+            supabase.table("inventory_items").update(payload).eq("id", item_id).execute()
+            return jsonify({"success": True, "message": "updated"})
+
+        payload["created_at"] = datetime.now(timezone.utc).isoformat()
+        supabase.table("inventory_items").insert(payload).execute()
+        return jsonify({"success": True, "message": "inserted"})
+
+    except Exception as e:
+        app.logger.error(f"/api/save_inventory_item error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/toggle_inventory_item", methods=["POST"])
+@login_required
+def api_toggle_inventory_item():
+    """Soft delete / restore item master."""
+    try:
+        data = request.get_json(force=True) or {}
+        item_id = str(data.get("id") or "").strip()
+        if not item_id:
+            return jsonify({"error": "missing id"}), 400
+        is_active = bool(data.get("is_active", True))
+        supabase.table("inventory_items").update({
+            "is_active": is_active,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }).eq("id", item_id).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        app.logger.error(f"/api/toggle_inventory_item error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/inventory")
 @login_required
 def api_inventory():
+    """
+    Compatibility endpoint.
+    New system returns flattened rows from inventory_counts joined with inventory_items:
+      {item_id, item_name, category, unit, min_qty, date, quantity}
+    If new tables are not available yet, it falls back to legacy inventory table.
+    """
     try:
         all_data = []
         start = 0
         limit = 1000
         while True:
-            res = supabase.table("inventory").select("*").range(start, start + limit - 1).execute()
+            res = (
+                supabase.table("inventory_counts")
+                .select("id,item_id,count_date,quantity,note,created_at,updated_at,inventory_items(id,name,category,unit,min_qty,sort_order,is_active)")
+                .range(start, start + limit - 1)
+                .execute()
+            )
             batch = res.data or []
-            all_data.extend(batch)
+            for r in batch:
+                item = r.get("inventory_items") or {}
+                all_data.append({
+                    "id": r.get("id"),
+                    "item_id": r.get("item_id"),
+                    "item_name": item.get("name") or "",
+                    "category": item.get("category") or "",
+                    "unit": item.get("unit") or "ชิ้น",
+                    "min_qty": item.get("min_qty") or 0,
+                    "sort_order": item.get("sort_order") or 0,
+                    "is_active": item.get("is_active", True),
+                    "date": safe_date_str(r.get("count_date")),
+                    "quantity": r.get("quantity") or 0,
+                    "note": r.get("note") or "",
+                })
             if len(batch) < limit:
                 break
             start += limit
         return jsonify(all_data)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception as e_new:
+        # Legacy fallback for projects that have not run the new SQL yet.
+        try:
+            all_data = []
+            start = 0
+            limit = 1000
+            while True:
+                res = supabase.table("inventory").select("*").range(start, start + limit - 1).execute()
+                batch = res.data or []
+                all_data.extend(batch)
+                if len(batch) < limit:
+                    break
+                start += limit
+            return jsonify(all_data)
+        except Exception as e_old:
+            app.logger.error(f"/api/inventory error new={e_new} old={e_old}")
+            return jsonify({"error": str(e_new)}), 500
 
 
 @app.route("/api/save_inventory", methods=["POST"])
 @login_required
 def api_save_inventory():
+    """
+    Save inventory counts.
+    New behavior: UPSERT by (item_id, count_date), so the same item/date cannot duplicate.
+    Backward compatible: item_name is mapped to inventory_items by name/aliases.
+    """
     data = request.get_json(force=True)
+    rows = data if isinstance(data, list) else [data]
     try:
-        supabase.table("inventory").insert(data).execute()
-        return jsonify({"message": "success"})
+        items_cache = None
+        payload = []
+        now_iso = datetime.now(timezone.utc).isoformat()
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            item_id = str(row.get("item_id") or "").strip()
+            if not item_id:
+                if items_cache is None:
+                    items_cache = _inventory_fetch_items(include_inactive=True)
+                item_id = _inventory_match_item_id(row.get("item_name"), items_cache=items_cache) or ""
+            date_str = safe_date_str(row.get("date") or row.get("count_date"))
+            if not item_id:
+                return jsonify({"error": f"ไม่พบรายการกลางของ {row.get('item_name') or '-'}"}), 400
+            if not date_str:
+                return jsonify({"error": "กรุณาระบุวันที่"}), 400
+            qty = _num_or_zero(row.get("quantity"))
+            if qty < 0:
+                return jsonify({"error": "จำนวนต้องไม่ติดลบ"}), 400
+            payload.append({
+                "item_id": item_id,
+                "count_date": date_str,
+                "quantity": qty,
+                "note": str(row.get("note") or "").strip(),
+                "updated_at": now_iso,
+            })
+
+        if not payload:
+            return jsonify({"message": "no data", "count": 0})
+
+        supabase.table("inventory_counts").upsert(payload, on_conflict="item_id,count_date").execute()
+        return jsonify({"message": "success", "count": len(payload)})
+
     except Exception as e:
+        # If the new schema is not installed, fallback to old insert to avoid breaking immediately.
+        try:
+            legacy_payload = []
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                legacy_payload.append({
+                    "item_name": str(row.get("item_name") or row.get("name") or "").strip(),
+                    "date": safe_date_str(row.get("date") or row.get("count_date")),
+                    "quantity": _num_or_zero(row.get("quantity")),
+                })
+            if legacy_payload:
+                supabase.table("inventory").insert(legacy_payload).execute()
+                return jsonify({"message": "success", "count": len(legacy_payload), "legacy": True})
+        except Exception:
+            pass
+        app.logger.error(f"/api/save_inventory error: {e}")
         return jsonify({"error": str(e)}), 500
 
 
