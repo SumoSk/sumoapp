@@ -204,6 +204,32 @@
     .kpi .value{ font-weight:1000; font-size:18px; letter-spacing:.2px; }
     .kpi .hint{ color:var(--muted); font-size:10px; }
 
+
+    .segment-card{
+      cursor:pointer;
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    }
+    .segment-card:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 14px 30px rgba(2,8,23,.10);
+      border-color: color-mix(in oklab, var(--primary) 35%, var(--line) 65%);
+    }
+    .segment-card.active{
+      border-color: color-mix(in oklab, var(--primary) 60%, var(--line) 40%);
+      box-shadow: 0 0 0 3px rgba(14,165,164,.14), 0 14px 30px rgba(2,8,23,.08);
+    }
+    .segment-card .value-row{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:8px;
+    }
+    .segment-card .pct{
+      color:var(--muted);
+      font-size:11px;
+      font-weight:900;
+    }
+
     .filters{
       display:flex;
       flex-wrap:wrap;
@@ -277,15 +303,71 @@
     .plan-row{
       border:1px solid var(--line);
       border-radius:16px;
-      padding:10px;
+      padding:12px;
       background:#fff;
       display:grid;
       gap:10px;
-      grid-template-columns: 1.2fr 1fr 1fr .9fr auto;
+      grid-template-columns: minmax(260px, 1.35fr) minmax(220px, .9fr) minmax(260px, 1fr) auto;
       align-items:start;
     }
+    .plan-row.dup{ border-color: color-mix(in oklab, var(--warn) 70%, var(--line) 30%); background:#fffaf0; }
     .plan-row .meta{ font-size:10px; color:var(--muted); margin-top:4px; }
-    .plan-row .row-actions{ display:flex; gap:8px; justify-content:flex-end; align-items:center; }
+    .contact-note{
+      display:none;
+      margin-top:7px;
+      padding:8px 9px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:#f8fafc;
+      color:#334155;
+      font-size:11px;
+      line-height:1.45;
+      font-weight:800;
+    }
+    .contact-note.show{display:block;}
+    .contact-note.call{background:#ecfdf5;border-color:#bbf7d0;color:#065f46;}
+    .contact-note.later{background:#fffbeb;border-color:#fde68a;color:#92400e;}
+    .contact-note.pause{background:#fff7ed;border-color:#fed7aa;color:#9a3412;}
+    .contact-note.stop{background:#fef2f2;border-color:#fecaca;color:#991b1b;}
+    .contact-note .note-title{font-weight:1000;display:block;margin-bottom:2px;}
+    .plan-row .row-actions{ display:flex; gap:8px; justify-content:flex-end; align-items:center; flex-wrap:wrap; }
+    .plan-submit-card{
+      margin-top:12px;
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:linear-gradient(180deg,#fff,#fbfffe);
+      padding:12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      box-shadow:0 10px 24px rgba(2,8,23,.05);
+    }
+    .plan-summary-box{
+      display:none;
+      margin:12px 0 0;
+      border:1px solid color-mix(in oklab, var(--success) 32%, var(--line) 68%);
+      background:color-mix(in oklab, var(--success) 9%, #fff 91%);
+      border-radius:16px;
+      padding:12px;
+    }
+    .plan-summary-box.show{ display:block; }
+    .plan-summary-box .summary-line{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+    .today-summary-card{ box-shadow:none; }
+    .today-summary-content{ display:none; }
+    .today-summary-card.expanded .today-summary-content{ display:block; }
+    .today-summary-mini{
+      font-size:11px;
+      color:var(--muted);
+      font-weight:900;
+      display:inline-flex;
+      gap:6px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .today-summary-mini strong{ color:#0f172a; }
 
     /* ===== Sticky action bar ===== */
     .actionbar{
@@ -472,42 +554,57 @@
           <div class="filters">
             <div class="field" style="min-width:200px;">
               <label>วันที่บันทึก</label>
-              <input class="input" type="date" id="planDate">
+              <input class="input" type="date" id="planDate" readonly>
             </div>
-            <div class="field" style="min-width:260px;">
-              <label>โปรโมชัน</label>
-              <input class="input" type="text" id="planDefaultPromo" placeholder=>
+            <div class="field" style="min-width:320px; flex:1;">
+              <label>โปรโมชัน / เรื่องที่โทร</label>
+              <input class="input" type="text" id="planDefaultPromo" placeholder="เช่น Rejuran / โปรแกรมผิว / โปรเดือนนี้">
             </div>
-            <div class="field" style="min-width:260px;">
-              <label>ช่องทาง</label>
-              <select class="input" id="planDefaultChannel"></select>
-            </div>
+            <select class="input" id="planDefaultChannel" style="display:none;">
+              <option value="call" selected>call</option>
+            </select>
             <div style="display:flex; gap:8px; align-items:flex-end;">
-              <button class="btn" id="btnAddRow" type="button">➕ เพิ่มแถว</button>
-              <button class="btn btn-primary" id="btnSaveBulk" type="button">💾 บันทึกทั้งหมด</button>
+              <button class="btn" id="btnAddRow" type="button">➕ เพิ่มลูกค้า</button>
             </div>
           </div>
+
+          <div id="lastSaveSummary" class="plan-summary-box"></div>
 
           <div style="height:12px;"></div>
 
           <datalist id="customerList"></datalist>
           <div class="plan-rows" id="planRows"></div>
 
-          <!-- ✅ TODAY SUMMARY (ใต้หน้าบันทึกการโทร) -->
+          <div class="plan-submit-card">
+            <div class="actionbar-left">
+              <span class="badge b-slate">รายการ: <span class="mono" id="planCount">0</span></span>
+              <span class="badge b-green">พร้อมบันทึก: <span class="mono" id="planValid">0</span></span>
+              <span class="badge b-amber">ยังไม่ครบ/ซ้ำ: <span class="mono" id="planInvalid">0</span></span>
+              <span class="badge b-slate">Draft: <span class="mono" id="planDraftStatus">—</span></span>
+            </div>
+            <div class="actionbar-right">
+              <button class="btn" id="btnAddRow2" type="button">➕ เพิ่มลูกค้าต่อ</button>
+              <button class="btn btn-primary" id="btnSaveBulk2" type="button">💾 บันทึกทั้งหมด</button>
+            </div>
+          </div>
+
+          <!-- ✅ TODAY SUMMARY (หุบไว้ก่อน ลดความรก) -->
           <div style="height:14px;"></div>
 
-          <section class="card" style="box-shadow:none;">
-            <div class="card-head">
+          <section class="card today-summary-card" id="todaySummaryCard">
+            <div class="card-head" style="cursor:pointer;" id="todaySummaryHeader" title="กดเพื่อเปิด/ปิดรายละเอียด">
               <div>
                 <div class="card-title">🧾 สรุปข้อมูลที่บันทึกวันนี้</div>
+                <div class="today-summary-mini" id="todaySummaryMini">หุบอยู่ • กดเปิดเมื่อต้องการดูรายละเอียด</div>
               </div>
               <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                 <span class="badge b-slate">วันที่: <span class="mono" id="todaySummaryDate">—</span></span>
-                <button class="btn" id="btnReloadTodaySummary" type="button">🔄 โหลดสรุปวันนี้</button>
+                <button class="btn" id="btnReloadTodaySummary" type="button">🔄 โหลด</button>
+                <button class="btn btn-primary" id="btnToggleTodaySummary" type="button">เปิดดู</button>
               </div>
             </div>
 
-            <div class="card-body">
+            <div class="card-body today-summary-content" id="todaySummaryContent">
               <div class="grid kpis" style="grid-template-columns: repeat(4, minmax(0,1fr));" id="todayKpis"></div>
 
               <div style="height:12px;"></div>
@@ -527,7 +624,7 @@
               <div style="height:12px;"></div>
 
               <div class="table-wrap">
-                <table style="min-width:980px;">
+                <table style="min-width:820px;">
                   <thead>
                     <tr>
                       <th>เวลา</th>
@@ -535,7 +632,6 @@
                       <th>โปรโมชัน</th>
                       <th>Outcome</th>
                       <th>คอมเมนต์</th>
-                      <th>ช่องทาง</th>
                     </tr>
                   </thead>
                   <tbody id="todaySummaryTbody"></tbody>
@@ -544,20 +640,6 @@
             </div>
           </section>
           <!-- ✅ /TODAY SUMMARY -->
-
-          <div class="actionbar">
-            <div class="actionbar-inner">
-              <div class="actionbar-left">
-                <span class="badge b-slate">รายการ: <span class="mono" id="planCount">0</span></span>
-                <span class="badge b-slate">Valid: <span class="mono" id="planValid">0</span></span>
-                <span class="badge b-slate">Draft: <span class="mono" id="planDraftStatus">—</span></span>
-              </div>
-              <div class="actionbar-right">
-                <button class="btn" id="btnAddRow2" type="button">➕ เพิ่มแถว</button>
-                <button class="btn btn-primary" id="btnSaveBulk2" type="button">💾 บันทึก</button>
-              </div>
-            </div>
-          </div>
 
         </div>
       </section>
@@ -601,6 +683,21 @@
 
           <div style="height:12px;"></div>
 
+          <div class="card" style="box-shadow:none;">
+            <div class="card-head">
+              <div>
+                <div class="card-title">📌 จำนวนลูกค้าตามสถานะติดต่อ</div>
+                <div class="card-sub">คลิกการ์ดเพื่อกรองตารางแนะนำโทรตามสถานะนั้น</div>
+              </div>
+              <button class="btn btn-ghost" id="btnClearDashSegment" type="button">แสดงทั้งหมด</button>
+            </div>
+            <div class="card-body">
+              <div class="grid kpis" id="segmentKpis"></div>
+            </div>
+          </div>
+
+          <div style="height:12px;"></div>
+
           <div class="filters">
             <div class="field" style="min-width:180px;">
               <label>ช่วงวันที่ (History/Pitch)</label>
@@ -610,14 +707,13 @@
               </div>
             </div>
             <div class="field" style="min-width:220px;">
-              <label>Filter: Segment</label>
+              <label>สถานะติดต่อ</label>
               <select id="dashSegment" class="input">
                 <option value="">ทั้งหมด</option>
-                <option value="VIP">VIP (มูลค่าสูง)</option>
-                <option value="ACTIVE">Active (มีสัญญาณสนใจ)</option>
-                <option value="WARM">Warm (พอมีหวัง)</option>
-                <option value="COLD">Cold (ต้องใช้แรง)</option>
-                <option value="STOP">Stop (ควรหยุดตาม)</option>
+                <option value="CALL">ควรโทร</option>
+                <option value="LATER">รอติดต่อภายหลัง</option>
+                <option value="PAUSE">พักติดต่อ</option>
+                <option value="STOP">หยุดติดต่อ</option>
               </select>
             </div>
             <div class="field" style="min-width:240px;">
@@ -647,16 +743,16 @@
 
             <div class="card" style="box-shadow:none;">
               <div class="card-head">
-                <div class="card-title">🔥 Follow-up Funnel</div>
-                <div class="card-sub">แบ่งกลุ่มตาม “ความน่าติดตาม” (Priority Score)</div>
+                <div class="card-title">🔥 สถานะติดต่อลูกค้า</div>
+                <div class="card-sub">แบ่งกลุ่มตามสถานะจริง: ควรโทร / รอ / พัก / หยุด</div>
               </div>
               <div class="card-body">
                 <canvas id="chartFunnel" height="120"></canvas>
                 <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-                  <span class="badge b-green">Hot</span>
-                  <span class="badge b-amber">Warm</span>
-                  <span class="badge b-slate">Cold</span>
-                  <span class="badge b-red">Stop</span>
+                  <span class="badge b-green">ควรโทร</span>
+                  <span class="badge b-amber">รอภายหลัง</span>
+                  <span class="badge b-slate">พักติดต่อ</span>
+                  <span class="badge b-red">หยุดติดต่อ</span>
                 </div>
               </div>
             </div>
@@ -676,13 +772,14 @@
                     <tr>
                       <th>#</th>
                       <th>ลูกค้า</th>
-                      <th>Segment</th>
+                      <th>สถานะติดต่อ</th>
                       <th class="right">Priority</th>
                       <th class="right">ยอดซื้อรวม</th>
                       <th class="right">โทรล่าสุด</th>
                       <th>Outcome ล่าสุด</th>
                       <th class="right">โทรแล้ว</th>
                       <th>แนะนำ</th>
+                      <th>เหตุผล</th>
                     </tr>
                   </thead>
                   <tbody id="dashTopTbody"></tbody>
@@ -713,14 +810,13 @@
               <input class="input" id="custQ" placeholder="ชื่อ/OPD/เบอร์">
             </div>
             <div class="field" style="min-width:210px;">
-              <label>Segment</label>
+              <label>สถานะติดต่อ</label>
               <select class="input" id="custSegment">
                 <option value="">ทั้งหมด</option>
-                <option value="VIP">VIP</option>
-                <option value="ACTIVE">Active</option>
-                <option value="WARM">Warm</option>
-                <option value="COLD">Cold</option>
-                <option value="STOP">Stop</option>
+                <option value="CALL">ควรโทร</option>
+                <option value="LATER">รอติดต่อภายหลัง</option>
+                <option value="PAUSE">พักติดต่อ</option>
+                <option value="STOP">หยุดติดต่อ</option>
               </select>
             </div>
             <div class="field" style="min-width:210px;">
@@ -755,7 +851,8 @@
                 <tr>
                   <th>#</th>
                   <th>ลูกค้า</th>
-                  <th>Segment</th>
+                  <th>สถานะติดต่อ</th>
+                  <th>เหตุผล</th>
                   <th class="right">Priority</th>
                   <th class="right">ยอดซื้อรวม</th>
                   <th class="right">ค่าเฉลี่ย/ครั้ง</th>
@@ -941,6 +1038,113 @@
       return Math.floor((bUTC - aUTC) / 86400000);
     }
 
+
+
+    // ✅ CRM purchase history helper
+    // หน้า CRM เดิมดึงประวัติซื้อจาก /api/reccord_sale อย่างเดียวและผูกด้วย OPD ตรง ๆ
+    // แต่หน้าวิเคราะห์ใช้ /api/sales ซึ่ง normalize รายการได้ครบกว่า
+    // ชุดนี้ทำให้ CRM ใช้ข้อมูลขายชุดเดียวกับหน้าวิเคราะห์ และ fallback ด้วยเบอร์/ชื่อเมื่อ OPD เก่าไม่ตรง
+    function cleanOPDForRecord(v){
+      const d = String(v ?? '').replace(/\D/g, '');
+      if(!d) return '';
+      const opd = d.padStart(4,'0').slice(-4);
+      return opd === '0000' ? '' : opd;
+    }
+    function normPhoneForRecord(v){
+      let d = String(v ?? '').replace(/\D/g, '');
+      if(d.startsWith('66') && d.length >= 11) d = '0' + d.slice(-9);
+      return d;
+    }
+    function normNameForRecord(v){
+      return String(v ?? '').trim().replace(/\s+/g,' ').toLowerCase();
+    }
+    function stringifySaleItemForCRM(item){
+      if(item == null) return '';
+      if(typeof item === 'string') return item.trim();
+      if(typeof item === 'object'){
+        const label = String(item.label || item.name || item.item || item.product_name || '').trim();
+        const qty = item.qty ?? item.quantity ?? item.count ?? '';
+        const price = item.price ?? item.unit_price ?? item.amount ?? '';
+        if(label && qty && price) return `${label} - ${qty} ชิ้น x ${price} บาท`;
+        if(label && qty) return `${label} - ${qty} ชิ้น`;
+        if(label) return label;
+        try{ return JSON.stringify(item); }catch(e){ return String(item); }
+      }
+      return String(item).trim();
+    }
+    function parseSaleItemsForCRM(raw){
+      if(raw == null || raw === '') return [];
+      let val = raw;
+      if(typeof val === 'string'){
+        const t = val.trim();
+        if(!t) return [];
+        try{
+          const parsed = JSON.parse(t);
+          val = parsed;
+        }catch(e){
+          // รองรับข้อมูลเก่าที่เป็นข้อความหลายบรรทัด
+          return t.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+        }
+      }
+      if(Array.isArray(val)) return val.map(stringifySaleItemForCRM).filter(Boolean);
+      return [stringifySaleItemForCRM(val)].filter(Boolean);
+    }
+    function normalizeSaleRecordForCRM(r){
+      const out = {...(r || {})};
+      out.opd = cleanOPDForRecord(out.opd);
+      out.name = String(out.name || out.customer_name || out.full_name || '').trim();
+      out.phone = String(out.phone || out.tel || out.mobile || '').trim();
+      out.date = iso10(out.date || out.sale_date || out.created_at || out.updated_at || '');
+      out.amount = Number(out.amount ?? out.total ?? out.total_amount ?? 0) || 0;
+      out.items = parseSaleItemsForCRM(out.items ?? out.item ?? out.sale_items ?? out.products);
+      return out;
+    }
+    async function loadSalesRecordsForCRM(){
+      // ใช้ /api/sales ก่อน เพราะเป็น endpoint เดียวกับหน้าวิเคราะห์ที่ประวัติซื้อขึ้นครบ
+      let arr = [];
+      try{ arr = await fetchJSON('/api/sales'); }catch(e){ arr = []; }
+      if(!Array.isArray(arr) || !arr.length){
+        try{ arr = await fetchJSON('/api/reccord_sale'); }catch(e){ arr = []; }
+      }
+      return (Array.isArray(arr) ? arr : []).map(normalizeSaleRecordForCRM);
+    }
+    function pushMapList(map, key, val){
+      if(!key) return;
+      if(!map.has(key)) map.set(key, []);
+      map.get(key).push(val);
+    }
+    function sortSaleRecordsDesc(list){
+      list.sort((a,b)=>{
+        const ad = iso10(a?.date);
+        const bd = iso10(b?.date);
+        if(bd !== ad) return bd.localeCompare(ad);
+        return String(b?.created_at || b?.date || '').localeCompare(String(a?.created_at || a?.date || ''));
+      });
+      return list;
+    }
+    function getPurchaseRecordsForCustomer(opd){
+      const key = cleanOPDForRecord(opd);
+      const cust = customerByOPD.get(key) || {opd:key, name:'', phone:''};
+      const buckets = [];
+      if(key && recordsByOPD.has(key)) buckets.push(recordsByOPD.get(key));
+      const ph = normPhoneForRecord(cust.phone || '');
+      if(ph && recordsByPhone.has(ph)) buckets.push(recordsByPhone.get(ph));
+      const nm = normNameForRecord(cust.name || '');
+      if(nm && recordsByName.has(nm)) buckets.push(recordsByName.get(nm));
+
+      const seen = new Set();
+      const merged = [];
+      for(const list of buckets){
+        for(const r of (list || [])){
+          const rid = r.id || r.sale_id || `${r.date}|${r.opd}|${r.name}|${r.phone}|${r.amount}|${JSON.stringify(r.items || []).slice(0,180)}`;
+          if(seen.has(rid)) continue;
+          seen.add(rid);
+          merged.push(r);
+        }
+      }
+      return sortSaleRecordsDesc(merged);
+    }
+
     function nowStamp(){
       const d = new Date();
       const hh = String(d.getHours()).padStart(2,'0');
@@ -965,7 +1169,7 @@
     const CHANNELS = ['call','line','visit','facebook','instagram','other'];
 
     const isInterested = (outcome)=> /^สนใจ/.test(String(outcome||'').trim());
-    const isHardReject = (outcome)=> /^ไม่สนใจ/.test(String(outcome||'').trim()) || /ไม่น่าจะกลับมา/.test(String(outcome||''));
+    const isHardReject = (outcome)=> /^ไม่สนใจ/.test(String(outcome||'').trim()) || /ไม่น่าจะกลับมา/.test(String(outcome||'')) || /เบอร์ผิด/.test(String(outcome||''));
 
     // ===================== Global state =====================
     let customers = [];                // from /api/customers
@@ -974,6 +1178,8 @@
     let customerIndex = new Map();     // label -> {opd,name,phone}
     let customerByOPD = new Map();     // opd -> {opd,name,phone}
     let recordsByOPD = new Map();      // opd -> [record_sale]
+    let recordsByPhone = new Map();    // phone -> [record_sale]
+    let recordsByName = new Map();     // normalized name -> [record_sale]
     let pitchesByOPD = new Map();      // opd -> [pitches]
     let analytics = [];                // computed customers analytics objects
 
@@ -993,6 +1199,8 @@
     const kpiPitches = $('#kpiPitches');
     const kpiInterested = $('#kpiInterested');
     const kpiConvScore = $('#kpiConvScore');
+    const segmentKpis = $('#segmentKpis');
+    const btnClearDashSegment = $('#btnClearDashSegment');
     const dashFrom = $('#dashFrom');
     const dashTo = $('#dashTo');
     const dashSegment = $('#dashSegment');
@@ -1011,7 +1219,9 @@
     const planRows = $('#planRows');
     const planCount = $('#planCount');
     const planValid = $('#planValid');
+    const planInvalid = $('#planInvalid');
     const planDraftStatus = $('#planDraftStatus');
+    const lastSaveSummary = $('#lastSaveSummary');
     const btnAddRow = $('#btnAddRow');
     const btnAddRow2 = $('#btnAddRow2');
     const btnSaveBulk = $('#btnSaveBulk');
@@ -1020,12 +1230,18 @@
     const dlCustomers = $('#customerList');
 
     // ✅ Today summary elements (added)
+    const todaySummaryCard = $('#todaySummaryCard');
+    const todaySummaryHeader = $('#todaySummaryHeader');
+    const todaySummaryMini = $('#todaySummaryMini');
+    const todaySummaryContent = $('#todaySummaryContent');
     const todaySummaryDate = $('#todaySummaryDate');
     const btnReloadTodaySummary = $('#btnReloadTodaySummary');
+    const btnToggleTodaySummary = $('#btnToggleTodaySummary');
     const todayKpis = $('#todayKpis');
     const todayStats = $('#todayStats');
     const todayPromoTop = $('#todayPromoTop');
     const todaySummaryTbody = $('#todaySummaryTbody');
+    let todaySummaryExpanded = false;
 
     // Customers view
     const custQ = $('#custQ');
@@ -1071,10 +1287,14 @@
     const loadDraft = ()=>{ try{ return JSON.parse(localStorage.getItem(DRAFT_KEY))||null; }catch{return null;} };
     const saveDraft = debounce(()=>{
       const draft = {
-        date: planDate.value || todayISO(),
+        date: todayISO(),
         defaultPromo: planDefaultPromo.value || '',
-        defaultChannel: planDefaultChannel.value || 'call',
-        rows: getPlanRowsPayload(true)
+        rows: getPlanRowsPayload(true).map(r=>({
+          opd:r.opd,
+          customer_label:r.customer_label,
+          outcome:r.outcome,
+          content:r.content
+        }))
       };
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
       planDraftStatus.textContent = `saved ${nowStamp()}`;
@@ -1107,21 +1327,24 @@
     // ✅ ปรับ sort record ให้คอนซิสต์ แม้ date จะเป็น YYYY-MM-DD หรือ ISO timestamp
     function buildRecordsIndex(){
       recordsByOPD = new Map();
+      recordsByPhone = new Map();
+      recordsByName = new Map();
+
+      records = (records || []).map(normalizeSaleRecordForCRM);
+
       for(const r of records){
-        const opd = pad4(r?.opd);
-        if(!opd) continue;
-        if(!recordsByOPD.has(opd)) recordsByOPD.set(opd, []);
-        recordsByOPD.get(opd).push(r);
+        const opd = cleanOPDForRecord(r?.opd);
+        const phone = normPhoneForRecord(r?.phone || '');
+        const name = normNameForRecord(r?.name || '');
+
+        if(opd) pushMapList(recordsByOPD, opd, r);
+        if(phone) pushMapList(recordsByPhone, phone, r);
+        if(name) pushMapList(recordsByName, name, r);
       }
-      for(const [opd, list] of recordsByOPD.entries()){
-        list.sort((a,b)=>{
-          const ad = iso10(a?.date);
-          const bd = iso10(b?.date);
-          if(bd !== ad) return bd.localeCompare(ad); // วันล่าสุดก่อน
-          // วันเดียวกันค่อยดู timestamp เต็ม (กรณีมีเวลา)
-          return String(b?.date||'').localeCompare(String(a?.date||''));
-        });
-      }
+
+      for(const list of recordsByOPD.values()) sortSaleRecordsDesc(list);
+      for(const list of recordsByPhone.values()) sortSaleRecordsDesc(list);
+      for(const list of recordsByName.values()) sortSaleRecordsDesc(list);
     }
 
     function buildPitchesIndex(){
@@ -1140,30 +1363,76 @@
    // ===================== Scoring & Segmentation =====================
 const VIP_THRESHOLD = 15000;
 
-// ✅ แนะนำให้โทรเฉพาะคนที่ไม่ได้มาเกิน 2 เดือน
-const INACTIVE_DAYS = 60; // ~2 เดือน
+// ✅ กติกาใหม่: คนเพิ่งมาไม่ควรโทรเร็วเกินไป
+// - เพิ่งมาไม่ถึง 4 เดือน = ยังไม่แนะนำ
+// - ถ้าโทรแล้วลูกค้ามาหลังจากนั้น = พักโทรจนกว่าจะครบ 6 เดือน
+// - ไม่มาเกือบ 1 ปีครึ่ง = หยุดติดต่อ
+const RECENT_VISIT_DAYS = 120;        // ~4 เดือน
+const POST_CALL_VISIT_PAUSE_DAYS = 180; // ~6 เดือน
+const LONG_ABSENT_STOP_DAYS = 540;    // ~1 ปีครึ่ง
+const INACTIVE_DAYS = RECENT_VISIT_DAYS
+const NO_CONTACT_PAT = /(ไม่รับสาย|ปิดเครื่อง|โทรไม่ติด|ติดต่อไม่ได้)/;
+const SOFT_INTEREST_PAT = /(สนใจแต่ยังต้องตามต่อ|สนใจแต่ยังไม่ว่าง)/;
+const STRONG_STOP_PAT = /(เบอร์ผิด|ไม่น่าจะกลับมาแล้ว|ไม่สนใจไม่บอกเหตุผล)/;
+const CLEAR_REJECT_PAT = /(ไม่สนใจ)/;
+
+const CONTACT_STATUS_LABELS = {
+  CALL: 'ควรโทร',
+  LATER: 'รอติดต่อภายหลัง',
+  PAUSE: 'พักติดต่อ',
+  STOP: 'หยุดติดต่อ'
+};
+
+function isNoContactOutcome(outcome){
+  return NO_CONTACT_PAT.test(String(outcome || '').trim());
+}
+function isSoftInterestOutcome(outcome){
+  return SOFT_INTEREST_PAT.test(String(outcome || '').trim());
+}
+function isStrongStopOutcome(outcome){
+  return STRONG_STOP_PAT.test(String(outcome || '').trim());
+}
+function isClearRejectOutcome(outcome){
+  return CLEAR_REJECT_PAT.test(String(outcome || '').trim());
+}
+function countLatestNoContactStreak(list){
+  let n = 0;
+  for(const p of (list || [])){
+    if(isNoContactOutcome(p?.outcome)) n++;
+    else break;
+  }
+  return n;
+}
+function countLatestSoftInterestStreak(list){
+  let n = 0;
+  for(const p of (list || [])){
+    if(isSoftInterestOutcome(p?.outcome)) n++;
+    else break;
+  }
+  return n;
+}
 
 function calcCustomerAnalytics(opd){
       const cust = customerByOPD.get(opd) || {opd, name:opd, phone:''};
       const pitchList = pitchesByOPD.get(opd) || [];
-      const recList = recordsByOPD.get(opd) || [];
+      const recList = getPurchaseRecordsForCustomer(opd);
 
       const paid = recList.filter(r=> Number(r.amount||0) > 0);
       const totalAmount = paid.reduce((s,r)=> s + Number(r.amount||0), 0);
       const paidVisits = paid.length;
       const avgAmount = paidVisits ? totalAmount/paidVisits : 0;
+      const isHighValue = totalAmount >= VIP_THRESHOLD;
 
-      // ✅ last visit date (ใช้ record ล่าสุด ไม่ว่า amount=0 หรือไม่)
+      // ✅ วันมาคลินิกล่าสุด ใช้ประวัติขาย/เข้ารับบริการล่าสุด ไม่ผูกกับยอดเงิน
       const lastBuyDate = recList[0]?.date ? iso10(recList[0].date) : '';
 
-      // ✅ เก็บ “การโทรล่าสุดทั้งหมด” ไว้แสดงผล
+      // ✅ เก็บการโทรล่าสุดทั้งหมดไว้แสดงผล
       const overallAttempts = pitchList.length;
       const overallLastPitch = pitchList[0] || null;
       const overallLastPitchDate = overallLastPitch ? iso10(overallLastPitch.created_at||overallLastPitch.date||'') : '';
       const overallLastOutcome = overallLastPitch?.outcome || '';
 
-      // ✅ ถ้าลูกค้ามีการซื้อแล้ว ให้เริ่มรอบติดตามใหม่หลังวันซื้อล่าสุด
-      //    เพื่อไม่ให้การโทรรอบก่อนการซื้อ ยังดันขึ้น Top Priority อยู่
+      // ✅ เริ่มรอบติดตามใหม่หลังวันที่ลูกค้ามาครั้งล่าสุด
       const scoringPitchList = lastBuyDate
         ? pitchList.filter(p => iso10(p.created_at||p.date||'') > lastBuyDate)
         : pitchList;
@@ -1173,99 +1442,166 @@ function calcCustomerAnalytics(opd){
       const lastPitchDate = lastPitch ? iso10(lastPitch.created_at||lastPitch.date||'') : '';
       const lastOutcome = lastPitch?.outcome || '';
       const everInterested = scoringPitchList.some(p=> isInterested(p.outcome));
-      const lastInterestedDate = (()=> {
-        const f = scoringPitchList.find(p=> isInterested(p.outcome));
-        return f ? iso10(f.created_at||f.date||'') : '';
-      })();
+
+      // ✅ วิเคราะห์ลำดับเหตุการณ์หลังคำว่า “สนใจ”
+      const interestedPitches = scoringPitchList.filter(p => isInterested(p.outcome));
+      const interestAttempts = interestedPitches.length;
+      const latestInterestedPitch = interestedPitches[0] || null;
+      const latestInterestedDate = latestInterestedPitch ? iso10(latestInterestedPitch.created_at||latestInterestedPitch.date||'') : '';
+      const followupsAfterInterest = latestInterestedDate
+        ? scoringPitchList.filter(p => iso10(p.created_at||p.date||'') > latestInterestedDate)
+        : [];
+      const followupAfterInterestCount = followupsAfterInterest.length;
+      const lastInterestedDate = latestInterestedDate;
+
+      const latestNoContact = isNoContactOutcome(lastOutcome);
+      const latestSoftInterest = isSoftInterestOutcome(lastOutcome);
+      const latestStrongStop = isStrongStopOutcome(lastOutcome);
+      const latestClearReject = isClearRejectOutcome(lastOutcome);
+      const noContactStreak = countLatestNoContactStreak(scoringPitchList);
+      const softInterestStreak = countLatestSoftInterestStreak(scoringPitchList);
+      const calledToday = !!(overallLastPitchDate && overallLastPitchDate === todayISO());
 
       const hadPitchBeforeOrOnLastBuy = !!(lastBuyDate && pitchList.some(p => iso10(p.created_at||p.date||'') <= lastBuyDate));
       const hasPostBuyFollowup = attempts > 0;
 
       const daysSincePitch = lastPitchDate ? daysBetween(lastPitchDate, todayISO()) : null;
       const daysSinceBuy = lastBuyDate ? daysBetween(lastBuyDate, todayISO()) : null;
-      const cameRecently = (daysSinceBuy !== null && daysSinceBuy < INACTIVE_DAYS);
+      const cameRecently = (daysSinceBuy !== null && daysSinceBuy < RECENT_VISIT_DAYS);
+      const longAbsentStop = (daysSinceBuy !== null && daysSinceBuy >= LONG_ABSENT_STOP_DAYS);
 
-      // ✅ ลูกค้าซื้อแล้วหลังรอบโทรเดิม และยังไม่มีการติดตามรอบใหม่ => ซ่อนจาก Top Priority
       const visitedAfterPitch = hadPitchBeforeOrOnLastBuy;
+      const visitedAfterLatestPitch = !!(overallLastPitchDate && lastBuyDate && overallLastPitchDate <= lastBuyDate);
       const suppressTopPriority = hadPitchBeforeOrOnLastBuy && !hasPostBuyFollowup;
-      const visitedRecently = visitedAfterPitch && (daysSinceBuy !== null && daysSinceBuy <= 1);
+      const postCallVisitStillCooling = !!(hadPitchBeforeOrOnLastBuy && !hasPostBuyFollowup && daysSinceBuy !== null && daysSinceBuy < POST_CALL_VISIT_PAUSE_DAYS);
+      const visitedRecently = visitedAfterLatestPitch && (daysSinceBuy !== null && daysSinceBuy <= 1);
 
-      let sInterest = 0;
-      if(everInterested) sInterest += 18;
-      if(isInterested(lastOutcome)) sInterest += 22;
-      if(isHardReject(lastOutcome)) sInterest = Math.min(sInterest, 8);
+      // ✅ เคยสนใจ แต่ตามอีก 2 ครั้งแล้วยังไม่มา = พัก ไม่ดันโทรต่อ
+      const interestedThenFollowedNoVisit = !!(
+        everInterested &&
+        !latestNoContact &&
+        (
+          followupAfterInterestCount >= 2 ||
+          (interestAttempts >= 2 && latestSoftInterest) ||
+          softInterestStreak >= 2
+        )
+      );
 
-      let sRecency = 0;
-      if(daysSincePitch === null) sRecency = 8;
-      else{
-        if(daysSincePitch < 2) sRecency = 2;
-        else if(daysSincePitch < 7) sRecency = 10;
-        else if(daysSincePitch <= 21) sRecency = 20;
-        else if(daysSincePitch <= 45) sRecency = 14;
-        else sRecency = 8;
-      }
-
-      let sAttempts = 0;
-      if(attempts === 0) sAttempts = 10;
-      else if(attempts === 1) sAttempts = 15;
-      else if(attempts === 2) sAttempts = 12;
-      else if(attempts === 3) sAttempts = 7;
-      else sAttempts = 4;
-
-      let sValue = 0;
-      if(totalAmount <= 0) sValue = 4;
-      else{
-        const x = Math.log10(totalAmount + 1);
-        sValue = Math.max(6, Math.min(25, Math.round((x - 3) * 12 + 10)));
-      }
-
-      let priority = sInterest + sRecency + sAttempts + sValue;
-      priority = Math.max(0, Math.min(100, Math.round(priority)));
-
-      const stopByReject = isHardReject(lastOutcome);
-      const stopByAttempts = (!everInterested && attempts >= 3);
-
-      let segment = 'COLD';
-      if(totalAmount >= VIP_THRESHOLD) segment = 'VIP';
-      if(stopByReject || stopByAttempts) segment = 'STOP';
-      else if(isInterested(lastOutcome) || (everInterested && attempts < 3)) segment = 'ACTIVE';
-      else if(attempts < 3) segment = 'WARM';
-
-      let recommend = 'โทรตาม';
-      if(segment === 'STOP') recommend = 'พัก/หยุด';
-      else if(segment === 'VIP') recommend = 'VIP follow-up';
-      else if(priority >= 70) recommend = 'โทรวันนี้';
-      else if(priority >= 50) recommend = 'ตามต่อ';
-      else recommend = 'ค่อยโทร';
-
+      let priority = 0;
       let bucket = 'Cold';
-      if(segment === 'STOP') bucket = 'Stop';
-      else if(priority >= 70) bucket = 'Hot';
-      else if(priority >= 50) bucket = 'Warm';
-      else bucket = 'Cold';
+      let recommend = 'ค่อยโทร';
+      let callReason = '';
+      let contactStatus = 'CALL';
+      let contactStatusReason = '';
 
-      // ✅ ถ้าซื้อแล้วหลังรอบโทรเดิม และยังไม่มีการ follow-up รอบใหม่ ให้หยุดแนะนำก่อน
-      if(suppressTopPriority){
-        priority = 0;
-        bucket = 'Stop';
-        recommend = 'ซื้อแล้วหลังโทร';
+      // ✅ 1) หยุดติดต่อ: ไม่ควรเสียเวลาโทรต่อ
+      if(latestStrongStop){
+        contactStatus = 'STOP';
+        contactStatusReason = lastOutcome.includes('เบอร์ผิด') ? 'เบอร์ผิด' : 'ปฏิเสธชัดเจน';
+      }
+      else if(longAbsentStop){
+        contactStatus = 'STOP';
+        contactStatusReason = `ไม่มาเกือบ 1 ปีครึ่ง (${daysSinceBuy} วัน)`;
+      }
+      // ✅ 2) พัก/รอหลังลูกค้ามาแล้ว: กันเคสโทรแล้วลูกค้ามา แต่ระบบยังดันให้โทรซ้ำ
+      else if(postCallVisitStillCooling){
+        contactStatus = 'LATER';
+        contactStatusReason = `มาแล้วหลังการโทร พักโทรจนกว่าจะครบ 6 เดือน (ตอนนี้ ${daysSinceBuy} วัน)`;
+      }
+      else if(cameRecently){
+        contactStatus = 'LATER';
+        contactStatusReason = `เพิ่งมาไม่ถึง 4 เดือน (${daysSinceBuy} วัน)`;
+      }
+      else if(visitedAfterLatestPitch && !hasPostBuyFollowup){
+        contactStatus = 'LATER';
+        contactStatusReason = 'มาแล้วหลังโทรล่าสุด';
+      }
+      else if(suppressTopPriority && daysSinceBuy !== null && daysSinceBuy < POST_CALL_VISIT_PAUSE_DAYS){
+        contactStatus = 'LATER';
+        contactStatusReason = `ซื้อ/มาแล้วหลังโทร พักถึงครบ 6 เดือน`;
+      }
+      // ✅ 3) พักติดต่อ: เสียเวลาสูง/ตามแล้วไม่เกิด action
+      else if(latestNoContact && noContactStreak >= 3){
+        contactStatus = 'PAUSE';
+        contactStatusReason = `ติดต่อไม่ได้ ${noContactStreak} ครั้งติด`;
+      }
+      else if(interestedThenFollowedNoVisit){
+        contactStatus = 'PAUSE';
+        contactStatusReason = 'เคยสนใจ แต่ตามอีก 2 ครั้งแล้วยังไม่มา';
+      }
+      else if(latestClearReject){
+        contactStatus = 'PAUSE';
+        contactStatusReason = 'ปฏิเสธล่าสุด';
+      }
+      else if(!everInterested && attempts >= 3 && !latestNoContact){
+        contactStatus = 'PAUSE';
+        contactStatusReason = 'โทรหลายครั้งแล้วยังไม่เกิดสัญญาณสนใจ';
+      }
+      // ✅ 4) รอภายหลัง: ไม่ควรโทรตอนนี้ แต่ไม่ใช่ลูกค้าที่ควรทิ้ง
+      else if(calledToday){
+        contactStatus = 'LATER';
+        contactStatusReason = 'โทรไปแล้ววันนี้';
+      }
+      else if(latestNoContact && noContactStreak < 3){
+        contactStatus = 'LATER';
+        contactStatusReason = `ล่าสุดติดต่อไม่ได้ ${noContactStreak} ครั้ง ยังโทรซ้ำได้ภายหลัง`;
+      }
+      // ✅ 5) ควรโทรจริง
+      else{
+        contactStatus = 'CALL';
+        if(isHighValue && daysSinceBuy !== null && daysSinceBuy >= 180) contactStatusReason = `ลูกค้ามูลค่าสูง + ไม่ได้มา ${daysSinceBuy} วัน`;
+        else if(isInterested(lastOutcome)) contactStatusReason = 'ล่าสุดสนใจ ยังไม่มีการมาหลังจากนั้น';
+        else if(everInterested) contactStatusReason = 'เคยสนใจและยังไม่ถูกตามซ้ำเกินควร';
+        else if(attempts === 0 && daysSinceBuy !== null) contactStatusReason = `ยังไม่เคยโทร + ไม่ได้มา ${daysSinceBuy} วัน`;
+        else if(daysSinceBuy !== null && daysSinceBuy >= RECENT_VISIT_DAYS) contactStatusReason = `ไม่ได้มา ${daysSinceBuy} วัน`;
+        else contactStatusReason = 'เข้าเงื่อนไขติดตาม';
       }
 
-      // ✅ แบบ B: ถ้ามาแล้วหลังโทรล่าสุด และมาวันนี้/เมื่อวาน => ไม่แนะนำทั้งระบบ
-      if(visitedRecently){
+      // คะแนนคำนวณเฉพาะคนที่ควรโทรจริง
+      if(contactStatus === 'CALL'){
+        let sInterest = 0;
+        if(everInterested) sInterest += 18;
+        if(isInterested(lastOutcome)) sInterest += 22;
+
+        let sRecency = 0;
+        if(daysSincePitch === null) sRecency = 12;
+        else{
+          if(daysSincePitch < 2) sRecency = 4;
+          else if(daysSincePitch < 7) sRecency = 10;
+          else if(daysSincePitch <= 21) sRecency = 20;
+          else if(daysSincePitch <= 45) sRecency = 16;
+          else sRecency = 12;
+        }
+
+        let sAttempts = 0;
+        if(attempts === 0) sAttempts = 14;
+        else if(attempts === 1) sAttempts = 15;
+        else if(attempts === 2) sAttempts = 10;
+        else sAttempts = 4;
+
+        let sValue = 0;
+        if(totalAmount <= 0) sValue = 4;
+        else{
+          const x = Math.log10(totalAmount + 1);
+          sValue = Math.max(6, Math.min(25, Math.round((x - 3) * 12 + 10)));
+        }
+
+        priority = Math.max(1, Math.min(100, Math.round(sInterest + sRecency + sAttempts + sValue)));
+        if(priority >= 70){ bucket = 'Hot'; recommend = 'โทรวันนี้'; }
+        else if(priority >= 50){ bucket = 'Warm'; recommend = 'ตามต่อ'; }
+        else { bucket = 'Cold'; recommend = 'ค่อยโทร'; }
+        callReason = contactStatusReason;
+      }else{
         priority = 0;
-        segment = 'STOP';
-        bucket = 'Stop';
-        recommend = 'มาแล้ว (ไม่ต้องโทร)';
+        if(contactStatus === 'LATER'){ bucket = 'Warm'; recommend = 'รอภายหลัง'; }
+        else if(contactStatus === 'PAUSE'){ bucket = 'Cold'; recommend = 'พักติดต่อ'; }
+        else { bucket = 'Stop'; recommend = 'หยุดติดต่อ'; }
+        callReason = contactStatusReason;
       }
 
-      // ✅ RULE ใหม่: ถ้ามาใน 2 เดือนนี้ -> ไม่แนะนำทั้งระบบ (STOP + priority=0)
-      if(cameRecently){
-        priority = 0;
-        segment = 'STOP';
-        bucket = 'Stop';
-        recommend = 'มาใน 2 เดือนนี้ (ไม่ต้องโทร)';
-      }
+      const isCallCandidate = contactStatus === 'CALL' && priority > 0;
+      const segment = contactStatus; // ใช้ field เดิม แต่เปลี่ยนนิยามใหม่ให้เข้าใจง่าย
+      const callBlockReason = contactStatus === 'CALL' ? '' : contactStatusReason;
 
       return {
         opd,
@@ -1283,17 +1619,32 @@ function calcCustomerAnalytics(opd){
         scoringLastOutcome: lastOutcome,
         everInterested,
         lastInterestedDate,
+        followupAfterInterestCount,
+        interestAttempts,
+        latestNoContact,
+        noContactStreak,
+        calledToday,
+        interestedThenFollowedNoVisit,
         daysSincePitch,
         daysSinceBuy,
         cameRecently,
+        longAbsentStop,
+        postCallVisitStillCooling,
         priority,
         segment,
+        contactStatus,
+        contactStatusReason,
+        isHighValue,
         bucket,
         recommend,
+        callReason,
         visitedAfterPitch,
+        visitedAfterLatestPitch,
         visitedRecently,
         suppressTopPriority,
-        hasPostBuyFollowup
+        hasPostBuyFollowup,
+        callBlockReason,
+        isCallCandidate
       };
     }
 
@@ -1301,7 +1652,7 @@ function calcCustomerAnalytics(opd){
       const opds = new Set();
       for(const c of customers) opds.add(pad4(c?.opd));
       for(const p of pitches) opds.add(pad4(p?.opd));
-      for(const r of records) opds.add(pad4(r?.opd));
+      for(const r of records){ const ropd = cleanOPDForRecord(r?.opd); if(ropd) opds.add(ropd); }
 
       analytics = Array.from(opds)
         .filter(Boolean)
@@ -1338,12 +1689,13 @@ function calcCustomerAnalytics(opd){
     }
 
     function buildFunnelChart(listAnalytics){
-      const buckets = {Hot:0, Warm:0, Cold:0, Stop:0};
+      const buckets = {CALL:0, LATER:0, PAUSE:0, STOP:0};
       for(const a of listAnalytics){
-        buckets[a.bucket] = (buckets[a.bucket]||0) + 1;
+        const k = a.segment || a.contactStatus || 'CALL';
+        buckets[k] = (buckets[k]||0) + 1;
       }
-      const labels = ['Hot','Warm','Cold','Stop'];
-      const data = labels.map(k=> buckets[k]||0);
+      const labels = ['ควรโทร','รอภายหลัง','พักติดต่อ','หยุดติดต่อ'];
+      const data = [buckets.CALL||0, buckets.LATER||0, buckets.PAUSE||0, buckets.STOP||0];
 
       const ctx = document.getElementById('chartFunnel').getContext('2d');
       if(chartFunnel) chartFunnel.destroy();
@@ -1360,22 +1712,79 @@ function calcCustomerAnalytics(opd){
 
     // ===================== Rendering =====================
     function segBadge(seg){
-      if(seg==='VIP') return `<span class="badge b-green">VIP</span>`;
-      if(seg==='ACTIVE') return `<span class="badge b-green">ACTIVE</span>`;
-      if(seg==='WARM') return `<span class="badge b-amber">WARM</span>`;
-      if(seg==='COLD') return `<span class="badge b-slate">COLD</span>`;
-      return `<span class="badge b-red">STOP</span>`;
+      if(seg==='CALL') return `<span class="badge b-green">ควรโทร</span>`;
+      if(seg==='LATER') return `<span class="badge b-amber">รอติดต่อภายหลัง</span>`;
+      if(seg==='PAUSE') return `<span class="badge b-slate">พักติดต่อ</span>`;
+      if(seg==='STOP') return `<span class="badge b-red">หยุดติดต่อ</span>`;
+      return `<span class="badge b-slate">${esc(seg || '-')}</span>`;
+    }
+
+    function valueBadge(a){
+      return a?.isHighValue ? `<span class="badge b-green">VIP/มูลค่าสูง</span>` : '';
     }
 
     function renderRecommend(a){
-  if(a.suppressTopPriority) return `<span class="badge b-slate">ซื้อแล้วหลังโทร</span>`;
-  if(a.cameRecently) return `<span class="badge b-slate">มาใน 2 เดือนนี้</span>`;
-  if(a.segment==='STOP') return `<span class="badge b-red">พัก/หยุด</span>`;
-  if(a.segment==='VIP') return `<span class="badge b-green">VIP follow-up</span>`;
-  if(a.bucket==='Hot') return `<span class="badge b-green">โทรวันนี้</span>`;
-  if(a.bucket==='Warm') return `<span class="badge b-amber">ตามต่อ</span>`;
-  return `<span class="badge b-slate">ค่อยโทร</span>`;
-}
+      if(a.segment==='CALL'){
+        if(a.bucket==='Hot') return `<span class="badge b-green">โทรวันนี้</span>`;
+        if(a.bucket==='Warm') return `<span class="badge b-amber">ตามต่อ</span>`;
+        return `<span class="badge b-slate">ค่อยโทร</span>`;
+      }
+      if(a.segment==='LATER') return `<span class="badge b-amber">รอภายหลัง</span>`;
+      if(a.segment==='PAUSE') return `<span class="badge b-slate">พักติดต่อ</span>`;
+      return `<span class="badge b-red">หยุดติดต่อ</span>`;
+    }
+
+
+
+    function getSegmentCounts(list){
+      const counts = {CALL:0, LATER:0, PAUSE:0, STOP:0};
+      const vipCounts = {CALL:0, LATER:0, PAUSE:0, STOP:0};
+      for(const a of (list || [])){
+        const k = a.segment || a.contactStatus || 'CALL';
+        if(counts[k] === undefined) counts[k] = 0;
+        counts[k]++;
+        if(a.isHighValue){
+          if(vipCounts[k] === undefined) vipCounts[k] = 0;
+          vipCounts[k]++;
+        }
+      }
+      return {counts, vipCounts};
+    }
+
+    function segmentInfo(seg){
+      const map = {
+        CALL:  {label:'ควรโทร', icon:'☎️', cls:'b-green', hint:'กลุ่มที่ควรเอาเข้าคิวโทร'},
+        LATER: {label:'รอติดต่อภายหลัง', icon:'⏳', cls:'b-amber', hint:'เพิ่งมา/โทรวันนี้/ยังไม่ควรโทรตอนนี้'},
+        PAUSE: {label:'พักติดต่อ', icon:'⏸️', cls:'b-slate', hint:'ตามแล้วไม่คุ้ม หรือยังไม่ควรตามต่อ'},
+        STOP:  {label:'หยุดติดต่อ', icon:'🛑', cls:'b-red', hint:'ปฏิเสธชัดเจน/เบอร์ผิด/หายเกินเกณฑ์'}
+      };
+      return map[seg] || {label:seg || '-', icon:'•', cls:'b-slate', hint:''};
+    }
+
+    function renderSegmentDashboard(){
+      if(!segmentKpis) return;
+      const {counts, vipCounts} = getSegmentCounts(analytics);
+      const total = Math.max(analytics.length, 1);
+      const activeSeg = dashSegment?.value || '';
+      const order = ['CALL','LATER','PAUSE','STOP'];
+
+      segmentKpis.innerHTML = order.map(seg=>{
+        const info = segmentInfo(seg);
+        const n = counts[seg] || 0;
+        const pct = Math.round(n * 1000 / total) / 10;
+        const vip = vipCounts[seg] || 0;
+        return `
+          <div class="kpi segment-card ${activeSeg===seg?'active':''}" data-dash-segment="${seg}" title="คลิกเพื่อกรอง: ${esc(info.label)}">
+            <div class="label">${info.icon} ${esc(info.label)}</div>
+            <div class="value-row">
+              <div class="value mono">${n.toLocaleString()}</div>
+              <div class="pct mono">${pct}%</div>
+            </div>
+            <div class="hint">${esc(info.hint)}${vip ? ` • VIP ${vip.toLocaleString()} คน` : ''}</div>
+          </div>
+        `;
+      }).join('');
+    }
 
     function filterAnalyticsForDash(list){
       const q = (dashQ.value||'').trim().toLowerCase();
@@ -1407,6 +1816,8 @@ function calcCustomerAnalytics(opd){
       const conv = Math.round(rate*60 + avgPriority*0.4);
       kpiConvScore.textContent = `${Math.max(0, Math.min(100, conv))}`;
 
+      renderSegmentDashboard();
+
       const f = dashFrom.value || '';
       const t = dashTo.value || '';
       dashRange.textContent = (f||t) ? `${f||'—'} ถึง ${t||'—'}` : 'ทั้งหมด';
@@ -1415,7 +1826,7 @@ function calcCustomerAnalytics(opd){
       buildFunnelChart(analytics);
 
       const filtered = filterAnalyticsForDash(analytics);
-      const top = filtered.filter(a => !a.suppressTopPriority).slice(0, 30);
+      const top = filtered.filter(a => a.isCallCandidate).slice(0, 30);
 
       dashTopTbody.innerHTML = top.map((a, i)=>`
         <tr>
@@ -1423,6 +1834,7 @@ function calcCustomerAnalytics(opd){
           <td>
             <a class="link" data-open-profile="${esc(a.opd)}">${esc(a.name)}</a>
             <div style="color:#64748b; font-size:10px; margin-top:3px;">OPD <span class="mono">${esc(a.opd)}</span>${a.phone?` • ${esc(a.phone)}`:''}</div>
+            <div style="margin-top:4px;">${valueBadge(a)}</div>
           </td>
           <td>${segBadge(a.segment)}</td>
           <td class="right mono"><strong>${a.priority}</strong></td>
@@ -1431,8 +1843,9 @@ function calcCustomerAnalytics(opd){
           <td>${a.lastOutcome ? `<span class="badge b-slate">${esc(a.lastOutcome)}</span>` : '-'}</td>
           <td class="right mono">${a.attempts}</td>
           <td>${renderRecommend(a)}</td>
+          <td style="min-width:190px;color:#334155;font-weight:800;">${esc(a.callReason || '-')}</td>
         </tr>
-      `).join('') || `<tr><td colspan="9" style="padding:14px; color:#64748b;">ไม่มีข้อมูลตามตัวกรอง</td></tr>`;
+      `).join('') || `<tr><td colspan="10" style="padding:14px; color:#64748b;">ไม่มีลูกค้าที่ควรโทรตามเงื่อนไขนี้</td></tr>`;
     }
 
     function renderCustomersTable(){
@@ -1467,7 +1880,8 @@ function calcCustomerAnalytics(opd){
             <a class="link" data-open-profile="${esc(a.opd)}">${esc(a.name)}</a>
             <div style="color:#64748b; font-size:10px; margin-top:3px;">OPD <span class="mono">${esc(a.opd)}</span>${a.phone?` • ${esc(a.phone)}`:''}</div>
           </td>
-          <td>${segBadge(a.segment)}</td>
+          <td>${segBadge(a.segment)}<div style="margin-top:4px;">${valueBadge(a)}</div></td>
+          <td style="min-width:190px;color:#334155;font-weight:800;">${esc(a.contactStatusReason || a.callReason || '-')}</td>
           <td class="right mono"><strong>${a.priority}</strong></td>
           <td class="right mono">${fmtMoney(a.totalAmount)}</td>
           <td class="right mono">${fmtMoney(a.avgAmount)}</td>
@@ -1476,7 +1890,7 @@ function calcCustomerAnalytics(opd){
           <td>${a.lastOutcome ? `<span class="badge b-slate">${esc(a.lastOutcome)}</span>` : '-'}</td>
           <td class="right mono">${a.attempts}</td>
         </tr>
-      `).join('') || `<tr><td colspan="10" style="padding:14px; color:#64748b;">ไม่พบลูกค้าตามเงื่อนไข</td></tr>`;
+      `).join('') || `<tr><td colspan="11" style="padding:14px; color:#64748b;">ไม่พบลูกค้าตามเงื่อนไข</td></tr>`;
     }
 
     function renderHistorySummary(){
@@ -1559,6 +1973,15 @@ function calcCustomerAnalytics(opd){
       return arr.map(([k,v])=> `<span class="badge b-slate">${esc(k)} <span class="mono">${v}</span></span>`).join(' ');
     }
 
+    function setTodaySummaryExpanded(expanded){
+      todaySummaryExpanded = !!expanded;
+      if(todaySummaryCard) todaySummaryCard.classList.toggle('expanded', todaySummaryExpanded);
+      if(btnToggleTodaySummary) btnToggleTodaySummary.textContent = todaySummaryExpanded ? 'หุบ' : 'เปิดดู';
+      if(todaySummaryMini && !todaySummaryMini.dataset.loaded){
+        todaySummaryMini.textContent = todaySummaryExpanded ? 'กำลังแสดงรายละเอียด' : 'หุบอยู่ • กดเปิดเมื่อต้องการดูรายละเอียด';
+      }
+    }
+
     async function loadTodaySummary(){
       const d = planDate.value || todayISO();
       todaySummaryDate.textContent = fmtShortDate(d);
@@ -1582,6 +2005,10 @@ function calcCustomerAnalytics(opd){
         }).length;
 
         const uniq = new Set(rows.map(r=> pad4(r.opd||''))).size;
+        if(todaySummaryMini){
+          todaySummaryMini.dataset.loaded = '1';
+          todaySummaryMini.innerHTML = `วันนี้โทร <strong class="mono">${total}</strong> รายการ • สนใจ <strong class="mono">${interested}</strong> • ลูกค้า <strong class="mono">${uniq}</strong> คน`;
+        }
 
         const freqOutcome = new Map();
         const freqChannel = new Map();
@@ -1612,8 +2039,6 @@ function calcCustomerAnalytics(opd){
           const promo = r.promotion || '';
           const outcome = r.outcome || '';
           const content = r.content || '';
-          const channel = r.channel || '';
-
           return `
             <tr>
               <td class="mono">${esc(t)}</td>
@@ -1624,17 +2049,23 @@ function calcCustomerAnalytics(opd){
               <td>${esc(promo)}</td>
               <td><span class="badge b-slate">${esc(outcome)}</span></td>
               <td>${esc(content)}</td>
-              <td><span class="badge b-slate">${esc(channel||'-')}</span></td>
             </tr>
           `;
-        }).join('') || `<tr><td colspan="6" style="padding:14px; color:#64748b;">วันนี้ยังไม่มีข้อมูลที่บันทึก</td></tr>`;
+        }).join('') || `<tr><td colspan="5" style="padding:14px; color:#64748b;">วันนี้ยังไม่มีข้อมูลที่บันทึก</td></tr>`;
+
+        todayStats.innerHTML = `<div style="font-weight:1000; margin-bottom:8px;">สรุป Outcome</div><div style="display:flex;gap:8px;flex-wrap:wrap;">${renderFreqBadges(freqOutcome, 8)}</div>`;
+        todayPromoTop.innerHTML = `<div style="font-weight:1000; margin-bottom:8px;">โปรโมชันที่บันทึกวันนี้</div><div style="display:flex;gap:8px;flex-wrap:wrap;">${renderFreqBadges(freqPromo, 8)}</div>`;
 
       }catch(e){
         console.error(e);
         todayKpis.innerHTML = '';
         todayStats.innerHTML = `<span style="color:#ef4444;">โหลดสรุปวันนี้ไม่สำเร็จ</span>`;
         todayPromoTop.innerHTML = '';
-        todaySummaryTbody.innerHTML = `<tr><td colspan="6" style="padding:14px; color:#64748b;">-</td></tr>`;
+        todaySummaryTbody.innerHTML = `<tr><td colspan="5" style="padding:14px; color:#64748b;">-</td></tr>`;
+        if(todaySummaryMini){
+          todaySummaryMini.dataset.loaded = '1';
+          todaySummaryMini.innerHTML = `<span style="color:#ef4444;">โหลดสรุปวันนี้ไม่สำเร็จ</span>`;
+        }
         showToast('โหลดสรุปวันนี้ไม่สำเร็จ','error');
       }
     }
@@ -1685,9 +2116,129 @@ function calcCustomerAnalytics(opd){
       }
     }
 
+
+    function forcePlanToday(){
+      const t = todayISO();
+      if(planDate) planDate.value = t;
+      if(planTitleDate) planTitleDate.textContent = fmtShortDate(t);
+      if(todaySummaryDate) todaySummaryDate.textContent = fmtShortDate(t);
+      return t;
+    }
+
+    function getDuplicateOPDs(){
+      const counts = new Map();
+      $$('#planRows .plan-row').forEach(rowEl=>{
+        const opd = rowEl.dataset.opd || '';
+        if(!opd) return;
+        counts.set(opd, (counts.get(opd)||0)+1);
+      });
+      return new Set(Array.from(counts.entries()).filter(([_,n])=>n>1).map(([opd])=>opd));
+    }
+
+    function updateDuplicateMarks(){
+      const dup = getDuplicateOPDs();
+      $$('#planRows .plan-row').forEach(rowEl=>{
+        const opd = rowEl.dataset.opd || '';
+        const isDup = !!opd && dup.has(opd);
+        rowEl.classList.toggle('dup', isDup);
+        const meta = rowEl.querySelector('[data-meta]');
+        if(meta && isDup){
+          const base = meta.dataset.base || meta.textContent || '';
+          meta.dataset.base = base.replace(' • ซ้ำในรายการ','');
+          meta.textContent = meta.dataset.base + ' • ซ้ำในรายการ';
+        }else if(meta && meta.dataset.base){
+          meta.textContent = meta.dataset.base;
+        }
+      });
+      return dup;
+    }
+
+    function planContactStatusClass(status){
+      if(status === 'CALL') return 'call';
+      if(status === 'LATER') return 'later';
+      if(status === 'PAUSE') return 'pause';
+      if(status === 'STOP') return 'stop';
+      return '';
+    }
+
+    function planContactStatusIcon(status){
+      if(status === 'CALL') return '✅';
+      if(status === 'LATER') return '⏳';
+      if(status === 'PAUSE') return '⚠️';
+      if(status === 'STOP') return '🛑';
+      return 'ℹ️';
+    }
+
+    function getPlanContactInsight(opd){
+      const key = pad4(opd || '');
+      if(!key) return null;
+      const a = analytics.find(x => x.opd === key) || calcCustomerAnalytics(key);
+      const status = a.contactStatus || a.segment || 'CALL';
+      const label = CONTACT_STATUS_LABELS[status] || status || 'ตรวจสอบ';
+      const reason = a.contactStatusReason || a.callReason || a.recommend || 'ไม่มีเหตุผลเพิ่มเติม';
+      return { status, label, reason, isHighValue: !!a.isHighValue, priority: a.priority || 0, lastBuyDate: a.lastBuyDate || '', lastPitchDate: a.lastPitchDate || '' };
+    }
+
+    function updatePlanRowContactNote(rowEl){
+      if(!rowEl) return;
+      const note = rowEl.querySelector('[data-contact-note]');
+      if(!note) return;
+      const opd = rowEl.dataset.opd || '';
+      if(!opd){
+        note.className = 'contact-note';
+        note.innerHTML = '';
+        return;
+      }
+      const info = getPlanContactInsight(opd);
+      if(!info){
+        note.className = 'contact-note';
+        note.innerHTML = '';
+        return;
+      }
+      const cls = planContactStatusClass(info.status);
+      const icon = planContactStatusIcon(info.status);
+      const extra = [];
+      if(info.isHighValue) extra.push('VIP/มูลค่าสูง');
+      if(info.lastBuyDate) extra.push(`มาล่าสุด ${fmtShortDate(info.lastBuyDate)}`);
+      if(info.lastPitchDate) extra.push(`โทรล่าสุด ${fmtShortDate(info.lastPitchDate)}`);
+      note.className = `contact-note show ${cls}`;
+      note.innerHTML = `
+        <span class="note-title">${icon} สถานะ: ${esc(info.label)}</span>
+        <span>${esc(info.reason)}</span>
+        ${extra.length ? `<div style="margin-top:4px;font-weight:700;opacity:.9;">${extra.map(esc).join(' • ')}</div>` : ''}
+      `;
+    }
+
+    function updateAllPlanContactNotes(){
+      $$('#planRows .plan-row').forEach(updatePlanRowContactNote);
+    }
+
+    function showBatchSaveSummary(savedRows){
+      if(!lastSaveSummary) return;
+      const rows = savedRows || [];
+      const freq = new Map();
+      for(const r of rows){
+        const k = String(r.outcome||'(ไม่ระบุ)').trim() || '(ไม่ระบุ)';
+        freq.set(k, (freq.get(k)||0)+1);
+      }
+      const chips = Array.from(freq.entries())
+        .sort((a,b)=> b[1]-a[1])
+        .map(([k,v])=> `<span class="badge b-slate">${esc(k)} <span class="mono">${v}</span></span>`)
+        .join(' ');
+      lastSaveSummary.classList.add('show');
+      lastSaveSummary.innerHTML = `
+        <div style="font-weight:1000; margin-bottom:8px; color:#065f46;">✅ บันทึกสำเร็จ ${rows.length} รายการ</div>
+        <div class="summary-line">${chips || '<span class="badge b-slate">ไม่มีข้อมูล</span>'}</div>
+      `;
+    }
+
     // ===================== Plan UI =====================
     function initPlanDefaults(){
-      planDefaultChannel.innerHTML = CHANNELS.map(c=> `<option value="${c}">${c}</option>`).join('');
+      forcePlanToday();
+      if(planDefaultChannel){
+        planDefaultChannel.innerHTML = '<option value="call" selected>call</option>';
+        planDefaultChannel.value = 'call';
+      }
     }
 
     function createPlanRow(row = {}){
@@ -1695,22 +2246,13 @@ function calcCustomerAnalytics(opd){
       el.className = 'plan-row';
       el.dataset.opd = row.opd || '';
 
-      const defaultPromo = planDefaultPromo.value || '';
-      const defaultChannel = planDefaultChannel.value || 'call';
-
       el.innerHTML = `
         <div>
           <div class="field">
-            <label>ลูกค้า (เลือกจากรายการ)</label>
+            <label>ลูกค้า (พิมพ์ชื่อ / OPD / เบอร์)</label>
             <input class="input" data-cust list="customerList" placeholder="พิมพ์ชื่อ / OPD / เบอร์" value="${esc(row.customer_label||'')}">
             <div class="meta" data-meta>—</div>
-          </div>
-        </div>
-
-        <div>
-          <div class="field">
-            <label>โปรโมชัน</label>
-            <input class="input" data-promo placeholder="${esc(row.promotion ?? defaultPromo)}">
+            <div class="contact-note" data-contact-note></div>
           </div>
         </div>
 
@@ -1725,17 +2267,14 @@ function calcCustomerAnalytics(opd){
 
         <div>
           <div class="field">
-            <label>ช่องทาง</label>
-            <select class="input" data-channel>
-              ${CHANNELS.map(c=> `<option value="${c}" ${(row.channel||defaultChannel)===c?'selected':''}>${c}</option>`).join('')}
-            </select>
-            <label style="margin-top:8px;">โน้ต</label>
-            <input class="input" data-note placeholder="คอมเมนต์ (ถ้ามี)" value="${esc(row.content||'')}">
+            <label>หมายเหตุ</label>
+            <input class="input" data-note placeholder="เช่น นัดวัน / ขอคิดก่อน / โทรไม่ติด" value="${esc(row.content||'')}">
           </div>
         </div>
 
         <div class="row-actions">
           <button class="btn btn-icon" type="button" data-open-profile title="ดูโปรไฟล์">📇</button>
+          <button class="btn" type="button" data-add-next title="เพิ่มลูกค้าต่อ">➕ ต่อ</button>
           <button class="btn btn-icon btn-danger" type="button" data-del-row title="ลบแถว">🗑️</button>
         </div>
       `;
@@ -1743,31 +2282,39 @@ function calcCustomerAnalytics(opd){
       const meta = el.querySelector('[data-meta]');
       if(row.opd){
         const c = customerByOPD.get(pad4(row.opd));
-        meta.textContent = c ? `OPD ${pad4(c.opd)}${c.phone?` • ${c.phone}`:''}` : `OPD ${pad4(row.opd)}`;
+        const text = c ? `OPD ${pad4(c.opd)}${c.phone?` • ${c.phone}`:''}` : `OPD ${pad4(row.opd)}`;
+        meta.textContent = text;
+        meta.dataset.base = text;
       }
+      updatePlanRowContactNote(el);
       return el;
     }
 
     function refreshPlanCounters(){
-      const payload = getPlanRowsPayload(true);
-      const valid = payload.filter(x=> x.opd && x.outcome).length;
-      planCount.textContent = payload.length.toString();
+      const rows = getPlanRowsPayload(true);
+      const dup = updateDuplicateMarks();
+      updateAllPlanContactNotes();
+      const valid = rows.filter(x=> x.opd && x.outcome && !dup.has(x.opd)).length;
+      const invalid = Math.max(0, rows.length - valid);
+      planCount.textContent = rows.length.toString();
       planValid.textContent = valid.toString();
+      if(planInvalid) planInvalid.textContent = invalid.toString();
+      const saveBtn = btnSaveBulk2;
+      if(saveBtn) saveBtn.disabled = rows.length === 0 || valid === 0 || invalid > 0;
     }
 
     function getPlanRowsPayload(includeInvalid=false){
-      const date = planDate.value || todayISO();
+      const date = forcePlanToday();
       const rows = [];
+      const centralPromo = (planDefaultPromo.value || '').trim();
       $$('#planRows .plan-row').forEach(rowEl=>{
         const opd = rowEl.dataset.opd || '';
         const customer_label = rowEl.querySelector('[data-cust]')?.value?.trim() || '';
-        const promotion = rowEl.querySelector('[data-promo]')?.value?.trim() || '';
         const outcome = rowEl.querySelector('[data-outcome]')?.value || '';
         const content = rowEl.querySelector('[data-note]')?.value?.trim() || '';
-        const channel = rowEl.querySelector('[data-channel]')?.value || 'call';
         const valid = !!opd && !!outcome;
         if(valid || includeInvalid){
-          rows.push({ date, opd, promotion, outcome, content, channel, customer_label });
+          rows.push({ date, opd, promotion: centralPromo, outcome, content, channel:'call', customer_label });
         }
       });
       return rows;
@@ -1776,17 +2323,17 @@ function calcCustomerAnalytics(opd){
     function addPlanRow(row={}){
       const el = createPlanRow(row);
       planRows.appendChild(el);
+      updatePlanRowContactNote(el);
       refreshPlanCounters();
       saveDraft();
+      setTimeout(()=> el.querySelector('[data-cust]')?.focus(), 0);
     }
 
     function restorePlanDraft(){
       initPlanDefaults();
       const d = loadDraft();
-      planDate.value = d?.date || todayISO();
-      planDefaultPromo.value = d?.defaultPromo || '';
-      planDefaultChannel.value = d?.defaultChannel || 'call';
-      planTitleDate.textContent = fmtShortDate(planDate.value);
+      forcePlanToday();
+      planDefaultPromo.value = d?.defaultPromo || planDefaultPromo.value || '';
 
       planRows.innerHTML = '';
       if(d?.rows?.length){
@@ -1799,7 +2346,15 @@ function calcCustomerAnalytics(opd){
     }
 
     async function saveBulkPitches(){
+      forcePlanToday();
       const rows = getPlanRowsPayload(true);
+      const dup = getDuplicateOPDs();
+
+      if(dup.size){
+        refreshPlanCounters();
+        showToast('มีลูกค้าซ้ำในรายการ กรุณาลบหรือเปลี่ยนก่อนบันทึก','warn');
+        return;
+      }
 
       const invalid = rows.filter(r=> !r.opd);
       if(invalid.length){
@@ -1814,7 +2369,7 @@ function calcCustomerAnalytics(opd){
 
       const payload = rows
         .filter(r=> r.opd && r.outcome)
-        .map(r=>({ date:r.date, opd:r.opd, promotion:r.promotion, outcome:r.outcome, content:r.content, channel:r.channel }));
+        .map(r=>({ date:r.date, opd:r.opd, promotion:r.promotion, outcome:r.outcome, content:r.content, channel:'call' }));
 
       if(!payload.length){
         showToast('ยังไม่มีรายการ valid ให้บันทึก','warn');
@@ -1826,8 +2381,7 @@ function calcCustomerAnalytics(opd){
         return;
       }
 
-      btnSaveBulk.disabled = true; btnSaveBulk2.disabled = true;
-      btnSaveBulk.textContent = 'กำลังบันทึก...';
+      btnSaveBulk2.disabled = true;
       btnSaveBulk2.textContent = 'กำลังบันทึก...';
 
       try{
@@ -1840,20 +2394,26 @@ function calcCustomerAnalytics(opd){
         if(!res.ok) throw new Error(d.error||'บันทึกไม่สำเร็จ');
 
         showToast(`บันทึกสำเร็จ ${d.inserted||payload.length} รายการ ✅`);
+        showBatchSaveSummary(payload);
 
+        // ล้างเฉพาะรายชื่อลูกค้า แต่คงวันที่วันนี้และโปรโมชันเดิมไว้ เพื่อโทรชุดถัดไปต่อได้เร็ว
         planRows.innerHTML = '';
         addPlanRow({});
-        clearDraft();
-        planDraftStatus.textContent = 'cleared';
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+          date: todayISO(),
+          defaultPromo: planDefaultPromo.value || '',
+          rows: []
+        }));
+        planDraftStatus.textContent = 'cleared rows';
 
         await reloadAllData(false);
-        await loadTodaySummary(); // ✅ refresh today summary
+        await loadTodaySummary();
       }catch(e){
         showToast(String(e.message||'บันทึกไม่สำเร็จ'), 'error');
       }finally{
-        btnSaveBulk.disabled = false; btnSaveBulk2.disabled = false;
-        btnSaveBulk.textContent = '💾 บันทึกทั้งหมด';
-        btnSaveBulk2.textContent = '💾 บันทึก';
+        btnSaveBulk2.disabled = false;
+        btnSaveBulk2.textContent = '💾 บันทึกทั้งหมด';
+        refreshPlanCounters();
       }
     }
 
@@ -1873,12 +2433,17 @@ function calcCustomerAnalytics(opd){
         const meta = rowEl.querySelector('[data-meta]');
         if(picked){
           rowEl.dataset.opd = picked.opd;
-          meta.textContent = `OPD ${picked.opd}${picked.phone?` • ${picked.phone}`:''}`;
+          const text = `OPD ${picked.opd}${picked.phone?` • ${picked.phone}`:''}`;
+          meta.textContent = text;
+          meta.dataset.base = text;
           e.target.classList.remove('invalid');
+          updatePlanRowContactNote(rowEl);
         }else{
           rowEl.dataset.opd = '';
           meta.textContent = '—';
+          meta.dataset.base = '—';
           e.target.classList.add('invalid');
+          updatePlanRowContactNote(rowEl);
         }
         refreshPlanCounters();
         saveDraft();
@@ -1895,6 +2460,12 @@ function calcCustomerAnalytics(opd){
         if(!$('#planRows .plan-row')) addPlanRow({});
         refreshPlanCounters();
         saveDraft();
+        return;
+      }
+
+      const addNext = e.target.closest('[data-add-next]');
+      if(addNext){
+        addPlanRow({});
         return;
       }
 
@@ -1957,11 +2528,11 @@ function calcCustomerAnalytics(opd){
 
     // ===================== Export CSV =====================
     function exportCustomersCSV(list){
-      const header = ['opd','name','phone','segment','priority','bucket','recommend','attempts','lastPitchDate','lastOutcome','totalAmount','paidVisits','avgAmount','lastBuyDate'];
+      const header = ['opd','name','phone','contact_status','reason','vip','priority','bucket','recommend','attempts','lastPitchDate','lastOutcome','totalAmount','paidVisits','avgAmount','lastBuyDate'];
       const lines = [header.join(',')];
       for(const a of list){
         const row = [
-          a.opd, a.name, a.phone, a.segment, a.priority, a.bucket, a.recommend,
+          a.opd, a.name, a.phone, CONTACT_STATUS_LABELS[a.segment] || a.segment, a.contactStatusReason || a.callReason || '', a.isHighValue ? 'VIP' : '', a.priority, a.bucket, a.recommend,
           a.attempts, a.lastPitchDate, a.lastOutcome, Math.round(a.totalAmount),
           a.paidVisits, Math.round(a.avgAmount), a.lastBuyDate
         ].map(v=> `"${String(v??'').replaceAll('"','""')}"`);
@@ -2066,7 +2637,7 @@ function calcCustomerAnalytics(opd){
     async function renderCustomerModal(opd){
       const a = analytics.find(x=> x.opd === opd) || calcCustomerAnalytics(opd);
       const pitchList = pitchesByOPD.get(opd) || [];
-      const recList = recordsByOPD.get(opd) || [];
+      const recList = getPurchaseRecordsForCustomer(opd);
 
       modalTitle.innerHTML = `📇 ${esc(a.name)} <span class="badge b-slate">OPD <span class="mono">${esc(a.opd)}</span></span>`;
 
@@ -2081,9 +2652,9 @@ function calcCustomerAnalytics(opd){
               <div class="s">${renderRecommend(a)}</div>
             </div>
             <div class="mini">
-              <div class="k">Segment</div>
+              <div class="k">สถานะติดต่อ</div>
               <div class="v">${segBadge(a.segment)}</div>
-              <div class="s">Bucket: <b>${esc(a.bucket)}</b></div>
+              <div class="s">${esc(a.contactStatusReason || a.callReason || '-')}</div>
             </div>
             <div class="mini">
               <div class="k">ยอดซื้อรวม</div>
@@ -2106,6 +2677,7 @@ function calcCustomerAnalytics(opd){
                 ${a.phone ? `<span class="badge b-slate">📞 ${esc(a.phone)}</span>` : `<span class="badge b-slate">📞 —</span>`}
                 <span class="badge b-slate">โทรแล้ว <span class="mono">${a.attempts}</span> ครั้ง</span>
                 ${a.everInterested ? `<span class="badge b-green">เคยสนใจ</span>` : `<span class="badge b-slate">ไม่เคยสนใจ</span>`}
+                ${a.callBlockReason ? `<span class="badge b-slate">✅ ${esc(a.callBlockReason)}</span>` : ``}
                 ${a.suppressTopPriority ? `<span class="badge b-slate">✅ ซื้อแล้วหลังโทร</span>` : ``}
                 ${a.visitedRecently ? `<span class="badge b-slate">✅ มาแล้ว (ล่าสุด)</span>` : ``}
               </div>
@@ -2117,19 +2689,13 @@ function calcCustomerAnalytics(opd){
               <div style="height:10px;"></div>
               <div style="color:#334155; font-weight:900; margin-bottom:6px;">แนะนำ Next step</div>
               <div style="color:#0f172a;">
-                ${a.suppressTopPriority
-                  ? 'ลูกค้ามีการซื้อแล้วหลังรอบโทรเดิม และยังไม่มีการติดตามรอบใหม่ — ไม่ควรขึ้นใน Top Priority'
-                  : a.visitedRecently
-                    ? 'ลูกค้ามาแล้วหลังโทรล่าสุด (วันนี้/เมื่อวาน) — ไม่ต้องแนะนำให้โทรซ้ำ'
-                    : a.segment==='STOP'
-                      ? 'พักไว้ก่อน (Hard reject/ครบโควตาแล้ว) เพื่อไม่เสียเวลาทีม'
-                      : a.segment==='VIP'
-                        ? 'ลูกค้ามูลค่าสูง: โทร/ไลน์แบบ personal + offer ที่ตรงรายการซื้อ'
-                        : a.bucket==='Hot'
-                          ? 'โทรวันนี้: สัญญาณดี + recency เหมาะ'
-                          : a.bucket==='Warm'
-                            ? 'ตามต่อ: ยังมีโอกาสปิด'
-                            : 'ค่อยโทร: จัดเป็นคิวรอง'}
+                ${a.segment==='CALL'
+                  ? `ควรติดต่อลูกค้า: ${esc(a.contactStatusReason || a.callReason || '')}`
+                  : a.segment==='LATER'
+                    ? `รอติดต่อภายหลัง: ${esc(a.contactStatusReason || a.callReason || '')}`
+                    : a.segment==='PAUSE'
+                      ? `พักติดต่อก่อน เพื่อลดการเสียเวลา: ${esc(a.contactStatusReason || a.callReason || '')}`
+                      : `หยุดติดต่อ: ${esc(a.contactStatusReason || a.callReason || '')}`}
               </div>
             </div>
           </div>
@@ -2303,7 +2869,7 @@ function calcCustomerAnalytics(opd){
         }
 
         customers = await fetchJSON('/api/customers').catch(()=>[]);
-        records = await fetchJSON('/api/reccord_sale').catch(()=>[]);
+        records = await loadSalesRecordsForCRM();
         await loadPitchesForDashboard();
 
         buildCustomerIndexes();
@@ -2315,6 +2881,7 @@ function calcCustomerAnalytics(opd){
 
         renderDashboard();
         renderCustomersTable();
+        updateAllPlanContactNotes();
 
       }catch(e){
         console.error(e);
@@ -2337,6 +2904,21 @@ function calcCustomerAnalytics(opd){
       const list = await fetchJSON(url).catch(()=>[]);
       pitches = Array.isArray(list) ? list : [];
     }
+
+
+    segmentKpis?.addEventListener('click', (e)=>{
+      const card = e.target.closest('[data-dash-segment]');
+      if(!card) return;
+      dashSegment.value = card.dataset.dashSegment || '';
+      renderDashboard();
+      showToast(`กรองสถานะ: ${segmentInfo(dashSegment.value).label} ✅`);
+    });
+
+    btnClearDashSegment?.addEventListener('click', ()=>{
+      dashSegment.value = '';
+      renderDashboard();
+      showToast('แสดงทุกสถานะแล้ว ✅');
+    });
 
     // ===================== Dashboard filters =====================
     btnApplyDash.addEventListener('click', async ()=>{
@@ -2402,16 +2984,14 @@ function calcCustomerAnalytics(opd){
 
     // ===================== Plan controls =====================
     planDate.addEventListener('change', ()=>{
-      planTitleDate.textContent = fmtShortDate(planDate.value);
+      forcePlanToday();
       saveDraft();
-      loadTodaySummary(); // ✅ update summary when date changes
+      loadTodaySummary();
     });
     planDefaultPromo.addEventListener('input', saveDraft);
-    planDefaultChannel.addEventListener('change', saveDraft);
 
-    btnAddRow.addEventListener('click', ()=> addPlanRow({ promotion: planDefaultPromo.value || '', channel: planDefaultChannel.value || 'call' }));
-    btnAddRow2.addEventListener('click', ()=> addPlanRow({ promotion: planDefaultPromo.value || '', channel: planDefaultChannel.value || 'call' }));
-    btnSaveBulk.addEventListener('click', saveBulkPitches);
+    btnAddRow.addEventListener('click', ()=> addPlanRow({}));
+    btnAddRow2.addEventListener('click', ()=> addPlanRow({}));
     btnSaveBulk2.addEventListener('click', saveBulkPitches);
 
     btnClearDraft.addEventListener('click', ()=>{
@@ -2419,12 +2999,25 @@ function calcCustomerAnalytics(opd){
       clearDraft();
       planRows.innerHTML = '';
       addPlanRow({});
+      forcePlanToday();
+      if(lastSaveSummary) lastSaveSummary.classList.remove('show');
       planDraftStatus.textContent = 'cleared';
       showToast('ล้าง Draft แล้ว','warn');
     });
 
     // ✅ Manual reload today summary
-    btnReloadTodaySummary.addEventListener('click', loadTodaySummary);
+    btnReloadTodaySummary.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      loadTodaySummary();
+    });
+    btnToggleTodaySummary?.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      setTodaySummaryExpanded(!todaySummaryExpanded);
+    });
+    todaySummaryHeader?.addEventListener('click', (e)=>{
+      if(e.target.closest('button')) return;
+      setTodaySummaryExpanded(!todaySummaryExpanded);
+    });
 
     // ===================== Global click: open profile links =====================
     document.addEventListener('click', (e)=>{
@@ -2456,6 +3049,7 @@ function calcCustomerAnalytics(opd){
       histFrom.value = '';
       histTo.value = '';
       await loadHistoryFromFilters();
+      setTodaySummaryExpanded(false);
 
       showView('plan');
       restorePlanDraft();

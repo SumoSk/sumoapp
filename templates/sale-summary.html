@@ -546,6 +546,143 @@
       font-size: 12px;
       color:#6b7280;
     }
+
+    /* Data Download Modal */
+    .data-download-modal{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(15,23,42,.46);
+      backdrop-filter: blur(6px);
+      z-index:10004;
+      padding:16px;
+    }
+    .data-download-box{
+      width:min(94vw, 430px);
+      background:linear-gradient(180deg,#ffffff 0%,#f8fffd 100%);
+      border:1px solid rgba(13,148,136,.18);
+      border-radius:22px;
+      box-shadow:0 24px 70px rgba(15,23,42,.28);
+      padding:16px;
+      position:relative;
+      overflow:hidden;
+    }
+    .data-download-box::before{
+      content:"";
+      position:absolute;
+      inset:0 0 auto 0;
+      height:5px;
+      background:linear-gradient(90deg,#0d9488,#4f46e5,#7c3aed);
+    }
+    .data-download-close{
+      position:absolute;
+      right:10px;
+      top:10px;
+      width:34px;
+      height:34px;
+      border:0;
+      border-radius:999px;
+      background:#f1f5f9;
+      color:#334155;
+      font-size:20px;
+      cursor:pointer;
+    }
+    .data-download-title{
+      margin:4px 42px 4px 0;
+      font-size:18px;
+      font-weight:800;
+      color:#0f172a;
+    }
+    .data-download-sub{
+      margin:0 0 14px;
+      font-size:12px;
+      color:#64748b;
+      line-height:1.5;
+    }
+    .data-download-password{
+      display:grid;
+      gap:10px;
+      margin-top:8px;
+    }
+    .data-download-password input{
+      width:100%;
+      border:1px solid #cbd5e1;
+      border-radius:14px;
+      padding:12px 14px;
+      font-family:'Prompt',sans-serif;
+      font-size:16px;
+      text-align:center;
+      letter-spacing:6px;
+      outline:none;
+      background:#fff;
+    }
+    .data-download-password input:focus{
+      border-color:#0d9488;
+      box-shadow:0 0 0 4px rgba(13,148,136,.12);
+    }
+    .data-download-actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:12px;
+    }
+    .data-download-choice{
+      border:1px solid #e2e8f0;
+      background:#fff;
+      border-radius:16px;
+      padding:12px 10px;
+      cursor:pointer;
+      text-align:left;
+      box-shadow:0 8px 20px rgba(15,23,42,.06);
+      transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+      font-family:'Prompt',sans-serif;
+    }
+    .data-download-choice:hover{
+      transform:translateY(-1px);
+      box-shadow:0 14px 28px rgba(15,23,42,.11);
+      border-color:#99f6e4;
+    }
+    .data-download-choice .t{
+      display:block;
+      font-size:13px;
+      font-weight:800;
+      color:#0f172a;
+      margin-bottom:3px;
+    }
+    .data-download-choice .d{
+      display:block;
+      font-size:11px;
+      color:#64748b;
+      line-height:1.35;
+    }
+    .data-download-error{
+      display:none;
+      color:#b91c1c;
+      background:#fef2f2;
+      border:1px solid #fecaca;
+      border-radius:12px;
+      padding:8px 10px;
+      font-size:12px;
+      font-weight:700;
+    }
+    @media (max-width:420px){
+      .data-download-actions{grid-template-columns:1fr;}
+    }
+    .download-tab-card{
+      width:min(100%, 760px);
+      margin:12px auto 0;
+      background:linear-gradient(180deg,#ffffff 0%,#f8fffd 100%);
+      border:1px solid #dbeafe;
+      border-radius:18px;
+      padding:18px;
+      box-shadow:0 12px 32px rgba(15,23,42,.08);
+    }
+    .download-tab-card .data-download-title{ text-align:left; }
+    .download-tab-card .data-download-sub{ text-align:left; }
+    .download-tab-card .data-download-password{ max-width:360px; }
+
   </style>
 </head>
 <body>
@@ -563,6 +700,7 @@
     <div class="summary-tabs" role="tablist" aria-label="สรุปการขาย">
       <button id="tabBtnSales" type="button" class="summary-tab-btn active" onclick="switchSummaryTab('sales')">สรุปยอดขาย</button>
       <button id="tabBtnPending" type="button" class="summary-tab-btn" onclick="switchSummaryTab('pending')">ค้างชำระ/ค้างทำ</button>
+      <button id="tabBtnDownload" type="button" class="summary-tab-btn" onclick="switchSummaryTab('download')">โหลดข้อมูล</button>
     </div>
 
     <div id="salesTabPanel" class="summary-tab-panel active" role="tabpanel" aria-label="สรุปยอดขาย">
@@ -577,10 +715,6 @@
 
       <div id="reviewSection">กำลังโหลดข้อมูล...</div>
 
-      <div style="text-align:center; margin-top:8px;">
-        <button id="downloadExcelBtn" class="btn" type="button" style="background:#00796b;" disabled>⬇️ โหลด Excel</button>
-        <button id="downloadPdfBtn" class="btn" type="button" style="background:#c62828; margin-left:8px;" disabled>📄 โหลด PDF</button>
-      </div>
     </div>
 
     <div id="pendingTabPanel" class="summary-tab-panel" role="tabpanel" aria-label="ค้างชำระและค้างทำ">
@@ -626,6 +760,41 @@
               <tr><td colspan="6" class="pending-empty">กำลังโหลดข้อมูล...</td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="downloadTabPanel" class="summary-tab-panel" role="tabpanel" aria-label="โหลดข้อมูล">
+      <div class="download-tab-card">
+        <div class="data-download-title">📥 โหลดข้อมูล</div>
+        <p class="data-download-sub" id="dataDownloadSub">กรอกรหัสผ่านเพื่อเลือกประเภทไฟล์ที่ต้องการดาวน์โหลด</p>
+
+        <div id="dataDownloadPasswordStep" class="data-download-password">
+          <input id="dataDownloadPassword" type="password" inputmode="numeric" autocomplete="off" placeholder="รหัสผ่าน" maxlength="8" aria-label="รหัสผ่านโหลดข้อมูล">
+          <div id="dataDownloadError" class="data-download-error">รหัสผ่านไม่ถูกต้อง</div>
+          <button type="button" class="btn" id="dataDownloadUnlockBtn" style="background:#0d9488; width:100%;">ปลดล็อก</button>
+        </div>
+
+        <div id="dataDownloadMenuStep" style="display:none;">
+          <div class="data-download-actions">
+            <button type="button" class="data-download-choice" id="downloadExcelBtn" data-download-action="excel">
+              <span class="t">📊 รายงาน Excel</span>
+              <span class="d">รายงานอ่านง่าย + raw data ครบ</span>
+            </button>
+            <button type="button" class="data-download-choice" id="downloadPdfSummaryBtn" data-download-action="pdf">
+              <span class="t">📄 PDF สรุปยอดขาย</span>
+              <span class="d">เลือกเดือนและโหลดเป็น PDF</span>
+            </button>
+            <button type="button" class="data-download-choice" id="downloadAiExportBtn" data-download-action="ai">
+              <span class="t">🤖 AI Chatbot ZIP</span>
+              <span class="d">ข้อมูลจริงทั้งหมดสำหรับผู้ช่วย AI</span>
+            </button>
+            <button type="button" class="data-download-choice" id="downloadNotebookLmBtn" data-download-action="notebooklm">
+              <span class="t">📘 NotebookLM ZIP</span>
+              <span class="d">แยกเป็น TXT หลายไฟล์สำหรับ Gemini</span>
+            </button>
+          </div>
+          <p class="data-download-sub" style="margin-top:12px;margin-bottom:0;color:#b45309;">ไฟล์เหล่านี้มีข้อมูลจริงของคลินิก ใช้เฉพาะภายในเท่านั้น</p>
         </div>
       </div>
     </div>
@@ -909,8 +1078,8 @@
         renderView();
         updateMonthButtons();
 
-        document.getElementById('downloadExcelBtn').disabled = false;
-        document.getElementById('downloadPdfBtn').disabled = false;
+        const legacyDownloadBtn = document.getElementById('downloadDataBtn');
+        if (legacyDownloadBtn) legacyDownloadBtn.disabled = false;
       })
       .catch(err => {
         console.error(err);
@@ -996,20 +1165,31 @@
 
     // ===== Main tabs + Pending Summary =====
     function switchSummaryTab(tab){
-      activeSummaryTab = tab === 'pending' ? 'pending' : 'sales';
+      activeSummaryTab = (tab === 'pending' || tab === 'download') ? tab : 'sales';
 
       const salesBtn = document.getElementById('tabBtnSales');
       const pendingBtn = document.getElementById('tabBtnPending');
+      const downloadBtn = document.getElementById('tabBtnDownload');
       const salesPanel = document.getElementById('salesTabPanel');
       const pendingPanel = document.getElementById('pendingTabPanel');
+      const downloadPanel = document.getElementById('downloadTabPanel');
 
       salesBtn?.classList.toggle('active', activeSummaryTab === 'sales');
       pendingBtn?.classList.toggle('active', activeSummaryTab === 'pending');
+      downloadBtn?.classList.toggle('active', activeSummaryTab === 'download');
       salesPanel?.classList.toggle('active', activeSummaryTab === 'sales');
       pendingPanel?.classList.toggle('active', activeSummaryTab === 'pending');
+      downloadPanel?.classList.toggle('active', activeSummaryTab === 'download');
 
       if(activeSummaryTab === 'pending'){
         renderPendingSummary();
+      }
+      if(activeSummaryTab === 'download'){
+        resetDataDownloadModal();
+        setTimeout(()=>{
+          const input = document.getElementById('dataDownloadPassword');
+          if(!dataDownloadUnlocked && input) input.focus();
+        }, 80);
       }
     }
     window.switchSummaryTab = switchSummaryTab;
@@ -1314,6 +1494,13 @@
       return `${yy + yearDelta}-${String(mm).padStart(2,'0')}`;
     }
 
+    function monthKeyShift(monthKey, monthDelta){
+      const [yy, mm] = String(monthKey || '').split('-').map(n => parseInt(n, 10));
+      if(!yy || !mm) return '';
+      const d = new Date(yy, mm - 1 + monthDelta, 1);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}`;
+    }
+
     function getMonthRecords(monthKey){
       return (groupedByMonth[monthKey] || []).slice();
     }
@@ -1356,6 +1543,13 @@
       return set.size;
     }
 
+    function billCountForMonthToDay(monthKey, limitDay){
+      return getMonthRecords(monthKey).filter(r => {
+        const day = parseInt(String(r.date || '').split('-')[2] || '0', 10) || 0;
+        return day > 0 && day <= limitDay;
+      }).length;
+    }
+
     function formatDiffBaht(diff){
       if(diff > 0) return `+${diff.toLocaleString()} บาท`;
       if(diff < 0) return `-${Math.abs(diff).toLocaleString()} บาท`;
@@ -1377,6 +1571,121 @@
       return `${sign}${pct.toFixed(1)}%`;
     }
 
+    function openPrevMonthCompareModal(monthKey){
+      const prevMonth = monthKeyShift(monthKey, -1);
+      const currentRecords = getMonthRecords(monthKey);
+      const prevRecords = getMonthRecords(prevMonth);
+      const box = document.getElementById('yearCompareContent');
+      const modal = document.getElementById('yearCompareModal');
+      if(!box || !modal) return;
+
+      if(!currentRecords.length){
+        box.innerHTML = '<div class="year-compare-title">ไม่พบข้อมูลเดือนนี้</div>';
+        modal.style.display = 'flex';
+        return;
+      }
+
+      const [yy, mm] = String(monthKey).split('-').map(Number);
+      const [py, pm] = String(prevMonth).split('-').map(Number);
+      const currentLimit = daysToCompareForMonth(yy, mm);
+      const prevSameLimit = Math.min(currentLimit, daysInMonth(py, pm));
+      const prevFullLimit = daysInMonth(py, pm);
+
+      const currentPeriod = getMonthToDayTotal(monthKey, currentLimit);
+      const prevSamePeriod = getMonthToDayTotal(prevMonth, prevSameLimit);
+      const diffPeriod = currentPeriod - prevSamePeriod;
+
+      const prevFullMonth = getMonthTotal(prevMonth);
+      const prevRemainingAfterSamePeriod = Math.max(0, prevFullMonth - prevSamePeriod);
+
+      const currentCustomers = customerCountForMonthToDay(monthKey, currentLimit);
+      const prevCustomers = customerCountForMonthToDay(prevMonth, prevSameLimit);
+      const customerDiff = currentCustomers - prevCustomers;
+
+      const currentBills = billCountForMonthToDay(monthKey, currentLimit);
+      const prevBills = billCountForMonthToDay(prevMonth, prevSameLimit);
+      const billDiff = currentBills - prevBills;
+
+      const currentDaily = buildDailyTotals(monthKey);
+      const prevDaily = buildDailyTotals(prevMonth);
+      const maxDay = Math.max(currentLimit, prevFullLimit);
+      const rows = [];
+      for(let day = 1; day <= maxDay; day++){
+        const isCurrentComparableDay = day <= currentLimit;
+        const cur = isCurrentComparableDay ? (currentDaily[day] || 0) : null;
+        const old = day <= prevFullLimit ? (prevDaily[day] || 0) : 0;
+        if((cur === null || cur === 0) && old === 0) continue;
+        const diff = cur === null ? null : (cur - old);
+        rows.push(`
+          <tr>
+            <td>${day}</td>
+            <td>${cur === null ? '<span class="year-compare-neutral">-</span>' : cur.toLocaleString()}</td>
+            <td>${old.toLocaleString()}</td>
+            <td class="${diff === null ? 'year-compare-neutral' : diffTextClass(diff)}">${diff === null ? '-' : formatDiffBaht(diff)}</td>
+          </tr>
+        `);
+      }
+
+      box.innerHTML = `
+        <div class="year-compare-title">เทียบ ${monthLabel(monthKey)} กับเดือนก่อน ${monthLabel(prevMonth)}</div>
+        <div class="year-compare-sub">
+          ยอดเปรียบเทียบหลักใช้วันที่ 1-${currentLimit} เทียบกับเดือนก่อนวันที่ 1-${prevSameLimit} และตารางด้านล่างแสดงเดือนก่อนจนจบเดือน
+        </div>
+
+        <div class="year-compare-cards">
+          <div class="year-compare-card">
+            <div class="label">ยอด ${monthLabel(monthKey)} วันที่ 1-${currentLimit}</div>
+            <div class="value">${currentPeriod.toLocaleString()} บาท</div>
+          </div>
+          <div class="year-compare-card">
+            <div class="label">ยอด ${monthLabel(prevMonth)} วันที่ 1-${prevSameLimit}</div>
+            <div class="value">${prevSamePeriod.toLocaleString()} บาท</div>
+          </div>
+          <div class="year-compare-card diff ${diffClass(diffPeriod)}">
+            <div class="label">ส่วนต่างช่วงวันเดียวกัน</div>
+            <div class="value">${formatDiffBaht(diffPeriod)}</div>
+            <div style="font-size:11px;color:#64748b;margin-top:4px;">${percentText(currentPeriod, prevSamePeriod)}</div>
+          </div>
+        </div>
+
+        <div class="year-compare-cards" style="margin-top:10px;">
+          <div class="year-compare-card diff ${diffClass(customerDiff)}">
+            <div class="label">จำนวนลูกค้า เดือนนี้ / เดือนก่อน</div>
+            <div class="value">${currentCustomers.toLocaleString()} / ${prevCustomers.toLocaleString()} คน</div>
+            <div style="font-size:11px;color:#64748b;margin-top:4px;">ส่วนต่าง ${customerDiff > 0 ? '+' : ''}${customerDiff.toLocaleString()} คน</div>
+          </div>
+          <div class="year-compare-card diff ${diffClass(billDiff)}">
+            <div class="label">จำนวนบิล เดือนนี้ / เดือนก่อน</div>
+            <div class="value">${currentBills.toLocaleString()} / ${prevBills.toLocaleString()} บิล</div>
+            <div style="font-size:11px;color:#64748b;margin-top:4px;">ส่วนต่าง ${billDiff > 0 ? '+' : ''}${billDiff.toLocaleString()} บิล</div>
+          </div>
+          <div class="year-compare-card">
+            <div class="label">ยอดเดือนก่อนหลังวันที่ ${prevSameLimit}</div>
+            <div class="value">${prevRemainingAfterSamePeriod.toLocaleString()} บาท</div>
+            <div style="font-size:11px;color:#64748b;margin-top:4px;">ยอดเต็มเดือนก่อน ${prevFullMonth.toLocaleString()} บาท</div>
+          </div>
+        </div>
+
+        <div class="year-compare-table-wrap">
+          <table class="year-compare-table">
+            <thead>
+              <tr>
+                <th>วันที่</th>
+                <th>${monthLabel(monthKey)}</th>
+                <th>${monthLabel(prevMonth)} ทั้งเดือน</th>
+                <th>ส่วนต่าง</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.length ? rows.join('') : '<tr><td colspan="4" style="text-align:center;color:#64748b;">ไม่มีข้อมูลรายวันให้เทียบ</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      modal.style.display = 'flex';
+    }
+
     function openYearCompareModal(monthKey){
       const prevYearMonth = monthKeyOffset(monthKey, -1);
       const currentRecords = getMonthRecords(monthKey);
@@ -1396,18 +1705,23 @@
       const prevSameLimit = Math.min(currentLimit, daysInMonth(yy - 1, mm));
       const prevFullLimit = daysInMonth(yy - 1, mm);
 
-      // ยอดเทียบช่วงวันเดียวกัน: เดือนปัจจุบันถึงวันที่มีข้อมูลจริง เทียบกับปีที่แล้วช่วงวันเดียวกัน
+      // ใช้รูปแบบเดียวกับ Dashboard เทียบเดือนก่อน:
+      // แถวบน = ยอดช่วงวันเดียวกัน + ส่วนต่าง
+      // แถวล่าง = จำนวนลูกค้า / จำนวนบิล / ยอดหลังช่วงเทียบ
       const currentPeriod = getMonthToDayTotal(monthKey, currentLimit);
       const prevSamePeriod = getMonthToDayTotal(prevYearMonth, prevSameLimit);
       const diffPeriod = currentPeriod - prevSamePeriod;
 
-      // ยอดเต็มเดือนของปีที่แล้ว: ใช้เป็นภาพรวมว่าปีก่อนทั้งเดือนปิดที่เท่าไหร่
       const prevFullMonth = getMonthTotal(prevYearMonth);
       const prevRemainingAfterSamePeriod = Math.max(0, prevFullMonth - prevSamePeriod);
 
       const currentCustomers = customerCountForMonthToDay(monthKey, currentLimit);
       const prevCustomers = customerCountForMonthToDay(prevYearMonth, prevSameLimit);
       const customerDiff = currentCustomers - prevCustomers;
+
+      const currentBills = billCountForMonthToDay(monthKey, currentLimit);
+      const prevBills = billCountForMonthToDay(prevYearMonth, prevSameLimit);
+      const billDiff = currentBills - prevBills;
 
       const currentDaily = buildDailyTotals(monthKey);
       const prevDaily = buildDailyTotals(prevYearMonth);
@@ -1418,7 +1732,7 @@
         const cur = isCurrentComparableDay ? (currentDaily[day] || 0) : null;
         const old = day <= prevFullLimit ? (prevDaily[day] || 0) : 0;
 
-        // แสดงข้อมูลปีที่แล้วจนจบเดือน แม้วันของปีนี้ยังไม่ถึง
+        // แสดงประวัติปีที่แล้วจนจบเดือน แม้วันของปีนี้ยังไม่ถึง
         if((cur === null || cur === 0) && old === 0) continue;
 
         const diff = cur === null ? null : (cur - old);
@@ -1460,13 +1774,15 @@
             <div class="value">${currentCustomers.toLocaleString()} / ${prevCustomers.toLocaleString()} คน</div>
             <div style="font-size:11px;color:#64748b;margin-top:4px;">ส่วนต่าง ${customerDiff > 0 ? '+' : ''}${customerDiff.toLocaleString()} คน</div>
           </div>
-          <div class="year-compare-card">
-            <div class="label">ยอดเต็มเดือน ${monthLabel(prevYearMonth)}</div>
-            <div class="value">${prevFullMonth.toLocaleString()} บาท</div>
+          <div class="year-compare-card diff ${diffClass(billDiff)}">
+            <div class="label">จำนวนบิล ปีนี้ / ปีที่แล้ว</div>
+            <div class="value">${currentBills.toLocaleString()} / ${prevBills.toLocaleString()} บิล</div>
+            <div style="font-size:11px;color:#64748b;margin-top:4px;">ส่วนต่าง ${billDiff > 0 ? '+' : ''}${billDiff.toLocaleString()} บิล</div>
           </div>
           <div class="year-compare-card">
             <div class="label">ยอดปีที่แล้วหลังวันที่ ${prevSameLimit}</div>
             <div class="value">${prevRemainingAfterSamePeriod.toLocaleString()} บาท</div>
+            <div style="font-size:11px;color:#64748b;margin-top:4px;">ยอดเต็มเดือน ${monthLabel(prevYearMonth)} ${prevFullMonth.toLocaleString()} บาท</div>
           </div>
         </div>
 
@@ -1495,6 +1811,7 @@
       if(modal) modal.style.display = 'none';
     }
     window.openYearCompareModal = openYearCompareModal;
+    window.openPrevMonthCompareModal = openPrevMonthCompareModal;
     window.closeYearCompareModal = closeYearCompareModal;
 
     function renderSelectedMonth(){
@@ -1539,11 +1856,21 @@
 
       const compareDiv = document.createElement('div');
       compareDiv.className='compare';
-      compareDiv.innerHTML = diff>0
-        ? `📈 ดีกว่าเดือนก่อน <span style="color:green;font-weight:bold;">+${diff.toLocaleString()}</span> บาท (เทียบวันที่ 1-${limitDayCurr})`
-        : diff<0
-          ? `📉 น้อยกว่าเดือนก่อน <span style="color:red;font-weight:bold;">${diff.toLocaleString()}</span> บาท (เทียบวันที่ 1-${limitDayCurr})`
-          : `📊 เท่ากับเดือนก่อนหน้า`;
+
+      const prevMonthCompareLine = document.createElement('div');
+      if(prevRecs.length){
+        prevMonthCompareLine.className = 'year-compare-trigger';
+        prevMonthCompareLine.innerHTML = diff > 0
+          ? `📈 ดีกว่าเดือนก่อน <span style="color:green;font-weight:bold;">+${diff.toLocaleString()}</span> บาท (กดดู)`
+          : diff < 0
+            ? `📉 น้อยกว่าเดือนก่อน <span style="color:red;font-weight:bold;">-${Math.abs(diff).toLocaleString()}</span> บาท (กดดู)`
+            : `📊 เท่ากับเดือนก่อนหน้า (กดดู)`;
+        prevMonthCompareLine.onclick = () => openPrevMonthCompareModal(selectedMonth);
+      }else{
+        prevMonthCompareLine.className = 'year-compare-trigger muted';
+        prevMonthCompareLine.textContent = `📈 ยังไม่มีข้อมูล ${monthLabel(prevMonth)} สำหรับเทียบเดือนก่อน`;
+      }
+      compareDiv.appendChild(prevMonthCompareLine);
 
       const prevYearMonth = monthKeyOffset(selectedMonth, -1);
       const prevYearRecs = groupedByMonth[prevYearMonth] || [];
@@ -2205,61 +2532,524 @@
       openCustomerModal(key);
     });
 
-    // ===== Excel Export =====
-    document.getElementById('downloadExcelBtn')?.addEventListener('click', downloadExcel);
+    // ===== รวมปุ่มโหลดข้อมูล + รหัสผ่าน =====
+    let dataDownloadUnlocked = false;
 
-    function downloadExcel(){
-      const allMonths = isRangeActive()
-        ? monthsSorted.filter(m=> m >= rangeStart && m <= rangeEnd)
-        : (selectedMonth ? [selectedMonth] : []);
+    function openDataDownloadModal(){
+      switchSummaryTab('download');
+    }
 
-      const recs = allMonths.flatMap(m=> groupedByMonth[m] || []);
-      if(!recs.length){
-        alert('ไม่มีข้อมูลให้ดาวน์โหลด');
-        return;
+    function closeDataDownloadModal(){
+      // ปุ่มโหลดข้อมูลย้ายมาอยู่ในแถบที่ 3 แล้ว จึงไม่มี popup ให้ปิด
+    }
+
+    function resetDataDownloadModal(){
+      const passwordStep = document.getElementById('dataDownloadPasswordStep');
+      const menuStep = document.getElementById('dataDownloadMenuStep');
+      const sub = document.getElementById('dataDownloadSub');
+      const err = document.getElementById('dataDownloadError');
+      const input = document.getElementById('dataDownloadPassword');
+      if(err) err.style.display = 'none';
+      if(input) input.value = '';
+      if(dataDownloadUnlocked){
+        if(passwordStep) passwordStep.style.display = 'none';
+        if(menuStep) menuStep.style.display = 'block';
+        if(sub) sub.textContent = 'เลือกประเภทไฟล์ที่ต้องการดาวน์โหลด';
+      }else{
+        if(passwordStep) passwordStep.style.display = 'grid';
+        if(menuStep) menuStep.style.display = 'none';
+        if(sub) sub.textContent = 'กรอกรหัสผ่านเพื่อเลือกประเภทไฟล์ที่ต้องการดาวน์โหลด';
       }
+    }
 
-      const filename = isRangeActive()
-        ? `ยอดขาย_${rangeStart}_ถึง_${rangeEnd}.xlsx`
-        : `ยอดขาย_${selectedMonth||'ทั้งหมด'}.xlsx`;
+    function unlockDataDownload(){
+      const input = document.getElementById('dataDownloadPassword');
+      const err = document.getElementById('dataDownloadError');
+      const pass = String(input?.value || '').trim();
+      if(pass !== '1112'){
+        if(err) err.style.display = 'block';
+        if(input){ input.select(); input.focus(); }
+        return false;
+      }
+      dataDownloadUnlocked = true;
+      resetDataDownloadModal();
+      return true;
+    }
 
-      const sortedRecs = recs.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
-      const ws_data = [];
-      let currentDate = '';
-      let dailyTotal = 0;
+    document.getElementById('downloadDataBtn')?.addEventListener('click', openDataDownloadModal);
+    document.getElementById('dataDownloadUnlockBtn')?.addEventListener('click', unlockDataDownload);
+    document.getElementById('dataDownloadPassword')?.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        unlockDataDownload();
+      }
+    });
+    document.querySelectorAll('[data-download-action]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        if(!dataDownloadUnlocked) return;
+        const action = btn.getAttribute('data-download-action');
+        closeDataDownloadModal();
+        if(action === 'excel') downloadExcel();
+        else if(action === 'pdf') openPdfMonthModal();
+        else if(action === 'ai') downloadAIChatbotExport();
+        else if(action === 'notebooklm') downloadNotebookLmExport();
+      });
+    });
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape') closeDataDownloadModal();
+    });
 
-      sortedRecs.forEach(r=>{
-        const formattedDate = formatDate(r.date);
-        const items = (r.items||[]).map(item=>{
-          const m = String(item).match(/^(.*?) ?(?:\((.*?)\))? - (\d+) ชิ้น/);
-          if(m){
-            const main=m[1], sub=m[2], qty=m[3];
-            return sub ? `${main} (${sub}) - ${qty} ชิ้น` : `${main} - ${qty} ชิ้น`;
-          }
-          return String(item);
-        }).join('\n');
+    // ===== AI Chatbot Full Export =====
+    document.getElementById('downloadAiExportBtn')?.addEventListener('click', downloadAIChatbotExport);
 
-        if(formattedDate !== currentDate){
-          if(currentDate !== ''){
-            ws_data.push(['','','','รวมยอดประจำวัน', dailyTotal, '']);
-            ws_data.push([]);
-          }
-          currentDate = formattedDate;
-          dailyTotal = 0;
-          ws_data.push([`วันที่ ${formattedDate}`]);
-          ws_data.push(['OPD','ชื่อ','เบอร์','รายการ','ยอด (บาท)','หมายเหตุ']);
+    async function downloadAIChatbotExport(){
+      const btn = document.getElementById('downloadAiExportBtn') || document.getElementById('downloadDataBtn');
+      const oldText = btn ? btn.textContent : '';
+      try{
+        if(btn){
+          btn.disabled = true;
+          btn.textContent = 'กำลังรวมข้อมูล...';
         }
 
-        dailyTotal += parseCurrency(r.amount);
-        ws_data.push([ r.opd||'', r.name, r.phone||'', items, parseCurrency(r.amount), r.note||'' ]);
+        const res = await fetch('/api/export_ai_chatbot_zip', { credentials:'include' });
+        if(!res.ok){
+          let msg = 'Export ไม่สำเร็จ';
+          try{
+            const data = await res.json();
+            msg = data.error || msg;
+          }catch(e){}
+          throw new Error(msg);
+        }
+
+        const blob = await res.blob();
+        let filename = `palmy_ai_chatbot_full_${new Date().toISOString().slice(0,10)}.zip`;
+        const cd = res.headers.get('Content-Disposition') || '';
+        const m = cd.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+        if(m){ filename = decodeURIComponent(m[1] || m[2] || filename); }
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }catch(err){
+        console.error(err);
+        alert(err.message || 'Export ไม่สำเร็จ');
+      }finally{
+        if(btn){
+          btn.disabled = false;
+          btn.textContent = oldText || '📥 โหลดข้อมูล';
+        }
+      }
+    }
+
+
+    // ===== NotebookLM Split TXT ZIP Export =====
+    document.getElementById('downloadNotebookLmBtn')?.addEventListener('click', downloadNotebookLmExport);
+
+    async function downloadNotebookLmExport(){
+      const btn = document.getElementById('downloadNotebookLmBtn') || document.getElementById('downloadDataBtn');
+      const oldText = btn ? btn.textContent : '';
+      try{
+        const ok = confirm('ระบบจะสร้าง ZIP ที่แยกข้อมูลจริงออกเป็นหลายไฟล์ TXT สำหรับ NotebookLM/Gemini เช่น ลูกค้า ยอดขาย นัดหมาย ค้างชำระ/ค้างทำ และสต๊อก\n\nไฟล์นี้มีข้อมูลจริง ใช้เฉพาะภายในคลินิกเท่านั้น ต้องการดาวน์โหลดหรือไม่?');
+        if(!ok) return;
+
+        if(btn){
+          btn.disabled = true;
+          btn.textContent = 'กำลังสร้าง ZIP...';
+        }
+
+        const res = await fetch('/api/export_notebooklm_markdown', { credentials:'include' });
+        if(!res.ok){
+          let msg = 'Export NotebookLM ไม่สำเร็จ';
+          try{
+            const data = await res.json();
+            msg = data.error || msg;
+          }catch(e){}
+          throw new Error(msg);
+        }
+
+        const blob = await res.blob();
+        let filename = `palmy_notebooklm_split_pack_${new Date().toISOString().slice(0,10)}.zip`;
+        const cd = res.headers.get('Content-Disposition') || '';
+        const m = cd.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+        if(m){ filename = decodeURIComponent(m[1] || m[2] || filename); }
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }catch(err){
+        console.error(err);
+        alert(err.message || 'Export NotebookLM ไม่สำเร็จ');
+      }finally{
+        if(btn){
+          btn.disabled = false;
+          btn.textContent = oldText || '📥 โหลดข้อมูล';
+        }
+      }
+    }
+
+    // ===== Improved Excel Report Export =====
+    document.getElementById('downloadExcelBtn')?.addEventListener('click', downloadExcel);
+
+    function excelSafe(v){
+      if(v === null || v === undefined) return '';
+      if(v instanceof Date) return v.toISOString().slice(0,10);
+      if(typeof v === 'object'){
+        try{ return JSON.stringify(v, null, 0); }catch(e){ return String(v); }
+      }
+      return v;
+    }
+
+    function excelNum(v){
+      const n = Number(String(v ?? '').replace(/,/g,''));
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function excelDate(v){
+      const s = String(v || '').slice(0,10);
+      return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
+    }
+
+    function excelItemRowsFromSale(sale){
+      const raw = sale?.items_normalized || sale?.items || sale?.item || [];
+      const list = Array.isArray(raw) ? raw : safeParseItems(raw);
+      return (list || []).map(it => {
+        if(it && typeof it === 'object'){
+          const category = String(it.category || it.main || it.group || '').trim();
+          const name = String(it.name || it.subitem || it.sub || it.label || it.product || '').trim();
+          const label = String(it.label || (category && name ? `${category} (${name})` : (name || category)) || '').trim();
+          const qty = excelNum(it.qty ?? it.quantity ?? it.count ?? 1) || 1;
+          const priceRaw = it.price ?? it.unit_price ?? it.amount;
+          const price = (priceRaw === null || priceRaw === undefined || priceRaw === '') ? '' : excelNum(priceRaw);
+          return { category, name: name || label, label, qty, price, raw: it };
+        }
+
+        const text = String(it || '').trim();
+        let category = '', name = text, qty = 1, price = '';
+        const m = text.match(/^(.*?)\s*-\s*(\d+(?:\.\d+)?)\s*ชิ้น\s*x\s*(\d+(?:\.\d+)?)\s*บาท?/);
+        let base = text;
+        if(m){
+          base = (m[1] || '').trim();
+          qty = excelNum(m[2]) || 1;
+          price = excelNum(m[3]);
+        }else{
+          const m2 = text.match(/^(.*?)\s*-\s*(\d+(?:\.\d+)?)\s*ชิ้น/);
+          if(m2){
+            base = (m2[1] || '').trim();
+            qty = excelNum(m2[2]) || 1;
+          }
+        }
+        const m3 = base.match(/^(.*?)\s*\((.*?)\)\s*$/);
+        if(m3){
+          category = (m3[1] || '').trim();
+          name = (m3[2] || '').trim();
+        }else{
+          name = base;
+        }
+        return { category, name, label: base, qty, price, raw: text };
       });
+    }
 
-      if(currentDate !== '') ws_data.push(['','','','รวมยอดประจำวัน', dailyTotal, '']);
+    function pendingWorkText(v){
+      let arr = v;
+      if(typeof arr === 'string'){
+        try{ arr = JSON.parse(arr); }catch(e){ arr = arr ? [arr] : []; }
+      }
+      if(!Array.isArray(arr)) arr = arr ? [arr] : [];
+      return arr.map(x => {
+        if(x && typeof x === 'object'){
+          const item = x.item || x.name || x.label || x.product || '';
+          const qty = x.qty || x.quantity || x.count || '';
+          const unit = x.unit || 'ครั้ง';
+          const note = x.note ? ` (${x.note})` : '';
+          return `${item}${qty ? ' ' + qty : ''}${unit || ''}${note}`.trim();
+        }
+        return String(x || '').trim();
+      }).filter(Boolean).join('\n');
+    }
 
-      const worksheet = XLSX.utils.aoa_to_sheet(ws_data);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'ยอดขายรายวัน');
-      XLSX.writeFile(workbook, filename);
+    function rowsToSheet(rows, header, opts={}){
+      const aoa = [header, ...(rows || []).map(r => header.map(h => excelSafe(r[h])) )];
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws['!cols'] = (opts.widths || header.map(h => ({wch: Math.min(Math.max(String(h).length + 4, 12), 28)})));
+      ws['!autofilter'] = { ref: XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:Math.max(0, aoa.length-1), c:Math.max(0, header.length-1)}}) };
+      return ws;
+    }
+
+    function addSheet(wb, name, rows, header, opts={}){
+      const safeName = String(name).slice(0,31);
+      const ws = rowsToSheet(rows, header, opts);
+      XLSX.utils.book_append_sheet(wb, ws, safeName);
+    }
+
+    function dateInCurrentView(d){
+      const day = excelDate(d);
+      if(!day) return false;
+      const m = day.slice(0,7);
+      if(isRangeActive()) return m >= rangeStart && m <= rangeEnd;
+      if(selectedMonth) return m === selectedMonth;
+      return true;
+    }
+
+    function buildCustomerMetrics(sales){
+      const map = new Map();
+      for(const s of sales || []){
+        const opdRaw = String(s.opd || '').replace(/\D/g,'');
+        const opd = opdRaw ? opdRaw.padStart(4,'0').slice(-4) : '';
+        const key = opd || String(s.name || s.customer_name || '').trim();
+        if(!key) continue;
+        if(!map.has(key)){
+          map.set(key, { sale_count:0, total_spent:0, first_visit:'', last_visit:'', last_items:[] });
+        }
+        const o = map.get(key);
+        const d = excelDate(s.date);
+        o.sale_count += 1;
+        o.total_spent += excelNum(s.amount);
+        if(d && (!o.first_visit || d < o.first_visit)) o.first_visit = d;
+        if(d && (!o.last_visit || d > o.last_visit)){
+          o.last_visit = d;
+          o.last_items = excelItemRowsFromSale(s).map(x=>x.label || x.name).filter(Boolean).slice(0,8);
+        }
+      }
+      return map;
+    }
+
+    async function downloadExcel(){
+      const btn = document.getElementById('downloadExcelBtn') || document.getElementById('downloadDataBtn');
+      const oldText = btn ? btn.textContent : '';
+      try{
+        if(btn){ btn.disabled = true; btn.textContent = 'กำลังสร้าง Excel...'; }
+
+        const res = await fetch('/api/export_excel_report_data', { credentials:'include' });
+        if(!res.ok){
+          let msg = 'โหลดข้อมูล Excel ไม่สำเร็จ';
+          try{ const err = await res.json(); msg = err.error || msg; }catch(e){}
+          throw new Error(msg);
+        }
+        const data = await res.json();
+        const curated = data.curated || {};
+        const metadata = data.metadata || {};
+        const errors = data.errors || {};
+
+        const salesAll = curated.sales_full || [];
+        const sales = salesAll.filter(s => dateInCurrentView(s.date));
+        if(!sales.length){
+          alert('ไม่มีข้อมูลยอดขายในช่วงที่เลือก');
+          return;
+        }
+
+        const pendingAll = curated.pending_summary || [];
+        const pending = pendingAll.filter(p => dateInCurrentView(p.sale_date || p.date));
+        const apptsAll = curated.appointments_full || [];
+        const appts = apptsAll.filter(a => dateInCurrentView(a.appt_date || a.date));
+        const dailyAll = curated.daily_summary || [];
+        const daily = dailyAll.filter(d => dateInCurrentView(d.date));
+        const inventory = (curated.inventory_counts_full || []).filter(r => dateInCurrentView(r.count_date || r.date));
+        const customers = curated.customers_full || [];
+        const customerMetrics = buildCustomerMetrics(salesAll);
+
+        const totalSales = sales.reduce((sum, s)=> sum + excelNum(s.amount), 0);
+        const billCount = sales.length;
+        const uniqueCustomers = new Set(sales.map(s => String(s.opd || s.name || s.customer_name || '').trim()).filter(Boolean)).size;
+        const aov = billCount ? totalSales / billCount : 0;
+        const arTotal = pending.reduce((sum, p)=> sum + excelNum(p.ar_amount), 0);
+        const pendingWorkCount = pending.reduce((sum, p)=> {
+          let arr = p.pending_work;
+          if(typeof arr === 'string') { try{ arr = JSON.parse(arr); }catch(e){ arr = []; } }
+          if(!Array.isArray(arr)) arr = [];
+          return sum + arr.reduce((s,x)=> s + (excelNum(x.qty || x.quantity || x.count || 1) || 1), 0);
+        }, 0);
+
+        const wb = XLSX.utils.book_new();
+        wb.Props = {
+          Title: 'Palmy Clinic Excel Report',
+          Subject: 'Sales, customers, appointments, pending and inventory report',
+          Author: 'Palmy Clinic System',
+          CreatedDate: new Date()
+        };
+
+        const rangeLabel = isRangeActive()
+          ? `${rangeStart} ถึง ${rangeEnd}`
+          : (selectedMonth || 'ทั้งหมด');
+        const summaryRows = [
+          {'หัวข้อ':'ช่วงข้อมูล', 'ค่า':rangeLabel},
+          {'หัวข้อ':'เวลาสร้างไฟล์', 'ค่า':metadata.exported_at || new Date().toISOString()},
+          {'หัวข้อ':'ยอดขายรวม', 'ค่า':totalSales},
+          {'หัวข้อ':'จำนวนบิล', 'ค่า':billCount},
+          {'หัวข้อ':'ลูกค้าไม่ซ้ำ', 'ค่า':uniqueCustomers},
+          {'หัวข้อ':'เฉลี่ยต่อบิล', 'ค่า':Math.round(aov)},
+          {'หัวข้อ':'ค้างชำระรวม', 'ค่า':arTotal},
+          {'หัวข้อ':'จำนวนค้างทำรวม', 'ค่า':pendingWorkCount},
+          {'หัวข้อ':'จำนวนนัดหมายในช่วง', 'ค่า':appts.length},
+          {'หัวข้อ':'จำนวน record สต๊อกในช่วง', 'ค่า':inventory.length},
+          {'หัวข้อ':'หมายเหตุ', 'ค่า':'ไฟล์นี้มีข้อมูลจริง ใช้เฉพาะภายในคลินิก'}
+        ];
+        addSheet(wb, '00_สรุปภาพรวม', summaryRows, ['หัวข้อ','ค่า'], {widths:[{wch:26},{wch:40}]});
+
+        const billRows = sales.slice().sort((a,b)=> String(a.date||'').localeCompare(String(b.date||''))).map(s => ({
+          'วันที่': excelDate(s.date),
+          'เลขใบเสร็จ': s.disp_no || s.orig_no || '',
+          'สถานะใบเสร็จ': s.receipt_status || '',
+          'OPD': s.opd || '',
+          'ชื่อ': s.name || s.customer_name || '',
+          'เบอร์': s.phone || '',
+          'รายการรวม': excelItemRowsFromSale(s).map(x => `${x.label || x.name}${x.qty ? ' x ' + x.qty : ''}`).join('\n'),
+          'ยอดรวม': excelNum(s.amount),
+          'วิธีชำระ': s.payment_method || s.payment || '',
+          'ค้างชำระ': excelNum(s.ar_amount),
+          'ค้างทำ': pendingWorkText(s.pending_work),
+          'หมายเหตุ': s.note || ''
+        }));
+        addSheet(wb, '01_ยอดขายรายบิล', billRows, ['วันที่','เลขใบเสร็จ','สถานะใบเสร็จ','OPD','ชื่อ','เบอร์','รายการรวม','ยอดรวม','วิธีชำระ','ค้างชำระ','ค้างทำ','หมายเหตุ'], {
+          widths:[{wch:12},{wch:18},{wch:14},{wch:8},{wch:18},{wch:14},{wch:42},{wch:12},{wch:12},{wch:12},{wch:28},{wch:28}]
+        });
+
+        const itemRows = [];
+        for(const s of sales){
+          const items = excelItemRowsFromSale(s);
+          if(!items.length){
+            itemRows.push({'วันที่':excelDate(s.date),'เลขใบเสร็จ':s.disp_no||s.orig_no||'','OPD':s.opd||'','ชื่อ':s.name||s.customer_name||'','หมวด':'','รายการ':'','จำนวน':'','ราคา/หน่วย':'','รวมบรรทัด':'','ยอดบิล':excelNum(s.amount),'หมายเหตุ':s.note||''});
+            continue;
+          }
+          for(const it of items){
+            const qty = excelNum(it.qty) || 1;
+            const price = it.price === '' ? '' : excelNum(it.price);
+            itemRows.push({
+              'วันที่': excelDate(s.date),
+              'เลขใบเสร็จ': s.disp_no || s.orig_no || '',
+              'OPD': s.opd || '',
+              'ชื่อ': s.name || s.customer_name || '',
+              'หมวด': it.category || '',
+              'รายการ': it.name || it.label || '',
+              'จำนวน': qty,
+              'ราคา/หน่วย': price,
+              'รวมบรรทัด': price === '' ? '' : qty * price,
+              'ยอดบิล': excelNum(s.amount),
+              'หมายเหตุ': s.note || ''
+            });
+          }
+        }
+        addSheet(wb, '02_แยกรายสินค้า', itemRows, ['วันที่','เลขใบเสร็จ','OPD','ชื่อ','หมวด','รายการ','จำนวน','ราคา/หน่วย','รวมบรรทัด','ยอดบิล','หมายเหตุ'], {
+          widths:[{wch:12},{wch:18},{wch:8},{wch:18},{wch:16},{wch:24},{wch:10},{wch:12},{wch:12},{wch:12},{wch:28}]
+        });
+
+        const dailyRows = daily.slice().sort((a,b)=> String(a.date||'').localeCompare(String(b.date||''))).map(d => ({
+          'วันที่': excelDate(d.date),
+          'ยอดขายรวม': excelNum(d.total_sales),
+          'จำนวนบิล': excelNum(d.bill_count),
+          'ลูกค้าไม่ซ้ำ': excelNum(d.unique_customers),
+          'ค้างชำระรวม': excelNum(d.ar_total),
+          'ค้างทำรวม': excelNum(d.pending_work_count),
+          'จำนวนนัด': excelNum(d.appointment_count),
+          'เคสแพทย์': excelNum(d.doctor_case_count),
+          'เคส IV': excelNum(d.iv_case_count),
+          'Top items': Array.isArray(d.top_items) ? d.top_items.map(x=>`${x.name || ''} ${x.qty || ''}`).join('\n') : excelSafe(d.top_items)
+        }));
+        addSheet(wb, '03_สรุปรายวัน', dailyRows, ['วันที่','ยอดขายรวม','จำนวนบิล','ลูกค้าไม่ซ้ำ','ค้างชำระรวม','ค้างทำรวม','จำนวนนัด','เคสแพทย์','เคส IV','Top items'], {
+          widths:[{wch:12},{wch:14},{wch:10},{wch:12},{wch:14},{wch:12},{wch:10},{wch:10},{wch:10},{wch:36}]
+        });
+
+        const customerRows = customers.map(c => {
+          const opdRaw = String(c.opd || c.OPD || '').replace(/\D/g,'');
+          const opd = opdRaw ? opdRaw.padStart(4,'0').slice(-4) : '';
+          const m = customerMetrics.get(opd) || customerMetrics.get(String(c.name || '').trim()) || {};
+          return {
+            'OPD': opd,
+            'ชื่อ': c.name || c.nickname || '',
+            'ชื่อเต็ม': c.full_name || c.fullname || '',
+            'เบอร์': c.phone || c.tel || '',
+            'วันเกิด': c.birth_date || c.birthday || '',
+            'เดือนเกิด': c.birth_month || '',
+            'VIP': c.vip || c.vip_level || '',
+            'จำนวนบิล': m.sale_count || 0,
+            'ยอดรวม': Math.round(m.total_spent || 0),
+            'เฉลี่ย/บิล': m.sale_count ? Math.round((m.total_spent || 0) / m.sale_count) : 0,
+            'มาครั้งแรก': m.first_visit || '',
+            'มาล่าสุด': m.last_visit || '',
+            'รายการล่าสุด': (m.last_items || []).join('\n'),
+            'Profile': c.profile || '',
+            'หมายเหตุ': c.note || ''
+          };
+        });
+        addSheet(wb, '04_ลูกค้า', customerRows, ['OPD','ชื่อ','ชื่อเต็ม','เบอร์','วันเกิด','เดือนเกิด','VIP','จำนวนบิล','ยอดรวม','เฉลี่ย/บิล','มาครั้งแรก','มาล่าสุด','รายการล่าสุด','Profile','หมายเหตุ'], {
+          widths:[{wch:8},{wch:16},{wch:22},{wch:14},{wch:12},{wch:10},{wch:10},{wch:10},{wch:12},{wch:12},{wch:12},{wch:12},{wch:28},{wch:36},{wch:30}]
+        });
+
+        const pendingRows = pending.slice().sort((a,b)=> String(a.sale_date || a.date || '').localeCompare(String(b.sale_date || b.date || ''))).map(p => ({
+          'วันที่': excelDate(p.sale_date || p.date),
+          'Sale ID': p.sale_id || '',
+          'OPD': p.opd || '',
+          'ชื่อ': p.name || '',
+          'ค้างชำระ': excelNum(p.ar_amount),
+          'ค้างทำ': pendingWorkText(p.pending_work),
+          'หมายเหตุ': p.note || '',
+          'สร้างเมื่อ': p.created_at || '',
+          'แก้ไขเมื่อ': p.updated_at || ''
+        }));
+        addSheet(wb, '05_ค้างชำระค้างทำ', pendingRows, ['วันที่','Sale ID','OPD','ชื่อ','ค้างชำระ','ค้างทำ','หมายเหตุ','สร้างเมื่อ','แก้ไขเมื่อ'], {
+          widths:[{wch:12},{wch:12},{wch:8},{wch:18},{wch:12},{wch:32},{wch:28},{wch:20},{wch:20}]
+        });
+
+        const apptRows = appts.slice().sort((a,b)=> String(a.date || a.appt_date || '').localeCompare(String(b.date || b.appt_date || ''))).map(a => ({
+          'วันที่': excelDate(a.appt_date || a.date),
+          'เวลา': a.time || a.appt_time || a.start_time || '',
+          'OPD': a.opd || '',
+          'ชื่อ': a.name || a.customer_name || '',
+          'ประเภท/คอลัมน์': a.case_type || a.type || a.column_id || '',
+          'สถานะ': a.status || '',
+          'หมายเหตุ': a.note || a.notes || '',
+          'สร้างเมื่อ': a.created_at || '',
+          'แก้ไขเมื่อ': a.updated_at || ''
+        }));
+        addSheet(wb, '06_นัดหมาย', apptRows, ['วันที่','เวลา','OPD','ชื่อ','ประเภท/คอลัมน์','สถานะ','หมายเหตุ','สร้างเมื่อ','แก้ไขเมื่อ'], {
+          widths:[{wch:12},{wch:10},{wch:8},{wch:18},{wch:16},{wch:12},{wch:32},{wch:20},{wch:20}]
+        });
+
+        const invRows = inventory.slice().sort((a,b)=> String(a.count_date || a.date || '').localeCompare(String(b.count_date || b.date || ''))).map(i => ({
+          'วันที่': excelDate(i.count_date || i.date),
+          'หมวด': i.category || '',
+          'รายการ': i.item_name || i.name || '',
+          'จำนวน': excelNum(i.quantity),
+          'หน่วย': i.unit || '',
+          'ขั้นต่ำ': i.min_qty || '',
+          'หมายเหตุ': i.note || ''
+        }));
+        addSheet(wb, '07_สต๊อก', invRows, ['วันที่','หมวด','รายการ','จำนวน','หน่วย','ขั้นต่ำ','หมายเหตุ'], {
+          widths:[{wch:12},{wch:22},{wch:24},{wch:10},{wch:10},{wch:10},{wch:26}]
+        });
+
+        const rawSales = salesAll.map(row => ({...row, items_normalized: excelSafe(row.items_normalized), items: excelSafe(row.items), item: excelSafe(row.item), pending_work: excelSafe(row.pending_work)}));
+        addSheet(wb, '08_Raw_sales', rawSales, Object.keys((rawSales[0] || {empty:''})).slice(0, 80), {widths:[]});
+        addSheet(wb, '09_Raw_customers', customers, Object.keys((customers[0] || {empty:''})).slice(0, 80), {widths:[]});
+        addSheet(wb, '10_Raw_appointments', apptsAll, Object.keys((apptsAll[0] || {empty:''})).slice(0, 80), {widths:[]});
+        const rawPending = pendingAll.map(row => ({...row, pending_work: excelSafe(row.pending_work)}));
+        addSheet(wb, '11_Raw_pending', rawPending, Object.keys((rawPending[0] || {empty:''})).slice(0, 80), {widths:[]});
+        addSheet(wb, '12_Raw_inventory', curated.inventory_counts_full || [], Object.keys(((curated.inventory_counts_full || [])[0] || {empty:''})).slice(0, 80), {widths:[]});
+
+        if(Object.keys(errors || {}).length){
+          const errorRows = Object.entries(errors).map(([table, error]) => ({'ตาราง':table, 'error':error}));
+          addSheet(wb, '99_Errors', errorRows, ['ตาราง','error'], {widths:[{wch:28},{wch:70}]});
+        }
+
+        const stamp = new Date().toISOString().slice(0,19).replace(/[T:]/g,'-');
+        const fileRange = String(rangeLabel).replace(/[^0-9A-Za-zก-๙_-]+/g,'_');
+        const filename = `palmy_excel_report_${fileRange}_${stamp}.xlsx`;
+        XLSX.writeFile(wb, filename, { bookType:'xlsx', compression:true });
+      }catch(err){
+        console.error(err);
+        alert(err.message || 'สร้างไฟล์ Excel ไม่สำเร็จ');
+      }finally{
+        if(btn){ btn.disabled = false; btn.textContent = oldText || '📥 โหลดข้อมูล'; }
+      }
     }
 
     // ===== PDF Export =====

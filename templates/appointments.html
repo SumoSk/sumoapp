@@ -445,15 +445,43 @@
     .mqFilters.is-open{ display:grid; }
     .mqFilters .ipt{ padding:7px 9px; font-size:10px; }
     .mqFilterReset{ padding:7px 10px; white-space:nowrap; }
+    .mqCustomRange{
+      display:none;
+      grid-column:1/-1;
+      grid-template-columns: 1fr 1fr auto;
+      gap:8px;
+      align-items:end;
+      padding:10px;
+      border:1px solid #dbeafe;
+      background:#eff6ff;
+      border-radius:12px;
+    }
+    .mqCustomRange.is-open{ display:grid; }
+    .mqCustomRange label{
+      display:grid;
+      gap:5px;
+      color:#1e3a8a;
+      font-weight:900;
+    }
+    .mqCustomRangeHint{
+      grid-column:1/-1;
+      color:#475569;
+      font-weight:800;
+      line-height:1.35;
+    }
     .apptStack{ display:flex; flex-direction:column; gap:4px; }
     .apptCard + .apptCard{ margin-top:4px; }
     .slotConflictNote{ color:#b91c1c; font-weight:900; margin-top:6px; }
     @media (max-width:900px){
       .mqFilters{ grid-template-columns:1fr 1fr; }
       .mqFilterReset{ grid-column:1/-1; }
+      .mqCustomRange{ grid-template-columns:1fr 1fr; }
+      .mqCustomRange .mqCustomSearchBtn{ grid-column:1/-1; }
     }
     @media (max-width:460px){
       .mqFilters{ grid-template-columns:1fr; }
+      .mqCustomRange{ grid-template-columns:1fr; }
+      .mqCustomRange .mqCustomSearchBtn{ grid-column:auto; }
       .mqHeaderActions{ justify-content:flex-start; }
     }
 
@@ -517,6 +545,10 @@
               <span class="sumLabel" style="color:#047857;">คอนเฟิร์มแล้ว</span>
               <span class="sumValue" id="sumConfirmed" style="color:#047857;">- เคส</span>
             </div>
+            <div class="sumBox" style="background:#fef2f2; border-color:#fecaca;">
+              <span class="sumLabel" style="color:#b91c1c;">ยกเลิกแล้ว</span>
+              <span class="sumValue" id="sumCancelled" style="color:#b91c1c;">- เคส</span>
+            </div>
           </div>
 
           <div class="mqHeaderActions">
@@ -536,14 +568,15 @@
             <option value="month">เดือนนี้</option>
             <option value="year">ปีนี้</option>
             <option value="all">ทั้งหมด</option>
+            <option value="custom">เลือกช่วงเวลา</option>
           </select>
-          <select class="ipt" id="mqFilterStatus" onchange="MonthQueue.renderFromCache()">
+          <select class="ipt" id="mqFilterStatus" onchange="MonthQueue.onFilterChange('status')">
             <option value="all">สถานะ: ทั้งหมด</option>
             <option value="pending">รอคอนเฟิร์ม</option>
             <option value="confirmed">คอนเฟิร์มแล้ว</option>
             <option value="cancelled">ยกเลิกแล้ว</option>
           </select>
-          <select class="ipt" id="mqFilterColumn" onchange="MonthQueue.renderFromCache()">
+          <select class="ipt" id="mqFilterColumn" onchange="MonthQueue.onFilterChange('column')">
             <option value="all">ช่อง: ทั้งหมด</option>
             <option value="doctor">แพทย์ 1 + แพทย์ 2</option>
             <option value="1">แพทย์ 1</option>
@@ -551,13 +584,24 @@
             <option value="3">Treat</option>
             <option value="4">IV</option>
           </select>
-          <select class="ipt" id="mqFilterType" onchange="MonthQueue.renderFromCache()">
+          <select class="ipt" id="mqFilterType" onchange="MonthQueue.onFilterChange('type')">
             <option value="all">ลูกค้า: ทั้งหมด</option>
             <option value="old">ลูกค้าเก่า</option>
             <option value="new">ลูกค้าใหม่</option>
           </select>
-          <input class="ipt" id="mqFilterText" placeholder="ค้นหาชื่อ / เบอร์ / หัตถการ" oninput="MonthQueue.renderFromCache()">
+          <input class="ipt" id="mqFilterText" placeholder="ค้นหาชื่อ / เบอร์ / หัตถการ / OPD" oninput="MonthQueue.onFilterTextInput()">
           <button type="button" class="btn btn-ghost mqFilterReset" onclick="MonthQueue.resetFilters()">ล้างฟิลเตอร์</button>
+
+          <div class="mqCustomRange" id="mqCustomRangeBox">
+            <div class="mqCustomRangeHint">เลือกช่วงวันที่เอง แล้วกดค้นหา ระบบจะค้นจากฐานข้อมูลจริงตามช่วงนี้</div>
+            <label>เริ่มวันที่
+              <input type="date" class="ipt" id="mqCustomStart">
+            </label>
+            <label>ถึงวันที่
+              <input type="date" class="ipt" id="mqCustomEnd">
+            </label>
+            <button type="button" class="btn btn-primary mqCustomSearchBtn" onclick="MonthQueue.applyCustomRange()">ค้นหาช่วงนี้</button>
+          </div>
         </div>
 
         <div class="mqList" id="mqList">
@@ -805,6 +849,12 @@
     const normalizeTime = (v) => {
       const s = trim(v);
       return s.length >= 5 ? s.slice(0,5) : s;
+    };
+
+    const isUuidValue = (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trim(v));
+    const normalizeOpdValue = (v) => {
+      const d = trim(v).replace(/\D/g, '');
+      return d ? d.padStart(4, '0').slice(-4) : '';
     };
 
     const api = async (url, method='GET', body=null) => {
@@ -1120,7 +1170,9 @@
         const customer_name = trim($('searchCustInput').value);
         const guest_phone = trim($('guestPhone').value);
         const customer_type = $('customerTypeSelect').value;
-        const customer_id = trim($('apptCustId').value);
+        const customer_ref = trim($('apptCustId').value);
+        const customer_id = isUuidValue(customer_ref) ? customer_ref : '';
+        const opd = customer_id ? '' : normalizeOpdValue(customer_ref);
 
         if(!customer_name) return Toast.show('กรุณากรอกชื่อลูกค้า', 'error');
         if(!appt_date) return Toast.show('กรุณาเลือกวันที่', 'error');
@@ -1147,7 +1199,7 @@
           guest_phone: guest_phone || null,
           customer_type,
           customer_id: customer_id || null,
-          opd: customer_id || null
+          opd: opd || null
         };
 
         if(id) payload.id = id;
@@ -1229,6 +1281,8 @@
       _rowMap: {},
       _currentStartDate: null,
       _currentEndDate: null,
+      _lastQueryKey: '',
+      _filterTimer: null,
 
       normalizeStatus(s){
         const v = (s || 'pending').toLowerCase();
@@ -1280,21 +1334,23 @@
         const column = $('mqFilterColumn');
         const type = $('mqFilterType');
         const text = $('mqFilterText');
-        const oldRange = range?.value || 'default';
 
         if(range) range.value = 'default';
         if(status) status.value = 'all';
         if(column) column.value = 'all';
         if(type) type.value = 'all';
         if(text) text.value = '';
+        if($('mqCustomStart')) $('mqCustomStart').value = '';
+        if($('mqCustomEnd')) $('mqCustomEnd').value = '';
+        this.syncCustomRangeUI();
 
         this.updateFilterButtonState();
-        if(oldRange !== 'default') this.onRangeFilterChange();
-        else this.renderFromCache();
+        this.load(true);
       },
 
       hasActiveFilters(){
-        return (($('mqFilterStatus')?.value || 'all') !== 'all') ||
+        return (($('mqFilterRange')?.value || 'default') !== 'default') ||
+          (($('mqFilterStatus')?.value || 'all') !== 'all') ||
           (($('mqFilterColumn')?.value || 'all') !== 'all') ||
           (($('mqFilterType')?.value || 'all') !== 'all') ||
           !!trim($('mqFilterText')?.value || '');
@@ -1311,6 +1367,24 @@
 
       refreshLoadedRange(){ return this.load(true); },
 
+      onFilterChange(kind){
+        // ถ้าเลือก “ยกเลิกแล้ว” ให้ค้นประวัติทั้งหมดทันที ไม่ติดช่วงค่าเริ่มต้นที่เริ่มวันนี้
+        if(kind === 'status' && ($('mqFilterStatus')?.value || '') === 'cancelled') {
+          this.setRangeMode('all');
+          Toast.show('กำลังค้นประวัติยกเลิกทั้งหมด', 'warn');
+        }
+        this.updateFilterButtonState();
+        this.load(true);
+      },
+
+      onFilterTextInput(){
+        clearTimeout(this._filterTimer);
+        this._filterTimer = setTimeout(() => {
+          this.updateFilterButtonState();
+          this.load(true);
+        }, 260);
+      },
+
       selectedRangeMode(){
         return $('mqFilterRange')?.value || 'default';
       },
@@ -1318,6 +1392,53 @@
       setRangeMode(mode){
         const el = $('mqFilterRange');
         if(el) el.value = mode;
+        this.syncCustomRangeUI();
+      },
+
+      syncCustomRangeUI(){
+        const box = $('mqCustomRangeBox');
+        const isCustom = this.selectedRangeMode() === 'custom';
+        if(box) box.classList.toggle('is-open', isCustom);
+      },
+
+      customRangeValues(){
+        return {
+          start: trim($('mqCustomStart')?.value || ''),
+          end: trim($('mqCustomEnd')?.value || '')
+        };
+      },
+
+      setDefaultCustomDates(){
+        const now = new Date();
+        const start = $('mqCustomStart');
+        const end = $('mqCustomEnd');
+        if(start && !start.value) start.value = toYMD(new Date(now.getFullYear(), now.getMonth(), 1));
+        if(end && !end.value) end.value = toYMD(now);
+      },
+
+      async applyCustomRange(){
+        this.setRangeMode('custom');
+        const {start, end} = this.customRangeValues();
+        if(!start || !end) return Toast.show('กรุณาเลือกวันที่เริ่มต้นและสิ้นสุด', 'error');
+        if(new Date(start + 'T00:00:00') > new Date(end + 'T00:00:00')) {
+          return Toast.show('วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด', 'error');
+        }
+        this._cacheData = [];
+        this._lastQueryKey = '';
+        await this.load(true);
+      },
+
+      showCustomRangePrompt(){
+        const list = $('mqList');
+        this._cacheData = [];
+        this._currentStartDate = null;
+        this._currentEndDate = null;
+        $('sumToday').innerText = `0 เคส`;
+        $('sumRemain').innerText = `0 เคส`;
+        $('sumPending').innerText = `0 เคส`;
+        $('sumConfirmed').innerText = `0 เคส`;
+        if($('sumCancelled')) $('sumCancelled').innerText = `0 เคส`;
+        if(list) list.innerHTML = `<div style="padding:16px; text-align:center; color:#1e3a8a; font-weight:900; background:#eff6ff; border:1px solid #dbeafe; border-radius:12px;">เลือกวันที่เริ่มต้นและสิ้นสุด แล้วกด “ค้นหาช่วงนี้”</div>`;
       },
 
       rangeForMode(mode){
@@ -1347,12 +1468,19 @@
           };
         }
 
-        // ทั้งหมด = ช่วงข้อมูลที่กำลังโหลดอยู่ตอนนี้
-        // กดดูคิวก่อนหน้า / โหลดเดือนถัดไป เพื่อขยายช่วงทั้งหมดได้
-        if(mode === 'all' && this._currentStartDate && this._currentEndDate) {
+        // ทั้งหมด = ให้ backend ค้นทั้งตาราง appointments โดยตรง
+        // ไม่อิง cache ที่โหลดอยู่ จึงหาเคสยกเลิก/ประวัติเก่าทั้งหมดได้จริง
+        if(mode === 'all') {
+          return { startD: null, endD: null };
+        }
+
+        // เลือกช่วงเวลา = ผู้ใช้กำหนดเอง
+        if(mode === 'custom') {
+          const {start, end} = this.customRangeValues();
+          if(!start || !end) return { startD: null, endD: null, missingCustomRange: true };
           return {
-            startD: new Date(this._currentStartDate + 'T00:00:00'),
-            endD: new Date(this._currentEndDate + 'T00:00:00')
+            startD: new Date(start + 'T00:00:00'),
+            endD: new Date(end + 'T00:00:00')
           };
         }
 
@@ -1363,13 +1491,18 @@
       },
 
       async onRangeFilterChange(){
+        this.syncCustomRangeUI();
         this.updateFilterButtonState();
-        const mode = this.selectedRangeMode();
-        if(mode === 'all' && this._cacheData.length > 0) {
-          this.renderFromCache();
+        this._cacheData = [];
+        this._lastQueryKey = '';
+
+        if(this.selectedRangeMode() === 'custom') {
+          this.setDefaultCustomDates();
+          this.showCustomRangePrompt();
+          setTimeout(()=> $('mqCustomStart')?.focus(), 40);
           return;
         }
-        this._cacheData = [];
+
         await this.load(true);
       },
 
@@ -1413,32 +1546,32 @@
       async load(force=false){
         if(this._loading) return;
 
-        if(!force && this._cacheData.length > 0) {
+        const selectedMode = this.selectedRangeMode();
+        const filters = this.getFilters();
+        const queryKey = JSON.stringify({ mode:selectedMode, filters });
+
+        if(!force && this._cacheData.length > 0 && this._lastQueryKey === queryKey) {
           this.render();
           return;
         }
 
         this._loading = true;
+        this._lastQueryKey = queryKey;
         const list = $('mqList');
-        list.innerHTML = `<div style="padding:16px; text-align:center; color:#64748b;">กำลังโหลดคิว...</div>`;
+        list.innerHTML = `<div style="padding:16px; text-align:center; color:#64748b;">กำลังค้นคิวจากฐานข้อมูล...</div>`;
 
         try {
-          let startD;
-          let endD;
-
-          const selectedMode = this.selectedRangeMode();
           const range = this.rangeForMode(selectedMode);
-          startD = range.startD;
-          endD = range.endD;
-
-          await this.fetchAndAppendRange(startD, endD, 'replace');
+          if(range.missingCustomRange) {
+            this.showCustomRangePrompt();
+            return;
+          }
+          await this.fetchAndAppendRange(range.startD, range.endD, 'replace');
         } catch(e) {
           console.warn(e);
           if (this._cacheData.length === 0) {
-            const msg = (e && e.message === 'range_api_required')
-              ? 'เลือกช่วงยาวต้องใช้ API ช่วงวันที่ กรุณาวางไฟล์ apppy.py เวอร์ชันใหม่ก่อน'
-              : 'โหลดคิวไม่สำเร็จ กรุณารีเฟรช';
-            list.innerHTML = `<div style="padding:16px; text-align:center; color:#ef4444; font-weight:900;">${msg}</div>`;
+            const msg = (e && e.message) ? e.message : 'โหลดคิวไม่สำเร็จ กรุณารีเฟรช';
+            list.innerHTML = `<div style="padding:16px; text-align:center; color:#ef4444; font-weight:900;">${escapeHtml(msg)}</div>`;
           }
         } finally {
           this._loading = false;
@@ -1447,34 +1580,29 @@
 
       async loadPrevious() {
         if(this._loading) return;
+        // ปุ่มนี้เปลี่ยนเป็นโหลดประวัติทั้งหมดจากฐานข้อมูลโดยตรง
+        // เพื่อให้ค้นรายการยกเลิก/รายการเก่าทั้งหมดได้จริง ไม่ใช่แค่ cache เดือนก่อน
         this.setRangeMode('all');
-
-        const anchorStr = this._currentStartDate || toYMD(new Date());
-        const endD = new Date(anchorStr + 'T00:00:00');
-        endD.setDate(endD.getDate() - 1);
-
-        const startD = new Date(endD.getFullYear(), endD.getMonth(), 1);
-
-        this._loading = true;
         const btn = $('btnLoadPrevious');
-        if(btn) btn.innerHTML = '<span style="color:#94a3b8;">กำลังโหลดคิวย้อนหลัง...</span>';
-
+        if(btn) btn.innerHTML = '<span style="color:#94a3b8;">กำลังโหลดทั้งหมด...</span>';
         try {
-          await this.fetchAndAppendRange(startD, endD, 'prepend');
-          Toast.show(`โหลดคิวย้อนหลังถึง ${this.formatMonthTH(startD)} แล้ว`, 'success');
+          await this.load(true);
+          Toast.show('โหลดทั้งหมดแล้ว', 'success');
         } catch(e) {
           console.warn(e);
-          Toast.show('โหลดคิวก่อนหน้าไม่สำเร็จ', 'error');
+          Toast.show('โหลดทั้งหมดไม่สำเร็จ', 'error');
         } finally {
           if(btn) btn.innerHTML = '⬆️ ดูคิวก่อนหน้า';
-          this._loading = false;
         }
       },
 
       async loadMore() {
         if(this._loading) return;
+        if(this.selectedRangeMode() === 'all') {
+          Toast.show('โหลดทั้งหมดแล้ว', 'warn');
+          return;
+        }
         if(!this._currentEndDate) return;
-        this.setRangeMode('all');
 
         this._loading = true;
         const btn = $('btnLoadMore');
@@ -1532,6 +1660,11 @@
           byDate[ds].sort((x,y) => trim(x.start_time).localeCompare(trim(y.start_time)) || String(x.column_id).localeCompare(String(y.column_id)));
         });
 
+        // กรณีประวัติทั้งหมด: ไม่สร้างวันว่างยาว ๆ เป็นปี ให้แสดงเฉพาะวันที่มีรายการจริง
+        if(!startStr || !endStr) {
+          return Object.keys(byDate).sort().map(ds => ({ date: ds, items: byDate[ds] || [] }));
+        }
+
         const dates = [];
         const d = new Date(startStr + 'T00:00:00');
         const endDObj = new Date(endStr + 'T00:00:00');
@@ -1544,37 +1677,26 @@
       },
 
       async fetchRangeRows(startStr, endStr){
-        const rangeUrl = `/api/get_appointments_range?start=${encodeURIComponent(startStr)}&end=${encodeURIComponent(endStr)}`;
-        const rangeRes = await api(rangeUrl);
-        if(Array.isArray(rangeRes)) return rangeRes;
+        const f = this.getFilters();
+        const params = new URLSearchParams();
+        if(startStr) params.set('start', startStr);
+        if(endStr) params.set('end', endStr);
+        params.set('range', this.selectedRangeMode());
+        params.set('status', f.status);
+        params.set('column', f.column);
+        params.set('type', f.type);
+        if(f.text) params.set('q', f.text);
 
-        // ถ้า backend ยังไม่มี API range และเลือกช่วงยาว เช่น ปีนี้
-        // ห้าม fallback ยิงทีละวัน เพราะจะรอนานมาก
-        const startD = new Date(startStr + 'T00:00:00');
-        const endD = new Date(endStr + 'T00:00:00');
-        const dayCount = Math.floor((endD - startD) / 86400000) + 1;
-        if(dayCount > 45) {
-          throw new Error('range_api_required');
-        }
-
-        // fallback เฉพาะช่วงสั้น ๆ เช่น ค่าเริ่มต้น / เดือนนี้
-        console.warn('Range API unavailable, fallback to per-day loading', rangeRes);
-        const rows = [];
-        const d = new Date(startStr + 'T00:00:00');
-        const endDObj = new Date(endStr + 'T00:00:00');
-        while(d <= endDObj){
-          const ds = toYMD(d);
-          const res = await api(`/api/get_appointments?date=${encodeURIComponent(ds)}`);
-          if(res && res.__http_ok === false) throw new Error(res.__error || 'load_failed');
-          (res || []).forEach(a => rows.push({ ...a, appt_date: a.appt_date || ds }));
-          d.setDate(d.getDate()+1);
-        }
-        return rows;
+        const res = await api(`/api/search_appointments?${params.toString()}`);
+        if(res && res.__http_ok === false) throw new Error(res.__error || 'โหลดคิวไม่สำเร็จ');
+        if(res && res.success && Array.isArray(res.rows)) return res.rows;
+        if(Array.isArray(res)) return res;
+        throw new Error((res && (res.error || res.message)) || 'โหลดคิวไม่สำเร็จ');
       },
 
       async fetchAndAppendRange(startD, endD, mode='append') {
-        const startStr = toYMD(startD);
-        const endStr = toYMD(endD);
+        const startStr = startD ? toYMD(startD) : '';
+        const endStr = endD ? toYMD(endD) : '';
 
         const rows = await this.fetchRangeRows(startStr, endStr);
         const newBlocks = this.buildDateBlocks(startStr, endStr, rows);
@@ -1591,8 +1713,8 @@
           this._currentStartDate = this._cacheData[0].date;
           this._currentEndDate = this._cacheData[this._cacheData.length - 1].date;
         } else {
-          this._currentStartDate = startStr;
-          this._currentEndDate = endStr;
+          this._currentStartDate = startStr || null;
+          this._currentEndDate = endStr || null;
         }
 
         this.render();
@@ -1608,6 +1730,7 @@
         let remainCount = 0;
         let pendingCount = 0;
         let confirmedCount = 0;
+        let cancelledCount = 0;
 
         const visibleBlocks = this._cacheData.map(b => {
           const items = (b.items || []).filter(a => this.itemPassesFilters(a, filters));
@@ -1625,6 +1748,7 @@
             const st = this.normalizeStatus(a.status);
             if (st === 'pending') pendingCount++;
             if (st === 'confirmed') confirmedCount++;
+            if (st === 'cancelled') cancelledCount++;
           });
         });
 
@@ -1632,6 +1756,7 @@
         $('sumRemain').innerText = `${remainCount} เคส`;
         $('sumPending').innerText = `${pendingCount} เคส`;
         $('sumConfirmed').innerText = `${confirmedCount} เคส`;
+        if($('sumCancelled')) $('sumCancelled').innerText = `${cancelledCount} เคส`;
 
         this._rowMap = {};
         let kCounter = 0;
@@ -1729,13 +1854,17 @@
           html += `<div style="padding:16px; text-align:center; color:#64748b; font-weight:800;">- ไม่มีคิวในช่วงเวลาที่แสดงผล -</div>`;
         }
 
-        html += `
-          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
-            <button id="btnLoadMore" class="btn btn-ghost" style="flex:1 1 240px; padding:12px; border: 1px dashed #cbd5e1; background: #f8fafc; color: #475569; font-weight:900;" onclick="MonthQueue.loadMore()">
-              ⬇️ โหลดข้อมูลเดือนถัดไป
-            </button>
-          </div>
-        `;
+        if(this.selectedRangeMode() === 'all') {
+          html += `<div style="padding:12px; text-align:center; color:#64748b; font-weight:900;">แสดงประวัติทั้งหมดที่ตรงกับฟิลเตอร์แล้ว</div>`;
+        } else {
+          html += `
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+              <button id="btnLoadMore" class="btn btn-ghost" style="flex:1 1 240px; padding:12px; border: 1px dashed #cbd5e1; background: #f8fafc; color: #475569; font-weight:900;" onclick="MonthQueue.loadMore()">
+                ⬇️ โหลดข้อมูลเดือนถัดไป
+              </button>
+            </div>
+          `;
+        }
 
         $('mqList').innerHTML = html;
       }
@@ -1998,6 +2127,7 @@
     // Init
     Daily.init();
     Roster.init();
+    MonthQueue.syncCustomRangeUI();
     MonthQueue.load(false);
 
     

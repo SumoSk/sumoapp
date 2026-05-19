@@ -179,7 +179,7 @@
     .table-card{padding:0}
     .table-wrap{padding:14px;overflow:auto}
     table{width:100%;border-collapse:separate;border-spacing:0;background:#fff}
-    #finalCustTable{min-width:760px}
+    #finalCustTable{min-width:900px}
     th,td{border-bottom:1px solid var(--line);padding:10px 10px;font-size:12px;vertical-align:top}
     thead th{
       position:sticky; top:0; z-index: 5;
@@ -217,6 +217,79 @@
     }
     @media (max-width: 900px){
       .split2{grid-template-columns:1fr}
+    }
+
+
+    /* Extra dashboard cards */
+    .metric-table td.clickable-stat{
+      cursor:pointer;
+      border-radius:10px;
+      transition: background .08s ease, transform .08s ease;
+    }
+    .metric-table td.clickable-stat:hover{
+      background:#ecfdf5;
+      transform: translateY(-1px);
+    }
+    .stat-main{
+      font-weight:900;
+      color:#0f172a;
+      white-space:nowrap;
+    }
+    .stat-sub{
+      margin-top:2px;
+      color:#0f766e;
+      font-weight:900;
+      white-space:nowrap;
+    }
+    .stat-empty{
+      color:#94a3b8;
+      font-weight:800;
+      white-space:nowrap;
+    }
+    #weekdayStatsTable{min-width:680px}
+    #ageStatsTable{min-width:520px}
+    .dash-openable{ cursor:pointer; user-select:none; }
+    .dash-openable:hover .h1{ text-decoration:underline; }
+    .dash-fullscreen{
+      position:fixed; inset:0; z-index:16000; display:none;
+      background:rgba(15,23,42,.55); backdrop-filter: blur(6px);
+      padding:10px;
+    }
+    .dash-fullscreen.show{ display:flex; }
+    .dash-fullscreen__panel{
+      width:100%; height:100%; background:#fff; border-radius:18px;
+      box-shadow:0 22px 60px rgba(2,8,23,.28);
+      overflow:hidden; display:flex; flex-direction:column;
+      border:1px solid rgba(255,255,255,.55);
+    }
+    .dash-fullscreen__header{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+      padding:14px 16px; border-bottom:1px solid #e5e7eb;
+      background:linear-gradient(135deg,#f0fdfa 0%,#ffffff 70%);
+    }
+    .dash-fullscreen__title{ font-size:16px; font-weight:900; color:#064e3b; line-height:1.25; }
+    .dash-fullscreen__hint{ margin-top:4px; font-size:11px; color:#64748b; font-weight:800; }
+    .dash-fullscreen__close{
+      flex:0 0 auto; width:40px; height:40px; border-radius:999px; border:1px solid #d1d5db;
+      background:#fff; color:#0f172a; font-weight:900; cursor:pointer;
+      box-shadow:0 8px 18px rgba(2,8,23,.10);
+    }
+    .dash-fullscreen__body{
+      flex:1; overflow:auto; padding:14px; -webkit-overflow-scrolling:touch;
+      background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);
+    }
+    .dash-fullscreen__body .table-wrap{ padding:0; overflow:auto; }
+    .dash-fullscreen__body table{ min-width:720px; width:100%; }
+    .dash-fullscreen__body th, .dash-fullscreen__body td{ font-size:12px !important; padding:12px 12px; }
+    .dash-fullscreen__body .stat-main{ font-size:13px; }
+    .dash-fullscreen__body .stat-sub{ font-size:12px; }
+    .dash-fullscreen__body .sub-muted{ font-size:11px !important; }
+    @media (max-width: 640px){
+      .dash-fullscreen{ padding:0; }
+      .dash-fullscreen__panel{ border-radius:0; }
+      .dash-fullscreen__title{ font-size:14px; }
+      .dash-fullscreen__body{ padding:10px; }
+      .dash-fullscreen__body table{ min-width:720px; }
     }
 
     /* Range modal + modals (คงโครงเดิม) */
@@ -323,6 +396,279 @@
     .chip { font-size: 10px; }
     .ipt { font-size: 10px; }
     /* ตารางรายชื่อถูกลดคอลัมน์ให้เหมาะกับมือถือ จึงไม่มีช่องแก้ Profile inline แล้ว */
+  
+
+    /* =========================================================
+       ✅ FILTER BAR COMPACT: ย้ายฟิลเตอร์เป็นแถบยาวด้านบน
+       - กดเปิด/ปิดเพื่อลดความรก
+       - อยู่ก่อนแดชบอร์ดทั้งหมด
+       ========================================================= */
+    .grid{
+      display:block !important;
+      margin-top:12px;
+    }
+    .grid > div:first-child{
+      width:100%;
+      margin:0 0 12px 0;
+    }
+    .right{
+      margin-top:0;
+    }
+    details.filters{
+      width:100%;
+      margin:0 0 12px 0;
+      overflow:hidden;
+    }
+    details.filters summary{
+      min-height:48px;
+      border-bottom:none;
+      position:relative;
+    }
+    details.filters[open] summary{
+      border-bottom:1px solid var(--line);
+    }
+    details.filters summary::after{
+      content:'แตะเพื่อเปิด';
+      font-size:10px;
+      color:#64748b;
+      font-weight:900;
+      margin-left:auto;
+      padding:5px 10px;
+      border-radius:999px;
+      background:#f1f5f9;
+      border:1px solid #e2e8f0;
+    }
+    details.filters[open] summary::after{
+      content:'แตะเพื่อปิด';
+      color:#064e3b;
+      background:#ecfdf5;
+      border-color:#a7f3d0;
+    }
+    .flt-wrap{
+      grid-template-columns: minmax(260px, 1fr) minmax(300px, 1.15fr) minmax(240px, .85fr);
+      align-items:start;
+      gap:10px;
+    }
+    .flt-block{
+      height:100%;
+      padding:10px;
+    }
+    .flt-title{
+      font-size:11px;
+      margin-bottom:8px;
+    }
+    .flt-block label{
+      font-size:10px;
+      margin-bottom:4px;
+    }
+    .flt-block .ipt{
+      padding:8px 10px;
+      border-radius:10px;
+    }
+    .flt-block .chip{
+      padding:7px 10px;
+    }
+    @media (max-width: 980px){
+      .flt-wrap{
+        grid-template-columns:1fr;
+      }
+    }
+
+
+    /* ✅ Top filter placement: อยู่ก่อน KPI/แดชบอร์ดหลัก */
+    .filter-topbar-block{
+      width:100%;
+      margin:12px 0 10px;
+    }
+    .filter-topbar-block details.filters{
+      margin:0;
+    }
+    .filter-topbar-block + .kpis{
+      margin-top:10px;
+    }
+    .grid > div:first-child.right{
+      width:100%;
+      margin:0;
+    }
+
+    /* ✅ Weekday summary cells */
+    .stat-total-col{
+      background:#f0fdfa !important;
+      border-left:2px solid #99f6e4;
+    }
+    .stat-total-row td{
+      background:#ecfdf5 !important;
+      border-top:2px solid #0d9488;
+      font-weight:900;
+    }
+    .stat-total-row td:first-child{
+      color:#064e3b;
+    }
+
+
+    /* ===== Product Insight tabs ===== */
+    .view-tabs{
+      display:flex;
+      gap:8px;
+      margin:12px 0 10px;
+      flex-wrap:wrap;
+    }
+    .view-tab{
+      border:1px solid #cfe7e5;
+      background:#fff;
+      color:#0b7660;
+      border-radius:999px;
+      padding:10px 14px;
+      font-weight:900;
+      cursor:pointer;
+      box-shadow:0 4px 14px rgba(2,8,23,.06);
+    }
+    .view-tab.active{
+      background:#0b7660;
+      color:#fff;
+      border-color:#0b7660;
+    }
+    .view-panel{display:none;}
+    .view-panel.active{display:block;}
+    .product-control-grid{
+      display:grid;
+      grid-template-columns: 1.1fr 1.1fr 1fr auto;
+      gap:10px;
+      align-items:end;
+    }
+    @media (max-width: 900px){
+      .product-control-grid{grid-template-columns:1fr 1fr;}
+      .product-control-grid .product-run{grid-column:1/-1;}
+    }
+    @media (max-width: 520px){
+      .product-control-grid{grid-template-columns:1fr;}
+    }
+    .product-kpis{
+      display:grid;
+      grid-template-columns: repeat(5, minmax(0,1fr));
+      gap:10px;
+      margin:12px 0;
+    }
+    @media (max-width: 900px){.product-kpis{grid-template-columns: repeat(2, minmax(0,1fr));}}
+    .product-kpi{
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:linear-gradient(180deg,#fff 0%,#fbfffe 100%);
+      padding:12px;
+      box-shadow:0 6px 16px rgba(2,8,23,.05);
+      display:grid;
+      gap:5px;
+    }
+    .product-kpi .k{font-size:11px;color:#64748b;font-weight:800;}
+    .product-kpi .v{font-size:17px;font-weight:900;color:#0f172a;line-height:1.05;}
+    .product-kpi .s{font-size:10px;color:#0b7660;font-weight:800;}
+    .product-section-stack{
+      display:grid;
+      gap:12px;
+      margin-top:12px;
+    }
+    .product-stats-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      align-items:start;
+    }
+    @media (max-width: 980px){.product-stats-grid{grid-template-columns:1fr;}}
+    #productCustomersTable{min-width:760px;}
+    #productBrandTable{min-width:560px;}
+    #productGapTable{min-width:520px;}
+    #productCustomersTable thead th[data-product-sort]{
+      cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+    }
+    #productCustomersTable thead th[data-product-sort]::after{
+      content:' ↕';
+      color:#94a3b8;
+      font-weight:900;
+    }
+    #productCustomersTable thead th.product-sort-active::after{
+      content: attr(data-sort-arrow);
+      color:#0f766e;
+    }
+    .clickable-row{cursor:pointer;}
+    .clickable-row:hover td{background:#f0fdfa !important;}
+    .product-chip{
+      display:inline-flex;
+      padding:3px 8px;
+      border-radius:999px;
+      border:1px solid #ccfbf1;
+      background:#f0fdfa;
+      color:#115e59;
+      font-size:10px;
+      font-weight:900;
+      margin:2px;
+      white-space:nowrap;
+    }
+    .product-empty{
+      padding:18px;
+      text-align:center;
+      color:#64748b;
+      font-weight:800;
+    }
+
+    .legacy-warn-btn{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;margin-left:6px;border:1px solid #fde68a;border-radius:999px;background:#fffbeb;color:#92400e;cursor:pointer;font-size:12px;font-weight:900;box-shadow:0 4px 12px rgba(146,64,14,.12);vertical-align:middle;}
+    .legacy-warn-btn:hover{background:#fef3c7;transform:translateY(-1px)}
+    .legacy-warn-btn.small{width:20px;height:20px;font-size:10px;margin-left:4px;}
+    .legacy-product-modal{display:none;position:fixed;inset:0;background:rgba(15,23,42,.48);z-index:21000;align-items:center;justify-content:center;padding:14px;}
+    .legacy-product-modal__box{width:min(520px,94vw);max-height:92vh;overflow:auto;background:#fff;border-radius:18px;box-shadow:0 22px 60px rgba(2,8,23,.24);border:1px solid #e5e7eb;}
+    .legacy-product-modal__hd{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:14px 16px;border-bottom:1px solid #e5e7eb;background:linear-gradient(180deg,#fffbeb 0%,#ffffff 90%);}
+    .legacy-product-modal__title{font-size:14px;font-weight:900;color:#78350f;margin:0;}
+    .legacy-product-modal__hint{font-size:11px;color:#64748b;margin-top:3px;line-height:1.45;}
+    .legacy-product-modal__close{border:none;background:#fff;border-radius:999px;width:36px;height:36px;box-shadow:0 4px 14px rgba(2,8,23,.12);cursor:pointer;font-weight:900;}
+    .legacy-product-modal__bd{padding:14px 16px;display:grid;gap:12px;}
+    .legacy-product-modal__ft{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding:12px 16px;border-top:1px solid #e5e7eb;background:#f8fafc;}
+    .legacy-field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    @media(max-width:640px){.legacy-field-grid{grid-template-columns:1fr;}}
+    .legacy-readonly{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;font-size:12px;font-weight:900;color:#0f172a;}
+    .legacy-check-row{display:flex;align-items:center;gap:8px;font-size:12px;color:#334155;font-weight:800;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;}
+    .legacy-check-row input{width:auto;}
+
+    .price-control-row{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .price-toolbar{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    #priceTable{min-width:760px;}
+    #priceTable input[type=number], #priceTable input[type=text]{
+      width:100%;
+      padding:8px 10px;
+      border:1px solid #d1d5db;
+      border-radius:10px;
+      font-family:inherit;
+      font-size:10px;
+    }
+    .price-note{
+      border:1px solid #bae6fd;
+      background:#f0f9ff;
+      color:#075985;
+      border-radius:14px;
+      padding:10px 12px;
+      font-size:11px;
+      font-weight:800;
+      margin-top:10px;
+      line-height:1.5;
+    }
+    .price-status{
+      font-size:11px;
+      font-weight:900;
+      color:#64748b;
+    }
+
   </style>
 </head>
 
@@ -344,41 +690,9 @@
       </div>
     </div>
 
-    <!-- KPI ROW -->
-    <div class="kpis" aria-label="KPI summary">
-      <div class="kpi" id="kpiCustomers" title="คลิกเพื่อดูทั้งหมด (เลื่อนลงตาราง)">
-        <div class="k">ลูกค้าทั้งหมด</div>
-        <div class="v" id="kpiCustomersV">-</div>
-        <div class="s" id="kpiCustomersS">ตามช่วงที่เลือก</div>
-      </div>
-      <div class="kpi" id="kpiRevenue" title="รายได้รวมของกลุ่มที่กำลังแสดง">
-        <div class="k">รายได้รวม</div>
-        <div class="v" id="kpiRevenueV">-</div>
-        <div class="s" id="kpiRevenueS">บาท</div>
-      </div>
-      <div class="kpi" id="kpiAov" title="Average Order Value เฉลี่ย/บิล">
-        <div class="k">AOV เฉลี่ย/บิล</div>
-        <div class="v" id="kpiAovV">-</div>
-        <div class="s" id="kpiAovS">บาท/บิล</div>
-      </div>
-      <div class="kpi" id="kpiRisk" title="ลูกค้าที่ไม่ได้มาเกิน 90 วัน (คลิกเพื่อกรอง)">
-        <div class="k">เสี่ยงหาย (90+ วัน)</div>
-        <div class="v" id="kpiRiskV">-</div>
-        <div class="s" id="kpiRiskS">คลิกเพื่อดูรายชื่อ</div>
-      </div>
-      <div class="kpi" id="kpiAClass" title="ลูกค้าชั้น A (ABC) (คลิกเพื่อกรอง)">
-        <div class="k">ลูกค้าชั้น A</div>
-        <div class="v" id="kpiAClassV">-</div>
-        <div class="s" id="kpiAClassS">คลิกเพื่อดูรายชื่อ</div>
-      </div>
-    </div>
-
-    <!-- MAIN GRID -->
-    <div class="grid">
-
-      <!-- LEFT: FILTERS -->
-      <div>
-        <details class="filters" open>
+    <!-- FILTER TOPBAR -->
+    <div class="filter-topbar-block">
+        <details class="filters">
           <summary>
             <span>ฟิลเตอร์</span>
             <span class="sub-muted">ซ่อน/แสดง</span>
@@ -399,6 +713,7 @@
                 <span class="chip" data-range="6m">6 เดือน</span>
                 <span class="chip" data-range="thisYear">ปีนี้</span>
                 <span class="chip" data-range="all">ทั้งหมด</span>
+                <span class="chip" data-range="customRange">เลือกช่วงเวลา</span>
               </div>
               <div class="flt-title" style="margin-top:8px">ไม่ได้มา (Recency quick)</div>
               <div class="chips">
@@ -470,20 +785,108 @@
               <div id="filterResults" class="sub-muted" style="margin-top:8px;"></div>
             </div>
 
-            <div class="flt-block">
-              <div class="flt-title">ฟิลเตอร์สินค้า</div>
-              <div style="display:flex;justify-content:flex-end">
-                <button class="btn" id="btnAddProduct" type="button">เพิ่มสินค้า</button>
-              </div>
-              <div id="productListContainer" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
+            <!-- ฟิลเตอร์สินค้าถูกแยกไปอยู่แถบ "ค้นหาตามสินค้า" แล้ว
+                 เก็บ element เดิมแบบ hidden เพื่อให้ logic เก่าไม่กระทบ -->
+            <div style="display:none">
+              <button class="btn" id="btnAddProduct" type="button">เพิ่มสินค้า</button>
+              <div id="productListContainer"></div>
             </div>
 
           </div>
         </details>
       </div>
 
+
+    <!-- VIEW TABS -->
+    <div class="view-tabs" aria-label="เลือกมุมมองข้อมูล">
+      <button class="view-tab active" type="button" data-view="finance">ภาพรวมลูกค้า/การเงิน</button>
+      <button class="view-tab" type="button" data-view="product">ค้นหาตามสินค้า</button>
+    </div>
+
+    <section class="view-panel active" id="financeView">
+
+    <!-- KPI ROW -->
+    <div class="kpis" aria-label="KPI summary">
+      <div class="kpi" id="kpiCustomers" title="คลิกเพื่อดูทั้งหมด (เลื่อนลงตาราง)">
+        <div class="k">ลูกค้าทั้งหมด</div>
+        <div class="v" id="kpiCustomersV">-</div>
+        <div class="s" id="kpiCustomersS">ตามช่วงที่เลือก</div>
+      </div>
+      <div class="kpi" id="kpiRevenue" title="รายได้รวมของกลุ่มที่กำลังแสดง">
+        <div class="k">รายได้รวม</div>
+        <div class="v" id="kpiRevenueV">-</div>
+        <div class="s" id="kpiRevenueS">บาท</div>
+      </div>
+      <div class="kpi" id="kpiAov" title="Average Order Value เฉลี่ย/บิล">
+        <div class="k">AOV เฉลี่ย/บิล</div>
+        <div class="v" id="kpiAovV">-</div>
+        <div class="s" id="kpiAovS">บาท/บิล</div>
+      </div>
+      <div class="kpi" id="kpiRisk" title="ลูกค้าที่ไม่ได้มาเกิน 90 วัน (คลิกเพื่อกรอง)">
+        <div class="k">เสี่ยงหาย (90+ วัน)</div>
+        <div class="v" id="kpiRiskV">-</div>
+        <div class="s" id="kpiRiskS">คลิกเพื่อดูรายชื่อ</div>
+      </div>
+      <div class="kpi" id="kpiAClass" title="ลูกค้าชั้น A (ABC) (คลิกเพื่อกรอง)">
+        <div class="k">ลูกค้าชั้น A</div>
+        <div class="v" id="kpiAClassV">-</div>
+        <div class="s" id="kpiAClassS">คลิกเพื่อดูรายชื่อ</div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="grid">
+
       <!-- RIGHT: CONTENT -->
       <div class="right">
+
+        <div class="split2">
+          <div class="card table-card" data-dash-card="weekday">
+            <div class="hd dash-openable" onclick="openDashboardFullscreen('weekday')" title="กดเพื่อดูแดชบอร์ดนี้แบบเต็มจอ">
+              <p class="h1">สถิติรายได้แยกวัน 7 วัน</p>
+              <div class="hint sub-muted">แตะหัวข้อเพื่อขยายเต็มจอ</div>
+            </div>
+            <div class="table-wrap">
+              <table id="weekdayStatsTable" class="metric-table">
+                <thead>
+                  <tr>
+                    <th>วัน</th>
+                    <th>วันที่ 1–10</th>
+                    <th>วันที่ 11–20</th>
+                    <th>วันที่ 21–สิ้นเดือน</th>
+                    <th>รวมรายวัน</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+              <div class="sub-muted" style="margin-top:8px;">นับจากบิลขายในช่วงวันที่เลือก และนับลูกค้าไม่ซ้ำในแต่ละช่อง</div>
+            </div>
+          </div>
+
+          <div class="card table-card" data-dash-card="age">
+            <div class="hd dash-openable" onclick="openDashboardFullscreen('age')" title="กดเพื่อดูแดชบอร์ดนี้แบบเต็มจอ">
+              <p class="h1">สถิติช่วงอายุ</p>
+              <div class="hint sub-muted">แตะหัวข้อเพื่อขยายเต็มจอ</div>
+            </div>
+            <div class="table-wrap">
+              <table id="ageStatsTable" class="metric-table">
+                <thead>
+                  <tr>
+                    <th>ช่วงอายุ</th>
+                    <th>ลูกค้า</th>
+                    <th>จำนวนบิล</th>
+                    <th>ยอดรวม</th>
+                    <th>เฉลี่ย/บิล</th>
+                    <th style="width:64px">ดู</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+              <div id="ageStatsNote" class="sub-muted" style="margin-top:8px;"></div>
+            </div>
+          </div>
+        </div>
+
 
         <div class="split2">
           <div class="card table-card">
@@ -559,7 +962,7 @@
         <div class="card table-card" id="finalSection">
           <div class="hd">
             <p class="h1">รายชื่อลูกค้า</p>
-            <div class="hint sub-muted">คลิกหัวตารางเพื่อจัดเรียง | คลิกชื่อ/ปุ่มดู เพื่อเปิดประวัติ</div>
+            <div class="hint sub-muted">คลิกหัวตารางเพื่อจัดเรียง | คลิกชื่อเพื่อเปิดประวัติ</div>
           </div>
           <div class="table-wrap">
             <table id="finalCustTable">
@@ -574,7 +977,7 @@
                   <th data-sort="num">ไม่ได้มา (วัน)</th>
                   <th data-sort="str">กลุ่ม</th>
                   <th data-sort="num">Pitch ล่าสุด</th>
-                  <th>ดู</th>
+                  <th data-sort="str">เหตุผล</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -585,6 +988,163 @@
       </div>
     </div>
 
+    </section>
+
+    <section class="view-panel" id="productView">
+      <div class="card product-control-card">
+        <div class="hd">
+          <p class="h1">ค้นหาตามสินค้า / บริการ</p>
+          <div class="hint sub-muted">เลือกหมวดอย่างเดียวเพื่อดูทั้งหมวด หรือเลือกสินค้าเพื่อเจาะแบรนด์/รายการ</div>
+        </div>
+        <div class="bd">
+          <div class="product-control-grid">
+            <div>
+              <label>หมวดสินค้า</label>
+              <select id="productCategorySelect" class="ipt">
+                <option value="">เลือกหมวดสินค้า</option>
+              </select>
+            </div>
+            <div>
+              <label>สินค้า / แบรนด์</label>
+              <select id="productSubSelect" class="ipt" disabled>
+                <option value="">ทั้งหมดในหมวด</option>
+              </select>
+            </div>
+            <div>
+              <label>ค้นหาในผลลัพธ์</label>
+              <input id="productSearchInput" class="ipt" placeholder="ชื่อ / OPD / เบอร์">
+            </div>
+            <button id="btnRunProductInsight" class="btn btn-primary product-run" type="button">ดูข้อมูลสินค้า</button>
+          </div>
+          <div id="productAppliedNote" class="applied-banner" style="display:block;margin-top:12px;">เลือกหมวดสินค้าเพื่อเริ่มดูข้อมูล</div>
+        </div>
+      </div>
+
+      <div class="product-kpis">
+        <div class="product-kpi"><div class="k">ลูกค้าที่เคยทำ</div><div class="v" id="prodKpiCustomers">-</div><div class="s">ราย</div></div>
+        <div class="product-kpi"><div class="k">จำนวนรวม</div><div class="v" id="prodKpiQty">-</div><div class="s">ชิ้น/ครั้ง</div></div>
+        <div class="product-kpi"><div class="k">ยอดประเมิน</div><div class="v" id="prodKpiRevenue">-</div><div class="s">บาทประเมิน</div></div>
+        <div class="product-kpi"><div class="k">ห่างเฉลี่ยจากครั้งล่าสุด</div><div class="v" id="prodKpiAvgDays">-</div><div class="s">วัน</div></div>
+        <div class="product-kpi"><div class="k">ทำล่าสุด</div><div class="v" id="prodKpiLatestDate">-</div><div class="s">วันที่ล่าสุดในกลุ่มนี้</div></div>
+      </div>
+
+      <div class="product-section-stack">
+        <div class="product-stats-grid">
+          <div class="card table-card">
+            <div class="hd">
+              <p class="h1">สรุปแยกรายการ/แบรนด์</p>
+              <div class="hint sub-muted">กดแถวเพื่อเจาะรายการนั้น</div>
+            </div>
+            <div class="table-wrap">
+              <table id="productBrandTable">
+                <thead>
+                  <tr>
+                    <th>รายการ/แบรนด์</th>
+                    <th>ลูกค้า</th>
+                    <th>จำนวนรวม</th>
+                    <th>ยอดประเมิน</th>
+                    <th>ห่างเฉลี่ย</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="hd">
+              <p class="h1">สถิติระยะห่างหลังจากฉีด</p>
+              <div class="hint sub-muted">อิงจากวันที่ทำสินค้านี้ล่าสุด</div>
+            </div>
+            <div class="table-wrap">
+              <table id="productGapTable">
+                <thead>
+                  <tr>
+                    <th>ช่วงระยะห่าง</th>
+                    <th>ลูกค้า</th>
+                    <th>จำนวนรวม</th>
+                    <th>ยอดประเมิน</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card table-card">
+          <div class="hd">
+            <p class="h1">รายชื่อลูกค้าตามสินค้า</p>
+            <div class="hint sub-muted">กดหัวตารางเพื่อจัดเรียง | ห่าง = นับจากวันที่ทำสินค้านี้ล่าสุด</div>
+          </div>
+          <div class="table-wrap">
+            <table id="productCustomersTable">
+              <thead>
+                <tr>
+                  <th data-product-sort="opd">OPD</th>
+                  <th data-product-sort="name">ชื่อ</th>
+                  <th data-product-sort="latest">ล่าสุดที่ทำ</th>
+                  <th data-product-sort="days">ห่าง</th>
+                  <th data-product-sort="qty">จำนวนรวม</th>
+                  <th data-product-sort="items">รายการ/แบรนด์</th>
+                  <th>ดู</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view-panel" id="priceView">
+      <div class="card table-card">
+        <div class="hd">
+          <p class="h1">ตั้งค่าราคาประเมินสินค้า</p>
+          <div class="hint sub-muted">ใช้คำนวณเฉพาะแถบ “ค้นหาตามสินค้า” ไม่กระทบยอดจริงในแถบการเงิน</div>
+        </div>
+        <div class="bd">
+          <div class="price-toolbar">
+            <div class="price-control-row">
+              <div>
+                <label>หมวด</label>
+                <select id="priceCategoryFilter" class="ipt" style="min-width:180px;">
+                  <option value="all">ทุกหมวด</option>
+                </select>
+              </div>
+              <div>
+                <label>ค้นหารายการ</label>
+                <input id="priceSearchInput" class="ipt" placeholder="พิมพ์ชื่อสินค้า/แบรนด์" style="min-width:220px;">
+              </div>
+            </div>
+            <div class="price-control-row">
+              <button id="btnReloadEstimatedPrices" type="button" class="btn">รีโหลดราคา</button>
+              <button id="btnSaveAllEstimatedPrices" type="button" class="btn btn-primary">บันทึกราคาทั้งหมด</button>
+            </div>
+          </div>
+          <div class="price-note">
+            ราคานี้เป็น “ราคาประเมิน” สำหรับวิเคราะห์สินค้าเท่านั้น เช่น จำนวนฟิลเลอร์ × ราคาประเมินต่อชิ้น/cc. ยอดจริงของคลินิกในแถบภาพรวมยังใช้ยอดบิลจริงเหมือนเดิม
+          </div>
+          <div id="priceStatus" class="price-status" style="margin-top:10px;">กำลังเตรียมรายการ...</div>
+        </div>
+        <div class="table-wrap">
+          <table id="priceTable">
+            <thead>
+              <tr>
+                <th style="width:160px;">หมวด</th>
+                <th>สินค้า/แบรนด์</th>
+                <th style="width:110px;">หน่วย</th>
+                <th style="width:140px;">ราคาประเมิน</th>
+                <th style="width:90px;">สถานะ</th>
+                <th style="width:90px;">บันทึก</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </div>
 
   <!-- Loading -->
@@ -594,6 +1154,20 @@
 
   <!-- Toast -->
   <div class="toast-wrap" id="toastWrap"></div>
+
+  <!-- Fullscreen dashboard modal -->
+  <div id="dashboard-fullscreen-modal" class="dash-fullscreen" onclick="closeDashboardFullscreen(event)">
+    <div class="dash-fullscreen__panel" onclick="event.stopPropagation();">
+      <div class="dash-fullscreen__header">
+        <div>
+          <div id="dashboardFullTitle" class="dash-fullscreen__title">แดชบอร์ด</div>
+          <div id="dashboardFullHint" class="dash-fullscreen__hint">กดช่องข้อมูลเพื่อกรองรายชื่อด้านหลังได้เหมือนเดิม</div>
+        </div>
+        <button type="button" class="dash-fullscreen__close" onclick="closeDashboardFullscreen()">✕</button>
+      </div>
+      <div id="dashboardFullBody" class="dash-fullscreen__body"></div>
+    </div>
+  </div>
 
   <!-- Customer modal -->
   <div id="customer-modal">
@@ -608,6 +1182,33 @@
     <div class="box" style="background:#fff;border-radius:16px;max-width:92vw;max-height:90vh;overflow:auto;padding:18px;position:relative;box-shadow:0 12px 34px rgba(0,0,0,.22)">
       <button class="close" onclick="closePitchModal()" style="position:absolute;right:10px;top:10px;width:38px;height:38px;border:none;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.16);cursor:pointer;background:#fff">✖</button>
       <div id="pitch-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Legacy product quick-add modal -->
+  <div id="legacyProductModal" class="legacy-product-modal" onclick="closeLegacyProductModal(event)">
+    <div class="legacy-product-modal__box" onclick="event.stopPropagation();">
+      <div class="legacy-product-modal__hd">
+        <div>
+          <p class="legacy-product-modal__title">เพิ่มสินค้าเก่าจากประวัติ</p>
+          <div class="legacy-product-modal__hint">รายการนี้เจอในประวัติการซื้อ แต่ยังไม่มี/ยังไม่มีราคาประเมินใน Setting. บันทึกแล้วจะใช้วิเคราะห์สินค้าได้ทันที และค่าเริ่มต้นจะไม่เปิดให้เลือกในหน้าบันทึกยอดขาย</div>
+        </div>
+        <button type="button" class="legacy-product-modal__close" onclick="closeLegacyProductModal()">✕</button>
+      </div>
+      <div class="legacy-product-modal__bd">
+        <div><label>ชื่อที่พบในประวัติ</label><div id="legacyProductNameText" class="legacy-readonly">-</div></div>
+        <div class="legacy-field-grid">
+          <div><label>หมวด</label><select id="legacyProductCategory" class="ipt"></select></div>
+          <div><label>หน่วยประเมิน</label><select id="legacyProductUnit" class="ipt"><option value="ชิ้น">ชิ้น</option><option value="cc">cc</option><option value="ครั้ง">ครั้ง</option><option value="ขวด">ขวด</option><option value="จุด">จุด</option><option value="ยูนิต">ยูนิต</option></select></div>
+        </div>
+        <div><label>ราคาประเมิน</label><input id="legacyProductPrice" class="ipt" type="number" min="0" step="1" placeholder="เช่น 12000"></div>
+        <label class="legacy-check-row"><input id="legacyProductOpenSales" type="checkbox">เปิดให้เลือกในหน้าบันทึกยอดขายด้วย</label>
+        <div class="legacy-product-modal__hint">ถ้าไม่ติ๊ก ระบบจะเพิ่มเป็นสินค้าเก่า/ใช้เฉพาะวิเคราะห์ ไม่ทำให้หน้าบันทึกยอดขายรก</div>
+      </div>
+      <div class="legacy-product-modal__ft">
+        <button type="button" class="btn" onclick="closeLegacyProductModal()">ยกเลิก</button>
+        <button type="button" class="btn btn-primary" id="btnSaveLegacyProduct">บันทึกเข้าระบบ</button>
+      </div>
     </div>
   </div>
 
@@ -647,7 +1248,10 @@
       reconApplySpecial: null,
 
       profileByOpd: new Map(),
+      customerDataByOpd: new Map(),
+      ageByOpd: new Map(),
       pitchSummaryCache: new Map(),
+      pitchFullCache: new Map(),
       pitchSummaryFetchedAt: 0,
       pitchSummaryTTLms: 5 * 60 * 1000,
 
@@ -659,6 +1263,15 @@
       searchTimer: null,
       finalSort: {col:4, dir:-1},
       lastHydrateToken: 0,
+      productResultsMap: new Map(),
+      productBrandRows: [],
+      productCustomerRows: [],
+      productGapRows: [],
+      productSort: {key:'latest', dir:-1},
+      productEstimatedPrices: [],
+      productPriceMap: new Map(),
+      productPriceTimer: null,
+      legacyProductDraft: null,
     };
 
     function showLoading(on){
@@ -702,6 +1315,80 @@
     }
     const formatDate = d => { if(!d) return ''; const [y,m,dd]=d.split('-'); return `${dd}/${m}/${y.slice(-2)}`; };
 
+    const weekdayNamesTH = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสฯ','ศุกร์','เสาร์'];
+    const dayPeriodBuckets = [
+      {key:'all', label:'รวม', min:1, max:31},
+      {key:'d1_10', label:'วันที่ 1–10', min:1, max:10},
+      {key:'d11_20', label:'วันที่ 11–20', min:11, max:20},
+      {key:'d21_end', label:'วันที่ 21–สิ้นเดือน', min:21, max:31}
+    ];
+    const ageBuckets = [
+      {label:'20–30', min:20, max:30},
+      {label:'31–40', min:31, max:40},
+      {label:'41–50', min:41, max:50},
+      {label:'51–60', min:51, max:60},
+      {label:'61–70', min:61, max:70}
+    ];
+
+    function dayPeriodKeyFromDate(dateStr){
+      const d = parseYmdLocal(String(dateStr||'').slice(0,10));
+      if(!d) return '';
+      const day = d.getDate();
+      if(day <= 10) return 'd1_10';
+      if(day <= 20) return 'd11_20';
+      return 'd21_end';
+    }
+    function weekdayIndexFromDate(dateStr){
+      const d = parseYmdLocal(String(dateStr||'').slice(0,10));
+      return d ? d.getDay() : null;
+    }
+
+    function parseBirthToAge(c){
+      if(!c) return null;
+      const candidates = [
+        c.birth_th_ddmmyyyy,
+        c.birth_date,
+        c.birthdate,
+        c.birth,
+        c.birthday,
+        c.dob
+      ].filter(Boolean);
+
+      for(const raw of candidates){
+        const s = String(raw || '').trim();
+        if(!s) continue;
+
+        let y=null, m=1, d=1;
+        let mm = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+        if(mm){
+          d = Number(mm[1]); m = Number(mm[2]); y = Number(mm[3]);
+        }else{
+          mm = s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+          if(mm){
+            y = Number(mm[1]); m = Number(mm[2]); d = Number(mm[3]);
+          }else{
+            const digits = s.replace(/\D/g,'');
+            if(digits.length === 8){
+              d = Number(digits.slice(0,2));
+              m = Number(digits.slice(2,4));
+              y = Number(digits.slice(4,8));
+            }
+          }
+        }
+
+        if(!y) continue;
+        if(y > 2400) y -= 543;
+        if(y < 1900 || y > new Date().getFullYear()) continue;
+
+        const today = new Date();
+        let age = today.getFullYear() - y;
+        const hasBirthdayPassed = (today.getMonth()+1 > m) || ((today.getMonth()+1 === m) && today.getDate() >= d);
+        if(!hasBirthdayPassed) age -= 1;
+        if(age >= 0 && age <= 120) return age;
+      }
+      return null;
+    }
+
     const quantile = (arr,q) => {
       if(!arr.length) return 0;
       const a=[...arr].sort((x,y)=>x-y);
@@ -728,12 +1415,15 @@
 
     function parseSaleItem(item){
       if(item && typeof item === 'object'){
-        const label = String(item.label || item.name || item.item || '').trim();
-        const qty = Math.max(1, Math.floor(Number(item.qty || item.quantity || 1) || 1));
-        const price = Math.max(0, Math.floor(Number(item.price || item.unit_price || 0) || 0));
+        const objMain = String(item.main || item.category || item.group || '').trim();
+        const objSub = String(item.sub || item.subitem || item.product || item.name || item.item || item.title || '').trim();
+        const rawLabel = String(item.label || '').trim();
+        const label = rawLabel || (objMain && objSub ? `${objMain} (${objSub})` : (objSub || objMain));
+        const qty = Math.max(1, Math.floor(Number(item.qty || item.quantity || item.count || 1) || 1));
+        const price = Math.max(0, Math.floor(Number(item.price || item.unit_price || item.default_price || 0) || 0));
         const m = label.match(/^(.*?) ?(?:\((.*?)\))?$/);
-        const main = (m?.[1] || label).trim();
-        const sub = (m?.[2] || '').trim();
+        const main = (objMain || m?.[1] || label).trim();
+        const sub = (objSub && objMain ? objSub : (m?.[2] || objSub || '')).trim();
         const display = sub ? sub : main;
         return { raw:item, label, main, sub, display, qty, price };
       }
@@ -781,7 +1471,7 @@
       return sum;
     }
 
-    const productCategories = {
+    let productCategories = {
       "โบทอค": ["Aestox 50 u", "Aestox 100 u", "Allergan 50 u", "Allergan 100 u", "เฉพาะจุด", "แบ่งไว้แล้ว", "Nabota"],
       "ฟิลเลอร์": ["Neuramis สีดำ", "Neuramis สีทอง", "E.P.T.Q ระบุสีด้วย", "Restylane ระบุสีด้วย"],
       "Fat/Hifu": ["Bromi", "Sisi", "HIFU", "HIFU แถม"],
@@ -817,9 +1507,24 @@
       try{
         const r = await fetch('/api/customers');
         const arr = await r.json();
-        state.profileByOpd = new Map((arr||[]).map(c => [pad4(c.opd||''), c.profile || '']));
+
+        state.profileByOpd = new Map();
+        state.customerDataByOpd = new Map();
+        state.ageByOpd = new Map();
+
+        (arr || []).forEach(c => {
+          const opd = pad4(c.opd || '');
+          if(!opd) return;
+          state.profileByOpd.set(opd, c.profile || '');
+          state.customerDataByOpd.set(opd, c);
+
+          const age = parseBirthToAge(c);
+          if(Number.isFinite(age)) state.ageByOpd.set(opd, age);
+        });
       }catch(e){
         state.profileByOpd = new Map();
+        state.customerDataByOpd = new Map();
+        state.ageByOpd = new Map();
       }
     }
 
@@ -842,14 +1547,32 @@
     }
 
     async function fetchAllPitchesForOPD(opd){
+      const key = pad4(opd || '');
+      if(key && state.pitchFullCache.has(key)) return state.pitchFullCache.get(key) || [];
       try{
-        const r = await fetch(`/api/pitches?opd=${encodeURIComponent(opd)}`);
-        if(!r.ok) return [];
+        const r = await fetch(`/api/pitches?opd=${encodeURIComponent(key || opd)}`);
+        if(!r.ok) {
+          if(key) state.pitchFullCache.set(key, []);
+          return [];
+        }
         const arr = await r.json();
-        return Array.isArray(arr) ? arr : [];
+        const rows = Array.isArray(arr) ? arr : [];
+        rows.sort((a,b)=> String(b.created_at||b.date||'').localeCompare(String(a.created_at||a.date||'')));
+        if(key) state.pitchFullCache.set(key, rows);
+        return rows;
       }catch{
+        if(key) state.pitchFullCache.set(key, []);
         return [];
       }
+    }
+
+    async function fetchPitchFullBatch(opds){
+      const missing = [...new Set((opds || []).map(x=>pad4(x)).filter(Boolean))]
+        .filter(opd => !state.pitchFullCache.has(opd));
+      if(!missing.length) return;
+      await runWithConcurrency(missing, async (opd)=>{
+        await fetchAllPitchesForOPD(opd);
+      }, 8);
     }
 
     async function fetchPitchSummaryBatch(opds){
@@ -1201,6 +1924,863 @@
       `).join('') || `<tr><td colspan="6" class="sub-muted">ไม่มีข้อมูล</td></tr>`;
     }
 
+    function renderWeekdayRevenueStats(){
+      const cust = [...currentCustomers().values()];
+      const emptyStat = () => ({customers:new Set(), bills:0, revenue:0});
+      const addStat = (target, key, amount) => {
+        target.customers.add(key);
+        target.bills += 1;
+        target.revenue += amount;
+      };
+      const mergeStat = (target, source) => {
+        (source.customers || new Set()).forEach(k => target.customers.add(k));
+        target.bills += source.bills || 0;
+        target.revenue += source.revenue || 0;
+      };
+
+      const rows = weekdayNamesTH.map((name, idx) => {
+        const base = {
+          weekday: idx,
+          name,
+          d1_10: emptyStat(),
+          d11_20: emptyStat(),
+          d21_end: emptyStat(),
+          row_total: emptyStat(),
+        };
+
+        cust.forEach(v => {
+          (v.bills || []).forEach(b => {
+            const w = weekdayIndexFromDate(b.date);
+            if(w !== idx) return;
+            const amount = recordAmount(b);
+            const pkey = dayPeriodKeyFromDate(b.date);
+            if(base[pkey]) addStat(base[pkey], v.key, amount);
+            addStat(base.row_total, v.key, amount);
+          });
+        });
+        return base;
+      });
+
+      const colTotals = {
+        label: 'รวมทั้งหมด',
+        d1_10: emptyStat(),
+        d11_20: emptyStat(),
+        d21_end: emptyStat(),
+        row_total: emptyStat(),
+      };
+      rows.forEach(row => {
+        ['d1_10','d11_20','d21_end','row_total'].forEach(k => mergeStat(colTotals[k], row[k]));
+      });
+
+      const renderCell = (stat, onClick = '', extraClass = '') => {
+        if(!stat || !stat.bills){
+          return `<td class="${extraClass}"><span class="stat-empty">-</span></td>`;
+        }
+        const clickable = onClick ? ' clickable-stat' : '';
+        const clickAttr = onClick ? ` onclick="${onClick}"` : '';
+        return `
+          <td class="${clickable} ${extraClass}"${clickAttr}>
+            <div class="stat-main">${stat.customers.size.toLocaleString()} คน / ${stat.bills.toLocaleString()} บิล</div>
+            <div class="stat-sub">${Math.round(stat.revenue).toLocaleString()} บาท</div>
+          </td>`;
+      };
+
+      const tb = document.querySelector('#weekdayStatsTable tbody');
+      if(!tb) return;
+
+      const bodyRows = rows.map(row => `
+        <tr>
+          <td style="font-weight:900;color:#064e3b;">${esc(row.name)}</td>
+          ${renderCell(row.d1_10, `applyWeekdayDetail(${row.weekday}, 'd1_10', '${esc(row.name)} วันที่ 1–10')`)}
+          ${renderCell(row.d11_20, `applyWeekdayDetail(${row.weekday}, 'd11_20', '${esc(row.name)} วันที่ 11–20')`)}
+          ${renderCell(row.d21_end, `applyWeekdayDetail(${row.weekday}, 'd21_end', '${esc(row.name)} วันที่ 21–สิ้นเดือน')`)}
+          ${renderCell(row.row_total, `applyWeekdayDetail(${row.weekday}, 'all', '${esc(row.name)} รวมรายวัน')`, 'stat-total-col')}
+        </tr>
+      `).join('');
+
+      const totalRow = `
+        <tr class="stat-total-row">
+          <td>รวมทั้งหมด</td>
+          ${renderCell(colTotals.d1_10, '', '')}
+          ${renderCell(colTotals.d11_20, '', '')}
+          ${renderCell(colTotals.d21_end, '', '')}
+          ${renderCell(colTotals.row_total, '', 'stat-total-col')}
+        </tr>
+      `;
+
+      tb.innerHTML = bodyRows + totalRow;
+    }
+
+    function renderAgeRangeStats(){
+      const cust = [...currentCustomers().values()];
+      const withAge = cust.filter(v => Number.isFinite(state.ageByOpd.get(v.opd)));
+      const rows = ageBuckets.map(b => {
+        const inBucket = withAge.filter(v => {
+          const age = state.ageByOpd.get(v.opd);
+          return age >= b.min && age <= b.max;
+        });
+
+        const customers = inBucket.length;
+        const bills = inBucket.reduce((s,v)=>s+(v.bills?.length||0),0);
+        const revenue = inBucket.reduce((s,v)=>s+(v.revenue||0),0);
+        const aov = bills ? Math.round(revenue / bills) : 0;
+
+        return { b, customers, bills, revenue, aov };
+      });
+
+      const tb = document.querySelector('#ageStatsTable tbody');
+      if(!tb) return;
+      tb.innerHTML = rows.map(r => `
+        <tr>
+          <td style="font-weight:900;color:#064e3b;">${esc(r.b.label)}</td>
+          <td>${r.customers.toLocaleString()}</td>
+          <td>${r.bills.toLocaleString()}</td>
+          <td>${Math.round(r.revenue).toLocaleString()}</td>
+          <td>${r.aov.toLocaleString()}</td>
+          <td style="text-align:center">
+            <button class="icon-btn" type="button" title="ดูรายชื่อ" onclick="applyAgeBucket(${r.b.min}, ${r.b.max}, '${r.b.label}')">👁</button>
+          </td>
+        </tr>
+      `).join('') || `<tr><td colspan="6" class="sub-muted">ไม่มีข้อมูลอายุ</td></tr>`;
+
+      const note = document.getElementById('ageStatsNote');
+      if(note){
+        const total = cust.length;
+        const usable = withAge.length;
+        note.textContent = `ใช้ข้อมูลอายุได้ ${usable.toLocaleString()} จาก ${total.toLocaleString()} รายในกลุ่มที่แสดงอยู่`;
+      }
+    }
+
+
+    function setMainView(view){
+      const target = (view === 'product') ? 'product' : 'finance';
+      document.querySelectorAll('.view-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.view === target));
+      document.getElementById('financeView')?.classList.toggle('active', target === 'finance');
+      document.getElementById('productView')?.classList.toggle('active', target === 'product');
+      document.getElementById('priceView')?.classList.toggle('active', target === 'price');
+      if(target === 'product') renderProductInsight();
+      if(target === 'price') renderProductPriceSettings();
+    }
+
+    function initViewTabs(){
+      document.querySelectorAll('.view-tab').forEach(btn => {
+        btn.addEventListener('click', () => setMainView(btn.dataset.view));
+      });
+    }
+
+    function populateProductInsightSelectors(){
+      const catSel = document.getElementById('productCategorySelect');
+      const subSel = document.getElementById('productSubSelect');
+      if(!catSel || !subSel) return;
+      const current = catSel.value;
+      catSel.innerHTML = '<option value="">เลือกหมวดสินค้า</option>' +
+        Object.keys(productCategories).map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+      if(current && productCategories[current]) catSel.value = current;
+      updateProductSubOptions();
+    }
+
+    function updateProductSubOptions(){
+      const catSel = document.getElementById('productCategorySelect');
+      const subSel = document.getElementById('productSubSelect');
+      if(!catSel || !subSel) return;
+      const cat = catSel.value || '';
+      const subs = productCategories[cat] || [];
+      subSel.disabled = !cat;
+      subSel.innerHTML = '<option value="">ทั้งหมดในหมวด</option>' +
+        subs.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('');
+    }
+
+    function normalizeProductCompare(s){
+      return String(s || '').trim().toLowerCase().replace(/\s+/g,' ');
+    }
+
+    function productItemMatches(parsed, category, sub){
+      if(!category) return false;
+      const main = normalizeProductCompare(parsed.main || '');
+      const cat = normalizeProductCompare(category);
+      if(main !== cat) return false;
+      if(!sub) return true;
+      const subNeed = normalizeProductCompare(sub);
+      const candidates = [parsed.sub, parsed.display, parsed.label].map(normalizeProductCompare);
+      return candidates.includes(subNeed) || candidates.some(x => x && x.includes(subNeed));
+    }
+
+    function productItemDisplayName(parsed){
+      return parsed.sub || parsed.display || parsed.label || '-';
+    }
+
+    function productPriceKey(category, productName){
+      return `${normalizeProductCompare(category)}|${normalizeProductCompare(productName)}`;
+    }
+
+    function getEstimatedUnitPrice(category, productName){
+      const key = productPriceKey(category, productName);
+      const row = state.productPriceMap.get(key);
+      const n = Number(row?.estimated_price || 0);
+      return Number.isFinite(n) && n > 0 ? n : 0;
+    }
+    function getProductCatalogRow(category, productName){
+      return state.productPriceMap.get(productPriceKey(category, productName)) || null;
+    }
+
+    function productNeedsPriceAttention(category, productName){
+      const row = getProductCatalogRow(category, productName);
+      if(!row) return true;
+      const n = Number(row.estimated_price || 0);
+      return !(Number.isFinite(n) && n > 0);
+    }
+
+    function legacyWarnButton(category, productName, extraClass=''){
+      if(!productNeedsPriceAttention(category, productName)) return '';
+      return `<button class="legacy-warn-btn ${extraClass}" type="button" title="เพิ่ม/ใส่ราคาประเมินใน Setting" onclick="event.stopPropagation();openLegacyProductModal('${esc(category)}','${esc(productName)}')">⚠️</button>`;
+    }
+
+
+    function productLineRevenue(parsed, billAmount, itemCountInBill){
+      const q = Number(parsed.qty || 1) || 1;
+      const productName = productItemDisplayName(parsed);
+      const unitPrice = getEstimatedUnitPrice(parsed.main || '', productName);
+      return q * unitPrice;
+    }
+
+    function getProductScope(){
+      return {
+        category: document.getElementById('productCategorySelect')?.value || '',
+        sub: document.getElementById('productSubSelect')?.value || '',
+        q: String(document.getElementById('productSearchInput')?.value || '').trim().toLowerCase()
+      };
+    }
+
+    function buildProductInsightRows(category, sub){
+      const customers = [...state.customersMap.values()];
+      const resultMap = new Map();
+      const brandMap = new Map();
+      let latestDateAll = '';
+
+      customers.forEach(v => {
+        const matchedLines = [];
+        const itemAgg = new Map();
+        let qtyTotal = 0;
+        let revenueTotal = 0;
+        let latestDate = '';
+        let matchBillCount = 0;
+
+        (v.bills || []).forEach(b => {
+          const items = normalizeItemsArray(b.items).map(parseSaleItem);
+          const matched = items.filter(it => productItemMatches(it, category, sub));
+          if(!matched.length) return;
+          matchBillCount += 1;
+          const d = String(b.date || '').slice(0,10);
+          if(d && (!latestDate || d > latestDate)) latestDate = d;
+          if(d && (!latestDateAll || d > latestDateAll)) latestDateAll = d;
+
+          matched.forEach(it => {
+            const name = productItemDisplayName(it);
+            const qty = Number(it.qty || 1) || 1;
+            const rev = productLineRevenue(it, recordAmount(b), items.length);
+            qtyTotal += qty;
+            revenueTotal += rev;
+            const ag = itemAgg.get(name) || {name, qty:0, revenue:0};
+            ag.qty += qty;
+            ag.revenue += rev;
+            itemAgg.set(name, ag);
+
+            const brand = brandMap.get(name) || {name, customers:new Set(), bills:0, qty:0, revenue:0, latestDates:[]};
+            brand.customers.add(v.key);
+            brand.bills += 1;
+            brand.qty += qty;
+            brand.revenue += rev;
+            if(d) brand.latestDates.push(d);
+            brandMap.set(name, brand);
+
+            matchedLines.push({
+              date: d,
+              label: name,
+              qty,
+              revenue: rev,
+              billAmount: recordAmount(b),
+              note: b.note || '',
+              rawBill: b
+            });
+          });
+        });
+
+        if(qtyTotal > 0){
+          const lastDt = parseYmdLocal(latestDate);
+          const anchor = state.endAnchorDate || new Date();
+          const daysSinceProduct = lastDt ? Math.floor((anchor - lastDt)/(1000*60*60*24)) : null;
+          const itemSummary = [...itemAgg.values()].sort((a,b)=>b.qty-a.qty).map(x => `${x.name} ${x.qty}`);
+          const row = {
+            key: v.key,
+            v,
+            latestDate,
+            daysSinceProduct,
+            qtyTotal,
+            revenueTotal,
+            itemSummary,
+            matchBillCount,
+            lines: matchedLines.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))
+          };
+          resultMap.set(v.key, row);
+        }
+      });
+
+      const anchor = state.endAnchorDate || new Date();
+      const brandRows = [...brandMap.values()].map(b => {
+        const uniqueLatest = new Map();
+        b.latestDates.forEach(d => { if(d) uniqueLatest.set(d, d); });
+        const daysArr = [...uniqueLatest.values()].map(d => {
+          const dt = parseYmdLocal(d);
+          return dt ? Math.floor((anchor - dt)/(1000*60*60*24)) : null;
+        }).filter(x => Number.isFinite(x));
+        const avgDays = daysArr.length ? Math.round(daysArr.reduce((s,x)=>s+x,0) / daysArr.length) : null;
+        return {
+          name: b.name,
+          customers: b.customers.size,
+          qty: b.qty,
+          revenue: b.revenue,
+          avgDays
+        };
+      }).sort((a,b)=> (b.qty-a.qty) || (b.revenue-a.revenue));
+
+      return {
+        customerRows: [...resultMap.values()].sort((a,b)=>String(b.latestDate||'').localeCompare(String(a.latestDate||'')) || (b.qtyTotal-a.qtyTotal)),
+        brandRows,
+        latestDateAll
+      };
+    }
+
+    function applyProductTextSearch(rows, q){
+      if(!q) return rows;
+      const qDigits = onlyDigits(q);
+      return rows.filter(r => {
+        const hay = [r.v.opd || '', r.v.name || '', r.v.phone || '', r.itemSummary.join(' ')].join(' ').toLowerCase();
+        const phoneDigits = normPhone(r.v.phone || '');
+        return hay.includes(q) || (qDigits && phoneDigits.includes(qDigits));
+      });
+    }
+
+    const productGapBuckets = [
+      { label:'ไม่เกิน 2 เดือน', min:0, max:60 },
+      { label:'2–4 เดือน', min:61, max:120 },
+      { label:'4–6 เดือน / ครึ่งปี', min:121, max:180 },
+      { label:'6 เดือน–1 ปี', min:181, max:365 },
+      { label:'มากกว่า 1 ปี', min:366, max:Infinity }
+    ];
+
+    function buildProductGapRows(customerRows){
+      return productGapBuckets.map(b => {
+        const rows = customerRows.filter(r => {
+          const d = r.daysSinceProduct;
+          return Number.isFinite(d) && d >= b.min && d <= b.max;
+        });
+        return {
+          label: b.label,
+          min: b.min,
+          max: b.max,
+          customers: rows.length,
+          qty: rows.reduce((s,r)=>s+(r.qtyTotal||0),0),
+          revenue: rows.reduce((s,r)=>s+(r.revenueTotal||0),0)
+        };
+      });
+    }
+
+    function sortProductCustomerRows(rows){
+      const sort = state.productSort || {key:'latest', dir:-1};
+      const key = sort.key || 'latest';
+      const dir = sort.dir || 1;
+      const val = (r) => {
+        if(key === 'opd') return String(r.v.opd || '');
+        if(key === 'name') return String(r.v.name || '').toLowerCase();
+        if(key === 'latest') return r.latestDate || '';
+        if(key === 'days') return Number.isFinite(r.daysSinceProduct) ? r.daysSinceProduct : 999999;
+        if(key === 'qty') return Number(r.qtyTotal || 0);
+        if(key === 'items') return String((r.itemSummary || []).join(' ')).toLowerCase();
+        return '';
+      };
+      return [...rows].sort((a,b)=>{
+        const A = val(a), B = val(b);
+        let cmp = 0;
+        if(typeof A === 'number' && typeof B === 'number') cmp = A - B;
+        else cmp = A > B ? 1 : A < B ? -1 : 0;
+        if(cmp === 0){
+          const ao = String(a.v.opd || ''), bo = String(b.v.opd || '');
+          if(ao !== bo) return ao > bo ? 1 : -1;
+          return String(a.v.name || '').localeCompare(String(b.v.name || ''), 'th');
+        }
+        return cmp * dir;
+      });
+    }
+
+    function updateProductSortHeaders(){
+      const sort = state.productSort || {key:'latest', dir:-1};
+      document.querySelectorAll('#productCustomersTable thead th[data-product-sort]').forEach(th => {
+        const active = th.dataset.productSort === sort.key;
+        th.classList.toggle('product-sort-active', active);
+        th.setAttribute('data-sort-arrow', active ? (sort.dir === 1 ? ' ↑' : ' ↓') : ' ↕');
+      });
+    }
+
+    function setProductSort(key){
+      if(state.productSort && state.productSort.key === key) state.productSort.dir = -state.productSort.dir;
+      else state.productSort = {key, dir: (key === 'latest' || key === 'qty' || key === 'days') ? -1 : 1};
+      renderProductInsight();
+    }
+
+    function renderProductInsight(){
+      const {category, sub, q} = getProductScope();
+      const note = document.getElementById('productAppliedNote');
+      const brandTb = document.querySelector('#productBrandTable tbody');
+      const gapTb = document.querySelector('#productGapTable tbody');
+      const custTb = document.querySelector('#productCustomersTable tbody');
+      if(!brandTb || !gapTb || !custTb) return;
+
+      if(!category){
+        ['prodKpiCustomers','prodKpiQty','prodKpiRevenue','prodKpiAvgDays','prodKpiLatestDate'].forEach(id => {
+          const el=document.getElementById(id); if(el) el.textContent='-';
+        });
+        brandTb.innerHTML = `<tr><td colspan="5" class="product-empty">เลือกหมวดสินค้าเพื่อเริ่มดูข้อมูล</td></tr>`;
+        gapTb.innerHTML = `<tr><td colspan="4" class="product-empty">เลือกหมวดสินค้าเพื่อเริ่มดูข้อมูล</td></tr>`;
+        custTb.innerHTML = `<tr><td colspan="7" class="product-empty">เลือกหมวดสินค้าเพื่อเริ่มดูข้อมูล</td></tr>`;
+        if(note){ note.textContent = 'เลือกหมวดสินค้าเพื่อเริ่มดูข้อมูล'; note.style.display='block'; }
+        state.productResultsMap = new Map();
+        updateProductSortHeaders();
+        return;
+      }
+
+      const built = buildProductInsightRows(category, sub);
+      let customerRows = applyProductTextSearch(built.customerRows, q);
+      const gapRows = buildProductGapRows(customerRows);
+      customerRows = sortProductCustomerRows(customerRows);
+
+      state.productResultsMap = new Map(customerRows.map(r => [r.key, r]));
+      state.productBrandRows = built.brandRows;
+      state.productGapRows = gapRows;
+      state.productCustomerRows = customerRows;
+
+      const totalCustomers = customerRows.length;
+      const totalQty = customerRows.reduce((s,r)=>s+(r.qtyTotal||0),0);
+      const totalRevenue = customerRows.reduce((s,r)=>s+(r.revenueTotal||0),0);
+      const dayVals = customerRows.map(r=>r.daysSinceProduct).filter(x=>Number.isFinite(x));
+      const avgDays = dayVals.length ? Math.round(dayVals.reduce((s,x)=>s+x,0)/dayVals.length) : null;
+      const latest = customerRows.map(r=>r.latestDate).filter(Boolean).sort().pop() || '';
+
+      const setTxt = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+      setTxt('prodKpiCustomers', totalCustomers.toLocaleString());
+      setTxt('prodKpiQty', Math.round(totalQty).toLocaleString());
+      setTxt('prodKpiRevenue', Math.round(totalRevenue).toLocaleString());
+      setTxt('prodKpiAvgDays', avgDays == null ? '-' : avgDays.toLocaleString());
+      setTxt('prodKpiLatestDate', latest ? formatDate(latest) : '-');
+
+      if(note){
+        const scopeText = sub ? `${category} / ${sub}` : `${category} / ทั้งหมดในหมวด`;
+        note.textContent = `กำลังดู: ${scopeText} • ช่วงวันที่ ${formatDate(document.getElementById('startDate')?.value || '') || '-'} ถึง ${formatDate(document.getElementById('endDate')?.value || '') || '-'}`;
+        note.style.display='block';
+      }
+
+      brandTb.innerHTML = built.brandRows.map(r => `
+        <tr class="clickable-row" onclick="selectProductBrand('${esc(r.name)}')">
+          <td style="font-weight:900;color:#064e3b;">${esc(r.name)}${legacyWarnButton(category, r.name)}</td>
+          <td>${r.customers.toLocaleString()}</td>
+          <td>${Math.round(r.qty).toLocaleString()}</td>
+          <td>${Math.round(r.revenue).toLocaleString()}</td>
+          <td>${r.avgDays == null ? '-' : r.avgDays.toLocaleString() + ' วัน'}</td>
+        </tr>
+      `).join('') || `<tr><td colspan="5" class="product-empty">ไม่พบรายการย่อยในหมวดนี้</td></tr>`;
+
+      gapTb.innerHTML = gapRows.map(r => `
+        <tr>
+          <td style="font-weight:900;color:#064e3b;">${esc(r.label)}</td>
+          <td>${r.customers.toLocaleString()}</td>
+          <td>${Math.round(r.qty).toLocaleString()}</td>
+          <td>${Math.round(r.revenue).toLocaleString()}</td>
+        </tr>
+      `).join('') || `<tr><td colspan="4" class="product-empty">ไม่มีข้อมูลระยะห่าง</td></tr>`;
+
+      custTb.innerHTML = customerRows.map(r => {
+        const chips = r.itemSummary.slice(0,5).map(x=>{
+          const cleanName = String(x || '').replace(/\s+[0-9.]+$/, '');
+          return `<span class="product-chip">${esc(x)}${legacyWarnButton(category, cleanName, 'small')}</span>`;
+        }).join('');
+        const more = r.itemSummary.length > 5 ? `<span class="product-chip">+${r.itemSummary.length-5}</span>` : '';
+        return `
+          <tr>
+            <td>${esc(r.v.opd || '-')}</td>
+            <td><a class="link" href="javascript:;" onclick="openProductHistory('${esc(r.key)}')">${esc(r.v.name || '-')}</a></td>
+            <td>${r.latestDate ? formatDate(r.latestDate) : '-'}</td>
+            <td>${r.daysSinceProduct == null ? '-' : r.daysSinceProduct.toLocaleString() + ' วัน'}</td>
+            <td>${Math.round(r.qtyTotal).toLocaleString()}</td>
+            <td>${chips}${more}</td>
+            <td><button class="icon-btn" type="button" onclick="openProductHistory('${esc(r.key)}')">ดู</button></td>
+          </tr>`;
+      }).join('') || `<tr><td colspan="7" class="product-empty">ไม่พบลูกค้าที่ตรงกับเงื่อนไขสินค้า</td></tr>`;
+
+      updateProductSortHeaders();
+    }
+
+    function selectProductBrand(name){
+      const subSel = document.getElementById('productSubSelect');
+      if(!subSel) return;
+      const options = [...subSel.options];
+      const found = options.find(o => normalizeProductCompare(o.value) === normalizeProductCompare(name));
+      if(found){ subSel.value = found.value; }
+      else{
+        subSel.innerHTML += `<option value="${esc(name)}">${esc(name)}</option>`;
+        subSel.value = name;
+      }
+      renderProductInsight();
+      document.getElementById('productCustomersTable')?.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+
+    function defaultUnitForProductModal(category){
+      return defaultUnitForCategory(category || '') || 'ชิ้น';
+    }
+
+    function openLegacyProductModal(category, productName){
+      const modal = document.getElementById('legacyProductModal');
+      if(!modal) return;
+      const name = String(productName || '').trim();
+      const cat = String(category || '').trim();
+      state.legacyProductDraft = {category: cat, productName: name};
+
+      const nameText = document.getElementById('legacyProductNameText');
+      if(nameText) nameText.textContent = name || '-';
+
+      const catSel = document.getElementById('legacyProductCategory');
+      if(catSel){
+        const cats = Object.keys(productCategories || {});
+        catSel.innerHTML = cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+        if(cat && cats.includes(cat)) catSel.value = cat;
+      }
+
+      const row = getProductCatalogRow(cat, name);
+      const unitSel = document.getElementById('legacyProductUnit');
+      if(unitSel) unitSel.value = row?.unit_label || defaultUnitForProductModal(cat);
+      const priceInput = document.getElementById('legacyProductPrice');
+      if(priceInput) priceInput.value = row?.estimated_price ? String(row.estimated_price) : '';
+      const openSales = document.getElementById('legacyProductOpenSales');
+      if(openSales) openSales.checked = row?.is_active === true;
+
+      modal.style.display = 'flex';
+      setTimeout(()=>{ try{ document.getElementById('legacyProductPrice')?.focus(); }catch(e){} }, 50);
+    }
+
+    function closeLegacyProductModal(event){
+      if(event && event.target && event.target.id !== 'legacyProductModal') return;
+      const modal = document.getElementById('legacyProductModal');
+      if(modal) modal.style.display = 'none';
+      state.legacyProductDraft = null;
+    }
+
+    async function saveLegacyProductFromInsight(){
+      const draft = state.legacyProductDraft || {};
+      const category = document.getElementById('legacyProductCategory')?.value || draft.category || '';
+      const productName = draft.productName || '';
+      const price = document.getElementById('legacyProductPrice')?.value || '';
+      const unit = document.getElementById('legacyProductUnit')?.value || 'ชิ้น';
+      const openSales = !!document.getElementById('legacyProductOpenSales')?.checked;
+
+      if(!category) return toast('กรุณาเลือกหมวด', 'warn');
+      if(!productName) return toast('ไม่พบชื่อสินค้า', 'err');
+      if(price === '' || Number(price) < 0) return toast('กรุณาใส่ราคาประเมิน', 'warn');
+
+      try{
+        showLoading(true);
+        const res = await fetch('/api/products_add_from_insight', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({category, product_name: productName, estimated_price: Number(price || 0), estimated_unit: unit, open_for_sales: openSales})
+        });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok) throw new Error(data.error || 'save_failed');
+        await loadProductEstimatedPrices();
+        closeLegacyProductModal();
+        renderProductInsight();
+        toast('เพิ่ม/อัปเดตราคาประเมินแล้ว', 'ok');
+      }catch(e){
+        console.error(e);
+        toast('บันทึกไม่สำเร็จ: ' + (e.message || e), 'err', 3600);
+      }finally{
+        showLoading(false);
+      }
+    }
+
+    function openProductHistory(key){
+      const row = state.productResultsMap.get(key);
+      if(!row) return;
+      const {category, sub} = getProductScope();
+      const scopeText = sub ? `${category} / ${sub}` : `${category} / ทั้งหมดในหมวด`;
+      const lines = row.lines.map((x, idx) => `
+        <tr>
+          <td>${idx+1}</td>
+          <td>${formatDate(x.date || '')}</td>
+          <td>${esc(x.label)}</td>
+          <td>${Math.round(x.qty).toLocaleString()}</td>
+          <td>${Math.round(x.revenue).toLocaleString()}</td>
+          <td>${esc(x.note || '-')}</td>
+        </tr>
+      `).join('') || `<tr><td colspan="6" class="sub-muted">ไม่มีประวัติ</td></tr>`;
+
+      document.getElementById('modal-content').innerHTML = `
+        <h3 style="font-size:16px;margin:0 0 8px;color:#064e3b;font-weight:900;">📦 ประวัติสินค้า: ${esc(row.v.name || '-')}</h3>
+        <div style="font-size:12px;">🆔 OPD: <b>${esc(row.v.opd || '-')}</b></div>
+        <div style="font-size:12px;">📞 เบอร์: ${esc(row.v.phone || '-')}</div>
+        <div style="font-size:12px;">🔎 เงื่อนไข: <b>${esc(scopeText)}</b></div>
+        <div style="font-size:12px;">📅 ล่าสุดที่ทำ: <b>${row.latestDate ? formatDate(row.latestDate) : '-'}</b> ${row.daysSinceProduct == null ? '' : `(ห่าง ${row.daysSinceProduct.toLocaleString()} วัน)`}</div>
+        <div style="font-size:12px;color:#0a645a;font-weight:900;margin-top:6px;">จำนวนรวม ${Math.round(row.qtyTotal).toLocaleString()} • ยอดประเมิน ${Math.round(row.revenueTotal).toLocaleString()} บาท</div>
+        <hr style="margin:14px 0;border:0;border-top:1px solid #e5e7eb;">
+        <div class="table-wrap" style="padding:0;max-height:56vh;overflow:auto;">
+          <table style="min-width:620px;">
+            <thead><tr><th>#</th><th>วันที่</th><th>รายการ</th><th>จำนวน</th><th>ยอดประเมิน</th><th>หมายเหตุ</th></tr></thead>
+            <tbody>${lines}</tbody>
+          </table>
+        </div>
+      `;
+      document.getElementById('customer-modal').style.display = 'flex';
+    }
+
+    function initProductInsight(){
+      populateProductInsightSelectors();
+      document.getElementById('productCategorySelect')?.addEventListener('change', () => {
+        updateProductSubOptions();
+        renderProductInsight();
+      });
+      document.getElementById('productSubSelect')?.addEventListener('change', renderProductInsight);
+      document.getElementById('productSearchInput')?.addEventListener('input', () => {
+        clearTimeout(state.productSearchTimer);
+        state.productSearchTimer = setTimeout(renderProductInsight, 180);
+      });
+      document.getElementById('btnRunProductInsight')?.addEventListener('click', renderProductInsight);
+      document.querySelectorAll('#productCustomersTable thead th[data-product-sort]').forEach(th => {
+        th.addEventListener('click', () => setProductSort(th.dataset.productSort));
+      });
+      document.getElementById('btnSaveLegacyProduct')?.addEventListener('click', saveLegacyProductFromInsight);
+    }
+
+
+    function defaultUnitForCategory(category){
+      const c = String(category || '');
+      if(c.includes('ฟิลเลอร์')) return 'ชิ้น/cc';
+      if(c.includes('โบทอค')) return 'ขวด/จุด';
+      if(c.includes('ดริป') || c.includes('ทรีทเม้นท์') || c.includes('งานผิว')) return 'ครั้ง';
+      return 'ชิ้น';
+    }
+
+    function buildDefaultEstimatedPriceRows(){
+      const rows = [];
+      let order = 10;
+      Object.entries(productCategories).forEach(([category, subs]) => {
+        (subs || []).forEach(name => {
+          rows.push({
+            id: '',
+            category,
+            product_name: name,
+            unit_label: defaultUnitForCategory(category),
+            estimated_price: 0,
+            is_active: true,
+            sort_order: order++
+          });
+        });
+      });
+      return rows;
+    }
+
+    function rebuildProductPriceMap(){
+      state.productPriceMap = new Map();
+      (state.productEstimatedPrices || []).forEach(r => {
+        if(!r) return;
+        state.productPriceMap.set(productPriceKey(r.category, r.product_name), r);
+      });
+    }
+
+    async function loadProductEstimatedPrices(){
+      try{
+        const [catsRes, prodsRes] = await Promise.all([
+          fetch('/api/categories'),
+          fetch('/api/products')
+        ]);
+        if(!catsRes.ok || !prodsRes.ok) throw new Error('product_catalog_api_not_ready');
+
+        const cats = await catsRes.json();
+        const prods = await prodsRes.json();
+        const categoriesArr = Array.isArray(cats) ? cats : [];
+        const productsArr = Array.isArray(prods) ? prods : [];
+
+        const catById = new Map(categoriesArr.map(c => [String(c.id), c]));
+        const activeProducts = productsArr
+          // Product Insight ใช้ทั้งสินค้าเปิดขายและสินค้าเก่า/ปิดใช้งาน
+          // เพราะสินค้าเก่าอาจอยู่ในประวัติ แต่ไม่ควรขึ้นในหน้าบันทึกยอดขาย
+          .filter(p => !p.deleted_at)
+          .sort((a,b) => {
+            const ca = catById.get(String(a.category_id)) || {};
+            const cb = catById.get(String(b.category_id)) || {};
+            return (Number(ca.sort_order || 0) - Number(cb.sort_order || 0)) ||
+              String(ca.name || '').localeCompare(String(cb.name || ''), 'th') ||
+              (Number(a.sort_order || 0) - Number(b.sort_order || 0)) ||
+              String(a.name || '').localeCompare(String(b.name || ''), 'th');
+          });
+
+        const categoryMap = {};
+        const priceRows = [];
+        activeProducts.forEach(p => {
+          const cat = catById.get(String(p.category_id)) || {};
+          const category = String(cat.name || p.category_name || '').trim();
+          const name = String(p.name || '').trim();
+          if(!category || !name) return;
+          if(!categoryMap[category]) categoryMap[category] = [];
+          if(!categoryMap[category].includes(name)) categoryMap[category].push(name);
+          priceRows.push({
+            id: p.id,
+            product_id: p.id,
+            category,
+            product_name: name,
+            unit_label: p.estimated_unit || defaultUnitForCategory(category),
+            estimated_price: Number(p.estimated_price || 0) || 0,
+            is_active: p.is_active !== false,
+            sort_order: Number(p.sort_order || 0)
+          });
+        });
+
+        if(Object.keys(categoryMap).length){
+          productCategories = categoryMap;
+          state.productEstimatedPrices = priceRows;
+        }else{
+          state.productEstimatedPrices = buildDefaultEstimatedPriceRows();
+        }
+      }catch(e){
+        console.warn('load product catalog from settings failed:', e);
+        state.productEstimatedPrices = buildDefaultEstimatedPriceRows();
+      }
+      rebuildProductPriceMap();
+      populateProductInsightSelectors();
+      renderProductPriceSettings();
+    }
+
+    function renderPriceCategoryFilter(){
+      const sel = document.getElementById('priceCategoryFilter');
+      if(!sel) return;
+      const current = sel.value || 'all';
+      const cats = Object.keys(productCategories);
+      sel.innerHTML = '<option value="all">ทุกหมวด</option>' + cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+      sel.value = cats.includes(current) ? current : 'all';
+    }
+
+    function filteredPriceRows(){
+      const cat = document.getElementById('priceCategoryFilter')?.value || 'all';
+      const q = String(document.getElementById('priceSearchInput')?.value || '').trim().toLowerCase();
+      return (state.productEstimatedPrices || []).filter(r => {
+        if(cat !== 'all' && r.category !== cat) return false;
+        if(q){
+          const hay = `${r.category||''} ${r.product_name||''} ${r.unit_label||''}`.toLowerCase();
+          if(!hay.includes(q)) return false;
+        }
+        return true;
+      });
+    }
+
+    function renderProductPriceSettings(){
+      renderPriceCategoryFilter();
+      const tb = document.querySelector('#priceTable tbody');
+      const status = document.getElementById('priceStatus');
+      if(!tb) return;
+      const rows = filteredPriceRows();
+      if(status) status.textContent = `แสดง ${rows.length.toLocaleString()} รายการ จากทั้งหมด ${(state.productEstimatedPrices||[]).length.toLocaleString()} รายการ`;
+      tb.innerHTML = rows.map((r, idx) => {
+        const rowKey = productPriceKey(r.category, r.product_name);
+        return `<tr data-price-key="${esc(rowKey)}">
+          <td>${esc(r.category || '-')}</td>
+          <td style="font-weight:900;color:#064e3b;">${esc(r.product_name || '-')}</td>
+          <td><input type="text" data-price-field="unit_label" value="${esc(r.unit_label || defaultUnitForCategory(r.category))}"></td>
+          <td><input type="number" min="0" step="1" inputmode="numeric" data-price-field="estimated_price" value="${Number(r.estimated_price || 0)}"></td>
+          <td>
+            <select class="ipt" data-price-field="is_active">
+              <option value="true" ${r.is_active !== false ? 'selected' : ''}>ใช้</option>
+              <option value="false" ${r.is_active === false ? 'selected' : ''}>ปิด</option>
+            </select>
+          </td>
+          <td><button class="icon-btn" type="button" onclick="saveEstimatedPriceByKey('${esc(rowKey)}')">บันทึก</button></td>
+        </tr>`;
+      }).join('') || `<tr><td colspan="6" class="product-empty">ไม่พบรายการ</td></tr>`;
+    }
+
+    function collectEstimatedPriceRowByKey(rowKey){
+      const row = (state.productEstimatedPrices || []).find(r => productPriceKey(r.category, r.product_name) === rowKey);
+      const tr = [...document.querySelectorAll('#priceTable tbody tr[data-price-key]')].find(el => el.dataset.priceKey === rowKey);
+      if(!row || !tr) return null;
+      const unit = tr.querySelector('[data-price-field="unit_label"]')?.value || defaultUnitForCategory(row.category);
+      const price = Number(tr.querySelector('[data-price-field="estimated_price"]')?.value || 0);
+      const activeValue = tr.querySelector('[data-price-field="is_active"]')?.value;
+      return {
+        id: row.id || undefined,
+        category: row.category,
+        product_name: row.product_name,
+        unit_label: unit.trim() || defaultUnitForCategory(row.category),
+        estimated_price: Number.isFinite(price) && price > 0 ? price : 0,
+        is_active: activeValue !== 'false',
+        sort_order: Number(row.sort_order || 0)
+      };
+    }
+
+    async function saveEstimatedPriceRow(payload){
+      const res = await fetch('/api/save_product_estimated_price', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data.error || 'save_failed');
+      return data.row || payload;
+    }
+
+    async function saveEstimatedPriceByKey(rowKey){
+      try{
+        const payload = collectEstimatedPriceRowByKey(rowKey);
+        if(!payload) return toast('ไม่พบแถวราคานี้', 'err');
+        const saved = await saveEstimatedPriceRow(payload);
+        const idx = state.productEstimatedPrices.findIndex(r => productPriceKey(r.category, r.product_name) === rowKey);
+        if(idx >= 0) state.productEstimatedPrices[idx] = {...state.productEstimatedPrices[idx], ...saved, ...payload};
+        rebuildProductPriceMap();
+        renderProductInsight();
+        toast('บันทึกราคาประเมินแล้ว', 'ok');
+      }catch(e){
+        toast('บันทึกไม่สำเร็จ: ' + (e.message || e), 'err');
+      }
+    }
+
+    async function saveAllEstimatedPrices(){
+      try{
+        const visibleKeys = filteredPriceRows().map(r => productPriceKey(r.category, r.product_name));
+        const rows = visibleKeys.map(collectEstimatedPriceRowByKey).filter(Boolean);
+        if(!rows.length) return toast('ไม่มีรายการให้บันทึก', 'warn');
+        const res = await fetch('/api/save_product_estimated_prices', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({rows})
+        });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok) throw new Error(data.error || 'save_failed');
+        await loadProductEstimatedPrices();
+        renderProductInsight();
+        toast(`บันทึกแล้ว ${rows.length.toLocaleString()} รายการ`, 'ok');
+      }catch(e){
+        toast('บันทึกทั้งหมดไม่สำเร็จ: ' + (e.message || e), 'err');
+      }
+    }
+
+    function initProductPriceSettings(){
+      renderProductPriceSettings();
+      document.getElementById('priceCategoryFilter')?.addEventListener('change', renderProductPriceSettings);
+      document.getElementById('priceSearchInput')?.addEventListener('input', () => {
+        clearTimeout(state.productPriceTimer);
+        state.productPriceTimer = setTimeout(renderProductPriceSettings, 160);
+      });
+      document.getElementById('btnReloadEstimatedPrices')?.addEventListener('click', async () => {
+        await loadProductEstimatedPrices();
+        toast('รีโหลดราคาประเมินแล้ว', 'ok');
+      });
+      document.getElementById('btnSaveAllEstimatedPrices')?.addEventListener('click', saveAllEstimatedPrices);
+    }
+
     const today = () => new Date();
     const daysSince = (iso) => {
       if(!iso) return Number.POSITIVE_INFINITY;
@@ -1208,6 +2788,145 @@
       const t = today();
       return Math.floor((t - d)/(1000*60*60*24));
     };
+
+    function iso10(v){
+      const s = String(v || '').trim();
+      return s ? s.slice(0,10) : '';
+    }
+    function daysBetweenISO(aISO, bISO){
+      const a = iso10(aISO), b = iso10(bISO);
+      if(!a || !b) return null;
+      const [ay,am,ad] = a.split('-').map(Number);
+      const [by,bm,bd] = b.split('-').map(Number);
+      if(!ay || !am || !ad || !by || !bm || !bd) return null;
+      return Math.floor((Date.UTC(by,bm-1,bd) - Date.UTC(ay,am-1,ad)) / 86400000);
+    }
+    function isInterestedOutcome(outcome){
+      return /^สนใจ/.test(String(outcome || '').trim());
+    }
+    function isHardRejectOutcome(outcome){
+      const s = String(outcome || '').trim();
+      return s.includes('เบอร์ผิด') || s.includes('ไม่น่าจะกลับมา') || /^ไม่สนใจ/.test(s);
+    }
+    function isNoContactOutcome(outcome){
+      const s = String(outcome || '').trim();
+      return s.includes('ไม่รับสาย') || s.includes('ปิดเครื่อง') || s.includes('โทรไม่ติด');
+    }
+    function saleDateForRecord(r){
+      return iso10(r?.date || r?.created_at || '');
+    }
+    function pitchDateForRecord(p){
+      return iso10(p?.created_at || p?.date || '');
+    }
+    function allSalesForCustomer(v){
+      const opd = pad4(v?.opd || '');
+      const phone = normPhone(v?.phone || '');
+      const name = String(v?.name || '').trim().toLowerCase();
+      const rows = state.allSales.filter(r => {
+        const ropd = pad4(r.opd || '');
+        if(opd && /^\d{4}$/.test(opd) && opd !== '0000' && ropd === opd) return true;
+        const rphone = normPhone(r.phone || '');
+        if(phone && rphone && rphone === phone) return true;
+        const rname = String(r.name || '').trim().toLowerCase();
+        return !!name && !!rname && rname === name;
+      });
+      rows.sort((a,b)=> String(saleDateForRecord(b)).localeCompare(String(saleDateForRecord(a))));
+      return rows;
+    }
+    function countNoContactStreak(pitches){
+      let n = 0;
+      for(const p of pitches || []){
+        if(isNoContactOutcome(p.outcome)) n++;
+        else break;
+      }
+      return n;
+    }
+    function postInterestFollowupsWithoutVisit(pitches, lastSaleDate){
+      const rows = (pitches || []).slice().sort((a,b)=> String(pitchDateForRecord(a)).localeCompare(String(pitchDateForRecord(b))));
+      let latestInterestDate = '';
+      rows.forEach(p => {
+        const d = pitchDateForRecord(p);
+        if(isInterestedOutcome(p.outcome) && d) latestInterestDate = d;
+      });
+      if(!latestInterestDate) return { hasInterest:false, count:0 };
+      if(lastSaleDate && lastSaleDate > latestInterestDate) return { hasInterest:true, count:0, converted:true };
+      const followups = rows.filter(p => {
+        const d = pitchDateForRecord(p);
+        return d && d > latestInterestDate;
+      });
+      return { hasInterest:true, count:followups.length, converted:false };
+    }
+    function contactBadgeHTML(info){
+      const status = String(info.status || 'ควรโทร');
+      let cls = 'b-gray';
+      if(status === 'ควรโทร') cls = 'b-ok';
+      else if(status === 'รอติดต่อภายหลัง') cls = 'b-gray';
+      else if(status === 'พักติดต่อ') cls = 'b-warn';
+      else if(status === 'หยุดติดต่อ') cls = 'b-bad';
+      return `<span class="badge ${cls}">${esc(status)}</span>`;
+    }
+    function computeContactReasonForCustomer(v){
+      const opd = pad4(v?.opd || '');
+      const pitches = (state.pitchFullCache.get(opd) || []).slice()
+        .sort((a,b)=> String(pitchDateForRecord(b)).localeCompare(String(pitchDateForRecord(a))));
+      const sales = allSalesForCustomer(v);
+      const lastSaleDate = sales[0] ? saleDateForRecord(sales[0]) : (v?.last ? iso10(v.last) : '');
+      const latestPitch = pitches[0] || null;
+      const lastPitchDate = latestPitch ? pitchDateForRecord(latestPitch) : '';
+      const lastOutcome = latestPitch?.outcome || '';
+      const todayStr = ymdLocal(new Date());
+      const daysFromSale = lastSaleDate ? daysBetweenISO(lastSaleDate, todayStr) : null;
+      const daysFromPitch = lastPitchDate ? daysBetweenISO(lastPitchDate, todayStr) : null;
+      const noContactStreak = countNoContactStreak(pitches);
+      const postInterest = postInterestFollowupsWithoutVisit(pitches, lastSaleDate);
+      const isVIP = Number(v?.revenue || 0) >= 150000;
+
+      let status = 'ควรโทร';
+      let reason = '';
+
+      if(lastSaleDate && daysFromSale !== null && daysFromSale >= 540){
+        status = 'หยุดติดต่อ';
+        reason = `ไม่มา ${daysFromSale.toLocaleString()} วัน (เกือบ 1 ปีครึ่ง+)`;
+      }else if(isHardRejectOutcome(lastOutcome)){
+        status = 'หยุดติดต่อ';
+        reason = lastOutcome.includes('เบอร์ผิด') ? 'เบอร์ผิด' : 'ปฏิเสธชัดเจนล่าสุด';
+      }else if(lastPitchDate && lastPitchDate === todayStr){
+        status = 'รอติดต่อภายหลัง';
+        reason = 'โทรวันนี้แล้ว ไม่ควรโทรซ้ำ';
+      }else if(lastSaleDate && lastPitchDate && lastSaleDate > lastPitchDate){
+        const waitText = (daysFromSale !== null && daysFromSale < 180)
+          ? `มาแล้วหลังโทรล่าสุด พักโทรจนกว่าจะครบ 6 เดือน (มาแล้ว ${daysFromSale.toLocaleString()} วัน)`
+          : `มาแล้วหลังโทรล่าสุด ${daysFromSale !== null ? daysFromSale.toLocaleString() + ' วัน' : ''}`;
+        status = daysFromSale !== null && daysFromSale < 180 ? 'พักติดต่อ' : 'รอติดต่อภายหลัง';
+        reason = waitText;
+      }else if(lastSaleDate && daysFromSale !== null && daysFromSale < 120){
+        status = 'รอติดต่อภายหลัง';
+        reason = `เพิ่งมา ${daysFromSale.toLocaleString()} วัน ยังไม่ถึง 4 เดือน`;
+      }else if(noContactStreak >= 3){
+        status = 'พักติดต่อ';
+        reason = `ติดต่อไม่ได้ ${noContactStreak} ครั้งติด`;
+      }else if(postInterest.hasInterest && postInterest.count >= 2 && !postInterest.converted && !isNoContactOutcome(lastOutcome)){
+        status = 'พักติดต่อ';
+        reason = `เคยสนใจ แต่ตามอีก ${postInterest.count} ครั้งยังไม่มา`;
+      }else if(isNoContactOutcome(lastOutcome)){
+        status = 'รอติดต่อภายหลัง';
+        reason = noContactStreak > 0
+          ? `ล่าสุดติดต่อไม่ได้ ${noContactStreak} ครั้ง ยังพอโทรซ้ำได้`
+          : 'ล่าสุดติดต่อไม่ได้';
+      }else if(!pitches.length){
+        status = 'ควรโทร';
+        reason = lastSaleDate && daysFromSale !== null ? `ยังไม่เคยโทร / ไม่ได้มา ${daysFromSale.toLocaleString()} วัน` : 'ยังไม่เคยโทร';
+      }else{
+        status = 'ควรโทร';
+        const base = lastSaleDate && daysFromSale !== null
+          ? `ไม่ได้มา ${daysFromSale.toLocaleString()} วัน`
+          : (daysFromPitch !== null ? `โทรล่าสุด ${daysFromPitch.toLocaleString()} วันก่อน` : 'ควรติดตาม');
+        reason = isVIP ? `VIP + ${base}` : base;
+      }
+
+      if(!reason) reason = '-';
+      return { status, reason, isVIP, lastSaleDate, lastPitchDate, lastOutcome };
+    }
 
     function buildFinalRows(){
       const m=currentCustomers();
@@ -1244,6 +2963,7 @@
           lastPitchDays: isFinite(days)? days : null,
           lastOutcomeStr: outcomeStr,
           pitchCount,
+          contactInfo: computeContactReasonForCustomer(v),
           profile: state.profileByOpd.get(v.opd) || ''
         };
       });
@@ -1261,6 +2981,7 @@
           case 6: return r.recency||0;
           case 7: return `${r.rfm||''} ${r.abc||''}`.toLowerCase();
           case 8: return (r.lastPitchDays!=null? r.lastPitchDays : Number.POSITIVE_INFINITY);
+          case 9: return `${r.contactInfo?.status || ''} ${r.contactInfo?.reason || ''}`.toLowerCase();
           default: return 0;
         }
       };
@@ -1318,7 +3039,10 @@
           <td style="color:${r.recColor}">${r.recency}</td>
           <td>${rfmBadge}<div style="margin-top:4px">${abcBadge}</div></td>
           <td class="lp-cell" title="${esc(pitchTitle)}">${esc(pitchText)}</td>
-          <td><button class="icon-btn" type="button" onclick="openCustomerModal('${esc(key)}')">ดู</button></td>
+          <td title="${esc((r.contactInfo?.status || '') + ' — ' + (r.contactInfo?.reason || ''))}">
+            ${contactBadgeHTML(r.contactInfo || {})}
+            <div class="sub-muted" style="margin-top:4px;line-height:1.35">${esc(r.contactInfo?.reason || '-')}</div>
+          </td>
         </tr>`;
       }).join('') || `<tr><td colspan="10" class="sub-muted">ไม่มีลูกค้าตามเงื่อนไข</td></tr>`;
     }
@@ -1357,6 +3081,7 @@
       renderFinalTable();
 
       await fetchPitchSummaryBatch(opds);
+      await fetchPitchFullBatch(opds);
       if(token !== state.lastHydrateToken) return;
 
       buildFinalRows();
@@ -1368,9 +3093,12 @@
       const abcRes = computeABC();
       renderRecencyDistribution();
       renderSpendBands();
+      renderWeekdayRevenueStats();
+      renderAgeRangeStats();
 
       updateAppliedBanner();
       updateKpis();
+      if(document.getElementById('productView')?.classList.contains('active')) renderProductInsight();
 
       hydratePitchSummaryForCurrentRows().catch(()=>{});
     }
@@ -1419,6 +3147,35 @@
       state.appliedNote = `— แสดงตาม: AOV ${label}`;
       state.selectedKeys = null;
       const pred = v => v.aov>=min && v.aov<=max;
+      state.reconApplySpecial = ()=> setSelectedByPredicate(pred);
+      setSelectedByPredicate(pred);
+    }
+
+    function applyWeekdayDetail(weekday, bucketKey, label){
+      const bucket = dayPeriodBuckets.find(x => x.key === bucketKey) || dayPeriodBuckets[0];
+      state.appliedNote = `— แสดงตาม: รายได้วัน${label || weekdayNamesTH[weekday]}`;
+      state.selectedKeys = null;
+
+      const pred = v => (v.bills || []).some(b => {
+        const w = weekdayIndexFromDate(b.date);
+        if(w !== Number(weekday)) return false;
+        if(bucket.key === 'all') return true;
+        return dayPeriodKeyFromDate(b.date) === bucket.key;
+      });
+
+      state.reconApplySpecial = ()=> setSelectedByPredicate(pred);
+      setSelectedByPredicate(pred);
+    }
+
+    function applyAgeBucket(min, max, label){
+      state.appliedNote = `— แสดงตาม: ช่วงอายุ ${label} ปี`;
+      state.selectedKeys = null;
+
+      const pred = v => {
+        const age = state.ageByOpd.get(v.opd);
+        return Number.isFinite(age) && age >= min && age <= max;
+      };
+
       state.reconApplySpecial = ()=> setSelectedByPredicate(pred);
       setSelectedByPredicate(pred);
     }
@@ -1542,6 +3299,10 @@
         const preset = chip.getAttribute('data-range');
         state.appliedNote=''; state.reconApplySpecial=null;
         state.selectedKeys=null;
+        if(preset === 'customRange'){
+          openRangeModal();
+          return;
+        }
         if(preset.startsWith('abs:')){
           applyAbsentChip(preset.replace('abs:',''));
         }else{
@@ -1666,6 +3427,53 @@
         alert('เกิดข้อผิดพลาดในการโหลดข้อมูล Pitch');
       }
     }
+
+    function openDashboardFullscreen(type){
+      const meta = {
+        weekday: {
+          title: 'สถิติรายได้แยกวัน 7 วัน',
+          hint: 'แสดงจำนวนลูกค้า / จำนวนบิล / ยอดขาย แยกตามช่วงวันที่ 1–10, 11–20, 21–สิ้นเดือน',
+          selector: '[data-dash-card="weekday"] .table-wrap'
+        },
+        age: {
+          title: 'สถิติช่วงอายุ',
+          hint: 'อิงเฉพาะลูกค้าที่มีข้อมูลปีเกิด กดปุ่มดูเพื่อกรองรายชื่อช่วงอายุนั้น',
+          selector: '[data-dash-card="age"] .table-wrap'
+        }
+      }[type];
+      if(!meta) return;
+
+      const source = document.querySelector(meta.selector);
+      const modal = document.getElementById('dashboard-fullscreen-modal');
+      const body = document.getElementById('dashboardFullBody');
+      const title = document.getElementById('dashboardFullTitle');
+      const hint = document.getElementById('dashboardFullHint');
+      if(!source || !modal || !body) return;
+
+      const clone = source.cloneNode(true);
+      clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+      clone.querySelectorAll('.dash-openable').forEach(el => el.classList.remove('dash-openable'));
+
+      title.textContent = meta.title;
+      hint.textContent = meta.hint;
+      body.innerHTML = '';
+      body.appendChild(clone);
+      modal.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeDashboardFullscreen(event){
+      if(event && event.target && event.target.id !== 'dashboard-fullscreen-modal') return;
+      const modal = document.getElementById('dashboard-fullscreen-modal');
+      const body = document.getElementById('dashboardFullBody');
+      if(modal) modal.classList.remove('show');
+      if(body) body.innerHTML = '';
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape') closeDashboardFullscreen();
+    });
 
     /* Customer modal (ยกของเดิมมาแบบตรงๆ) */
     async function openCustomerModal(key) {
@@ -1868,10 +3676,12 @@
     document.getElementById('openCustomRange')?.addEventListener('click', openRangeModal);
 
     /* Init */
+    initViewTabs();
+    initProductInsight();
     (async function init(){
       showLoading(true);
       try{
-        await Promise.all([loadAllSales(), loadAllProfiles()]);
+        await Promise.all([loadAllSales(), loadAllProfiles(), loadProductEstimatedPrices()]);
         // default active "all"
         document.querySelectorAll('.chip[data-range]').forEach(c=>c.classList.remove('active'));
         const allChip = document.querySelector('.chip[data-range="all"]');
@@ -1890,6 +3700,8 @@
     /* ==========================
        NOTE: ฟังก์ชัน global ที่ถูกเรียกจาก HTML
        ========================== */
+    window.openDashboardFullscreen = openDashboardFullscreen;
+    window.closeDashboardFullscreen = closeDashboardFullscreen;
     window.openCustomerModal = openCustomerModal;
     window.closeCustomerModal = closeCustomerModal;
     window.openPitchModalForOPD = openPitchModalForOPD;
@@ -1901,6 +3713,9 @@
     window.applyABC = applyABC;
     window.applyRFM = applyRFM;
     window.applySpend = applySpend;
+    window.saveEstimatedPriceByKey = saveEstimatedPriceByKey;
+    window.applyWeekdayDetail = applyWeekdayDetail;
+    window.applyAgeBucket = applyAgeBucket;
   </script>
 
   {% include "floating_menu.html" %}

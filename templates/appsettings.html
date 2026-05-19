@@ -1,2137 +1,610 @@
-<!-- templates/appsettings.html (FULL + UX ปรับใหม่ + เครื่องมือเพิ่มรูป/ข้อความ/ไดคัท/ยางลบ/Undo/Export/Share/เปิดรูป) -->
+<!-- templates/appsettings.html : Simple clean settings, no A4 -->
 <!doctype html>
 <html lang="th">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1, viewport-fit=cover" />
   <title>ตั้งค่า</title>
-
   <style>
     :root{
-      --teal:#0f766e;
-      --teal-600:#0d9488;
-      --bg:#f7f7f7;
-      --card:#ffffff;
-      --muted:#6b7280;
-      --line:#e5e7eb;
-      --danger:#c62828;
-      --shadow-soft: 0 10px 30px rgba(0,0,0,.08);
+      --teal:#0f766e; --teal2:#0d9488;
+      --bg:#f6fbfa; --card:#fff; --text:#0f172a; --muted:#64748b;
+      --line:#e2e8f0; --soft:#f8fafc; --danger:#dc2626;
+      --shadow:0 8px 22px rgba(2,8,23,.06);
       --radius:16px;
     }
-
     *{box-sizing:border-box}
-    html,body{height:100%}
     body{
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif;
       margin:0;
-      background: var(--bg);
-      color:#111827;
-      padding: 10px 10px 140px;
-      font-size:12px; /* ตามที่ขอ: 12 ให้หมด */
+      padding:10px 10px 120px;
+      background:var(--bg);
+      color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif;
+      font-size:12px;
     }
-
-    .wrap{max-width:980px;margin:0 auto;padding:6px 6px 0;}
-
+    input,select,button{font:inherit;font-size:12px}
+    .wrap{max-width:980px;margin:0 auto}
     .topbar{
-      background: linear-gradient(135deg, rgba(15,118,110,.10), rgba(13,148,136,.06));
-      border:1px solid rgba(15,118,110,.10);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-soft);
-      padding:14px 14px 12px;
-      margin-bottom:12px;
-    }
-    .title{display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
-    h1{font-size:16px; margin:0; letter-spacing:.2px;}
-    .subtitle{color:var(--muted); font-size:12px; margin-top:6px; line-height:1.4}
-    .pill{
-      display:inline-flex; align-items:center; gap:6px;
-      padding:6px 10px; border-radius:999px;
-      background: rgba(15,118,110,.10);
-      color: var(--teal);
-      font-size:12px;
-      white-space:nowrap;
-      border:1px solid rgba(15,118,110,.15);
-    }
-
-    .card{
-      background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-soft);
-      padding: 12px;
-      border:1px solid rgba(17,24,39,.06);
-      margin-bottom:12px;
-    }
-
-    .tabsWrap{
-      position: sticky;
-      top: 8px;
-      z-index: 5;
-      background: rgba(247,247,247,.88);
-      backdrop-filter: blur(10px);
-      padding: 8px 0 10px;
-      margin: -4px 0 10px;
-    }
-    .tabs{display:flex; gap:8px; flex-wrap:wrap;}
-    .tabBtn{
-      appearance:none;
-      border:1px solid rgba(17,24,39,.10);
       background:#fff;
-      color:#111827;
-      border-radius:999px;
-      padding:9px 12px;
-      font-size:12px;
-      cursor:pointer;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      box-shadow: 0 6px 16px rgba(0,0,0,.06);
-      transition: transform .08s ease, box-shadow .12s ease, background .12s ease;
-    }
-    .tabBtn:active{transform: translateY(1px)}
-    .tabBtn.active{
-      background: linear-gradient(135deg, rgba(15,118,110,.14), rgba(13,148,136,.10));
-      border-color: rgba(15,118,110,.35);
-      color: var(--teal);
-      box-shadow: 0 10px 22px rgba(15,118,110,.12);
-      font-weight: 700;
-    }
-
-    .tag{
-      display:inline-block;
-      padding:2px 8px;
-      border-radius:999px;
-      background: #eef1f7;
-      font-size:12px;
-      border: 1px solid rgba(17,24,39,.08);
-    }
-    .tag.old{background:#fff7d6;border-color: rgba(202,138,4,.25); color:#92400e;}
-    .tag.off{background:#fdecec;border-color: rgba(198,40,40,.25); color:#8a1d1d;}
-    .tag.on{background:#e9fbf7;border-color: rgba(13,148,136,.25); color:#0b5d56;}
-    .muted{color:var(--muted); font-size:12px}
-
-    h2{font-size:12px; margin: 8px 0 10px; letter-spacing:.2px;}
-
-    .bar{
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:12px;
       display:flex;
-      gap:10px;
-      align-items:center;
-      flex-wrap:wrap;
-      margin: 8px 0 10px;
-    }
-    .bar .grow{flex:1; min-width: 220px;}
-    .bar .right{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
-    .field{display:flex; flex-direction:column; gap:6px;}
-    .field label{font-size:12px; color:var(--muted);}
-
-    input,select,button,textarea{
-      font: inherit;
-      font-size:12px;
-      border-radius: 12px;
-      border:1px solid rgba(17,24,39,.14);
-      padding: 8px 9px;
-      outline:none;
-      background:#fff;
-      transition: box-shadow .12s ease, border-color .12s ease, transform .08s ease;
-    }
-    textarea{min-height:74px; resize:vertical}
-    input:focus,select:focus,textarea:focus{
-      border-color: rgba(13,148,136,.55);
-      box-shadow: 0 0 0 4px rgba(13,148,136,.14);
-    }
-
-    .btn{
-      cursor:pointer;
-      border:none;
-      color:#fff;
-      background: linear-gradient(135deg, var(--teal), var(--teal-600));
-      box-shadow: 0 10px 22px rgba(15,118,110,.18);
-      font-weight:700;
-      white-space:nowrap;
-      padding: 8px 10px;
-    }
-    .btn:active{transform: translateY(1px)}
-    .btn.secondary{background:#111827; box-shadow: 0 10px 22px rgba(0,0,0,.16);}
-    .btn.ghost{
-      background:#eef7f6;
-      color: var(--teal);
-      border:1px solid rgba(15,118,110,.18);
-      box-shadow:none;
-      font-weight:700;
-    }
-    .btn.danger{
-      background: linear-gradient(135deg, #d32f2f, #b71c1c);
-      box-shadow: 0 10px 22px rgba(211,47,47,.18);
-    }
-    .btn.small{padding:7px 9px; font-size:12px; box-shadow:none}
-    .btn.small.secondary{box-shadow:none}
-    .btn.small.ghost{box-shadow:none}
-
-    /* Lists */
-    .list{
-      border:1px solid rgba(17,24,39,.08);
-      border-radius: 14px;
-      overflow:hidden;
-      background:#fff;
-    }
-    .rowItem{
-      display:grid;
-      grid-template-columns: 1.4fr .9fr .7fr auto;
-      gap:10px;
-      padding: 10px 10px;
-      border-bottom:1px solid rgba(17,24,39,.06);
-      align-items:center;
-    }
-    .rowItem:last-child{border-bottom:none}
-    .rowMain{display:flex; flex-direction:column; gap:4px; min-width:0;}
-    .nameLine{display:flex; align-items:center; gap:8px; min-width:0;}
-    .nameLine b{font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-    .subLine{font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-    .mini{font-size:12px; color:var(--muted);}
-    .actions{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
-
-    @media (max-width: 780px){
-      .rowItem{grid-template-columns: 1fr; gap:8px;}
-      .actions{justify-content:flex-start}
-    }
-
-    /* Drawer */
-    .backdrop{
-      position:fixed; inset:0;
-      background: rgba(0,0,0,.35);
-      display:none;
-      z-index: 50;
-    }
-    .drawer{
-      position:fixed;
-      top:0; right:0;
-      height:100%;
-      width:min(420px, 92vw);
-      background:#fff;
-      border-left:1px solid rgba(17,24,39,.10);
-      box-shadow: -20px 0 60px rgba(0,0,0,.20);
-      transform: translateX(100%);
-      transition: transform .18s ease;
-      z-index: 60;
-      display:flex;
-      flex-direction:column;
-    }
-    .drawer.open{transform: translateX(0)}
-    .backdrop.show{display:block}
-    .drawerHeader{
-      padding: 12px;
-      border-bottom:1px solid rgba(17,24,39,.08);
-      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
-    }
-    .drawerTitle{display:flex; flex-direction:column; gap:4px; min-width:0;}
-    .drawerTitle b{font-size:12px}
-    .drawerBody{
-      padding: 12px;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      overflow:auto;
-    }
-    .drawerFooter{
-      padding: 12px;
-      border-top:1px solid rgba(17,24,39,.08);
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      justify-content:flex-end;
-    }
-    .grid2{display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
-    .grid3{display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;}
-    .closeBtn{
-      border:1px solid rgba(17,24,39,.12);
-      background:#fff;
-      color:#111827;
-      box-shadow:none;
-      padding: 8px 10px;
-      border-radius: 12px;
-      cursor:pointer;
-    }
-
-    /* Toast */
-    .toast{
-      position: fixed;
-      left: 50%;
-      bottom: 16px;
-      transform: translateX(-50%);
-      background: rgba(17,24,39,.92);
-      color:#fff;
-      padding: 10px 12px;
-      border-radius: 12px;
-      font-size:12px;
-      box-shadow: 0 12px 30px rgba(0,0,0,.22);
-      display:none;
-      z-index: 80;
-      max-width: 92vw;
-      text-align:center;
-    }
-
-    /* ===== Receipt Composer ===== */
-    .rcWrap{
-      display:grid;
-      grid-template-columns: 1fr 380px;
-      gap:12px;
-      align-items:start;
-    }
-    .rcStage{
-      background: #fff;
-      border: 1px solid rgba(17,24,39,.10);
-      border-radius: 14px;
-      box-shadow: var(--shadow-soft);
-      padding: 12px;
-    }
-
-    .rcTopTools{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
       align-items:center;
       justify-content:space-between;
-      margin-bottom:8px;
+      gap:10px;
+      margin-bottom:10px;
     }
-    .rcTopLeft{
-      display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+    .title{font-size:16px;font-weight:900;color:#064e3b;margin:0}
+    .hint{color:var(--muted);font-size:11px;margin-top:2px}
+    .tabs{
+      position:sticky;
+      top:8px;
+      z-index:20;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      padding:8px 0;
+      background:rgba(246,251,250,.92);
+      backdrop-filter:blur(8px);
     }
-    .rcTopRight{
-      display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+    .tabBtn{
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:999px;
+      padding:9px 13px;
+      font-weight:900;
+      cursor:pointer;
+      color:#0f172a;
     }
-
-    .modePill{
+    .tabBtn.active{background:var(--teal);border-color:var(--teal);color:#fff}
+    .panel{display:none}
+    .panel.active{display:block}
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      margin-bottom:10px;
+      overflow:hidden;
+    }
+    .cardHd{
+      padding:10px 12px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      background:#fbfffe;
+    }
+    .cardTitle{font-weight:900;color:#064e3b;font-size:13px}
+    .cardBody{padding:10px 12px}
+    .btn{
+      border:none;
+      border-radius:12px;
+      padding:9px 11px;
+      font-weight:900;
+      cursor:pointer;
+      background:#e2e8f0;
+      color:#0f172a;
       display:inline-flex;
       align-items:center;
+      justify-content:center;
       gap:6px;
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:12px;
-      border:1px solid rgba(17,24,39,.12);
-      background:#fff;
       white-space:nowrap;
     }
-    .modePill.warn{
-      border-color: rgba(211,47,47,.25);
-      background: rgba(211,47,47,.08);
-      color:#8a1d1d;
-      font-weight:700;
-    }
-    .modePill.info{
-      border-color: rgba(30,64,175,.25);
-      background: rgba(30,64,175,.08);
-      color:#1e3a8a;
-      font-weight:700;
-    }
-
-    .paperOuter{
+    .btn.primary{background:var(--teal);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid var(--line);color:#0f172a}
+    .btn.danger{background:#fee2e2;color:#991b1b}
+    .btn.ok{background:#dcfce7;color:#166534}
+    .btn.small{padding:7px 9px;border-radius:10px}
+    .ipt{
       width:100%;
-      display:flex;
-      justify-content:center;
-      padding: 8px 0;
-    }
-    .paper{
-      width: min(620px, 92vw);
-      background: #fff;
-      border-radius: 10px;
-      border: 1px solid rgba(17,24,39,.14);
-      box-shadow: 0 12px 26px rgba(0,0,0,.10);
-      position: relative;
-      overflow:hidden;
-      touch-action: none;
-      user-select:none;
-      -webkit-user-select:none;
-    }
-    canvas#rcCanvas{
-      width:100%;
-      height:100%;
-      display:block;
-      pointer-events:none;
-    }
-
-    .rcSide{
+      border:1px solid #cbd5e1;
       background:#fff;
-      border:1px solid rgba(17,24,39,.08);
-      border-radius: 14px;
-      box-shadow: var(--shadow-soft);
-      padding: 12px;
-      position: sticky;
-      top: 72px;
+      border-radius:12px;
+      padding:9px 10px;
+      outline:none;
+      min-width:0;
     }
-
-    .sep{border:none;border-top:1px solid rgba(17,24,39,.08); margin: 10px 0;}
-    .rangeRow{display:flex; gap:10px; align-items:center;}
-    input[type="range"]{width:100%; padding:0; border:none; box-shadow:none;}
-
-    .btnRow{display:flex; gap:8px; flex-wrap:wrap;}
-    .btnRow .btn{flex:1}
-    .miniRow{display:flex; gap:8px; flex-wrap:wrap;}
-    .miniRow .btn{flex:1}
-
-    .noteBox{
-      background: rgba(15,118,110,.06);
-      border: 1px solid rgba(15,118,110,.14);
-      border-radius: 12px;
-      padding: 10px;
-      color:#0f3d3a;
-      line-height:1.4;
+    .ipt:focus{border-color:var(--teal2);box-shadow:0 0 0 3px rgba(13,148,136,.12)}
+    label{display:block;font-weight:800;color:#475569;margin:0 0 5px;font-size:11px}
+    .filters{display:grid;grid-template-columns:1fr 160px 130px auto;gap:8px;align-items:end}
+    .filters.cat{grid-template-columns:1fr 130px auto}
+    @media(max-width:720px){.filters,.filters.cat{grid-template-columns:1fr}.topbar{align-items:flex-start}.topbar .btn{margin-top:6px}}
+    .list{display:grid;gap:8px}
+    .groupTitle{
+      margin:12px 2px 6px;
+      color:#064e3b;
+      font-weight:900;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
     }
-
-    .selCard{
-      border:1px solid rgba(17,24,39,.10);
-      background: #fff;
-      border-radius: 12px;
-      padding: 10px;
-      line-height:1.4;
+    .countPill{background:#ecfdf5;border:1px solid #bbf7d0;color:#047857;border-radius:999px;padding:3px 8px;font-weight:900;font-size:11px}
+    .row{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:10px;
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:8px;
+      align-items:center;
     }
-    .selHead{display:flex; align-items:center; justify-content:space-between; gap:8px;}
-    .kbd{
-      border:1px solid rgba(17,24,39,.14);
-      background: rgba(17,24,39,.04);
-      padding:2px 6px;
-      border-radius: 8px;
-      font-size:12px;
-      color: #111827;
+    .row:hover{border-color:#a7f3d0;box-shadow:0 6px 18px rgba(2,8,23,.05)}
+    .name{font-weight:900;color:#0f172a;line-height:1.25;word-break:break-word}
+    .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;color:var(--muted);font-size:11px}
+    .chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:#f8fafc;border-radius:999px;padding:3px 7px;white-space:nowrap}
+    .chip.on{background:#ecfdf5;color:#047857;border-color:#bbf7d0;font-weight:900}
+    .chip.off{background:#fef2f2;color:#b91c1c;border-color:#fecaca;font-weight:900}
+    .rowActions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+    @media(max-width:520px){.row{grid-template-columns:1fr}.rowActions{justify-content:flex-start}}
+    .empty{padding:16px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px;background:#fff}
+    .drawerBackdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;z-index:80}
+    .drawerBackdrop.show{display:block}
+    .drawer{
+      position:fixed;right:0;top:0;height:100%;width:min(420px,94vw);
+      background:#fff;z-index:90;transform:translateX(104%);transition:.18s ease;
+      box-shadow:-18px 0 48px rgba(2,8,23,.22);display:flex;flex-direction:column;
     }
-
-    @media (max-width: 980px){
-      .rcWrap{grid-template-columns: 1fr;}
-      .rcSide{position:relative; top:auto;}
-    }
+    .drawer.open{transform:translateX(0)}
+    .drawerHd{padding:13px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:flex-start;background:#fbfffe}
+    .drawerTitle{font-weight:900;color:#064e3b;font-size:14px}
+    .drawerSub{color:var(--muted);font-size:11px;margin-top:2px}
+    .drawerBody{padding:13px;display:grid;gap:10px;overflow:auto}
+    .drawerFt{padding:13px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;background:#fff}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    @media(max-width:520px){.grid2{grid-template-columns:1fr}}
+    .miniNote{background:#f8fafc;border:1px solid var(--line);border-radius:13px;padding:9px 10px;color:#475569;line-height:1.35}
+    .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 12px;border-radius:13px;box-shadow:0 14px 34px rgba(2,8,23,.22);z-index:120;display:none;font-weight:800;max-width:92vw;text-align:center}
   </style>
 </head>
-
 <body>
   <div class="wrap">
-
     <div class="topbar">
-      <div class="title">
-        <div>
-          <h1>ตั้งค่า</h1>
-          <div class="subtitle">จัดหมวดและสินค้าให้เรียบร้อย บิลเก่าไม่กระทบ ลบแล้วกู้คืนได้</div>
-        </div>
-        <div class="pill">🧾 ใช้ล็อกอินเดิม</div>
+      <div>
+        <h1 class="title">ตั้งค่า</h1>
+        <div class="hint">จัดสินค้า หมวด ราคา และราคาประเมิน</div>
       </div>
+      <button class="btn primary" id="topAddBtn" type="button">+ เพิ่ม</button>
     </div>
 
-    <div class="card">
-      <div class="tabsWrap">
-        <div class="tabs">
-          <button id="tabCats" class="tabBtn active" type="button">หมวดสินค้า</button>
-          <button id="tabProds" class="tabBtn" type="button">สินค้า</button>
-          <button id="tabTrash" class="tabBtn" type="button">ถังขยะ <span class="tag old">เก่า</span></button>
-          <button id="tabRC" class="tabBtn" type="button">สร้างA4</button>
-        </div>
-      </div>
-
-      <!-- ============ CATEGORIES ============ -->
-      <div id="panelCats">
-        <div class="bar">
-          <div class="field grow">
-            <label>ค้นหา</label>
-            <input id="catSearch" placeholder="พิมพ์ชื่อหมวด..." />
-          </div>
-          <div class="field" style="min-width:170px;">
-            <label>สถานะ</label>
-            <select id="catFilterActive">
-              <option value="all">ทั้งหมด</option>
-              <option value="true">ใช้งาน</option>
-              <option value="false">ปิด</option>
-            </select>
-          </div>
-          <div class="right">
-            <button class="btn" id="btnOpenAddCat" type="button">+ เพิ่มหมวด</button>
-          </div>
-        </div>
-        <div class="list" id="catsList"></div>
-      </div>
-
-      <!-- ============ PRODUCTS ============ -->
-      <div id="panelProds" style="display:none;">
-        <div class="bar">
-          <div class="field grow">
-            <label>ค้นหา</label>
-            <input id="prodSearch" placeholder="พิมพ์ชื่อสินค้า..." />
-          </div>
-          <div class="field" style="min-width:170px;">
-            <label>หมวด</label>
-            <select id="prodFilterCat">
-              <option value="all">ทั้งหมด</option>
-            </select>
-          </div>
-          <div class="field" style="min-width:170px;">
-            <label>สถานะ</label>
-            <select id="prodFilterActive">
-              <option value="all">ทั้งหมด</option>
-              <option value="true">ใช้งาน</option>
-              <option value="false">ปิด</option>
-            </select>
-          </div>
-          <div class="right">
-            <button class="btn" id="btnOpenAddProd" type="button">+ เพิ่มสินค้า</button>
-          </div>
-        </div>
-        <div class="list" id="prodsList"></div>
-      </div>
-
-      <!-- ============ TRASH ============ -->
-      <div id="panelTrash" style="display:none;">
-        <div class="muted">รายการที่ “ลบ” จะอยู่ตรงนี้ (deleted_at ไม่ว่าง) กู้คืนได้</div>
-        <div class="bar">
-          <div class="field grow">
-            <label>ค้นหา</label>
-            <input id="trashSearch" placeholder="ค้นหาในถังขยะ..." />
-          </div>
-        </div>
-        <div class="list" id="trashList"></div>
-      </div>
-
-      <!-- ============ RECEIPT COMPOSER ============ -->
-      <div id="panelRC" style="display:none;">
-        <div class="rcWrap">
-          <div class="rcStage">
-            <div class="rcTopTools">
-              <div class="rcTopLeft">
-                <span class="modePill" id="rcModePill">โหมดปกติ</span>
-                <span class="muted">แตะเลือกเลเยอร์ | ลากย้าย | 2 นิ้ว ย่อ/หมุน</span>
-              </div>
-              <div class="rcTopRight">
-                <button class="btn ghost" id="rcTopAddImg" type="button">+ รูป</button>
-                <button class="btn ghost" id="rcTopAddText" type="button">+ ข้อความ</button>
-                <button class="btn ghost" id="rcTopUndo" type="button">↩︎ Undo</button>
-                <button class="btn secondary" id="rcTopSave" type="button">บันทึก</button>
-                <button class="btn" id="rcTopShare" type="button">แชร์</button>
-              </div>
-            </div>
-
-            <div class="paperOuter">
-              <div class="paper" id="rcPaper">
-                <canvas id="rcCanvas"></canvas>
-              </div>
-            </div>
-
-            <div class="muted" style="line-height:1.4;">
-              Tip: ลายเซ็นเป็นรูปพื้นขาว → ใช้ “ไดคัท” วาดเส้นล้อมให้เหลือแต่ลายเซ็น (พื้นหลังโปร่งใส)
-            </div>
-          </div>
-
-          <div class="rcSide">
-            <div class="grid2">
-              <div class="field">
-                <label>ขนาด</label>
-                <select id="rcPaperSize">
-                  <option value="A3">A3</option>
-                  <option value="A4" selected>A4</option>
-                  <option value="A5">A5</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>แนว</label>
-                <select id="rcPaperOri">
-                  <option value="portrait" selected>ตั้ง</option>
-                  <option value="landscape">นอน</option>
-                </select>
-              </div>
-            </div>
-
-            <input id="rcFile" type="file" accept="image/*" multiple style="display:none;">
-
-            <hr class="sep">
-
-            <div class="selCard">
-              <div class="selHead">
-                <b>เลเยอร์ที่เลือก</b>
-                <span class="muted" id="rcSelType">-</span>
-              </div>
-              <div class="muted" id="rcSelHint" style="margin-top:6px;">แตะบนกระดาษเพื่อเลือก</div>
-
-              <!-- Actions (always) -->
-              <div id="rcCommonControls" style="display:none; margin-top:10px;">
-                <div class="miniRow">
-                  <button class="btn ghost" id="rcBringFront" type="button">ขึ้นหน้า</button>
-                  <button class="btn ghost" id="rcSendBack" type="button">ลงหลัง</button>
-                </div>
-                <div class="miniRow" style="margin-top:8px;">
-                  <button class="btn ghost" id="rcDuplicate" type="button">ทำซ้ำ</button>
-                  <button class="btn danger" id="rcDelete" type="button">ลบ</button>
-                </div>
-
-                <div class="field" style="margin-top:10px;">
-                  <label>ความทึบ</label>
-                  <div class="rangeRow">
-                    <input id="rcOpacity" type="range" min="10" max="100" value="100">
-                    <span class="muted" id="rcOpacityTxt">100%</span>
-                  </div>
-                </div>
-
-                <div class="miniRow" style="margin-top:8px;">
-                  <button class="btn ghost" id="rcCenter" type="button">จัดกลาง</button>
-                  <button class="btn ghost" id="rcResetTransform" type="button">รีเซ็ต</button>
-                </div>
-
-                <!-- Image tools -->
-                <div id="rcImageTools" style="display:none; margin-top:10px;">
-                  <div class="btnRow">
-                    <button class="btn danger" id="rcCutout" type="button">✂️ ไดคัท</button>
-                    <button class="btn ghost" id="rcEraser" type="button">🧽 ยางลบ</button>
-                  </div>
-
-                  <!-- Cutout controls -->
-                  <div id="rcCutoutControls" style="display:none; margin-top:10px;">
-                    <div class="btnRow">
-                      <button class="btn secondary" id="rcCutoutDone" type="button">✅ เสร็จ</button>
-                      <button class="btn ghost" id="rcCutoutCancel" type="button">ยกเลิก</button>
-                    </div>
-                    <div class="noteBox" style="margin-top:8px;">
-                      วาดเส้นล้อม “ส่วนที่ต้องการเก็บ” (ด้านนอกจะโปร่งใส)
-                    </div>
-                  </div>
-
-                  <!-- Eraser controls -->
-                  <div id="rcEraserControls" style="display:none; margin-top:10px;">
-                    <div class="field">
-                      <label>ขนาดยางลบ</label>
-                      <div class="rangeRow">
-                        <input id="rcBrush" type="range" min="4" max="120" value="26">
-                        <span class="muted" id="rcBrushTxt">26px</span>
-                      </div>
-                    </div>
-                    <div class="btnRow">
-                      <button class="btn secondary" id="rcEraserDone" type="button">✅ เสร็จ</button>
-                      <button class="btn ghost" id="rcEraserCancel" type="button">ยกเลิก</button>
-                    </div>
-                    <div class="noteBox" style="margin-top:8px;">
-                      โหมดยางลบ: วาดบน “รูปที่เลือก” เพื่อให้โปร่งใส<br>
-                      <span class="muted">Undo ย้อนได้</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Text tools -->
-                <div id="rcTextTools" style="display:none; margin-top:10px;">
-                  <div class="field">
-                    <label>ข้อความ</label>
-                    <textarea id="rcTextValue" placeholder="พิมพ์ข้อความ..."></textarea>
-                  </div>
-                  <div class="grid3">
-                    <div class="field">
-                      <label>ขนาด</label>
-                      <input id="rcFontSize" type="number" min="8" max="96" value="22">
-                    </div>
-                    <div class="field">
-                      <label>จัดแนว</label>
-                      <select id="rcAlign">
-                        <option value="left">ซ้าย</option>
-                        <option value="center">กลาง</option>
-                        <option value="right">ขวา</option>
-                      </select>
-                    </div>
-                    <div class="field">
-                      <label>สไตล์</label>
-                      <button class="btn ghost" id="rcBold" type="button">หนา/ปกติ</button>
-                    </div>
-                  </div>
-                  <div class="miniRow" style="margin-top:8px;">
-                    <button class="btn ghost" id="rcColor" type="button">สีดำ/น้ำเงิน</button>
-                    <button class="btn ghost" id="rcTextPreset" type="button">พรีเซ็ต “ลงนามโดย”</button>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-            <hr class="sep">
-
-            <div class="field">
-              <label>คุณภาพไฟล์</label>
-              <select id="rcDpi">
-                <option value="150">150 DPI (เบา/เร็ว)</option>
-                <option value="200" selected>200 DPI (กำลังดี)</option>
-                <option value="300">300 DPI (คม/ไฟล์ใหญ่)</option>
-              </select>
-            </div>
-
-            <div class="btnRow" style="margin-top:10px;">
-              <button class="btn secondary" id="rcSave" type="button">บันทึกเป็นรูป</button>
-              <button class="btn" id="rcShare" type="button">แชร์</button>
-            </div>
-            <div class="btnRow" style="margin-top:8px;">
-              <button class="btn ghost" id="rcOpenImage" type="button">เปิดรูป</button>
-              <button class="btn ghost" id="rcClearAll" type="button">ล้างทั้งหมด</button>
-            </div>
-
-            <div class="noteBox" style="margin-top:10px;">
-              iPad: กด “แชร์” แล้วเลือก <b>Save Image / บันทึกรูปภาพ</b> เพื่อเข้า Photos ได้เร็วสุด
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="tabs">
+      <button class="tabBtn active" type="button" data-tab="products">สินค้า</button>
+      <button class="tabBtn" type="button" data-tab="categories">หมวด</button>
+      <button class="tabBtn" type="button" data-tab="trash">ถังขยะ</button>
     </div>
 
-    {% include 'floating_menu.html' %}
+    <section class="panel active" id="panel-products">
+      <div class="card">
+        <div class="cardHd">
+          <div class="cardTitle">สินค้า</div>
+          <button class="btn primary small" id="btnAddProduct" type="button">+ สินค้า</button>
+        </div>
+        <div class="cardBody">
+          <div class="filters">
+            <div><label>ค้นหา</label><input class="ipt" id="prodSearch" placeholder="ชื่อสินค้า"></div>
+            <div><label>หมวด</label><select class="ipt" id="prodFilterCat"><option value="all">ทั้งหมด</option></select></div>
+            <div><label>สถานะ</label><select class="ipt" id="prodFilterActive"><option value="all">ทั้งหมด</option><option value="true">ใช้งาน</option><option value="false">ปิด</option></select></div>
+            <div><button class="btn ghost" type="button" id="btnClearProductFilter">ล้าง</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="list" id="productsList"></div>
+    </section>
+
+    <section class="panel" id="panel-categories">
+      <div class="card">
+        <div class="cardHd">
+          <div class="cardTitle">หมวดสินค้า</div>
+          <button class="btn primary small" id="btnAddCategory" type="button">+ หมวด</button>
+        </div>
+        <div class="cardBody">
+          <div class="filters cat">
+            <div><label>ค้นหา</label><input class="ipt" id="catSearch" placeholder="ชื่อหมวด"></div>
+            <div><label>สถานะ</label><select class="ipt" id="catFilterActive"><option value="all">ทั้งหมด</option><option value="true">ใช้งาน</option><option value="false">ปิด</option></select></div>
+            <div><button class="btn ghost" type="button" id="btnClearCatFilter">ล้าง</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="list" id="catsList"></div>
+    </section>
+
+    <section class="panel" id="panel-trash">
+      <div class="card">
+        <div class="cardHd"><div class="cardTitle">ถังขยะ</div></div>
+        <div class="cardBody">
+          <div class="filters cat">
+            <div><label>ค้นหา</label><input class="ipt" id="trashSearch" placeholder="ชื่อสินค้า / หมวด"></div>
+            <div></div>
+            <div><button class="btn ghost" type="button" id="btnClearTrashFilter">ล้าง</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="list" id="trashList"></div>
+    </section>
   </div>
 
-  <!-- Drawer + backdrop -->
-  <div id="backdrop" class="backdrop"></div>
-  <div id="drawer" class="drawer" aria-hidden="true">
-    <div class="drawerHeader">
-      <div class="drawerTitle">
-        <b id="drawerHeading">แก้ไข</b>
-        <div class="muted" id="drawerSub">กรอกข้อมูลแล้วกดบันทึก</div>
+  <div id="drawerBackdrop" class="drawerBackdrop"></div>
+  <aside id="drawer" class="drawer" aria-hidden="true">
+    <div class="drawerHd">
+      <div>
+        <div class="drawerTitle" id="drawerTitle">แก้ไข</div>
+        <div class="drawerSub" id="drawerSub">กรอกเฉพาะที่จำเป็น</div>
       </div>
-      <button class="closeBtn" id="btnCloseDrawer" type="button">ปิด</button>
+      <button class="btn ghost small" type="button" id="btnCloseDrawer">ปิด</button>
     </div>
     <div class="drawerBody" id="drawerBody"></div>
-    <div class="drawerFooter" id="drawerFooter"></div>
-  </div>
+    <div class="drawerFt" id="drawerFooter"></div>
+  </aside>
 
   <div id="toast" class="toast"></div>
+  {% include 'floating_menu.html' %}
 
 <script>
-  const $ = (id) => document.getElementById(id);
+const $ = (id) => document.getElementById(id);
+let categories = [];
+let products = [];
+let activeTab = 'products';
+let drawerState = { type:null, mode:null, data:null };
 
-  let categories = [];
-  let products = [];
-  let drawerState = { type: null, mode: null, data: null };
+function toast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(()=>{ t.style.display='none'; }, 1500);
+}
 
-  function toast(msg){
-    const t = $('toast');
-    t.textContent = msg;
-    t.style.display = 'block';
-    clearTimeout(toast._timer);
-    toast._timer = setTimeout(()=>{ t.style.display='none'; }, 1400);
+function escapeHtml(v){
+  return String(v ?? '')
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'",'&#39;');
+}
+
+function num(v){
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function money(v){
+  if(v === null || v === undefined || v === '') return '-';
+  const n = Number(v);
+  if(!Number.isFinite(n)) return '-';
+  return Math.round(n).toLocaleString();
+}
+
+async function api(url, method='GET', body=null){
+  const opts = { method, headers:{} };
+  if(body){
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
   }
-
-  function setTab(which){
-    $('tabCats').classList.toggle('active', which==='cats');
-    $('tabProds').classList.toggle('active', which==='prods');
-    $('tabTrash').classList.toggle('active', which==='trash');
-    $('tabRC').classList.toggle('active', which==='rc');
-
-    $('panelCats').style.display = which==='cats' ? '' : 'none';
-    $('panelProds').style.display = which==='prods' ? '' : 'none';
-    $('panelTrash').style.display = which==='trash' ? '' : 'none';
-    $('panelRC').style.display = which==='rc' ? '' : 'none';
-
-    if(which==='rc') requestAnimationFrame(()=>RC.draw());
-  }
-
-  $('tabCats').onclick = ()=>setTab('cats');
-  $('tabProds').onclick = ()=>setTab('prods');
-  $('tabTrash').onclick = ()=>setTab('trash');
-  $('tabRC').onclick = ()=>setTab('rc');
-
-  async function api(url, method='GET', body=null){
-    const opt = { method, headers: {} };
-    if(body){
-      opt.headers['Content-Type'] = 'application/json';
-      opt.body = JSON.stringify(body);
-    }
-    const res = await fetch(url, opt);
-    const data = await res.json().catch(()=> ({}));
-    if(!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
-    return data;
-  }
-
-  function catNameById(id){
-    const c = categories.find(x=>String(x.id)===String(id));
-    return c ? c.name : '-';
-  }
-
-  function money(v){
-    if(v===null || v===undefined || v==='') return '-';
-    const n = Number(v);
-    if(Number.isNaN(n)) return String(v);
-    return n.toFixed(2);
-  }
-
-  function escapeHtml(s){
-    return String(s ?? '')
-      .replaceAll('&','&amp;')
-      .replaceAll('<','&lt;')
-      .replaceAll('>','&gt;')
-      .replaceAll('"','&quot;')
-      .replaceAll("'","&#39;");
-  }
-
-  function openDrawer({type, mode, data}){
-    drawerState = {type, mode, data};
-    $('backdrop').classList.add('show');
-    $('drawer').classList.add('open');
-    $('drawer').setAttribute('aria-hidden','false');
-    renderDrawer();
-  }
-  function closeDrawer(){
-    $('backdrop').classList.remove('show');
-    $('drawer').classList.remove('open');
-    $('drawer').setAttribute('aria-hidden','true');
-    drawerState = { type:null, mode:null, data:null };
-  }
-  $('backdrop').onclick = closeDrawer;
-  $('btnCloseDrawer').onclick = closeDrawer;
-  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeDrawer(); });
-
-  function renderDrawer(){
-    const {type, mode, data} = drawerState;
-    const body = $('drawerBody');
-    const footer = $('drawerFooter');
-    body.innerHTML = '';
-    footer.innerHTML = '';
-
-    if(type === 'cat'){
-      $('drawerHeading').textContent = (mode==='add') ? 'เพิ่มหมวดสินค้า' : 'แก้ไขหมวดสินค้า';
-      $('drawerSub').textContent = 'ตั้งชื่อหมวดและสถานะให้เรียบร้อย';
-
-      const name = (data?.name ?? '');
-      const sort_order = (data?.sort_order ?? 0);
-      const is_active = (data?.is_active ?? true);
-
-      body.innerHTML = `
-        <div class="field">
-          <label>ชื่อหมวด</label>
-          <input id="d_cat_name" value="${escapeHtml(name)}" placeholder="เช่น ค่ายา / ค่าบริการ" />
-        </div>
-        <div class="grid2">
-          <div class="field">
-            <label>ลำดับ (sort_order)</label>
-            <input id="d_cat_sort" type="number" value="${escapeHtml(String(sort_order))}" />
-          </div>
-          <div class="field">
-            <label>สถานะ</label>
-            <select id="d_cat_active">
-              <option value="true" ${is_active ? 'selected':''}>ใช้งาน</option>
-              <option value="false" ${!is_active ? 'selected':''}>ปิด</option>
-            </select>
-          </div>
-        </div>
-      `;
-
-      const btnCancel = document.createElement('button');
-      btnCancel.className = 'btn ghost';
-      btnCancel.type = 'button';
-      btnCancel.textContent = 'ยกเลิก';
-      btnCancel.onclick = closeDrawer;
-
-      const btnSave = document.createElement('button');
-      btnSave.className = 'btn secondary';
-      btnSave.type = 'button';
-      btnSave.textContent = 'บันทึก';
-      btnSave.onclick = async ()=>{
-        const name2 = $('d_cat_name').value.trim();
-        const sort2 = parseInt($('d_cat_sort').value || '0', 10);
-        const active2 = ($('d_cat_active').value === 'true');
-        if(!name2) return toast('กรอกชื่อหมวดก่อน');
-
-        if(mode==='add'){
-          await api('/api/categories','POST',{name:name2, sort_order:sort2, is_active:active2});
-          toast('เพิ่มหมวดแล้ว');
-        }else{
-          await api('/api/categories','PUT',{id:data.id, name:name2, sort_order:sort2, is_active:active2});
-          toast('บันทึกแล้ว');
-        }
-        closeDrawer();
-        await loadAll();
-      };
-
-      footer.appendChild(btnCancel);
-      footer.appendChild(btnSave);
-      return;
-    }
-
-    if(type === 'prod'){
-      $('drawerHeading').textContent = (mode==='add') ? 'เพิ่มสินค้า' : 'แก้ไขสินค้า';
-      $('drawerSub').textContent = 'กำหนดหมวด ราคาเริ่มต้น และสถานะ';
-
-      const name = (data?.name ?? '');
-      const category_id = (data?.category_id ?? (categories[0]?.id ?? ''));
-      const default_price = (data?.default_price ?? '');
-      const sort_order = (data?.sort_order ?? 0);
-      const is_active = (data?.is_active ?? true);
-
-      body.innerHTML = `
-        <div class="field">
-          <label>หมวด</label>
-          <select id="d_prod_cat">
-            ${categories
-              .slice()
-              .sort((a,b)=> (a.sort_order||0)-(b.sort_order||0) || (a.name||'').localeCompare(b.name||''))
-              .map(c=>`<option value="${c.id}" ${String(c.id)===String(category_id)?'selected':''}>${escapeHtml(c.name)}${c.is_active?'':' (ปิด)'}</option>`)
-              .join('')}
-          </select>
-        </div>
-
-        <div class="field">
-          <label>ชื่อสินค้า</label>
-          <input id="d_prod_name" value="${escapeHtml(name)}" placeholder="เช่น ค่าตรวจ / ค่ายา..." />
-        </div>
-
-        <div class="grid2">
-          <div class="field">
-            <label>ราคาตั้งต้น</label>
-            <input id="d_prod_price" type="number" step="0.01" value="${escapeHtml(String(default_price))}" placeholder="ปล่อยว่างได้" />
-          </div>
-          <div class="field">
-            <label>ลำดับ (sort_order)</label>
-            <input id="d_prod_sort" type="number" value="${escapeHtml(String(sort_order))}" />
-          </div>
-        </div>
-
-        <div class="field">
-          <label>สถานะ</label>
-          <select id="d_prod_active">
-            <option value="true" ${is_active ? 'selected':''}>ใช้งาน</option>
-            <option value="false" ${!is_active ? 'selected':''}>ปิด</option>
-          </select>
-        </div>
-      `;
-
-      const btnCancel = document.createElement('button');
-      btnCancel.className = 'btn ghost';
-      btnCancel.type = 'button';
-      btnCancel.textContent = 'ยกเลิก';
-      btnCancel.onclick = closeDrawer;
-
-      const btnSave = document.createElement('button');
-      btnSave.className = 'btn secondary';
-      btnSave.type = 'button';
-      btnSave.textContent = 'บันทึก';
-      btnSave.onclick = async ()=>{
-        const category_id2 = $('d_prod_cat').value;
-        const name2 = $('d_prod_name').value.trim();
-        const default_price2 = $('d_prod_price').value;
-        const sort2 = parseInt($('d_prod_sort').value || '0', 10);
-        const active2 = ($('d_prod_active').value === 'true');
-        if(!category_id2) return toast('เลือกหมวดก่อน');
-        if(!name2) return toast('กรอกชื่อสินค้าก่อน');
-
-        if(mode==='add'){
-          await api('/api/products','POST',{category_id:category_id2, name:name2, default_price:default_price2, sort_order:sort2, is_active:active2});
-          toast('เพิ่มสินค้าแล้ว');
-        }else{
-          await api('/api/products','PUT',{id:data.id, category_id:category_id2, name:name2, default_price:default_price2, sort_order:sort2, is_active:active2});
-          toast('บันทึกแล้ว');
-        }
-        closeDrawer();
-        await loadAll();
-      };
-
-      footer.appendChild(btnCancel);
-
-      if(mode==='edit'){
-        const btnTrash = document.createElement('button');
-        btnTrash.className = 'btn danger';
-        btnTrash.type = 'button';
-        btnTrash.textContent = 'ลบ (ไปถังขยะ)';
-        btnTrash.onclick = async ()=>{
-          if(!confirm('ย้ายไปถังขยะใช่ไหม? (บิลเก่าไม่กระทบ)')) return;
-          await api('/api/products','DELETE',{id:data.id});
-          toast('ย้ายไปถังขยะแล้ว');
-          closeDrawer();
-          await loadAll();
-        };
-        footer.appendChild(btnTrash);
-      }
-
-      footer.appendChild(btnSave);
-      return;
-    }
-
-    if(type === 'trash'){
-      $('drawerHeading').textContent = 'กู้คืนสินค้า';
-      $('drawerSub').textContent = 'กู้คืนแล้วจะกลับไปอยู่รายการสินค้า';
-
-      body.innerHTML = `
-        <div class="field">
-          <label>สินค้า</label>
-          <input value="${escapeHtml(data?.name ?? '')}" disabled />
-        </div>
-        <div class="field">
-          <label>หมวด</label>
-          <input value="${escapeHtml(catNameById(data?.category_id))}" disabled />
-        </div>
-        <div class="field">
-          <label>ลบเมื่อ</label>
-          <input value="${escapeHtml(String(data?.deleted_at||'').replace('T',' ').replace('Z',''))}" disabled />
-        </div>
-      `;
-
-      const btnCancel = document.createElement('button');
-      btnCancel.className = 'btn ghost';
-      btnCancel.type = 'button';
-      btnCancel.textContent = 'ยกเลิก';
-      btnCancel.onclick = closeDrawer;
-
-      const btnRestore = document.createElement('button');
-      btnRestore.className = 'btn secondary';
-      btnRestore.type = 'button';
-      btnRestore.textContent = 'กู้คืน';
-      btnRestore.onclick = async ()=>{
-        await api('/api/products_restore','POST',{id:data.id});
-        toast('กู้คืนแล้ว');
-        closeDrawer();
-        await loadAll();
-      };
-
-      footer.appendChild(btnCancel);
-      footer.appendChild(btnRestore);
-      return;
-    }
-  }
-
-  function renderProdFilterCat(){
-    const sel = $('prodFilterCat');
-    const current = sel.value || 'all';
-    sel.innerHTML = `<option value="all">ทั้งหมด</option>` + categories
-      .slice()
-      .sort((a,b)=> (a.sort_order||0)-(b.sort_order||0) || (a.name||'').localeCompare(b.name||''))
-      .map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`)
-      .join('');
-    sel.value = (Array.from(sel.options).some(o=>o.value===current)) ? current : 'all';
-  }
-
-  function renderCatsList(){
-    const q = ($('catSearch').value || '').trim().toLowerCase();
-    const f = $('catFilterActive').value;
-
-    const list = $('catsList');
-    list.innerHTML = '';
-
-    const rows = categories
-      .slice()
-      .sort((a,b)=> (a.sort_order||0)-(b.sort_order||0) || (a.name||'').localeCompare(b.name||''))
-      .filter(c=>{
-        if(q && !String(c.name||'').toLowerCase().includes(q)) return false;
-        if(f==='true' && !c.is_active) return false;
-        if(f==='false' && c.is_active) return false;
-        return true;
-      });
-
-    if(rows.length===0){
-      list.innerHTML = `<div class="rowItem"><div class="mini">ไม่พบข้อมูล</div></div>`;
-      return;
-    }
-
-    rows.forEach(c=>{
-      const el = document.createElement('div');
-      el.className = 'rowItem';
-      el.innerHTML = `
-        <div class="rowMain">
-          <div class="nameLine">
-            <b title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</b>
-            ${c.is_active ? `<span class="tag on">ใช้งาน</span>` : `<span class="tag off">ปิด</span>`}
-          </div>
-          <div class="subLine">sort_order: ${escapeHtml(String(c.sort_order ?? 0))}</div>
-        </div>
-        <div class="mini">ไอดี: ${escapeHtml(String(c.id))}</div>
-        <div class="mini"></div>
-        <div class="actions">
-          <button class="btn secondary" type="button">แก้ไข</button>
-        </div>
-      `;
-      el.querySelector('button').onclick = ()=> openDrawer({type:'cat', mode:'edit', data:c});
-      list.appendChild(el);
-    });
-  }
-
-  function renderProdsList(){
-    const q = ($('prodSearch').value || '').trim().toLowerCase();
-    const cat = $('prodFilterCat').value;
-    const f = $('prodFilterActive').value;
-
-    const list = $('prodsList');
-    list.innerHTML = '';
-
-    const active = products.filter(p=> !p.deleted_at);
-
-    const rows = active
-      .slice()
-      .sort((a,b)=> (a.sort_order||0)-(b.sort_order||0) || (a.name||'').localeCompare(b.name||''))
-      .filter(p=>{
-        if(q && !String(p.name||'').toLowerCase().includes(q)) return false;
-        if(cat!=='all' && String(p.category_id)!==String(cat)) return false;
-        if(f==='true' && !p.is_active) return false;
-        if(f==='false' && p.is_active) return false;
-        return true;
-      });
-
-    if(rows.length===0){
-      list.innerHTML = `<div class="rowItem"><div class="mini">ไม่พบข้อมูล</div></div>`;
-      return;
-    }
-
-    rows.forEach(p=>{
-      const el = document.createElement('div');
-      el.className = 'rowItem';
-      el.innerHTML = `
-        <div class="rowMain">
-          <div class="nameLine">
-            <b title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</b>
-            ${p.is_active ? `<span class="tag on">ใช้งาน</span>` : `<span class="tag off">ปิด</span>`}
-          </div>
-          <div class="subLine">${escapeHtml(catNameById(p.category_id))} • ราคา: ${escapeHtml(money(p.default_price))} • sort_order: ${escapeHtml(String(p.sort_order ?? 0))}</div>
-        </div>
-        <div class="mini">หมวด: ${escapeHtml(catNameById(p.category_id))}</div>
-        <div class="mini">฿ ${escapeHtml(money(p.default_price))}</div>
-        <div class="actions">
-          <button class="btn secondary" type="button">แก้ไข</button>
-        </div>
-      `;
-      el.querySelector('button').onclick = ()=> openDrawer({type:'prod', mode:'edit', data:p});
-      list.appendChild(el);
-    });
-  }
-
-  function renderTrashList(){
-    const q = ($('trashSearch').value || '').trim().toLowerCase();
-    const list = $('trashList');
-    list.innerHTML='';
-
-    const trash = products
-      .filter(p=> !!p.deleted_at)
-      .slice()
-      .sort((a,b)=> String(b.deleted_at||'').localeCompare(String(a.deleted_at||'')))
-      .filter(p=>{
-        if(!q) return true;
-        const hay = `${p.name||''} ${catNameById(p.category_id)||''}`.toLowerCase();
-        return hay.includes(q);
-      });
-
-    if(trash.length===0){
-      list.innerHTML = `<div class="rowItem"><div class="mini">ถังขยะว่าง</div></div>`;
-      return;
-    }
-
-    trash.forEach(p=>{
-      const el = document.createElement('div');
-      el.className = 'rowItem';
-      el.innerHTML = `
-        <div class="rowMain">
-          <div class="nameLine">
-            <b title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</b>
-            <span class="tag old">เก่า</span>
-          </div>
-          <div class="subLine">${escapeHtml(catNameById(p.category_id))} • ลบเมื่อ: ${escapeHtml(String(p.deleted_at||'').replace('T',' ').replace('Z',''))}</div>
-        </div>
-        <div class="mini">หมวด: ${escapeHtml(catNameById(p.category_id))}</div>
-        <div class="mini">${escapeHtml(String(p.deleted_at||'').replace('T',' ').replace('Z',''))}</div>
-        <div class="actions">
-          <button class="btn secondary" type="button">กู้คืน</button>
-        </div>
-      `;
-      el.querySelector('button').onclick = ()=> openDrawer({type:'trash', mode:'edit', data:p});
-      list.appendChild(el);
-    });
-  }
-
-  async function loadAll(){
-    categories = await api('/api/categories');
-    products = await api('/api/products');
-    renderProdFilterCat();
-    renderCatsList();
-    renderProdsList();
-    renderTrashList();
-  }
-
-  // Search & filters
-  $('catSearch').addEventListener('input', renderCatsList);
-  $('catFilterActive').addEventListener('change', renderCatsList);
-
-  $('prodSearch').addEventListener('input', renderProdsList);
-  $('prodFilterCat').addEventListener('change', renderProdsList);
-  $('prodFilterActive').addEventListener('change', renderProdsList);
-
-  $('trashSearch').addEventListener('input', renderTrashList);
-
-  // Add buttons
-  $('btnOpenAddCat').onclick = ()=> openDrawer({type:'cat', mode:'add', data:{name:'', sort_order:0, is_active:true}});
-  $('btnOpenAddProd').onclick = ()=>{
-    if(!categories.length) return toast('ยังไม่มีหมวด กรุณาเพิ่มหมวดก่อน');
-    openDrawer({type:'prod', mode:'add', data:{category_id: categories[0].id, name:'', default_price:'', sort_order:0, is_active:true}});
-  };
-
-  // ===================== Receipt Composer =====================
-  const Paper = {
-    sizesMM: {
-      A3: { w: 297, h: 420 },
-      A4: { w: 210, h: 297 },
-      A5: { w: 148, h: 210 }
-    },
-    getSetting(){
-      const size = $('rcPaperSize').value || 'A4';
-      const ori = $('rcPaperOri').value || 'portrait';
-      const base = this.sizesMM[size] || this.sizesMM.A4;
-      let w = base.w, h = base.h;
-      if(ori === 'landscape'){ const t=w; w=h; h=t; }
-      return { size, ori, mmW:w, mmH:h };
-    },
-    mmToIn(mm){ return mm / 25.4; },
-  };
-
-  const RC = {
-    paperEl: null,
-    canvas: null,
-    ctx: null,
-
-    layers: [], // bottom->top
-    selectedId: null,
-
-    pointers: new Map(),
-    singleLast: null,
-    gesture: null,
-
-    // modes
-    mode: 'normal', // normal | cutout | eraser
-    cutPath: [],
-    cutActive: false,
-
-    eraser: { active:false, brush:26, lastPt:null },
-    undoStack: new Map(), // layerId -> [dataURL,...] limit 12
-
-    _lastExportBlobUrl: null,
-
-    init(){
-      this.paperEl = $('rcPaper');
-      this.canvas = $('rcCanvas');
-      this.ctx = this.canvas.getContext('2d');
-
-      this.applyPaperAspect();
-      this.resizeToPaper();
-
-      window.addEventListener('resize', ()=>{
-        this.resizeToPaper();
-        this.draw();
-      });
-
-      $('rcPaperSize').addEventListener('change', ()=>{
-        this.applyPaperAspect();
-        this.resizeToPaper();
-        this.draw();
-      });
-      $('rcPaperOri').addEventListener('change', ()=>{
-        this.applyPaperAspect();
-        this.resizeToPaper();
-        this.draw();
-      });
-
-      // pointer events
-      this.paperEl.addEventListener('pointerdown', (e)=>this.onPointerDown(e));
-      this.paperEl.addEventListener('pointermove', (e)=>this.onPointerMove(e));
-      this.paperEl.addEventListener('pointerup', (e)=>this.onPointerUp(e));
-      this.paperEl.addEventListener('pointercancel', (e)=>this.onPointerUp(e));
-
-      // top tools
-      $('rcTopAddImg').onclick = ()=> $('rcFile').click();
-      $('rcTopAddText').onclick = ()=> this.addTextLayer('ลงนามโดย');
-      $('rcTopUndo').onclick = ()=> this.undo();
-      $('rcTopSave').onclick = ()=> this.exportAs('save');
-      $('rcTopShare').onclick = ()=> this.exportAs('share');
-
-      // side tools
-      $('rcSave').onclick = ()=> this.exportAs('save');
-      $('rcShare').onclick = ()=> this.exportAs('share');
-      $('rcOpenImage').onclick = ()=> this.openLastExport();
-      $('rcClearAll').onclick = ()=> this.clearAll();
-
-      // file input
-      $('rcFile').addEventListener('change', async (e)=>{
-        const files = Array.from(e.target.files || []);
-        if(!files.length) return;
-        for(const f of files){
-          await this.addImageFile(f);
-        }
-        e.target.value = '';
-        toast('เพิ่มรูปแล้ว');
-        this.draw();
-      });
-
-      // selection common
-      $('rcOpacity').addEventListener('input', ()=>{
-        const l = this.getSelected();
-        if(!l) return;
-        l.opacity = Number($('rcOpacity').value) / 100;
-        $('rcOpacityTxt').textContent = `${$('rcOpacity').value}%`;
-        this.draw();
-      });
-      $('rcBringFront').onclick = ()=>{ this.bringFront(); this.draw(); };
-      $('rcSendBack').onclick = ()=>{ this.sendBack(); this.draw(); };
-      $('rcDuplicate').onclick = ()=>{ this.duplicateSelected(); this.draw(); };
-      $('rcDelete').onclick = ()=>{ this.deleteSelected(); this.draw(); };
-      $('rcCenter').onclick = ()=>{ const l=this.getSelected(); if(l){ l.x=this.paperEl.clientWidth/2; l.y=this.paperEl.clientHeight/2; } this.draw(); };
-      $('rcResetTransform').onclick = ()=>{ const l=this.getSelected(); if(l){ l.scale=1; l.rot=0; } this.draw(); };
-
-      // text tools
-      $('rcTextValue').addEventListener('input', ()=>{
-        const l = this.getSelected();
-        if(!l || l.type!=='text') return;
-        l.text = $('rcTextValue').value;
-        this.draw();
-      });
-      $('rcFontSize').addEventListener('input', ()=>{
-        const l = this.getSelected();
-        if(!l || l.type!=='text') return;
-        l.fontSize = Math.max(8, Math.min(96, parseInt($('rcFontSize').value || '22', 10)));
-        this.draw();
-      });
-      $('rcAlign').addEventListener('change', ()=>{
-        const l = this.getSelected();
-        if(!l || l.type!=='text') return;
-        l.align = $('rcAlign').value;
-        this.draw();
-      });
-      $('rcBold').onclick = ()=>{
-        const l = this.getSelected();
-        if(!l || l.type!=='text') return;
-        l.bold = !l.bold;
-        this.draw();
-      };
-      $('rcColor').onclick = ()=>{
-        const l = this.getSelected();
-        if(!l || l.type!=='text') return;
-        l.color = (l.color === '#111827') ? '#1e40af' : '#111827';
-        this.draw();
-      };
-      $('rcTextPreset').onclick = ()=>{
-        const l = this.getSelected();
-        if(!l || l.type!=='text') return;
-        const preset = `ลงนามโดย\n(Authorized Signature)`;
-        l.text = preset;
-        $('rcTextValue').value = preset;
-        this.draw();
-      };
-
-      // image tools
-      $('rcCutout').onclick = ()=> this.enterCutoutMode();
-      $('rcCutoutDone').onclick = ()=> this.finishCutout();
-      $('rcCutoutCancel').onclick = ()=> this.exitModes();
-
-      $('rcEraser').onclick = ()=> this.enterEraserMode();
-      $('rcBrush').addEventListener('input', ()=>{
-        this.eraser.brush = Number($('rcBrush').value);
-        $('rcBrushTxt').textContent = `${$('rcBrush').value}px`;
-      });
-      $('rcEraserDone').onclick = ()=> this.exitModes();
-      $('rcEraserCancel').onclick = ()=> this.undoAndExitEraser();
-
-      this.updateSelectedUI();
-      this.updateModePill();
-    },
-
-    applyPaperAspect(){
-      const s = Paper.getSetting();
-      this.paperEl.style.aspectRatio = `${s.mmW} / ${s.mmH}`;
-    },
-
-    resizeToPaper(){
-      const rect = this.paperEl.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      this.canvas.width = Math.max(1, Math.floor(rect.width * dpr));
-      this.canvas.height = Math.max(1, Math.floor(rect.height * dpr));
-      this.canvas.style.width = rect.width + 'px';
-      this.canvas.style.height = rect.height + 'px';
-      this.ctx.setTransform(1,0,0,1,0,0);
-      this.ctx.scale(dpr, dpr);
-    },
-
-    // ---------- Layers ----------
-    newId(){ return 'L' + Math.random().toString(16).slice(2) + Date.now().toString(16); },
-
-    select(id){
-      this.selectedId = id;
-      this.updateSelectedUI();
-      this.syncControlsFromLayer();
-      this.draw();
-    },
-
-    getSelected(){
-      return this.layers.find(l=>l.id===this.selectedId) || null;
-    },
-
-    addTextLayer(text){
-      this.exitModes();
-      const w = this.paperEl.clientWidth;
-      const h = this.paperEl.clientHeight;
-      const id = this.newId();
-      this.layers.push({
-        id,
-        type:'text',
-        x: w/2,
-        y: h/2,
-        scale: 1,
-        rot: 0,
-        opacity: 1,
-        text: text ?? '',
-        fontSize: 22,
-        bold: false,
-        align: 'left',
-        color: '#111827'
-      });
-      this.select(id);
-      toast('เพิ่มข้อความแล้ว');
-    },
-
-    async addImageFile(file){
-      this.exitModes();
-      const img = await this.loadImage(file);
-
-      // make editable bitmap canvas
-      const bmp = document.createElement('canvas');
-      bmp.width = img.naturalWidth;
-      bmp.height = img.naturalHeight;
-      const bctx = bmp.getContext('2d');
-      bctx.clearRect(0,0,bmp.width,bmp.height);
-      bctx.drawImage(img, 0, 0);
-
-      const w = this.paperEl.clientWidth;
-      const h = this.paperEl.clientHeight;
-      const s = Math.min((w*0.6)/bmp.width, (h*0.6)/bmp.height);
-
-      const id = this.newId();
-      this.layers.push({
-        id,
-        type:'image',
-        x: w/2,
-        y: h/2,
-        scale: s,
-        rot: 0,
-        opacity: 1,
-        bmp, // canvas
-        w: bmp.width,
-        h: bmp.height
-      });
-      this.select(id);
-    },
-
-    loadImage(file){
-      return new Promise((resolve, reject)=>{
-        const url = URL.createObjectURL(file);
-        const img = new Image();
-        img.decoding = 'async';
-        img.onload = ()=>{
-          setTimeout(()=>URL.revokeObjectURL(url), 1500);
-          resolve(img);
-        };
-        img.onerror = reject;
-        img.src = url;
-      });
-    },
-
-    deleteSelected(){
-      this.exitModes();
-      if(!this.selectedId) return;
-      const idx = this.layers.findIndex(l=>l.id===this.selectedId);
-      if(idx>=0) this.layers.splice(idx,1);
-      this.selectedId = this.layers.length ? this.layers[this.layers.length-1].id : null;
-      this.updateSelectedUI();
-      this.syncControlsFromLayer();
-      toast('ลบแล้ว');
-    },
-
-    duplicateSelected(){
-      this.exitModes();
-      const l = this.getSelected();
-      if(!l) return;
-      const id = this.newId();
-      const copy = JSON.parse(JSON.stringify(l));
-      copy.id = id;
-      copy.x += 12;
-      copy.y += 12;
-      if(l.type==='image'){
-        // deep clone bitmap
-        const nb = document.createElement('canvas');
-        nb.width = l.w; nb.height = l.h;
-        nb.getContext('2d').drawImage(l.bmp, 0, 0);
-        copy.bmp = nb;
-      }
-      this.layers.push(copy);
-      this.select(id);
-      toast('ทำซ้ำแล้ว');
-    },
-
-    bringFront(){
-      const id = this.selectedId;
-      if(!id) return;
-      const idx = this.layers.findIndex(l=>l.id===id);
-      if(idx<0 || idx===this.layers.length-1) return;
-      const [it] = this.layers.splice(idx,1);
-      this.layers.push(it);
-      toast('ขึ้นหน้า');
-    },
-
-    sendBack(){
-      const id = this.selectedId;
-      if(!id) return;
-      const idx = this.layers.findIndex(l=>l.id===id);
-      if(idx<=0) return;
-      const [it] = this.layers.splice(idx,1);
-      this.layers.unshift(it);
-      toast('ลงหลัง');
-    },
-
-    clearAll(){
-      this.exitModes();
-      if(!confirm('ล้างทั้งหมดในกระดาษนี้ใช่ไหม?')) return;
-      this.layers = [];
-      this.selectedId = null;
-      this.updateSelectedUI();
-      this.draw();
-      toast('ล้างแล้ว');
-    },
-
-    // ---------- UI sync ----------
-    updateSelectedUI(){
-      const l = this.getSelected();
-      $('rcCommonControls').style.display = l ? '' : 'none';
-      $('rcSelType').textContent = l ? (l.type==='image' ? 'รูป' : 'ข้อความ') : '-';
-      $('rcSelHint').textContent = l ? 'ลากเพื่อจัดตำแหน่ง | 2 นิ้วเพื่อย่อ/หมุน' : 'แตะบนกระดาษเพื่อเลือก';
-
-      $('rcTextTools').style.display = (l && l.type==='text') ? '' : 'none';
-      $('rcImageTools').style.display = (l && l.type==='image') ? '' : 'none';
-    },
-
-    syncControlsFromLayer(){
-      const l = this.getSelected();
-      if(!l) return;
-      const pct = Math.round((l.opacity ?? 1) * 100);
-      $('rcOpacity').value = String(pct);
-      $('rcOpacityTxt').textContent = `${pct}%`;
-
-      if(l.type==='text'){
-        $('rcTextValue').value = l.text ?? '';
-        $('rcFontSize').value = String(l.fontSize ?? 22);
-        $('rcAlign').value = l.align ?? 'left';
-      }
-    },
-
-    updateModePill(){
-      const pill = $('rcModePill');
-      pill.classList.remove('warn','info');
-      if(this.mode==='cutout'){
-        pill.textContent = 'โหมดไดคัท: วาดเส้นล้อม แล้วกด “เสร็จ”';
-        pill.classList.add('warn');
-      }else if(this.mode==='eraser'){
-        pill.textContent = 'โหมดยางลบ: วาดบนรูปที่เลือก (Undo ได้)';
-        pill.classList.add('info');
-      }else{
-        pill.textContent = 'โหมดปกติ';
-      }
-
-      // toggle sub-panels
-      $('rcCutoutControls').style.display = (this.mode==='cutout') ? '' : 'none';
-      $('rcEraserControls').style.display = (this.mode==='eraser') ? '' : 'none';
-    },
-
-    exitModes(){
-      this.mode = 'normal';
-      this.cutActive = false;
-      this.cutPath = [];
-      this.eraser.active = false;
-      this.eraser.lastPt = null;
-      this.updateModePill();
-      this.draw();
-    },
-
-    // ---------- Pointer + hit test ----------
-    getPaperPoint(e){
-      const r = this.paperEl.getBoundingClientRect();
-      return { x: e.clientX - r.left, y: e.clientY - r.top };
-    },
-
-    onPointerDown(e){
-      this.paperEl.setPointerCapture(e.pointerId);
-      const p = this.getPaperPoint(e);
-      this.pointers.set(e.pointerId, p);
-
-      // Cutout mode: only 1 finger drawing
-      if(this.mode==='cutout'){
-        if(this.pointers.size > 1) return;
-        this.cutActive = true;
-        this.cutPath = [p];
-        this.draw();
-        return;
-      }
-
-      // Eraser mode: only 1 finger drawing on selected image
-      if(this.mode==='eraser'){
-        if(this.pointers.size > 1) return;
-        const l = this.getSelected();
-        if(!l || l.type!=='image') return;
-        this.pushUndo(l); // snapshot before stroke
-        this.eraser.lastPt = p;
-        this.eraseAtPaperPoint(p);
-        this.draw();
-        return;
-      }
-
-      // Normal mode selection
-      if(this.pointers.size === 1){
-        const hit = this.hitTestTopmost(p);
-        if(hit){
-          this.select(hit.id);
-        }else{
-          this.selectedId = null;
-          this.updateSelectedUI();
-          this.draw();
-        }
-        this.singleLast = p;
-        this.gesture = null;
-        return;
-      }
-
-      // start gesture with 2 pointers
-      if(this.pointers.size === 2){
-        this.startGesture();
-      }
-    },
-
-    onPointerMove(e){
-      if(!this.pointers.has(e.pointerId)) return;
-      const p = this.getPaperPoint(e);
-      this.pointers.set(e.pointerId, p);
-
-      if(this.mode==='cutout'){
-        if(this.pointers.size > 1) return;
-        if(this.cutActive){
-          this.cutPath.push(p);
-          this.draw();
-        }
-        return;
-      }
-
-      if(this.mode==='eraser'){
-        if(this.pointers.size > 1) return;
-        this.eraser.lastPt = p;
-        this.eraseAtPaperPoint(p);
-        this.draw();
-        return;
-      }
-
-      const l = this.getSelected();
-      if(!l) return;
-
-      if(this.pointers.size === 1 && this.singleLast){
-        const dx = p.x - this.singleLast.x;
-        const dy = p.y - this.singleLast.y;
-        l.x += dx;
-        l.y += dy;
-        this.singleLast = p;
-        this.draw();
-        return;
-      }
-
-      if(this.pointers.size === 2){
-        this.updateGesture();
-        this.draw();
-      }
-    },
-
-    onPointerUp(e){
-      this.pointers.delete(e.pointerId);
-      this.singleLast = null;
-      this.gesture = null;
-      if(this.mode==='eraser'){
-        this.eraser.lastPt = null;
-      }
-      if(this.mode==='cutout'){
-        // keep path; user can continue drawing by touching again (still in mode)
-      }
-    },
-
-    startGesture(){
-      const l = this.getSelected();
-      if(!l) return;
-      const pts = Array.from(this.pointers.values());
-      if(pts.length !== 2) return;
-
-      const [p1, p2] = pts;
-      const center = { x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2 };
-      const dist = Math.hypot(p2.x-p1.x, p2.y-p1.y) || 1;
-      const angle = Math.atan2(p2.y-p1.y, p2.x-p1.x);
-
-      this.gesture = {
-        startCenter: center,
-        startDist: dist,
-        startAngle: angle,
-        startX: l.x,
-        startY: l.y,
-        startScale: l.scale,
-        startRot: l.rot
-      };
-    },
-
-    clamp(v,min,max){ return Math.max(min, Math.min(max, v)); },
-
-    updateGesture(){
-      const l = this.getSelected();
-      if(!l) return;
-      const pts = Array.from(this.pointers.values());
-      if(pts.length !== 2) return;
-      if(!this.gesture) this.startGesture();
-
-      const g = this.gesture;
-      const [p1, p2] = pts;
-      const center = { x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2 };
-      const dist = Math.hypot(p2.x-p1.x, p2.y-p1.y) || 1;
-      const angle = Math.atan2(p2.y-p1.y, p2.x-p1.x);
-
-      l.x = g.startX + (center.x - g.startCenter.x);
-      l.y = g.startY + (center.y - g.startCenter.y);
-
-      const scaleFactor = dist / g.startDist;
-      l.scale = this.clamp(g.startScale * scaleFactor, 0.05, 12);
-
-      let newRot = g.startRot + (angle - g.startAngle);
-      if(newRot > Math.PI) newRot -= 2*Math.PI;
-      if(newRot < -Math.PI) newRot += 2*Math.PI;
-      l.rot = newRot;
-    },
-
-    hitTestTopmost(p){
-      for(let i=this.layers.length-1; i>=0; i--){
-        const l = this.layers[i];
-        if(this.pointInLayer(p, l)) return l;
-      }
-      return null;
-    },
-
-    pointInLayer(p, l){
-      const dx = p.x - l.x;
-      const dy = p.y - l.y;
-      const cos = Math.cos(-l.rot);
-      const sin = Math.sin(-l.rot);
-      const rx = (dx*cos - dy*sin) / (l.scale || 1);
-      const ry = (dx*sin + dy*cos) / (l.scale || 1);
-
-      if(l.type === 'image'){
-        const hw = (l.w || 0)/2;
-        const hh = (l.h || 0)/2;
-        return rx >= -hw && rx <= hw && ry >= -hh && ry <= hh;
-      }
-      if(l.type === 'text'){
-        const m = this.measureTextBox(l);
-        const hw = m.w/2;
-        const hh = m.h/2;
-        return rx >= -hw && rx <= hw && ry >= -hh && ry <= hh;
-      }
-      return false;
-    },
-
-    measureTextBox(l){
-      const ctx = this.ctx;
-      ctx.save();
-      ctx.font = `${l.bold ? '700':'400'} ${l.fontSize || 22}px system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif`;
-      const lines = String(l.text ?? '').split('\n');
-      let maxW = 10;
-      for(const line of lines){
-        maxW = Math.max(maxW, ctx.measureText(line || ' ').width);
-      }
-      const lineH = (l.fontSize || 22) * 1.25;
-      const h = Math.max(lineH, lines.length * lineH);
-      ctx.restore();
-      return { w: maxW, h };
-    },
-
-    // ---------- Draw ----------
-    draw(){
-      const ctx = this.ctx;
-      const w = this.paperEl.clientWidth;
-      const h = this.paperEl.clientHeight;
-
-      ctx.clearRect(0,0,w,h);
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0,0,w,h);
-
-      for(const l of this.layers){
-        ctx.save();
-        ctx.globalAlpha = l.opacity ?? 1;
-        ctx.translate(l.x, l.y);
-        ctx.rotate(l.rot || 0);
-        ctx.scale(l.scale || 1, l.scale || 1);
-
-        if(l.type === 'image' && l.bmp){
-          ctx.drawImage(l.bmp, -l.w/2, -l.h/2, l.w, l.h);
-        }
-        if(l.type === 'text'){
-          const fontSize = l.fontSize || 22;
-          ctx.font = `${l.bold ? '700':'400'} ${fontSize}px system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif`;
-          ctx.fillStyle = l.color || '#111827';
-          ctx.textBaseline = 'middle';
-
-          const lines = String(l.text ?? '').split('\n');
-          const lineH = fontSize * 1.25;
-          const box = this.measureTextBox(l);
-          const align = l.align || 'left';
-          ctx.textAlign = align;
-
-          for(let i=0;i<lines.length;i++){
-            const y = (-box.h/2) + (i*lineH) + (lineH/2);
-            let x = 0;
-            if(align==='left') x = -box.w/2;
-            if(align==='center') x = 0;
-            if(align==='right') x = box.w/2;
-            ctx.fillText(lines[i], x, y);
-          }
-        }
-
-        // selection outline (only in normal mode)
-        if(this.mode==='normal' && this.selectedId === l.id){
-          ctx.globalAlpha = 1;
-          ctx.lineWidth = 2 / (l.scale || 1);
-          ctx.setLineDash([6/(l.scale||1), 6/(l.scale||1)]);
-          ctx.strokeStyle = 'rgba(13,148,136,.95)';
-          if(l.type==='image'){
-            ctx.strokeRect(-l.w/2, -l.h/2, l.w, l.h);
-          }else if(l.type==='text'){
-            const m = this.measureTextBox(l);
-            ctx.strokeRect(-m.w/2, -m.h/2, m.w, m.h);
-          }
-        }
-
-        ctx.restore();
-      }
-
-      // overlays
-      if(this.mode==='cutout'){
-        ctx.save();
-        ctx.fillStyle = 'rgba(17,24,39,.06)';
-        ctx.fillRect(0,0,w,h);
-
-        if(this.cutPath.length){
-          ctx.beginPath();
-          ctx.moveTo(this.cutPath[0].x, this.cutPath[0].y);
-          for(let i=1;i<this.cutPath.length;i++){
-            ctx.lineTo(this.cutPath[i].x, this.cutPath[i].y);
-          }
-          ctx.strokeStyle = 'rgba(211,47,47,.95)';
-          ctx.lineWidth = 3;
-          ctx.setLineDash([]);
-          ctx.stroke();
-        }
-        ctx.restore();
-      }
-
-      if(this.mode==='eraser'){
-        // show brush cursor if single pointer exists
-        const p = Array.from(this.pointers.values())[0] || this.eraser.lastPt;
-        if(p){
-          ctx.save();
-          ctx.strokeStyle = 'rgba(30,64,175,.70)';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, (this.eraser.brush||26)/2, 0, Math.PI*2);
-          ctx.stroke();
-          ctx.restore();
-        }
-      }
-    },
-
-    // ---------- Undo ----------
-    imageLayerToDataURL(layer){
-      const c = document.createElement('canvas');
-      c.width = layer.w;
-      c.height = layer.h;
-      c.getContext('2d').drawImage(layer.bmp, 0, 0);
-      return c.toDataURL('image/png');
-    },
-
-    pushUndo(layer){
-      if(!layer || layer.type!=='image') return;
-      const id = layer.id;
-      const arr = this.undoStack.get(id) || [];
-      arr.push(this.imageLayerToDataURL(layer));
-      while(arr.length > 12) arr.shift();
-      this.undoStack.set(id, arr);
-    },
-
-    async undo(){
-      const l = this.getSelected();
-      if(!l || l.type!=='image') return toast('เลือก “รูป” ก่อนค่อย Undo');
-      const arr = this.undoStack.get(l.id) || [];
-      if(!arr.length) return toast('ไม่มีอะไรให้ย้อนแล้ว');
-      const url = arr.pop();
-      this.undoStack.set(l.id, arr);
-
-      const img = new Image();
-      await new Promise((res, rej)=>{ img.onload=res; img.onerror=rej; img.src=url; });
-
-      const nb = document.createElement('canvas');
-      nb.width = img.naturalWidth;
-      nb.height = img.naturalHeight;
-      nb.getContext('2d').drawImage(img, 0, 0);
-
-      l.bmp = nb;
-      l.w = nb.width;
-      l.h = nb.height;
-      toast('ย้อนกลับแล้ว');
-      this.draw();
-    },
-
-    // ---------- Cutout ----------
-    enterCutoutMode(){
-      const l = this.getSelected();
-      if(!l || l.type!=='image') return toast('เลือก “รูป” ก่อนค่อยไดคัท');
-      this.mode = 'cutout';
-      this.cutActive = false;
-      this.cutPath = [];
-      this.updateModePill();
-      toast('โหมดไดคัท: วาดเส้นล้อม แล้วกด “เสร็จ”');
-      this.draw();
-    },
-
-    async finishCutout(){
-      const l = this.getSelected();
-      if(!l || l.type!=='image') return this.exitModes();
-      if(this.cutPath.length < 10) return toast('วาดเส้นให้ครบก่อน');
-
-      this.pushUndo(l);
-
-      // close path
-      const path = this.cutPath.slice();
-      path.push(path[0]);
-
-      // convert paper points -> image pixel points
-      const pts = path.map(p=>this.paperPointToImagePixel(p, l));
-
-      // build mask
-      const mask = document.createElement('canvas');
-      mask.width = l.w;
-      mask.height = l.h;
-      const mctx = mask.getContext('2d');
-      mctx.clearRect(0,0,mask.width,mask.height);
-      mctx.fillStyle = '#000';
-      mctx.beginPath();
-      mctx.moveTo(pts[0].x, pts[0].y);
-      for(let i=1;i<pts.length;i++) mctx.lineTo(pts[i].x, pts[i].y);
-      mctx.closePath();
-      mctx.fill();
-
-      // apply mask to bmp
-      const out = document.createElement('canvas');
-      out.width = l.w;
-      out.height = l.h;
-      const octx = out.getContext('2d');
-      octx.clearRect(0,0,out.width,out.height);
-      octx.drawImage(l.bmp, 0, 0);
-      octx.globalCompositeOperation = 'destination-in';
-      octx.drawImage(mask, 0, 0);
-      octx.globalCompositeOperation = 'source-over';
-
-      const trimmed = this.trimTransparent(out);
-      l.bmp = trimmed;
-      l.w = trimmed.width;
-      l.h = trimmed.height;
-
-      this.exitModes();
-      toast('ไดคัทแล้ว');
-      this.draw();
-    },
-
-    paperPointToImagePixel(p, l){
-      // paper -> layer local -> image pixel (top-left origin)
-      const dx = p.x - l.x;
-      const dy = p.y - l.y;
-      const cos = Math.cos(-l.rot);
-      const sin = Math.sin(-l.rot);
-      const rx = (dx*cos - dy*sin) / (l.scale || 1);
-      const ry = (dx*sin + dy*cos) / (l.scale || 1);
-
-      const ix = rx + (l.w/2);
-      const iy = ry + (l.h/2);
-      return { x: ix, y: iy };
-    },
-
-    trimTransparent(canvas){
-      const ctx = canvas.getContext('2d');
-      const {width:w, height:h} = canvas;
-      const data = ctx.getImageData(0,0,w,h).data;
-
-      let minX=w, minY=h, maxX=-1, maxY=-1;
-      for(let y=0;y<h;y++){
-        for(let x=0;x<w;x++){
-          const a = data[(y*w + x)*4 + 3];
-          if(a>0){
-            if(x<minX) minX=x;
-            if(y<minY) minY=y;
-            if(x>maxX) maxX=x;
-            if(y>maxY) maxY=y;
-          }
-        }
-      }
-      if(maxX<minX || maxY<minY) return canvas;
-
-      const tw = maxX - minX + 1;
-      const th = maxY - minY + 1;
-      const out = document.createElement('canvas');
-      out.width = tw;
-      out.height = th;
-      out.getContext('2d').drawImage(canvas, minX, minY, tw, th, 0, 0, tw, th);
-      return out;
-    },
-
-    // ---------- Eraser ----------
-    enterEraserMode(){
-      const l = this.getSelected();
-      if(!l || l.type!=='image') return toast('เลือก “รูป” ก่อนใช้ยางลบ');
-      this.mode = 'eraser';
-      this.eraser.active = true;
-      this.eraser.brush = Number($('rcBrush').value || '26');
-      this.eraser.lastPt = null;
-      this.updateModePill();
-      toast('โหมดยางลบ: วาดบนรูปที่เลือก (Undo ได้)');
-      this.draw();
-    },
-
-    undoAndExitEraser(){
-      if(this.mode==='eraser'){
-        this.undo().finally(()=> this.exitModes());
-        return;
-      }
-      this.exitModes();
-    },
-
-    eraseAtPaperPoint(p){
-      const l = this.getSelected();
-      if(!l || l.type!=='image') return;
-
-      // convert to image pixel coordinate
-      const ip = this.paperPointToImagePixel(p, l);
-
-      // erase with destination-out
-      const bctx = l.bmp.getContext('2d');
-      bctx.save();
-      bctx.globalCompositeOperation = 'destination-out';
-      bctx.beginPath();
-      bctx.arc(ip.x, ip.y, (this.eraser.brush||26)/2, 0, Math.PI*2);
-      bctx.fill();
-      bctx.restore();
-    },
-
-    // ---------- Export / Share / Open ----------
-    async exportBlob(){
-      const dpi = Number($('rcDpi').value || '200');
-      const s = Paper.getSetting();
-
-      const pxW = Math.round(Paper.mmToIn(s.mmW) * dpi);
-      const pxH = Math.round(Paper.mmToIn(s.mmH) * dpi);
-
-      const out = document.createElement('canvas');
-      out.width = pxW;
-      out.height = pxH;
-      const octx = out.getContext('2d');
-
-      octx.fillStyle = '#fff';
-      octx.fillRect(0,0,pxW,pxH);
-
-      const pw = this.paperEl.clientWidth;
-      const ph = this.paperEl.clientHeight;
-      const rx = pxW / pw;
-      const ry = pxH / ph;
-      const r = (rx + ry) / 2;
-
-      for(const l of this.layers){
-        octx.save();
-        octx.globalAlpha = l.opacity ?? 1;
-        octx.translate(l.x * rx, l.y * ry);
-        octx.rotate(l.rot || 0);
-        octx.scale((l.scale || 1) * r, (l.scale || 1) * r);
-
-        if(l.type==='image' && l.bmp){
-          octx.drawImage(l.bmp, -l.w/2, -l.h/2, l.w, l.h);
-        }
-        if(l.type==='text'){
-          const fontSize = (l.fontSize || 22);
-          octx.font = `${l.bold ? '700':'400'} ${fontSize}px system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Thai',sans-serif`;
-          octx.fillStyle = l.color || '#111827';
-          octx.textBaseline = 'middle';
-
-          const lines = String(l.text ?? '').split('\n');
-          const lineH = fontSize * 1.25;
-
-          // measure
-          let maxW = 10;
-          for(const line of lines){
-            maxW = Math.max(maxW, octx.measureText(line || ' ').width);
-          }
-          const boxH = Math.max(lineH, lines.length * lineH);
-          const align = l.align || 'left';
-          octx.textAlign = align;
-
-          for(let i=0;i<lines.length;i++){
-            const y = (-boxH/2) + (i*lineH) + (lineH/2);
-            let x = 0;
-            if(align==='left') x = -maxW/2;
-            if(align==='center') x = 0;
-            if(align==='right') x = maxW/2;
-            octx.fillText(lines[i], x, y);
-          }
-        }
-        octx.restore();
-      }
-
-      const blob = await new Promise((resolve)=> out.toBlob(resolve, 'image/png', 1.0));
-      if(!blob) throw new Error('สร้างไฟล์ไม่สำเร็จ');
-
-      const filename = `${s.size}_${s.ori}_${new Date().toISOString().slice(0,19).replaceAll(':','-')}.png`;
-      return { blob, filename };
-    },
-
-    async exportAs(mode){
-      try{
-        const { blob, filename } = await this.exportBlob();
-        const file = new File([blob], filename, {type:'image/png'});
-
-        // save last url for "open image"
-        if(this._lastExportBlobUrl) URL.revokeObjectURL(this._lastExportBlobUrl);
-        this._lastExportBlobUrl = URL.createObjectURL(blob);
-
-        if(mode==='share'){
-          try{
-            if(navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share){
-              await navigator.share({ files:[file], title:'Receipt', text:'ใบเสร็จ' });
-              toast('แชร์แล้ว (เลือก Save Image ได้)');
-              return;
-            }
-          }catch(e){}
-        }
-
-        // fallback download
-        const a = document.createElement('a');
-        a.href = this._lastExportBlobUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        toast(mode==='share' ? 'แชร์ไม่ได้ เลยดาวน์โหลดแทน' : 'ดาวน์โหลดแล้ว');
-      }catch(err){
-        console.error(err);
-        toast('บันทึกไม่สำเร็จ: ' + (err.message || err));
-      }
-    },
-
-    openLastExport(){
-      if(!this._lastExportBlobUrl) return toast('ยังไม่มีไฟล์บันทึกล่าสุด');
-      window.open(this._lastExportBlobUrl, '_blank');
-      toast('เปิดรูปแล้ว (กด Share/Save Image ได้)');
-    },
-
-    // ---------- Export shortcuts ----------
-    // side/top uses same exportAs()
-
-  };
-
-  // top bar shortcuts
-  $('rcTopAddImg').onclick = ()=> $('rcFile').click();
-  $('rcTopAddText').onclick = ()=> RC.addTextLayer('ลงนามโดย');
-  $('rcTopUndo').onclick = ()=> RC.undo();
-  $('rcTopSave').onclick = ()=> RC.exportAs('save');
-  $('rcTopShare').onclick = ()=> RC.exportAs('share');
-
-  // init RC
-  RC.init();
-
-  // init data
-  loadAll().catch(err=>{
-    console.error(err);
-    alert('โหลดข้อมูลไม่สำเร็จ: ' + err.message);
+  const res = await fetch(url, opts);
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error || data.message || ('HTTP '+res.status));
+  return data;
+}
+
+function categoryById(id){
+  return categories.find(c => String(c.id) === String(id)) || null;
+}
+function catNameById(id){
+  return categoryById(id)?.name || '-';
+}
+function sortedCats(){
+  return categories.slice().sort((a,b)=> (num(a.sort_order)-num(b.sort_order)) || String(a.name||'').localeCompare(String(b.name||''),'th'));
+}
+function sortedProducts(rows){
+  return rows.slice().sort((a,b)=>{
+    const ca = catNameById(a.category_id), cb = catNameById(b.category_id);
+    return ca.localeCompare(cb,'th') || (num(a.sort_order)-num(b.sort_order)) || String(a.name||'').localeCompare(String(b.name||''),'th');
   });
+}
+
+function setTab(tab){
+  activeTab = tab;
+  document.querySelectorAll('.tabBtn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  $(`panel-${tab}`).classList.add('active');
+  $('topAddBtn').textContent = tab === 'categories' ? '+ เพิ่มหมวด' : '+ เพิ่มสินค้า';
+  $('topAddBtn').style.visibility = tab === 'trash' ? 'hidden' : 'visible';
+}
+
+document.querySelectorAll('.tabBtn').forEach(btn => btn.addEventListener('click', ()=>setTab(btn.dataset.tab)));
+$('topAddBtn').addEventListener('click', ()=> activeTab === 'categories' ? openCategoryDrawer('add') : openProductDrawer('add'));
+
+function renderCategoryOptions(){
+  const current = $('prodFilterCat').value || 'all';
+  $('prodFilterCat').innerHTML = '<option value="all">ทั้งหมด</option>' + sortedCats().map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
+  $('prodFilterCat').value = [...$('prodFilterCat').options].some(o=>o.value===current) ? current : 'all';
+}
+
+function productRow(p){
+  const active = !!p.is_active;
+  const estUnit = p.estimated_unit || 'ชิ้น';
+  const deleted = !!p.deleted_at;
+  return `
+    <div class="row">
+      <div>
+        <div class="name">${escapeHtml(p.name)}</div>
+        <div class="meta">
+          <span class="chip">${escapeHtml(catNameById(p.category_id))}</span>
+          <span class="chip">ราคาตั้งต้น ${escapeHtml(money(p.default_price))}</span>
+          <span class="chip">ประเมิน ${escapeHtml(money(p.estimated_price))}/${escapeHtml(estUnit)}</span>
+          <span class="chip">ลำดับ ${escapeHtml(p.sort_order ?? 0)}</span>
+          <span class="chip ${active ? 'on' : 'off'}">${active ? 'ใช้งาน' : 'ปิด'}</span>
+        </div>
+      </div>
+      <div class="rowActions">
+        ${deleted ? `<button class="btn ok small" type="button" onclick="restoreProduct('${escapeHtml(p.id)}')">กู้คืน</button>` : `
+          <button class="btn ghost small" type="button" onclick="openProductDrawer('edit','${escapeHtml(p.id)}')">แก้ไข</button>
+          <button class="btn danger small" type="button" onclick="trashProduct('${escapeHtml(p.id)}')">ลบ</button>
+        `}
+      </div>
+    </div>`;
+}
+
+function renderProducts(){
+  const q = ($('prodSearch').value || '').trim().toLowerCase();
+  const cat = $('prodFilterCat').value || 'all';
+  const f = $('prodFilterActive').value || 'all';
+  const rows = sortedProducts(products.filter(p => !p.deleted_at).filter(p => {
+    if(q && !String(p.name||'').toLowerCase().includes(q)) return false;
+    if(cat !== 'all' && String(p.category_id) !== String(cat)) return false;
+    if(f === 'true' && !p.is_active) return false;
+    if(f === 'false' && p.is_active) return false;
+    return true;
+  }));
+  const box = $('productsList');
+  if(!rows.length){ box.innerHTML = '<div class="empty">ไม่พบสินค้า</div>'; return; }
+
+  const byCat = new Map();
+  for(const p of rows){
+    const cn = catNameById(p.category_id);
+    if(!byCat.has(cn)) byCat.set(cn, []);
+    byCat.get(cn).push(p);
+  }
+  box.innerHTML = [...byCat.entries()].map(([cn, list]) => `
+    <div class="groupTitle"><span>${escapeHtml(cn)}</span><span class="countPill">${list.length} รายการ</span></div>
+    ${list.map(productRow).join('')}
+  `).join('');
+}
+
+function catRow(c){
+  const active = !!c.is_active;
+  const count = products.filter(p => !p.deleted_at && String(p.category_id) === String(c.id)).length;
+  return `
+    <div class="row">
+      <div>
+        <div class="name">${escapeHtml(c.name)}</div>
+        <div class="meta">
+          <span class="chip">${count} สินค้า</span>
+          <span class="chip">ลำดับ ${escapeHtml(c.sort_order ?? 0)}</span>
+          <span class="chip ${active ? 'on' : 'off'}">${active ? 'ใช้งาน' : 'ปิด'}</span>
+        </div>
+      </div>
+      <div class="rowActions">
+        <button class="btn ghost small" type="button" onclick="openCategoryDrawer('edit','${escapeHtml(c.id)}')">แก้ไข</button>
+      </div>
+    </div>`;
+}
+
+function renderCats(){
+  const q = ($('catSearch').value || '').trim().toLowerCase();
+  const f = $('catFilterActive').value || 'all';
+  const rows = sortedCats().filter(c => {
+    if(q && !String(c.name||'').toLowerCase().includes(q)) return false;
+    if(f === 'true' && !c.is_active) return false;
+    if(f === 'false' && c.is_active) return false;
+    return true;
+  });
+  $('catsList').innerHTML = rows.length ? rows.map(catRow).join('') : '<div class="empty">ไม่พบหมวด</div>';
+}
+
+function renderTrash(){
+  const q = ($('trashSearch').value || '').trim().toLowerCase();
+  const rows = sortedProducts(products.filter(p => !!p.deleted_at).filter(p => {
+    if(!q) return true;
+    const hay = `${p.name||''} ${catNameById(p.category_id)}`.toLowerCase();
+    return hay.includes(q);
+  }));
+  $('trashList').innerHTML = rows.length ? rows.map(productRow).join('') : '<div class="empty">ถังขยะว่าง</div>';
+}
+
+function renderAll(){
+  renderCategoryOptions();
+  renderProducts();
+  renderCats();
+  renderTrash();
+}
+
+async function loadAll(){
+  categories = await api('/api/categories');
+  products = await api('/api/products');
+  renderAll();
+}
+
+function openDrawer(title, sub, bodyHtml, footerButtons){
+  $('drawerTitle').textContent = title;
+  $('drawerSub').textContent = sub || '';
+  $('drawerBody').innerHTML = bodyHtml;
+  $('drawerFooter').innerHTML = '';
+  footerButtons.forEach(btn => $('drawerFooter').appendChild(btn));
+  $('drawerBackdrop').classList.add('show');
+  $('drawer').classList.add('open');
+  $('drawer').setAttribute('aria-hidden','false');
+}
+function closeDrawer(){
+  $('drawerBackdrop').classList.remove('show');
+  $('drawer').classList.remove('open');
+  $('drawer').setAttribute('aria-hidden','true');
+  drawerState = {type:null, mode:null, data:null};
+}
+$('drawerBackdrop').onclick = closeDrawer;
+$('btnCloseDrawer').onclick = closeDrawer;
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeDrawer(); });
+
+function makeBtn(text, cls, fn){
+  const b = document.createElement('button');
+  b.className = `btn ${cls || ''}`;
+  b.type = 'button';
+  b.textContent = text;
+  b.onclick = fn;
+  return b;
+}
+
+function categoryOptions(selected){
+  return sortedCats().map(c => `<option value="${escapeHtml(c.id)}" ${String(c.id)===String(selected)?'selected':''}>${escapeHtml(c.name)}${c.is_active?'':' (ปิด)'}</option>`).join('');
+}
+
+function openProductDrawer(mode, id=null){
+  const data = id ? products.find(p => String(p.id) === String(id)) : null;
+  const p = data || { name:'', category_id: sortedCats()[0]?.id || '', default_price:'', estimated_price:'', estimated_unit:'ชิ้น', sort_order:0, is_active:true };
+  drawerState = { type:'product', mode, data:p };
+  const body = `
+    <div><label>ชื่อสินค้า</label><input class="ipt" id="d_prod_name" value="${escapeHtml(p.name)}" placeholder="ชื่อสินค้า"></div>
+    <div><label>หมวด</label><select class="ipt" id="d_prod_cat">${categoryOptions(p.category_id)}</select></div>
+    <div class="grid2">
+      <div><label>ราคาตั้งต้น</label><input class="ipt" id="d_prod_default" type="number" step="0.01" value="${escapeHtml(p.default_price ?? '')}" placeholder="0"></div>
+      <div><label>ราคาประเมิน</label><input class="ipt" id="d_prod_est" type="number" step="0.01" value="${escapeHtml(p.estimated_price ?? '')}" placeholder="0"></div>
+    </div>
+    <div class="grid2">
+      <div><label>หน่วยประเมิน</label><input class="ipt" id="d_prod_unit" value="${escapeHtml(p.estimated_unit || 'ชิ้น')}" placeholder="ชิ้น / cc / ครั้ง"></div>
+      <div><label>ลำดับ</label><input class="ipt" id="d_prod_sort" type="number" value="${escapeHtml(p.sort_order ?? 0)}"></div>
+    </div>
+    <div><label>สถานะ</label><select class="ipt" id="d_prod_active"><option value="true" ${p.is_active?'selected':''}>ใช้งาน</option><option value="false" ${!p.is_active?'selected':''}>ปิด</option></select></div>
+    <div class="miniNote">ราคาประเมินใช้เฉพาะหน้าวิเคราะห์สินค้า ไม่กระทบยอดเงินจริงในบิล</div>
+  `;
+  const buttons = [
+    makeBtn('ปิด','ghost',closeDrawer),
+    makeBtn('บันทึก','primary',saveProductFromDrawer),
+  ];
+  openDrawer(mode === 'add' ? 'เพิ่มสินค้า' : 'แก้ไขสินค้า', 'แก้ทีละรายการ ไม่รกหน้าจอ', body, buttons);
+}
+
+async function saveProductFromDrawer(){
+  const mode = drawerState.mode;
+  const old = drawerState.data || {};
+  const payload = {
+    category_id: $('d_prod_cat').value,
+    name: $('d_prod_name').value.trim(),
+    default_price: $('d_prod_default').value,
+    estimated_price: $('d_prod_est').value,
+    estimated_unit: $('d_prod_unit').value.trim() || 'ชิ้น',
+    sort_order: parseInt($('d_prod_sort').value || '0', 10),
+    is_active: $('d_prod_active').value === 'true'
+  };
+  if(!payload.category_id) return toast('เลือกหมวดก่อน');
+  if(!payload.name) return toast('กรอกชื่อสินค้า');
+  try{
+    const res = (mode === 'add')
+      ? await api('/api/products','POST',payload)
+      : await api('/api/products','PUT',{...payload, id: old.id});
+
+    closeDrawer();
+    await loadAll();
+
+    const expectedEst = Number(payload.estimated_price || 0);
+    let saved = null;
+    if(res && res.row && res.row.id){
+      saved = products.find(p => String(p.id) === String(res.row.id));
+    }
+    if(!saved && mode !== 'add' && old.id){
+      saved = products.find(p => String(p.id) === String(old.id));
+    }
+    if(!saved){
+      saved = products.find(p => String(p.category_id) === String(payload.category_id) && String(p.name || '').trim() === payload.name);
+    }
+
+    const actualEst = Number(saved?.estimated_price || 0);
+    const hasEstimatedField = saved && Object.prototype.hasOwnProperty.call(saved, 'estimated_price');
+    if(!hasEstimatedField || Math.abs(actualEst - expectedEst) > 0.0001){
+      toast('บันทึกสินค้าแล้ว แต่ราคาประเมินยังไม่เข้า Supabase: เช็ก app.py และ SQL');
+      return;
+    }
+
+    toast('บันทึกแล้ว');
+  }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
+}
+
+function openCategoryDrawer(mode, id=null){
+  const data = id ? categories.find(c => String(c.id) === String(id)) : null;
+  const c = data || { name:'', sort_order:0, is_active:true };
+  drawerState = { type:'category', mode, data:c };
+  const body = `
+    <div><label>ชื่อหมวด</label><input class="ipt" id="d_cat_name" value="${escapeHtml(c.name)}" placeholder="ชื่อหมวด"></div>
+    <div class="grid2">
+      <div><label>ลำดับ</label><input class="ipt" id="d_cat_sort" type="number" value="${escapeHtml(c.sort_order ?? 0)}"></div>
+      <div><label>สถานะ</label><select class="ipt" id="d_cat_active"><option value="true" ${c.is_active?'selected':''}>ใช้งาน</option><option value="false" ${!c.is_active?'selected':''}>ปิด</option></select></div>
+    </div>
+  `;
+  openDrawer(mode === 'add' ? 'เพิ่มหมวด' : 'แก้ไขหมวด', 'หมวดใช้จัดกลุ่มสินค้า', body, [
+    makeBtn('ปิด','ghost',closeDrawer),
+    makeBtn('บันทึก','primary',saveCategoryFromDrawer),
+  ]);
+}
+
+async function saveCategoryFromDrawer(){
+  const mode = drawerState.mode;
+  const old = drawerState.data || {};
+  const payload = {
+    name: $('d_cat_name').value.trim(),
+    sort_order: parseInt($('d_cat_sort').value || '0', 10),
+    is_active: $('d_cat_active').value === 'true'
+  };
+  if(!payload.name) return toast('กรอกชื่อหมวด');
+  try{
+    if(mode === 'add') await api('/api/categories','POST',payload);
+    else await api('/api/categories','PUT',{...payload, id: old.id});
+    toast('บันทึกแล้ว');
+    closeDrawer();
+    await loadAll();
+  }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
+}
+
+async function trashProduct(id){
+  if(!confirm('ย้ายสินค้านี้ไปถังขยะใช่ไหม?')) return;
+  try{
+    await api('/api/products','DELETE',{id});
+    toast('ย้ายไปถังขยะแล้ว');
+    await loadAll();
+  }catch(e){ toast('ลบไม่สำเร็จ: '+e.message); }
+}
+async function restoreProduct(id){
+  try{
+    await api('/api/products_restore','POST',{id});
+    toast('กู้คืนแล้ว');
+    await loadAll();
+  }catch(e){ toast('กู้คืนไม่สำเร็จ: '+e.message); }
+}
+
+window.openProductDrawer = openProductDrawer;
+window.openCategoryDrawer = openCategoryDrawer;
+window.trashProduct = trashProduct;
+window.restoreProduct = restoreProduct;
+
+$('btnAddProduct').onclick = ()=>openProductDrawer('add');
+$('btnAddCategory').onclick = ()=>openCategoryDrawer('add');
+['prodSearch','prodFilterCat','prodFilterActive'].forEach(id => $(id).addEventListener('input', renderProducts));
+$('prodFilterCat').addEventListener('change', renderProducts);
+$('prodFilterActive').addEventListener('change', renderProducts);
+$('btnClearProductFilter').onclick = ()=>{ $('prodSearch').value=''; $('prodFilterCat').value='all'; $('prodFilterActive').value='all'; renderProducts(); };
+
+['catSearch','catFilterActive'].forEach(id => $(id).addEventListener('input', renderCats));
+$('catFilterActive').addEventListener('change', renderCats);
+$('btnClearCatFilter').onclick = ()=>{ $('catSearch').value=''; $('catFilterActive').value='all'; renderCats(); };
+
+$('trashSearch').addEventListener('input', renderTrash);
+$('btnClearTrashFilter').onclick = ()=>{ $('trashSearch').value=''; renderTrash(); };
+
+loadAll().then(()=>toast('โหลดข้อมูลแล้ว')).catch(e=>{ console.error(e); alert('โหลดข้อมูลไม่สำเร็จ: '+e.message); });
 </script>
 </body>
 </html>

@@ -5,6 +5,7 @@ import re
 import json
 import time
 import hashlib
+import zipfile
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict, deque
 from math import isfinite
@@ -19,6 +20,7 @@ from flask import (
     url_for,
     session,
     jsonify,
+    send_file,
 )
 from werkzeug.security import check_password_hash
 from dotenv import load_dotenv
@@ -1567,7 +1569,7 @@ def api_products_map():
 
         prods_q = (
             supabase.table("products")
-            .select("id,name,default_price,sort_order,category_id,is_active,deleted_at")
+            .select("id,name,default_price,estimated_price,estimated_unit,sort_order,category_id,is_active,deleted_at")
             .in_("category_id", cat_ids)
             .eq("is_active", True)
             .is_("deleted_at", "null")
@@ -1587,6 +1589,8 @@ def api_products_map():
                     "id": p.get("id"),
                     "name": p.get("name"),
                     "default_price": p.get("default_price"),
+                    "estimated_price": p.get("estimated_price"),
+                    "estimated_unit": p.get("estimated_unit") or "ชิ้น",
                     "sort_order": p.get("sort_order", 0),
                 }
             )
@@ -1647,6 +1651,24 @@ def api_categories():
         return jsonify({"error": str(e)}), 500
 
 
+
+
+def _product_price_or_none(v: Any) -> Optional[float]:
+    try:
+        if v is None or v == "":
+            return None
+        n = float(v)
+        if n < 0:
+            n = 0.0
+        return n
+    except Exception:
+        raise ValueError("invalid_price")
+
+
+def _product_unit_clean(v: Any) -> str:
+    s = str(v or "").strip()
+    return s or "ชิ้น"
+
 @app.route("/api/products", methods=["GET", "POST", "PUT", "DELETE"])
 @login_required
 def api_products():
@@ -1680,15 +1702,23 @@ def api_products():
                 except Exception:
                     return jsonify({"error": "invalid_default_price"}), 400
 
+            try:
+                estimated_price = _product_price_or_none(data.get("estimated_price"))
+            except ValueError:
+                return jsonify({"error": "invalid_estimated_price"}), 400
+
             payload = {
                 "category_id": category_id,
                 "name": name,
                 "default_price": default_price,
+                "estimated_price": estimated_price if estimated_price is not None else 0,
+                "estimated_unit": _product_unit_clean(data.get("estimated_unit")),
                 "sort_order": int(data.get("sort_order") or 0),
                 "is_active": bool(data.get("is_active", True)),
             }
-            supabase.table("products").insert(payload).execute()
-            return jsonify({"message": "ok"})
+            ins = supabase.table("products").insert(payload).execute()
+            row = (ins.data or [{}])[0] if getattr(ins, "data", None) else {}
+            return jsonify({"message": "ok", "row": row})
 
         if request.method == "PUT":
             pid = data.get("id")
@@ -1714,14 +1744,24 @@ def api_products():
                     except Exception:
                         return jsonify({"error": "invalid_default_price"}), 400
 
+            if "estimated_price" in data:
+                try:
+                    ep = _product_price_or_none(data.get("estimated_price"))
+                    patch["estimated_price"] = ep if ep is not None else 0
+                except ValueError:
+                    return jsonify({"error": "invalid_estimated_price"}), 400
+            if "estimated_unit" in data:
+                patch["estimated_unit"] = _product_unit_clean(data.get("estimated_unit"))
+
             if "deleted_at" in data:
                 patch["deleted_at"] = data.get("deleted_at")
 
             if not patch:
                 return jsonify({"error": "no_fields"}), 400
 
-            supabase.table("products").update(patch).eq("id", pid).execute()
-            return jsonify({"message": "ok"})
+            upd = supabase.table("products").update(patch).eq("id", pid).execute()
+            row = (upd.data or [{}])[0] if getattr(upd, "data", None) else {}
+            return jsonify({"message": "ok", "row": row})
 
         if request.method == "DELETE":
             pid = data.get("id")
@@ -1755,6 +1795,276 @@ def api_products_restore():
         ).eq("id", pid).execute()
         return jsonify({"message": "restored"})
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+@app.route("/api/products_add_from_insight", methods=["POST"])
+@login_required
+def api_products_add_from_insight():
+    """Add/update a legacy product discovered from sales history.
+
+    Used by customer_list Product Insight when an item exists in old sales_records
+    but is not in the product settings. The default is_active=False keeps it out of
+    the sales-entry product picker, while still letting analytics use its estimated
+    price.
+    """
+    try:
+        data = request.get_json(force=True) or {}
+        category_name = (data.get("category") or data.get("category_name") or "").strip()
+        product_name = (data.get("product_name") or data.get("name") or "").strip()
+        if not category_name:
+            return jsonify({"error": "missing_category"}), 400
+        if not product_name:
+            return jsonify({"error": "missing_product_name"}), 400
+
+        try:
+            estimated_price = _product_price_or_none(data.get("estimated_price"))
+        except ValueError:
+            return jsonify({"error": "invalid_estimated_price"}), 400
+
+        estimated_price = estimated_price if estimated_price is not None else 0
+        estimated_unit = _product_unit_clean(data.get("estimated_unit") or data.get("unit") or "ชิ้น")
+
+        # Default false: use for analytics only, not for the sales-entry picker.
+        open_for_sales_raw = data.get("open_for_sales", data.get("is_active", False))
+        if isinstance(open_for_sales_raw, bool):
+            is_active = open_for_sales_raw
+        else:
+            is_active = str(open_for_sales_raw or "").strip().lower() in {"1", "true", "yes", "y", "on"}
+
+        # Find or create category by its display name.
+        cat_rows = (
+            supabase.table("product_categories")
+            .select("*")
+            .eq("name", category_name)
+            .limit(1)
+            .execute()
+        ).data or []
+
+        if cat_rows:
+            category = cat_rows[0]
+        else:
+            # Put new category at the end; normally category should already exist.
+            sort_order = 9999
+            try:
+                last_cat = (
+                    supabase.table("product_categories")
+                    .select("sort_order")
+                    .order("sort_order", desc=True)
+                    .limit(1)
+                    .execute()
+                ).data or []
+                if last_cat:
+                    sort_order = int(last_cat[0].get("sort_order") or 0) + 10
+            except Exception:
+                pass
+
+            ins_cat = supabase.table("product_categories").insert({
+                "name": category_name,
+                "sort_order": sort_order,
+                "is_active": True,
+            }).execute()
+            category = (ins_cat.data or [{}])[0]
+
+        category_id = category.get("id")
+        if not category_id:
+            return jsonify({"error": "category_create_failed"}), 500
+
+        # Existing product with the exact same name in this category: just update price/unit/status.
+        existing = (
+            supabase.table("products")
+            .select("*")
+            .eq("category_id", category_id)
+            .eq("name", product_name)
+            .limit(1)
+            .execute()
+        ).data or []
+
+        patch = {
+            "estimated_price": estimated_price,
+            "estimated_unit": estimated_unit,
+            "is_active": is_active,
+            "deleted_at": None,
+        }
+
+        if existing:
+            pid = existing[0].get("id")
+            upd = supabase.table("products").update(patch).eq("id", pid).execute()
+            row = (upd.data or [{}])[0] if getattr(upd, "data", None) else {}
+            return jsonify({"message": "updated", "row": row, "category": category}), 200
+
+        sort_order = 9999
+        try:
+            last_prod = (
+                supabase.table("products")
+                .select("sort_order")
+                .eq("category_id", category_id)
+                .order("sort_order", desc=True)
+                .limit(1)
+                .execute()
+            ).data or []
+            if last_prod:
+                sort_order = int(last_prod[0].get("sort_order") or 0) + 10
+        except Exception:
+            pass
+
+        payload = {
+            "category_id": category_id,
+            "name": product_name,
+            "default_price": None,
+            "estimated_price": estimated_price,
+            "estimated_unit": estimated_unit,
+            "sort_order": sort_order,
+            "is_active": is_active,
+            "deleted_at": None,
+        }
+        ins = supabase.table("products").insert(payload).execute()
+        row = (ins.data or [{}])[0] if getattr(ins, "data", None) else {}
+        return jsonify({"message": "inserted", "row": row, "category": category}), 200
+
+    except Exception as e:
+        app.logger.error(f"/api/products_add_from_insight error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# =============================================================
+# API — Product Estimated Prices
+# ใช้สำหรับหน้า customer_list แถบ "ตั้งค่าราคาประเมินสินค้า"
+# หมายเหตุ: ราคานี้ใช้คำนวณเฉพาะ Product Insight เท่านั้น ไม่กระทบยอดจริงของ sales_records.amount
+# =============================================================
+def _pep_clean_text(v: Any) -> str:
+    return str(v or "").strip()
+
+
+def _pep_float(v: Any, default: float = 0.0) -> float:
+    try:
+        if v in (None, ""):
+            return default
+        return float(v)
+    except Exception:
+        return default
+
+
+def _pep_int(v: Any, default: int = 0) -> int:
+    try:
+        if v in (None, ""):
+            return default
+        return int(float(v))
+    except Exception:
+        return default
+
+
+def _pep_bool(v: Any, default: bool = True) -> bool:
+    if isinstance(v, bool):
+        return v
+    s = str(v or "").strip().lower()
+    if s in {"false", "0", "no", "n", "off"}:
+        return False
+    if s in {"true", "1", "yes", "y", "on"}:
+        return True
+    return default
+
+
+def _clean_product_estimated_price_payload(data: Dict[str, Any]) -> Dict[str, Any]:
+    category = _pep_clean_text(data.get("category"))
+    product_name = _pep_clean_text(data.get("product_name") or data.get("name"))
+    if not category:
+        raise ValueError("missing_category")
+    if not product_name:
+        raise ValueError("missing_product_name")
+
+    payload = {
+        "category": category,
+        "product_name": product_name,
+        "unit_label": _pep_clean_text(data.get("unit_label") or data.get("unit") or "ชิ้น") or "ชิ้น",
+        "estimated_price": max(0.0, _pep_float(data.get("estimated_price"), 0.0)),
+        "is_active": _pep_bool(data.get("is_active"), True),
+        "sort_order": _pep_int(data.get("sort_order"), 0),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    return payload
+
+
+@app.route("/api/product_estimated_prices")
+@login_required
+def api_product_estimated_prices():
+    try:
+        include_inactive = str(request.args.get("include_inactive", "1")).lower() in {"1", "true", "yes"}
+        q = supabase.table("product_estimated_prices").select("*")
+        if not include_inactive:
+            q = q.eq("is_active", True)
+        rows = (
+            q.order("category", desc=False)
+             .order("sort_order", desc=False)
+             .order("product_name", desc=False)
+             .execute()
+             .data
+            or []
+        )
+        return jsonify(rows)
+    except Exception as e:
+        app.logger.error(f"/api/product_estimated_prices error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/save_product_estimated_price", methods=["POST"])
+@login_required
+def api_save_product_estimated_price():
+    try:
+        data = request.get_json(force=True) or {}
+        row_id = _pep_clean_text(data.get("id"))
+        payload = _clean_product_estimated_price_payload(data)
+
+        if row_id:
+            res = supabase.table("product_estimated_prices").update(payload).eq("id", row_id).execute()
+        else:
+            payload["created_at"] = datetime.now(timezone.utc).isoformat()
+            res = supabase.table("product_estimated_prices").upsert(
+                payload,
+                on_conflict="category,product_name"
+            ).execute()
+
+        row = (res.data or [payload])[0] if isinstance(res.data, list) else payload
+        return jsonify({"success": True, "row": row})
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        app.logger.error(f"/api/save_product_estimated_price error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/save_product_estimated_prices", methods=["POST"])
+@login_required
+def api_save_product_estimated_prices():
+    try:
+        data = request.get_json(force=True) or {}
+        rows_in = data if isinstance(data, list) else data.get("rows")
+        if not isinstance(rows_in, list):
+            return jsonify({"error": "payload_must_be_list_or_rows"}), 400
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        payloads = []
+        for row in rows_in:
+            if not isinstance(row, dict):
+                continue
+            payload = _clean_product_estimated_price_payload(row)
+            payload["created_at"] = row.get("created_at") or now_iso
+            payload["updated_at"] = now_iso
+            payloads.append(payload)
+
+        if not payloads:
+            return jsonify({"success": True, "count": 0, "rows": []})
+
+        res = supabase.table("product_estimated_prices").upsert(
+            payloads,
+            on_conflict="category,product_name"
+        ).execute()
+        return jsonify({"success": True, "count": len(payloads), "rows": res.data or payloads})
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        app.logger.error(f"/api/save_product_estimated_prices error: {e}")
         return jsonify({"error": str(e)}), 500
 
 
@@ -3028,20 +3338,26 @@ def api_get_appointments_range():
         if end_dt < start_dt:
             return jsonify({"error": "invalid_date_range"}), 400
 
-        # กันการดึงกว้างเกินไปโดยไม่ตั้งใจ
-        if (end_dt - start_dt).days > 92:
-            return jsonify({"error": "range_too_large", "max_days": 92}), 400
+        # ไม่จำกัดจำนวนวัน: ถ้าผู้ใช้เลือกทั้งหมด/เลือกช่วงเวลา ต้องได้ข้อมูลจริงครบ
+        # ความปลอดภัยเรื่องค้างแก้ด้วยการดึงข้อมูลแบบแบ่งหน้า 1000 แถวต่อรอบด้านล่าง
 
-        res = (
+        base_q = (
             supabase.table("appointments")
             .select("*")
             .gte("appt_date", start_date)
             .lte("appt_date", end_date)
             .order("appt_date", desc=False)
-            .execute()
         )
-
-        rows = res.data or []
+        rows = []
+        page_start = 0
+        page_size = 1000
+        while True:
+            res = base_q.range(page_start, page_start + page_size - 1).execute()
+            batch = res.data or []
+            rows.extend(batch)
+            if len(batch) < page_size:
+                break
+            page_start += page_size
         try:
             rows.sort(key=lambda r: (
                 str(r.get("appt_date") or ""),
@@ -3057,6 +3373,143 @@ def api_get_appointments_range():
     except Exception as e:
         app.logger.error(f"/api/get_appointments_range error: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+def _appt_norm_status_for_search(value: Any) -> str:
+    s = str(value or "pending").strip().lower()
+    if s in {"confirm", "confirmed"}:
+        return "confirmed"
+    if s in {"cancel", "canceled", "cancelled"}:
+        return "cancelled"
+    return "pending"
+
+
+@app.route("/api/search_appointments")
+@login_required
+def api_search_appointments():
+    """Search appointments directly from Supabase for the Queue filter.
+
+    This endpoint fixes the old frontend-only filter problem. The previous UI only
+    filtered rows that were already loaded in cache, so old cancelled appointments
+    were invisible. This endpoint queries the appointments table directly and then
+    applies status / column / customer type / text filters in Python for maximum
+    compatibility with older schemas.
+    """
+    try:
+        start_date = safe_date_str(request.args.get("start") or request.args.get("start_date"))
+        end_date = safe_date_str(request.args.get("end") or request.args.get("end_date"))
+        range_mode = (request.args.get("range") or "default").strip().lower()
+        status_filter = (request.args.get("status") or "all").strip().lower()
+        column_filter = (request.args.get("column") or "all").strip().lower()
+        type_filter = (request.args.get("type") or "all").strip().lower()
+        kw = (request.args.get("q") or "").strip().lower()
+
+        # Validate date range when provided. range=all intentionally has no date bound. range=custom uses the provided start/end dates.
+        if range_mode != "all":
+            if not start_date or not end_date:
+                return jsonify({"success": False, "error": "missing_date_range"}), 400
+            try:
+                start_dt = datetime.strptime(start_date, "%Y-%m-%d").date()
+                end_dt = datetime.strptime(end_date, "%Y-%m-%d").date()
+            except Exception:
+                return jsonify({"success": False, "error": "invalid_date_format"}), 400
+            if end_dt < start_dt:
+                return jsonify({"success": False, "error": "invalid_date_range"}), 400
+            # ไม่จำกัดจำนวนวัน: เลือกช่วงเวลา/ปีเก่า ๆ ต้องค้นเจอจริง
+            # backend จะดึงข้อมูลแบบแบ่งหน้าเพื่อไม่ให้ชน limit ของ Supabase
+
+        q = supabase.table("appointments").select("*")
+        if range_mode != "all" and start_date and end_date:
+            q = q.gte("appt_date", start_date).lte("appt_date", end_date)
+        q = q.order("appt_date", desc=False).order("start_time", desc=False)
+
+        rows: List[Dict[str, Any]] = []
+        page_start = 0
+        page_size = 1000
+        while True:
+            resp = q.range(page_start, page_start + page_size - 1).execute()
+            batch = resp.data or []
+            rows.extend(batch)
+            if len(batch) < page_size:
+                break
+            page_start += page_size
+
+        def _norm_col(v: Any) -> str:
+            try:
+                return str(int(float(v)))
+            except Exception:
+                return str(v or "").strip()
+
+        def _row_name(r: Dict[str, Any]) -> str:
+            return str(
+                r.get("customer_name") or r.get("guest_name") or r.get("display_name") or r.get("name") or ""
+            ).strip()
+
+        def _haystack(r: Dict[str, Any]) -> str:
+            vals = [
+                _row_name(r),
+                r.get("guest_phone"), r.get("phone"),
+                r.get("service"), r.get("procedure"),
+                r.get("opd"), r.get("customer_id"),
+                r.get("note"), r.get("status"),
+            ]
+            return " ".join(str(x or "") for x in vals).lower()
+
+        def _phone_digits(s: str) -> str:
+            return re.sub(r"\D", "", s or "")
+
+        out: List[Dict[str, Any]] = []
+        kw_digits = _phone_digits(kw)
+        for r in rows:
+            st = _appt_norm_status_for_search(r.get("status"))
+            if status_filter in {"pending", "confirmed", "cancelled"} and st != status_filter:
+                continue
+
+            col = _norm_col(r.get("column_id"))
+            if column_filter == "doctor":
+                if col not in {"1", "2"}:
+                    continue
+            elif column_filter not in {"", "all"} and col != column_filter:
+                continue
+
+            ctype = str(r.get("customer_type") or "new").strip().lower()
+            if ctype not in {"old", "new"}:
+                ctype = "new"
+            if type_filter in {"old", "new"} and ctype != type_filter:
+                continue
+
+            if kw:
+                hay = _haystack(r)
+                if kw not in hay and (not kw_digits or kw_digits not in _phone_digits(hay)):
+                    continue
+
+            # Normalize output fields for frontend compatibility.
+            r = dict(r)
+            r["status"] = st
+            r["customer_type"] = ctype
+            if not r.get("customer_name"):
+                r["customer_name"] = _row_name(r)
+            out.append(r)
+
+        out.sort(key=lambda r: (
+            str(r.get("appt_date") or ""),
+            str(r.get("start_time") or ""),
+            _norm_col(r.get("column_id")),
+            str(r.get("id") or ""),
+        ))
+
+        return jsonify({
+            "success": True,
+            "rows": out,
+            "count": len(out),
+            "range": range_mode,
+            "start_date": start_date or None,
+            "end_date": end_date or None,
+        })
+
+    except Exception as e:
+        app.logger.error(f"/api/search_appointments error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route("/api/save_appointment", methods=["POST"])
@@ -3101,14 +3554,28 @@ def api_save_appointment():
         if status not in allowed_status:
             status = "pending"
 
-        # frontend ส่งเลข OPD มาได้ แต่บางฐานข้อมูลเก่าอาจยังไม่มีคอลัมน์ customer_id/opd
-        opd_raw = data.get("opd") or data.get("customer_id")
-        opd = normalize_opd(opd_raw) if opd_raw else ""
-
         if not guest_name:
             return jsonify({"success": False, "error": "missing_customer_name"}), 400
         if not appt_date or not start_time or not column_id or not service:
             return jsonify({"success": False, "error": "missing_required_fields"}), 400
+
+        # สำคัญ: customer_id ใน Supabase เป็น uuid บางระบบ
+        # ห้ามเอาเลข OPD เช่น 0470 ไปใส่ customer_id เด็ดขาด
+        def _is_uuid_text(v):
+            return bool(re.match(
+                r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                str(v or "").strip()
+            ))
+
+        incoming_customer_id = data.get("customer_id")
+        incoming_customer_id_s = str(incoming_customer_id or "").strip()
+        customer_id_uuid = incoming_customer_id_s if _is_uuid_text(incoming_customer_id_s) else None
+
+        # frontend รุ่นเก่าอาจส่ง OPD มาใน customer_id ด้วย จึงต้องดึงกลับไปไว้ที่ opd
+        opd_raw = data.get("opd")
+        if not opd_raw and incoming_customer_id_s and not customer_id_uuid:
+            opd_raw = incoming_customer_id_s
+        opd = normalize_opd(opd_raw) if opd_raw else ""
 
         # กันคิวซ้ำวันเดียวกัน + เวลาเดียวกัน + ช่องเดียวกัน ยกเว้นรายการที่ cancelled
         try:
@@ -3147,19 +3614,27 @@ def api_save_appointment():
             "note": note,
         }
 
+        # รองรับฐานข้อมูลหลายเวอร์ชัน:
+        # - เวอร์ชันใหม่มี opd และ/หรือ customer_id
+        # - เวอร์ชันเก่าอาจไม่มีคอลัมน์ใดคอลัมน์หนึ่ง
+        # แต่ทุกกรณีจะไม่ใส่ OPD ลง customer_id อีกแล้ว
         candidate_payloads = []
+
+        p = dict(base_payload)
+        if customer_id_uuid:
+            p["customer_id"] = customer_id_uuid
+        if opd:
+            p["opd"] = opd
+        candidate_payloads.append(p)
+
         if opd:
             p = dict(base_payload)
-            p["customer_id"] = opd
             p["opd"] = opd
             candidate_payloads.append(p)
 
+        if customer_id_uuid:
             p = dict(base_payload)
-            p["customer_id"] = opd
-            candidate_payloads.append(p)
-
-            p = dict(base_payload)
-            p["opd"] = opd
+            p["customer_id"] = customer_id_uuid
             candidate_payloads.append(p)
 
         candidate_payloads.append(dict(base_payload))
@@ -3184,8 +3659,11 @@ def api_save_appointment():
             except Exception as e:
                 last_err = e
                 msg = str(e).lower()
-                # ถ้าพังเพราะคอลัมน์ customer_id/opd ไม่มี ให้ลอง payload ชุดถัดไป
-                if "customer_id" in msg or "opd" in msg or "schema" in msg or "column" in msg or "could not find" in msg:
+                # ถ้าพังเพราะคอลัมน์ไม่มี / schema cache / type uuid ให้ลอง payload ที่ตัด field เสี่ยงออก
+                if (
+                    "customer_id" in msg or "opd" in msg or "schema" in msg or
+                    "column" in msg or "could not find" in msg or "uuid" in msg
+                ):
                     continue
                 raise
 
@@ -4153,6 +4631,977 @@ def api_set_all_tax_display():
         app.logger.error(f"/api/set_all_tax_display error: {e}")
         return jsonify({"error": str(e)}), 500
 
+
+
+# =============================================================
+# API — Full AI Chatbot Export (single ZIP file)
+# =============================================================
+def _ai_json_default(obj):
+    try:
+        if hasattr(obj, "isoformat"):
+            return obj.isoformat()
+    except Exception:
+        pass
+    return str(obj)
+
+
+def _ai_to_jsonl(rows: List[Dict[str, Any]]) -> str:
+    return "\n".join(json.dumps(r, ensure_ascii=False, default=_ai_json_default) for r in (rows or [])) + ("\n" if rows else "")
+
+
+def _ai_fetch_table_all(table_name: str, select_expr: str = "*") -> Tuple[List[Dict[str, Any]], Optional[str]]:
+    """Fetch every row from a Supabase table with pagination.
+
+    Missing legacy tables are reported in metadata but do not break the export.
+    """
+    rows: List[Dict[str, Any]] = []
+    start = 0
+    limit = 1000
+    try:
+        while True:
+            res = supabase.table(table_name).select(select_expr).range(start, start + limit - 1).execute()
+            batch = res.data or []
+            if not isinstance(batch, list):
+                batch = []
+            rows.extend(batch)
+            if len(batch) < limit:
+                break
+            start += limit
+        return rows, None
+    except Exception as e:
+        return [], str(e)
+
+
+def _ai_num(v: Any, default: float = 0.0) -> float:
+    try:
+        if v in (None, ""):
+            return default
+        return float(v)
+    except Exception:
+        return default
+
+
+def _ai_int(v: Any, default: int = 0) -> int:
+    try:
+        if v in (None, ""):
+            return default
+        return int(float(v))
+    except Exception:
+        return default
+
+
+def _ai_parse_sale_item(item: Any) -> Dict[str, Any]:
+    """Normalize sale item for chatbot usage while keeping original label.
+
+    Supports old string format and newer object format.
+    """
+    out = {
+        "label": "",
+        "category": "",
+        "name": "",
+        "qty": 1,
+        "price": None,
+        "raw": item,
+    }
+
+    if isinstance(item, dict):
+        category = str(item.get("category") or item.get("main") or item.get("group") or "").strip()
+        name = str(item.get("name") or item.get("subitem") or item.get("sub") or item.get("label") or item.get("product") or "").strip()
+        label = str(item.get("label") or "").strip()
+        qty = _ai_int(item.get("qty") or item.get("quantity") or item.get("count"), 1)
+        price_raw = item.get("price") if item.get("price") is not None else item.get("unit_price")
+        price = None if price_raw in (None, "") else _ai_num(price_raw, 0)
+
+        # Handle name like "งานผิว (Rejuran)" when category is missing.
+        if not category and name:
+            m = re.match(r"^(.*?)\s*\((.*?)\)\s*$", name)
+            if m:
+                category = (m.group(1) or "").strip()
+                name = (m.group(2) or "").strip()
+
+        if not label:
+            if category and name:
+                label = f"{category} ({name})"
+            else:
+                label = name or category
+
+        out.update({"label": label, "category": category, "name": name or label, "qty": max(1, qty), "price": price})
+        return out
+
+    text = str(item or "").strip()
+    out["label"] = text
+    if not text:
+        return out
+
+    base = text
+    qty = 1
+    price = None
+    m = re.match(r"^(.*?)\s*-\s*(\d+(?:\.\d+)?)\s*ชิ้น\s*x\s*(\d+(?:\.\d+)?)\s*บาท?", text)
+    if m:
+        base = (m.group(1) or "").strip()
+        qty = _ai_int(m.group(2), 1)
+        price = _ai_num(m.group(3), 0)
+    else:
+        m2 = re.match(r"^(.*?)\s*-\s*(\d+(?:\.\d+)?)\s*ชิ้น", text)
+        if m2:
+            base = (m2.group(1) or "").strip()
+            qty = _ai_int(m2.group(2), 1)
+
+    category = ""
+    name = base
+    m3 = re.match(r"^(.*?)\s*\((.*?)\)\s*$", base)
+    if m3:
+        category = (m3.group(1) or "").strip()
+        name = (m3.group(2) or "").strip()
+
+    out.update({"category": category, "name": name or base, "qty": max(1, qty), "price": price})
+    return out
+
+
+def _ai_normalize_sale_items(row: Dict[str, Any]) -> List[Dict[str, Any]]:
+    raw = row.get("item")
+    if raw is None:
+        raw = row.get("items")
+    items = _ensure_item_list(raw)
+    return [_ai_parse_sale_item(x) for x in items if x not in (None, "")]
+
+
+def _ai_build_sales_full(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    out = []
+    for r in rows or []:
+        rr = dict(r)
+        rr["opd"] = normalize_opd(rr.get("opd"))
+        rr["date"] = safe_date_str(rr.get("date"))
+        rr["amount"] = _ai_num(rr.get("amount"), 0)
+        rr["items_normalized"] = _ai_normalize_sale_items(rr)
+        rr["items_text"] = _coerce_items_to_text_list(rr.get("item") if rr.get("item") is not None else rr.get("items"))
+        out.append(rr)
+    return out
+
+
+def _ai_build_daily_summary(sales_rows: List[Dict[str, Any]], pending_rows: List[Dict[str, Any]], appt_rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    by_day: Dict[str, Dict[str, Any]] = {}
+
+    def day_obj(d: str) -> Dict[str, Any]:
+        if d not in by_day:
+            by_day[d] = {
+                "date": d,
+                "total_sales": 0,
+                "bill_count": 0,
+                "unique_customers": 0,
+                "customer_opds": set(),
+                "payment_methods": defaultdict(int),
+                "top_items_counter": defaultdict(int),
+                "ar_total": 0,
+                "pending_work_count": 0,
+                "appointment_count": 0,
+                "appointment_statuses": defaultdict(int),
+                "doctor_case_count": 0,
+                "iv_case_count": 0,
+            }
+        return by_day[d]
+
+    for r in sales_rows or []:
+        d = safe_date_str(r.get("date"))
+        if not d:
+            continue
+        o = day_obj(d)
+        o["bill_count"] += 1
+        o["total_sales"] += _ai_num(r.get("amount"), 0)
+        opd = normalize_opd(r.get("opd"))
+        if opd:
+            o["customer_opds"].add(opd)
+        pm_raw = r.get("payment") if r.get("payment") not in (None, "") else r.get("payment_method")
+        pm = str(pm_raw or "").strip() or "ไม่ระบุ"
+        o["payment_methods"][pm] += 1
+        for it in _ai_normalize_sale_items(r):
+            name = it.get("name") or it.get("label") or "ไม่ระบุ"
+            o["top_items_counter"][name] += _ai_int(it.get("qty"), 1)
+
+    for p in pending_rows or []:
+        d = safe_date_str(p.get("sale_date") or p.get("date"))
+        if not d:
+            continue
+        o = day_obj(d)
+        o["ar_total"] += _ai_num(p.get("ar_amount"), 0)
+        pending = _ensure_pending_work_list(p.get("pending_work"))
+        o["pending_work_count"] += sum(_ai_int(x.get("qty"), 1) for x in pending)
+
+    for a in appt_rows or []:
+        d = safe_date_str(a.get("appt_date") or a.get("date"))
+        if not d:
+            continue
+        o = day_obj(d)
+        o["appointment_count"] += 1
+        st = str(a.get("status") or "ไม่ระบุ").strip() or "ไม่ระบุ"
+        o["appointment_statuses"][st] += 1
+        typ_raw = a.get("case_type") or a.get("type") or a.get("column_id") or a.get("note") or ""
+        typ = str(typ_raw or "").lower()
+        if "iv" in typ or "ดริป" in typ:
+            o["iv_case_count"] += 1
+        elif "doctor" in typ or "แพทย" in typ or "หมอ" in typ:
+            o["doctor_case_count"] += 1
+
+    out = []
+    for d in sorted(by_day.keys()):
+        o = by_day[d]
+        top_items = sorted(o["top_items_counter"].items(), key=lambda x: x[1], reverse=True)[:15]
+        out.append({
+            "date": d,
+            "total_sales": round(o["total_sales"], 2),
+            "bill_count": o["bill_count"],
+            "unique_customers": len(o["customer_opds"]),
+            "payment_methods": dict(o["payment_methods"]),
+            "top_items": [{"name": k, "qty": v} for k, v in top_items],
+            "ar_total": round(o["ar_total"], 2),
+            "pending_work_count": o["pending_work_count"],
+            "appointment_count": o["appointment_count"],
+            "appointment_statuses": dict(o["appointment_statuses"]),
+            "doctor_case_count": o["doctor_case_count"],
+            "iv_case_count": o["iv_case_count"],
+        })
+    return out
+
+
+def _ai_data_dictionary() -> Dict[str, Any]:
+    return {
+        "purpose": "ข้อมูลจริงทั้งหมดจากระบบคลินิก สำหรับให้ backend/AI Chatbot ใช้ค้นหาและสรุปคำตอบ",
+        "warning": "ไฟล์นี้มีข้อมูลลูกค้าจริง เช่น ชื่อ เบอร์ ประวัติซื้อ นัดหมาย และข้อมูลค้างชำระ ใช้เฉพาะภายในคลินิกเท่านั้น",
+        "recommended_usage": "ให้ระบบ chatbot ดึงเฉพาะข้อมูลที่เกี่ยวข้องกับคำถามจากไฟล์หรือฐานข้อมูล แล้วส่งให้ AI สรุป ไม่ควรส่งทั้งฐานข้อมูลให้ AI ทุกครั้ง",
+        "files": {
+            "raw/*.jsonl": "ข้อมูลดิบจาก Supabase ทีละตาราง ไม่ตัดข้อมูล",
+            "curated/customers_full.jsonl": "ข้อมูลลูกค้าจริงทั้งหมด",
+            "curated/sales_full.jsonl": "ยอดขายจริงทั้งหมด พร้อม items_normalized สำหรับ AI อ่านง่าย",
+            "curated/appointments_full.jsonl": "นัดหมายทั้งหมด",
+            "curated/pending_summary.jsonl": "ค้างชำระ/ค้างทำแบบ 1 บิลต่อ 1 แถว",
+            "curated/inventory_counts_full.jsonl": "ข้อมูลนับสต๊อกพร้อมรายละเอียด item",
+            "curated/daily_summary.jsonl": "สรุปรายวันจากยอดขาย นัดหมาย และรายการค้าง",
+        },
+        "important_fields": {
+            "opd": "รหัสลูกค้าในคลินิก",
+            "amount": "ยอดขายสุทธิของบิล",
+            "items_normalized": "รายการสินค้า/บริการในบิลแบบแยก category, name, qty, price",
+            "ar_amount": "ยอดค้างชำระของบิล",
+            "pending_work": "รายการที่ลูกค้าซื้อแล้วแต่ยังไม่ได้ทำ",
+            "receipt_status": "สถานะใบเสร็จ เช่น recorded/issued",
+            "orig_no": "เลขใบเสร็จต้นฉบับ RC",
+            "disp_no": "เลขแสดงผล RB",
+        },
+    }
+
+
+@app.route("/api/export_ai_chatbot_zip")
+@login_required
+def export_ai_chatbot_zip():
+    """Download a single ZIP containing real full data for AI Chatbot usage."""
+    try:
+        exported_at = datetime.now(timezone(timedelta(hours=7))).replace(microsecond=0).isoformat()
+        stamp = datetime.now(timezone(timedelta(hours=7))).strftime("%Y%m%d_%H%M%S")
+        filename = f"palmy_ai_chatbot_full_{stamp}.zip"
+
+        table_names = [
+            "customers",
+            "customer_gallery",
+            "sales_records",
+            "sale_pending_summary",
+            "appointments",
+            "product_categories",
+            "products",
+            "customer_pitch_logs",
+            "inventory_items",
+            "inventory_counts",
+            "receipt_counters_orig",
+            "staffs",
+            "work_schedules",
+            "oldsaledata",
+            "inventory",  # legacy backup table if still exists
+            "ar_transactions",  # legacy, may be deleted
+            "voucher_transactions",
+            "work_transactions",  # legacy, may be deleted
+        ]
+
+        raw: Dict[str, List[Dict[str, Any]]] = {}
+        errors: Dict[str, str] = {}
+        for t in table_names:
+            rows, err = _ai_fetch_table_all(t)
+            raw[t] = rows
+            if err:
+                errors[t] = err
+
+        sales_full = _ai_build_sales_full(raw.get("sales_records") or [])
+        daily_summary = _ai_build_daily_summary(
+            raw.get("sales_records") or [],
+            raw.get("sale_pending_summary") or [],
+            raw.get("appointments") or [],
+        )
+
+        inventory_counts_full: List[Dict[str, Any]] = []
+        items_by_id = {str(x.get("id")): x for x in (raw.get("inventory_items") or []) if x.get("id") is not None}
+        for c in raw.get("inventory_counts") or []:
+            row = dict(c)
+            item = items_by_id.get(str(c.get("item_id"))) or {}
+            row["item_name"] = item.get("name") or row.get("item_name")
+            row["category"] = item.get("category")
+            row["unit"] = item.get("unit")
+            row["min_qty"] = item.get("min_qty")
+            inventory_counts_full.append(row)
+
+        metadata = {
+            "export_type": "palmy_clinic_ai_chatbot_full_dataset",
+            "exported_at": exported_at,
+            "version": "1.0",
+            "contains_real_personal_data": True,
+            "warning": "ไฟล์นี้มีข้อมูลจริงของคลินิกและลูกค้า ใช้เฉพาะภายในเท่านั้น ห้ามส่งต่อสาธารณะ",
+            "source_tables": table_names,
+            "record_counts": {k: len(v or []) for k, v in raw.items()},
+            "curated_counts": {
+                "customers_full": len(raw.get("customers") or []),
+                "sales_full": len(sales_full),
+                "appointments_full": len(raw.get("appointments") or []),
+                "pending_summary": len(raw.get("sale_pending_summary") or []),
+                "inventory_counts_full": len(inventory_counts_full),
+                "daily_summary": len(daily_summary),
+            },
+            "table_errors": errors,
+        }
+
+        bio = BytesIO()
+        with zipfile.ZipFile(bio, "w", compression=zipfile.ZIP_DEFLATED) as z:
+            z.writestr("metadata.json", json.dumps(metadata, ensure_ascii=False, indent=2, default=_ai_json_default))
+            z.writestr("data_dictionary.json", json.dumps(_ai_data_dictionary(), ensure_ascii=False, indent=2, default=_ai_json_default))
+            z.writestr("README.txt", "ไฟล์นี้เป็นข้อมูลจริงทั้งหมดสำหรับ AI Chatbot ภายในคลินิก\nห้ามส่งต่อสาธารณะหรืออัปโหลดไปยังระบบที่ไม่ควบคุมสิทธิ์\nใช้สำหรับให้ backend/AI ดึงข้อมูลที่เกี่ยวข้องกับคำถามแล้วสรุปคำตอบเท่านั้น\n")
+
+            for table_name, rows in raw.items():
+                z.writestr(f"raw/{table_name}.jsonl", _ai_to_jsonl(rows or []))
+
+            z.writestr("curated/customers_full.jsonl", _ai_to_jsonl(raw.get("customers") or []))
+            z.writestr("curated/sales_full.jsonl", _ai_to_jsonl(sales_full))
+            z.writestr("curated/appointments_full.jsonl", _ai_to_jsonl(raw.get("appointments") or []))
+            z.writestr("curated/pending_summary.jsonl", _ai_to_jsonl(raw.get("sale_pending_summary") or []))
+            z.writestr("curated/inventory_items.jsonl", _ai_to_jsonl(raw.get("inventory_items") or []))
+            z.writestr("curated/inventory_counts_full.jsonl", _ai_to_jsonl(inventory_counts_full))
+            z.writestr("curated/products.jsonl", _ai_to_jsonl(raw.get("products") or []))
+            z.writestr("curated/product_categories.jsonl", _ai_to_jsonl(raw.get("product_categories") or []))
+            z.writestr("curated/customer_pitch_logs.jsonl", _ai_to_jsonl(raw.get("customer_pitch_logs") or []))
+            z.writestr("curated/customer_gallery.jsonl", _ai_to_jsonl(raw.get("customer_gallery") or []))
+            z.writestr("curated/staffs.jsonl", _ai_to_jsonl(raw.get("staffs") or []))
+            z.writestr("curated/work_schedules.jsonl", _ai_to_jsonl(raw.get("work_schedules") or []))
+            z.writestr("curated/daily_summary.jsonl", _ai_to_jsonl(daily_summary))
+
+        bio.seek(0)
+        return send_file(
+            bio,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name=filename,
+            max_age=0,
+        )
+    except Exception as e:
+        app.logger.error(f"/api/export_ai_chatbot_zip error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+
+# =============================================================
+# API — NotebookLM Export (single plain TXT source)
+# =============================================================
+# NOTE:
+# NotebookLM/Gemini reads natural text more reliably than huge JSON-in-Markdown.
+# This export intentionally creates a UTF-8 plain .txt file with clear sections,
+# one readable record at a time, while still keeping the real fields.
+
+_NB_CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
+def _nb_clean_scalar(v: Any) -> str:
+    """Convert any scalar to safe plain text for NotebookLM."""
+    if v is None:
+        return ""
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, (int, float)):
+        return str(v)
+    if isinstance(v, (datetime,)):
+        return v.isoformat()
+    s = str(v)
+    s = s.replace("\ufeff", "")
+    s = s.replace("\r\n", "\n").replace("\r", "\n")
+    s = _NB_CONTROL_RE.sub(" ", s)
+    # Keep new lines in notes, but prevent massive whitespace blobs.
+    s = "\n".join(re.sub(r"[ \t]+", " ", line).strip() for line in s.split("\n"))
+    return s.strip()
+
+
+def _nb_inline_value(v: Any) -> str:
+    """Compact value for one-line nested fields."""
+    if isinstance(v, dict):
+        parts = []
+        for k in sorted(v.keys(), key=lambda x: str(x)):
+            val = _nb_inline_value(v.get(k))
+            if val != "":
+                parts.append(f"{_nb_clean_scalar(k)}={val}")
+        return "; ".join(parts)
+    if isinstance(v, (list, tuple)):
+        return " | ".join(_nb_inline_value(x) for x in v if _nb_inline_value(x) != "")
+    return _nb_clean_scalar(v)
+
+
+def _nb_format_value(v: Any, indent: str = "") -> str:
+    """Readable multi-line formatting for scalars/lists/dicts."""
+    if isinstance(v, dict):
+        if not v:
+            return ""
+        lines = []
+        for k in sorted(v.keys(), key=lambda x: str(x)):
+            val = v.get(k)
+            if isinstance(val, (dict, list, tuple)):
+                rendered = _nb_format_value(val, indent + "  ")
+                if rendered:
+                    lines.append(f"{indent}{_nb_clean_scalar(k)}:")
+                    lines.append(rendered)
+            else:
+                rendered = _nb_clean_scalar(val)
+                if rendered != "":
+                    lines.append(f"{indent}{_nb_clean_scalar(k)}: {rendered}")
+        return "\n".join(lines)
+    if isinstance(v, (list, tuple)):
+        if not v:
+            return ""
+        lines = []
+        for item in v:
+            if isinstance(item, dict):
+                inline = _nb_inline_value(item)
+                if inline:
+                    lines.append(f"{indent}- {inline}")
+            elif isinstance(item, (list, tuple)):
+                inline = _nb_inline_value(item)
+                if inline:
+                    lines.append(f"{indent}- {inline}")
+            else:
+                rendered = _nb_clean_scalar(item)
+                if rendered:
+                    lines.append(f"{indent}- {rendered}")
+        return "\n".join(lines)
+    return _nb_clean_scalar(v)
+
+
+def _nb_ordered_keys(row: Dict[str, Any], preferred: Optional[List[str]] = None) -> List[str]:
+    preferred = preferred or []
+    keys = []
+    seen = set()
+    for k in preferred:
+        if k in row and k not in seen:
+            keys.append(k)
+            seen.add(k)
+    for k in sorted(row.keys(), key=lambda x: str(x)):
+        if k not in seen:
+            keys.append(k)
+            seen.add(k)
+    return keys
+
+
+def _nb_format_record(row: Dict[str, Any], preferred: Optional[List[str]] = None) -> str:
+    lines: List[str] = []
+    for k in _nb_ordered_keys(row or {}, preferred):
+        val = (row or {}).get(k)
+        rendered = _nb_format_value(val, "  ") if isinstance(val, (dict, list, tuple)) else _nb_clean_scalar(val)
+        if rendered == "":
+            continue
+        key = _nb_clean_scalar(k)
+        if isinstance(val, (dict, list, tuple)):
+            lines.append(f"{key}:")
+            lines.append(rendered)
+        else:
+            lines.append(f"{key}: {rendered}")
+    return "\n".join(lines) if lines else "(empty record)"
+
+
+def _nb_section(
+    title: str,
+    rows: List[Dict[str, Any]],
+    description: str = "",
+    preferred_keys: Optional[List[str]] = None,
+) -> str:
+    safe_title = _nb_clean_scalar(title)
+    section_code = re.sub(r"[^A-Za-z0-9ก-๙]+", "_", safe_title).strip("_") or "SECTION"
+    parts: List[str] = []
+    parts.append("\n\n============================================================\n")
+    parts.append(f"SECTION: {safe_title}\n")
+    parts.append("============================================================\n")
+    if description:
+        parts.append(_nb_clean_scalar(description) + "\n")
+    parts.append(f"จำนวนรายการทั้งหมดในส่วนนี้: {len(rows or [])}\n")
+    if not rows:
+        parts.append("ไม่มีข้อมูล\n")
+        return "".join(parts)
+
+    for idx, row in enumerate(rows or [], 1):
+        parts.append("\n------------------------------------------------------------\n")
+        parts.append(f"{section_code} RECORD {idx} / {len(rows or [])}\n")
+        parts.append("------------------------------------------------------------\n")
+        parts.append(_nb_format_record(row or {}, preferred_keys))
+        parts.append("\n")
+    return "".join(parts)
+
+
+def _nb_collect_dataset() -> Tuple[Dict[str, Any], Dict[str, List[Dict[str, Any]]], Dict[str, str]]:
+    """Collect the same real dataset as AI ZIP export, optimized for one NotebookLM plain-text file."""
+    table_names = [
+        "customers",
+        "customer_gallery",
+        "sales_records",
+        "sale_pending_summary",
+        "appointments",
+        "product_categories",
+        "products",
+        "customer_pitch_logs",
+        "inventory_items",
+        "inventory_counts",
+        "receipt_counters_orig",
+        "staffs",
+        "work_schedules",
+        "oldsaledata",
+        "inventory",  # legacy backup table if still exists
+        "ar_transactions",  # legacy, may be deleted
+        "voucher_transactions",
+        "work_transactions",  # legacy, may be deleted
+    ]
+
+    raw: Dict[str, List[Dict[str, Any]]] = {}
+    errors: Dict[str, str] = {}
+    for t in table_names:
+        rows, err = _ai_fetch_table_all(t)
+        raw[t] = rows
+        if err:
+            errors[t] = err
+
+    sales_full = _ai_build_sales_full(raw.get("sales_records") or [])
+    daily_summary = _ai_build_daily_summary(
+        raw.get("sales_records") or [],
+        raw.get("sale_pending_summary") or [],
+        raw.get("appointments") or [],
+    )
+
+    inventory_counts_full: List[Dict[str, Any]] = []
+    items_by_id = {str(x.get("id")): x for x in (raw.get("inventory_items") or []) if x.get("id") is not None}
+    for c in raw.get("inventory_counts") or []:
+        row = dict(c)
+        item = items_by_id.get(str(c.get("item_id"))) or {}
+        row["item_name"] = item.get("name") or row.get("item_name")
+        row["category"] = item.get("category")
+        row["unit"] = item.get("unit")
+        row["min_qty"] = item.get("min_qty")
+        inventory_counts_full.append(row)
+
+    curated: Dict[str, List[Dict[str, Any]]] = {
+        "customers_full": raw.get("customers") or [],
+        "sales_full": sales_full,
+        "appointments_full": raw.get("appointments") or [],
+        "pending_summary": raw.get("sale_pending_summary") or [],
+        "inventory_items": raw.get("inventory_items") or [],
+        "inventory_counts_full": inventory_counts_full,
+        "products": raw.get("products") or [],
+        "product_categories": raw.get("product_categories") or [],
+        "customer_pitch_logs": raw.get("customer_pitch_logs") or [],
+        "customer_gallery": raw.get("customer_gallery") or [],
+        "staffs": raw.get("staffs") or [],
+        "work_schedules": raw.get("work_schedules") or [],
+        "daily_summary": daily_summary,
+    }
+
+    metadata = {
+        "export_type": "palmy_clinic_notebooklm_plain_text_source",
+        "exported_at": datetime.now(timezone(timedelta(hours=7))).replace(microsecond=0).isoformat(),
+        "version": "1.1",
+        "contains_real_personal_data": True,
+        "warning": "ไฟล์นี้มีข้อมูลจริงของคลินิกและลูกค้า ใช้เฉพาะภายในเท่านั้น ห้ามส่งต่อสาธารณะ",
+        "source_tables": table_names,
+        "raw_record_counts": {k: len(v or []) for k, v in raw.items()},
+        "curated_record_counts": {k: len(v or []) for k, v in curated.items()},
+        "table_errors": errors,
+    }
+    return metadata, curated, errors
+
+
+def _nb_customer_lookup_index(customers: List[Dict[str, Any]]) -> str:
+    parts: List[str] = []
+    parts.append("\n\n============================================================\n")
+    parts.append("CUSTOMER LOOKUP INDEX / ดัชนีค้นหาลูกค้า\n")
+    parts.append("============================================================\n")
+    parts.append("ใช้ส่วนนี้เพื่อค้นหาจาก OPD, ชื่อ, ชื่อเต็ม หรือเบอร์โทรได้เร็วขึ้น\n")
+    if not customers:
+        parts.append("ไม่มีข้อมูลลูกค้า\n")
+        return "".join(parts)
+    for c in customers:
+        opd = _nb_clean_scalar(c.get("opd") or c.get("OPD") or "")
+        name = _nb_clean_scalar(c.get("name") or c.get("nickname") or "")
+        full_name = _nb_clean_scalar(c.get("full_name") or c.get("fullname") or "")
+        phone = _nb_clean_scalar(c.get("phone") or c.get("tel") or "")
+        vip = _nb_clean_scalar(c.get("vip") or c.get("vip_level") or "")
+        parts.append(f"- OPD: {opd or '-'} | ชื่อ: {name or '-'} | ชื่อเต็ม: {full_name or '-'} | เบอร์: {phone or '-'} | VIP: {vip or '-'}\n")
+    return "".join(parts)
+
+
+def _nb_plain_text_dataset() -> str:
+    metadata, curated, errors = _nb_collect_dataset()
+    dictionary = _ai_data_dictionary()
+
+    parts: List[str] = []
+    parts.append("PALMY CLINIC — NOTEBOOKLM / GEMINI KNOWLEDGE BASE\n")
+    parts.append("============================================================\n\n")
+    parts.append("ไฟล์นี้เป็นไฟล์ข้อความธรรมดา UTF-8 สำหรับอัปโหลดเข้า NotebookLM / Gemini\n")
+    parts.append("ออกแบบให้ AI อ่านง่ายกว่า Markdown ที่มี JSON ยาว ๆ โดยแบ่งข้อมูลเป็นหัวข้อและ record ชัดเจน\n\n")
+    parts.append("คำเตือน: ไฟล์นี้มีข้อมูลจริง เช่น ชื่อ เบอร์ ประวัติซื้อ นัดหมาย ค้างชำระ ค้างทำ และสต๊อก ใช้เฉพาะภายในคลินิกเท่านั้น\n\n")
+
+    parts.append("วิธีถามตัวอย่าง\n")
+    examples = [
+        "OPD 0114 เคยซื้ออะไรบ้างและยอดรวมเท่าไหร่",
+        "ลูกค้าชื่อออยมีประวัติซื้ออะไรบ้าง",
+        "วันนี้ยอดขายรวมเท่าไหร่ มีกี่บิล",
+        "ใครค้างชำระบ้าง",
+        "ใครมีค้างทำและค้างทำรายการอะไร",
+        "สต๊อกอะไรใกล้หมด",
+        "ลูกค้าคนนี้นัดครั้งล่าสุดเมื่อไหร่",
+        "เดือนนี้สินค้า/บริการอะไรขายดีที่สุด",
+    ]
+    for ex in examples:
+        parts.append(f"- {ex}\n")
+
+    parts.append("\n============================================================\n")
+    parts.append("METADATA\n")
+    parts.append("============================================================\n")
+    parts.append(_nb_format_record(metadata) + "\n")
+
+    parts.append("\n============================================================\n")
+    parts.append("DATA DICTIONARY / ความหมายของข้อมูล\n")
+    parts.append("============================================================\n")
+    parts.append(_nb_format_record(dictionary) + "\n")
+
+    if errors:
+        parts.append("\n============================================================\n")
+        parts.append("TABLE ERRORS / ตารางที่ไม่มีหรือดึงไม่ได้\n")
+        parts.append("============================================================\n")
+        parts.append(_nb_format_record(errors) + "\n")
+
+    parts.append(_nb_customer_lookup_index(curated.get("customers_full") or []))
+
+    section_order = [
+        (
+            "Daily Summary / สรุปรายวัน",
+            "daily_summary",
+            "สรุปรายวันจากยอดขาย นัดหมาย และรายการค้าง",
+            ["date", "total_sales", "bill_count", "unique_customers", "ar_total", "pending_work_count", "top_items"],
+        ),
+        (
+            "Customers Full / ข้อมูลลูกค้าเต็ม",
+            "customers_full",
+            "ข้อมูลลูกค้าจริงทั้งหมดจากตาราง customers",
+            ["opd", "name", "full_name", "phone", "birth_date", "birth_month", "vip", "vip_level", "profile", "note", "created_at", "updated_at"],
+        ),
+        (
+            "Sales Full / ประวัติขายเต็ม",
+            "sales_full",
+            "ยอดขายจริงทั้งหมด พร้อม items_normalized ที่แยกรายการให้ AI อ่านง่าย",
+            ["id", "sale_id", "date", "opd", "name", "customer_name", "amount", "payment_method", "orig_no", "disp_no", "receipt_status", "items_normalized", "items", "note", "ar_amount", "pending_work"],
+        ),
+        (
+            "Pending Summary / ค้างชำระและค้างทำ",
+            "pending_summary",
+            "ค้างชำระ/ค้างทำแบบ 1 บิลต่อ 1 แถว",
+            ["sale_id", "sale_date", "date", "opd", "name", "ar_amount", "pending_work", "note", "created_at", "updated_at"],
+        ),
+        (
+            "Appointments Full / นัดหมายเต็ม",
+            "appointments_full",
+            "ข้อมูลนัดหมายทั้งหมด",
+            ["date", "time", "opd", "name", "status", "column_id", "note", "created_at", "updated_at"],
+        ),
+        (
+            "Inventory Counts Full / ประวัตินับสต๊อก",
+            "inventory_counts_full",
+            "ข้อมูลนับสต๊อกพร้อมชื่อ item, หมวด, หน่วย และ min_qty",
+            ["count_date", "date", "item_name", "category", "quantity", "unit", "min_qty", "note"],
+        ),
+        (
+            "Inventory Items / รายการสต๊อกกลาง",
+            "inventory_items",
+            "ทะเบียนรายการสต๊อกกลาง",
+            ["name", "category", "unit", "min_qty", "sort_order", "is_active", "aliases"],
+        ),
+        (
+            "Customer Pitch Logs / ประวัติ CRM Pitch",
+            "customer_pitch_logs",
+            "ประวัติการ pitch / CRM",
+            ["created_at", "opd", "name", "promotion", "outcome", "content", "channel", "author", "note"],
+        ),
+        (
+            "Products / สินค้าและบริการ",
+            "products",
+            "ข้อมูลสินค้า/บริการ",
+            ["name", "category", "price", "unit", "is_active", "sort_order"],
+        ),
+        (
+            "Product Categories / หมวดสินค้าและบริการ",
+            "product_categories",
+            "หมวดสินค้า/บริการ",
+            ["name", "sort_order", "is_active"],
+        ),
+        (
+            "Customer Gallery / คลังรูปลูกค้า",
+            "customer_gallery",
+            "ข้อมูลคลังรูปลูกค้า/URL รูป ถ้ามี",
+            ["opd", "image_type", "is_profile", "image_url", "cloudinary_public_id", "created_at"],
+        ),
+        (
+            "Staffs / พนักงาน",
+            "staffs",
+            "ข้อมูลพนักงาน",
+            ["name", "role", "phone", "is_active", "created_at", "updated_at"],
+        ),
+        (
+            "Work Schedules / ตารางงาน",
+            "work_schedules",
+            "ข้อมูลตารางงาน/เวร",
+            ["date", "staff_name", "role", "start_time", "end_time", "note"],
+        ),
+    ]
+    for title, key, desc, preferred in section_order:
+        parts.append(_nb_section(title, curated.get(key) or [], desc, preferred))
+
+    parts.append("\n\nEND OF PALMY CLINIC NOTEBOOKLM KNOWLEDGE BASE\n")
+    return "".join(parts)
+
+
+
+_NB_SPLIT_SECTIONS = [
+    ("Daily Summary / สรุปรายวัน", "daily_summary", "สรุปรายวันจากยอดขาย นัดหมาย และรายการค้าง", ["date", "total_sales", "bill_count", "unique_customers", "ar_total", "pending_work_count", "top_items"], 600),
+    ("Customers Full / ข้อมูลลูกค้าเต็ม", "customers_full", "ข้อมูลลูกค้าจริงทั้งหมดจากตาราง customers", ["opd", "name", "full_name", "phone", "birth_date", "birth_month", "vip", "vip_level", "profile", "note", "created_at", "updated_at"], 350),
+    ("Sales Full / ประวัติขายเต็ม", "sales_full", "ยอดขายจริงทั้งหมด พร้อม items_normalized ที่แยกรายการให้ AI อ่านง่าย", ["id", "sale_id", "date", "opd", "name", "customer_name", "amount", "payment_method", "orig_no", "disp_no", "receipt_status", "items_normalized", "items", "note", "ar_amount", "pending_work"], 250),
+    ("Pending Summary / ค้างชำระและค้างทำ", "pending_summary", "ค้างชำระ/ค้างทำแบบ 1 บิลต่อ 1 แถว", ["sale_id", "sale_date", "date", "opd", "name", "ar_amount", "pending_work", "note", "created_at", "updated_at"], 400),
+    ("Appointments Full / นัดหมายเต็ม", "appointments_full", "ข้อมูลนัดหมายทั้งหมด", ["date", "time", "opd", "name", "status", "column_id", "note", "created_at", "updated_at"], 350),
+    ("Inventory Counts Full / ประวัตินับสต๊อก", "inventory_counts_full", "ข้อมูลนับสต๊อกพร้อมชื่อ item, หมวด, หน่วย และ min_qty", ["count_date", "date", "item_name", "category", "quantity", "unit", "min_qty", "note"], 450),
+    ("Inventory Items / รายการสต๊อกกลาง", "inventory_items", "ทะเบียนรายการสต๊อกกลาง", ["name", "category", "unit", "min_qty", "sort_order", "is_active", "aliases"], 600),
+    ("Customer Pitch Logs / ประวัติ CRM Pitch", "customer_pitch_logs", "ประวัติการ pitch / CRM", ["created_at", "opd", "name", "promotion", "outcome", "content", "channel", "author", "note"], 300),
+    ("Products / สินค้าและบริการ", "products", "ข้อมูลสินค้า/บริการ", ["name", "category", "price", "unit", "is_active", "sort_order"], 600),
+    ("Product Categories / หมวดสินค้าและบริการ", "product_categories", "หมวดสินค้า/บริการ", ["name", "sort_order", "is_active"], 800),
+    ("Customer Gallery / คลังรูปลูกค้า", "customer_gallery", "ข้อมูลคลังรูปลูกค้า/URL รูป ถ้ามี", ["opd", "image_type", "is_profile", "image_url", "cloudinary_public_id", "created_at"], 300),
+    ("Staffs / พนักงาน", "staffs", "ข้อมูลพนักงาน", ["name", "role", "phone", "is_active", "created_at", "updated_at"], 800),
+    ("Work Schedules / ตารางงาน", "work_schedules", "ข้อมูลตารางงาน/เวร", ["date", "staff_name", "role", "start_time", "end_time", "note"], 800),
+]
+
+
+def _nb_ascii_file_stem(index: int, key: str, part: Optional[int] = None) -> str:
+    safe_key = re.sub(r"[^A-Za-z0-9_\-]+", "_", str(key or "section")).strip("_").lower() or "section"
+    if part is None:
+        return f"{index:02d}_{safe_key}.txt"
+    return f"{index:02d}_{safe_key}_part{part:03d}.txt"
+
+
+def _nb_section_chunk(
+    title: str,
+    rows: List[Dict[str, Any]],
+    description: str = "",
+    preferred_keys: Optional[List[str]] = None,
+    start_number: int = 1,
+    total_count: Optional[int] = None,
+    part_number: Optional[int] = None,
+    total_parts: Optional[int] = None,
+) -> str:
+    safe_title = _nb_clean_scalar(title)
+    total_count = total_count if total_count is not None else len(rows or [])
+    parts: List[str] = []
+    parts.append(f"{safe_title}\n")
+    parts.append("=" * 70 + "\n\n")
+    if description:
+        parts.append(_nb_clean_scalar(description) + "\n")
+    if part_number and total_parts:
+        parts.append(f"ไฟล์ย่อย: {part_number}/{total_parts}\n")
+    parts.append(f"จำนวน record ในไฟล์นี้: {len(rows or [])}\n")
+    parts.append(f"จำนวน record ทั้งหมดของหมวดนี้: {total_count}\n")
+    parts.append("\n")
+
+    if not rows:
+        parts.append("ไม่มีข้อมูล\n")
+        return "".join(parts)
+
+    for offset, row in enumerate(rows or [], 0):
+        record_no = start_number + offset
+        parts.append("-" * 70 + "\n")
+        parts.append(f"RECORD {record_no} / {total_count}\n")
+        parts.append("-" * 70 + "\n")
+        parts.append(_nb_format_record(row or {}, preferred_keys))
+        parts.append("\n\n")
+    return "".join(parts)
+
+
+def _nb_zip_readme(metadata: Dict[str, Any]) -> str:
+    examples = [
+        "OPD 0114 เคยซื้ออะไรบ้างและยอดรวมเท่าไหร่",
+        "ลูกค้าชื่อออยมีประวัติซื้ออะไรบ้าง",
+        "วันนี้ยอดขายรวมเท่าไหร่ มีกี่บิล",
+        "ใครค้างชำระบ้าง",
+        "ใครมีค้างทำและค้างทำรายการอะไร",
+        "สต๊อกอะไรใกล้หมด",
+        "ลูกค้าคนนี้นัดครั้งล่าสุดเมื่อไหร่",
+        "เดือนนี้สินค้า/บริการอะไรขายดีที่สุด",
+    ]
+    lines: List[str] = []
+    lines.append("PALMY CLINIC — NOTEBOOKLM / GEMINI FILE PACK\n")
+    lines.append("=" * 70 + "\n\n")
+    lines.append("ไฟล์ ZIP นี้แยกข้อมูลออกเป็นหลายไฟล์ .txt เพื่อไม่ให้ NotebookLM/Gemini ค้างจากไฟล์ก้อนเดียวใหญ่เกินไป\n")
+    lines.append("วิธีใช้ที่แนะนำ: แตก ZIP ก่อน แล้วเลือกอัปโหลดไฟล์ .txt ที่ต้องการเข้า NotebookLM/Gemini\n")
+    lines.append("ถ้าต้องถามภาพรวมลูกค้าและยอดขาย ให้เริ่มจากไฟล์ 00_README, 01_METADATA, 02_CUSTOMER_LOOKUP_INDEX, customers_full, sales_full และ pending_summary\n\n")
+    lines.append("คำเตือน: ชุดไฟล์นี้มีข้อมูลจริงของคลินิก เช่น ชื่อ เบอร์ ประวัติซื้อ นัดหมาย ค้างชำระ ค้างทำ และสต๊อก ใช้เฉพาะภายในคลินิกเท่านั้น\n\n")
+    lines.append("ตัวอย่างคำถาม\n")
+    for ex in examples:
+        lines.append(f"- {ex}\n")
+    lines.append("\nข้อมูล export\n")
+    lines.append(_nb_format_record(metadata))
+    lines.append("\n")
+    return "".join(lines)
+
+
+def _nb_write_split_section_files(
+    z: zipfile.ZipFile,
+    file_index: int,
+    title: str,
+    key: str,
+    description: str,
+    preferred_keys: List[str],
+    rows: List[Dict[str, Any]],
+    chunk_size: int,
+) -> int:
+    rows = rows or []
+    chunk_size = max(50, int(chunk_size or 300))
+    total = len(rows)
+    if total == 0:
+        name = _nb_ascii_file_stem(file_index, key)
+        z.writestr(name, _nb_section_chunk(title, [], description, preferred_keys).encode("utf-8"))
+        return 1
+
+    total_parts = (total + chunk_size - 1) // chunk_size
+    written = 0
+    for part_idx, start in enumerate(range(0, total, chunk_size), 1):
+        chunk = rows[start:start + chunk_size]
+        filename = _nb_ascii_file_stem(file_index, key, part_idx if total_parts > 1 else None)
+        content = _nb_section_chunk(
+            title,
+            chunk,
+            description,
+            preferred_keys,
+            start_number=start + 1,
+            total_count=total,
+            part_number=part_idx if total_parts > 1 else None,
+            total_parts=total_parts if total_parts > 1 else None,
+        )
+        z.writestr(filename, content.encode("utf-8"))
+        written += 1
+    return written
+
+
+# =============================================================
+# API — Excel Report Data Export
+# =============================================================
+def _excel_json_safe_value(v: Any) -> Any:
+    """Make exported report data safe for jsonify without losing nested data."""
+    if v is None:
+        return None
+    if isinstance(v, (str, int, float, bool)):
+        return v
+    if isinstance(v, datetime):
+        return v.isoformat()
+    try:
+        if hasattr(v, "isoformat"):
+            return v.isoformat()
+    except Exception:
+        pass
+    if isinstance(v, dict):
+        return {str(k): _excel_json_safe_value(val) for k, val in v.items()}
+    if isinstance(v, (list, tuple, set)):
+        return [_excel_json_safe_value(x) for x in v]
+    return str(v)
+
+
+@app.route("/api/export_excel_report_data")
+@login_required
+def export_excel_report_data():
+    """Return real full data for a polished multi-sheet Excel report.
+
+    The browser uses SheetJS to build the workbook so we do not need an extra
+    Python xlsx dependency on the server. The dataset is shared with the AI /
+    NotebookLM export collector to keep information complete and consistent.
+    """
+    try:
+        metadata, curated, errors = _nb_collect_dataset()
+        metadata = dict(metadata or {})
+        metadata["export_type"] = "palmy_clinic_excel_report_data"
+        metadata["format"] = "json_for_browser_xlsx"
+        metadata["note"] = "ข้อมูลจริงครบสำหรับสร้าง Excel รายงานหลาย sheet: สรุป, รายบิล, รายสินค้า, ลูกค้า, ค้าง, นัดหมาย, สต๊อก และ raw data"
+        payload = {
+            "success": True,
+            "metadata": metadata,
+            "curated": curated,
+            "errors": errors or {},
+        }
+        return jsonify(_excel_json_safe_value(payload))
+    except Exception as e:
+        app.logger.error(f"/api/export_excel_report_data error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/export_notebooklm_markdown")
+@login_required
+def export_notebooklm_markdown():
+    """Download a ZIP pack of many plain TXT files for NotebookLM/Gemini.
+
+    Route name is kept for front-end compatibility with the previous Markdown/TXT button.
+    The output is now split into multiple files to avoid NotebookLM/Gemini freezing on one huge source.
+    """
+    try:
+        stamp = datetime.now(timezone(timedelta(hours=7))).strftime("%Y%m%d_%H%M%S")
+        filename = f"palmy_notebooklm_split_pack_{stamp}.zip"
+
+        metadata, curated, errors = _nb_collect_dataset()
+        metadata = dict(metadata or {})
+        metadata["export_type"] = "palmy_clinic_notebooklm_split_text_pack"
+        metadata["format"] = "zip_with_multiple_utf8_txt_files"
+        metadata["usage"] = "แตก ZIP แล้วอัปโหลดไฟล์ .txt ที่ต้องการเข้า NotebookLM/Gemini"
+        metadata["generated_files_note"] = "ข้อมูลขนาดใหญ่ เช่น sales/customers/pitch/gallery อาจถูกแบ่งเป็น part001, part002 เพื่อกันค้าง"
+
+        bio = BytesIO()
+        with zipfile.ZipFile(bio, "w", compression=zipfile.ZIP_DEFLATED) as z:
+            z.writestr("00_README_วิธีใช้.txt", _nb_zip_readme(metadata).encode("utf-8"))
+            z.writestr("01_METADATA.txt", _nb_section_chunk("METADATA", [metadata], "รายละเอียดชุดข้อมูลและจำนวน record", None).encode("utf-8"))
+            z.writestr("02_DATA_DICTIONARY.txt", _nb_section_chunk("DATA DICTIONARY / ความหมายของข้อมูล", [_ai_data_dictionary()], "ความหมายของ field สำคัญ", None).encode("utf-8"))
+            if errors:
+                z.writestr("03_TABLE_ERRORS.txt", _nb_section_chunk("TABLE ERRORS / ตารางที่ไม่มีหรือดึงไม่ได้", [errors], "ตารางบางตัวอาจไม่มีในระบบ ถือว่าไม่เป็นปัญหาถ้าไม่ได้ใช้งาน", None).encode("utf-8"))
+            z.writestr("04_CUSTOMER_LOOKUP_INDEX.txt", _nb_customer_lookup_index(curated.get("customers_full") or []).encode("utf-8"))
+
+            file_index = 5
+            for title, key, desc, preferred, chunk_size in _NB_SPLIT_SECTIONS:
+                _nb_write_split_section_files(
+                    z,
+                    file_index,
+                    title,
+                    key,
+                    desc,
+                    preferred,
+                    curated.get(key) or [],
+                    chunk_size,
+                )
+                file_index += 1
+
+        bio.seek(0)
+        return send_file(
+            bio,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name=filename,
+            max_age=0,
+        )
+    except Exception as e:
+        app.logger.error(f"/api/export_notebooklm_markdown split zip error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 # -----------------------------
 # OPTIONAL (แนะนำ): ถ้าอยากให้ของเก่าที่เป็น NULL ถูกอ่านเป็น show ชัด ๆ
