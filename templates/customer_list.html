@@ -685,6 +685,7 @@
       </div>
       <div class="actions">
         <button class="btn btn-primary" id="btnApply">ดูข้อมูล</button>
+        <button class="btn btn-primary" id="btnExportFilteredSummary" type="button">โหลดสรุปข้อมูล</button>
         <button class="btn btn-ghost" id="btnExportCsv" type="button">Export CSV</button>
         <button class="btn" id="openCustomRange" type="button">กำหนดช่วงวัน</button>
       </div>
@@ -3312,6 +3313,158 @@
       });
     });
 
+    function exportFilteredSummary(){
+      if(!state.finalRows.length){
+        toast('ไม่มีข้อมูลให้โหลด', 'warn');
+        return;
+      }
+
+      // ใช้ข้อมูลหลังฟิลเตอร์ปัจจุบันตาม state.finalRows ที่แสดงในตารางลูกค้า
+      const rows = state.finalRows || [];
+      const totalCustomers = rows.length;
+      const totalRevenue = rows.reduce((s,r)=>s+Number(r.total||0),0);
+      const totalVisits = rows.reduce((s,r)=>s+Number(r.visits||0),0);
+      const avgBill = totalVisits ? Math.round(totalRevenue / totalVisits) : 0;
+      const avgPerCustomer = totalCustomers ? Math.round(totalRevenue / totalCustomers) : 0;
+      const risk90 = rows.filter(r=>Number(r.recency||0) >= 90).length;
+      const aClass = rows.filter(r=>String(r.abc||'').toUpperCase()==='A').length;
+      const vipCount = rows.filter(r=>r.contactInfo?.isVIP).length;
+
+      const countBy = (arr, getter) => {
+        const m = new Map();
+        for(const x of arr){
+          const k = getter(x) || '-';
+          m.set(k, (m.get(k)||0)+1);
+        }
+        return Array.from(m.entries()).sort((a,b)=>b[1]-a[1]);
+      };
+      const sumBy = (arr, getter) => {
+        const m = new Map();
+        for(const x of arr){
+          const k = getter(x) || '-';
+          const o = m.get(k) || {n:0, revenue:0, visits:0};
+          o.n += 1;
+          o.revenue += Number(x.total||0);
+          o.visits += Number(x.visits||0);
+          m.set(k, o);
+        }
+        return Array.from(m.entries()).map(([k,o])=>({key:k, ...o})).sort((a,b)=>b.n-a.n);
+      };
+
+      const statusRows = sumBy(rows, r=>r.contactInfo?.status || '-');
+      const rfmRows = sumBy(rows, r=>r.rfm || '-');
+      const abcRows = sumBy(rows, r=>r.abc || '-');
+      const recRows = recencyBuckets.map(b=>{
+        const arr = rows.filter(r=>Number(r.recency||0) >= b.min && Number(r.recency||0) <= b.max);
+        return {key:b.label, n:arr.length, revenue:arr.reduce((s,x)=>s+Number(x.total||0),0), visits:arr.reduce((s,x)=>s+Number(x.visits||0),0)};
+      });
+      const spendRows = spendBands.map(b=>{
+        const arr = rows.filter(r=>Number(r.avg||0) >= b.min && Number(r.avg||0) <= b.max);
+        return {key:b.label, n:arr.length, revenue:arr.reduce((s,x)=>s+Number(x.total||0),0), visits:arr.reduce((s,x)=>s+Number(x.visits||0),0)};
+      });
+
+      const start = document.getElementById('startDate')?.value || '';
+      const end = document.getElementById('endDate')?.value || '';
+      const search = state.tableSearch || document.getElementById('qSearch')?.value || '';
+      const note = state.appliedNote || 'ตามฟิลเตอร์ปัจจุบัน';
+      const downloadedAt = new Date().toLocaleString('th-TH');
+
+      const h = v => esc(v == null ? '' : String(v));
+      const money = v => Math.round(Number(v||0)).toLocaleString('th-TH');
+      const pct = n => totalCustomers ? (Number(n||0)*100/totalCustomers).toFixed(1)+'%' : '0.0%';
+      const cell = v => h(v);
+      const table = (title, header, bodyRows) => `
+        <h2>${h(title)}</h2>
+        <table>
+          <thead><tr>${header.map(x=>`<th>${h(x)}</th>`).join('')}</tr></thead>
+          <tbody>
+            ${bodyRows.map(r=>`<tr>${r.map(c=>`<td>${cell(c)}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${header.length}">ไม่มีข้อมูล</td></tr>`}
+          </tbody>
+        </table>`;
+
+      const summaryTable = table('สรุปภาพรวมจากฟิลเตอร์', ['หัวข้อ','ค่า'], [
+        ['ช่วงวันที่', `${start || '-'} ถึง ${end || '-'}`],
+        ['ฟิลเตอร์/เงื่อนไข', note],
+        ['คำค้นหาในตาราง', search || '-'],
+        ['จำนวนลูกค้า', totalCustomers.toLocaleString('th-TH')],
+        ['จำนวนครั้ง/บิล', totalVisits.toLocaleString('th-TH')],
+        ['ยอดรวม', money(totalRevenue)],
+        ['เฉลี่ยต่อบิล', money(avgBill)],
+        ['เฉลี่ยต่อคน', money(avgPerCustomer)],
+        ['ลูกค้าไม่ได้มา 90+ วัน', risk90.toLocaleString('th-TH')],
+        ['ลูกค้าชั้น A', aClass.toLocaleString('th-TH')],
+        ['VIP/มูลค่าสูง', vipCount.toLocaleString('th-TH')],
+        ['โหลดเมื่อ', downloadedAt],
+      ]);
+
+      const statusTable = table('สถานะติดต่อ / เหตุผล CRM', ['สถานะ','จำนวนลูกค้า','% ลูกค้า','จำนวนครั้ง/บิล','ยอดรวม'],
+        statusRows.map(x=>[x.key, x.n, pct(x.n), x.visits, money(x.revenue)])
+      );
+      const rfmTable = table('กลุ่มลูกค้า RFM', ['กลุ่ม','จำนวนลูกค้า','% ลูกค้า','จำนวนครั้ง/บิล','ยอดรวม'],
+        rfmRows.map(x=>[x.key, x.n, pct(x.n), x.visits, money(x.revenue)])
+      );
+      const abcTable = table('ABC ตามยอดรวม', ['ชั้น','จำนวนลูกค้า','% ลูกค้า','จำนวนครั้ง/บิล','ยอดรวม'],
+        abcRows.map(x=>[x.key, x.n, pct(x.n), x.visits, money(x.revenue)])
+      );
+      const recTable = table('สรุปตามจำนวนวันที่ไม่ได้มา', ['ช่วงวัน','จำนวนลูกค้า','% ลูกค้า','จำนวนครั้ง/บิล','ยอดรวม'],
+        recRows.map(x=>[x.key, x.n, pct(x.n), x.visits, money(x.revenue)])
+      );
+      const spendTable = table('สรุปตามค่าเฉลี่ย/บิล', ['ช่วง AOV','จำนวนลูกค้า','% ลูกค้า','จำนวนครั้ง/บิล','ยอดรวม'],
+        spendRows.map(x=>[x.key, x.n, pct(x.n), x.visits, money(x.revenue)])
+      );
+
+      const detailTable = table('รายชื่อลูกค้าตามฟิลเตอร์',
+        ['ลำดับ','OPD','ชื่อ','จำนวนครั้ง','ยอดรวม','เฉลี่ย/บิล','ไม่ได้มา(วัน)','RFM','ABC','Pitch ล่าสุด(วัน)','สถานะติดต่อ','เหตุผล'],
+        rows.map((r,i)=>[
+          i+1,
+          r.v.opd || '',
+          r.v.name || '',
+          r.visits || 0,
+          money(r.total || 0),
+          money(r.avg || 0),
+          r.recency || 0,
+          r.rfm || '',
+          r.abc || '',
+          r.lastPitchDays == null ? 'ไม่เคย' : r.lastPitchDays,
+          r.contactInfo?.status || '',
+          r.contactInfo?.reason || '',
+        ])
+      );
+
+      const html = `<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  body{font-family:Tahoma,'Noto Sans Thai',sans-serif;font-size:12px;color:#111827;}
+  h1{font-size:18px;margin:0 0 8px;color:#0f766e;}
+  h2{font-size:14px;margin:18px 0 6px;color:#0f766e;}
+  .note{color:#64748b;margin-bottom:12px;}
+  table{border-collapse:collapse;margin-bottom:14px;width:100%;}
+  th{background:#e6fffb;color:#0f766e;font-weight:700;}
+  th,td{border:1px solid #d1d5db;padding:6px 8px;vertical-align:top;mso-number-format:'\\@';}
+</style></head><body>
+  <h1>สรุปวิเคราะห์ลูกค้า</h1>
+  <div class="note">ไฟล์นี้สร้างจากฟิลเตอร์ที่ใช้อยู่ในหน้า วิเคราะห์ลูกค้า ณ เวลาที่กดโหลด</div>
+  ${summaryTable}
+  ${statusTable}
+  ${rfmTable}
+  ${abcTable}
+  ${recTable}
+  ${spendTable}
+  ${detailTable}
+</body></html>`;
+
+      const blob = new Blob(['\ufeff', html], {type:'application/vnd.ms-excel;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `customer_summary_filtered_${ymdLocal(new Date())}.xls`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast('โหลดสรุปข้อมูลแล้ว', 'ok');
+    }
+
     /* Export CSV */
     function exportFinalCsv(){
       if(!state.finalRows.length){
@@ -3352,6 +3505,7 @@
       URL.revokeObjectURL(url);
       toast('Export CSV แล้ว', 'ok');
     }
+    document.getElementById('btnExportFilteredSummary')?.addEventListener('click', exportFilteredSummary);
     document.getElementById('btnExportCsv').addEventListener('click', exportFinalCsv);
 
     /* Modals */

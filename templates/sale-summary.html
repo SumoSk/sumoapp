@@ -430,7 +430,7 @@
     }
 
     /* ===============================
-       PDF Print Area (Landscape / Readable)
+       PDF Print Area (A4 Full / Monthly Sales List)
        =============================== */
     #pdf-print-area{
       position: fixed;
@@ -446,54 +446,95 @@
 
     .pdf-page{
       width: 1123px;
+      height: 794px;
       min-height: 794px;
       background: #fff;
       box-sizing: border-box;
       page-break-after: always;
-      padding: 22px 26px;
+      padding: 24px 28px 20px;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
     }
     .pdf-page:last-child{ page-break-after: auto; }
 
     .pdf-header{
       display:flex;
       justify-content:space-between;
-      align-items:flex-start;
-      margin-bottom: 14px;
-      gap: 16px;
+      align-items:stretch;
+      gap: 18px;
+      margin-bottom: 12px;
+      padding: 14px 16px;
+      border: 1px solid #cfe9e4;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #f0fdfa 0%, #ffffff 54%, #fff7ed 100%);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
     }
-    .pdf-header-left{ flex:1; }
+    .pdf-header-left{
+      flex:1;
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
     .pdf-title{
-      font-size: 30px;
-      font-weight: 700;
+      font-size: 28px;
+      font-weight: 800;
       color: #00695c;
-      margin-bottom: 4px;
-      line-height: 1.2;
+      margin-bottom: 5px;
+      line-height: 1.16;
+      letter-spacing: -0.2px;
     }
     .pdf-subtitle{
-      font-size: 15px;
-      color: #6b7280;
+      font-size: 14px;
+      color: #64748b;
+      line-height:1.35;
     }
     .pdf-header-right{
-      text-align:right;
-      min-width: 260px;
+      min-width: 275px;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      align-content:center;
     }
     .pdf-count,
     .pdf-total,
     .pdf-page-no{
-      font-size: 14px;
-      color: #374151;
-      margin-bottom: 4px;
+      font-size: 13px;
+      color: #334155;
+      border:1px solid #e2e8f0;
+      background: rgba(255,255,255,.9);
+      border-radius: 999px;
+      padding: 6px 12px;
+      text-align:right;
+      line-height:1.25;
+    }
+    .pdf-total{
+      border-color:#fed7aa;
+      background:#fff7ed;
+      color:#9a3412;
+      font-weight:700;
     }
     .pdf-total strong{
       color:#b45309;
-      font-size: 18px;
+      font-size: 17px;
     }
 
+    .pdf-table-wrap{
+      flex:1;
+      border: 1px solid #d7e5e2;
+      border-radius: 14px;
+      overflow:hidden;
+      background:#fff;
+    }
     .pdf-table{
       width: 100%;
-      border-collapse: collapse;
+      height:100%;
+      border-collapse: separate;
+      border-spacing: 0;
       table-layout: fixed;
-      font-size: 14px;
+      font-size: 13px;
+      margin:0;
     }
     .pdf-table thead{
       display: table-header-group !important;
@@ -501,50 +542,74 @@
     .pdf-table th{
       background: #00897b;
       color: #fff;
-      font-weight: 700;
+      font-weight: 800;
       text-align: center;
-      padding: 10px 8px;
-      border: 2px solid #d1d5db;
+      padding: 9px 8px;
+      border: none;
+      border-right: 1px solid rgba(255,255,255,.22);
       position: static !important;
-      line-height: 1.3;
+      line-height: 1.25;
+      white-space:nowrap;
     }
+    .pdf-table th:last-child{ border-right:none; }
     .pdf-table td{
-      border: 1px solid #d1d5db;
-      padding: 8px 10px;
+      border: none;
+      border-right: 1px solid #edf2f7;
+      border-bottom: 1px solid #e8eef2;
+      padding: 7px 9px;
       vertical-align: top;
       word-break: break-word;
+      overflow-wrap: anywhere;
       white-space: pre-wrap;
-      line-height: 1.45;
+      line-height: 1.38;
+      color:#243041;
     }
-    .pdf-table tbody tr:nth-child(even){
-      background: #f9fafb;
-    }
-    .pdf-table tbody tr:hover{
-      background: transparent;
-    }
+    .pdf-table td:last-child{ border-right:none; }
+    .pdf-table tbody tr:nth-child(odd){ background:#ffffff; }
+    .pdf-table tbody tr:nth-child(even){ background:#f8fafc; }
+    .pdf-table tbody tr:last-child td{ border-bottom:none; }
+    .pdf-table tbody tr:hover{ background:inherit; }
     .pdf-num,
     .pdf-date{
       text-align:center;
     }
+    .pdf-num{
+      color:#00695c;
+      font-weight:800;
+    }
+    .pdf-date{
+      color:#475569;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .pdf-name{
+      font-weight:700;
+      color:#0f172a;
+    }
+    .pdf-items{
+      font-size: 12.2px;
+      line-height: 1.46;
+      color:#334155;
+    }
     .pdf-amount,
     .pdf-running{
       text-align:right;
-      font-weight:600;
+      font-weight:800;
+      white-space:nowrap;
+      color:#0f766e;
     }
-    .pdf-name{
-      font-weight:600;
-    }
-    .pdf-items{
-      font-size: 13px;
-      line-height: 1.5;
+    .pdf-running{
+      color:#92400e;
+      background:#fffaf0;
     }
     .pdf-footer{
       margin-top: 10px;
       display:flex;
       justify-content:space-between;
       align-items:center;
-      font-size: 12px;
-      color:#6b7280;
+      font-size: 11.5px;
+      color:#64748b;
+      line-height:1.35;
     }
 
     /* Data Download Modal */
@@ -782,8 +847,8 @@
               <span class="d">รายงานอ่านง่าย + raw data ครบ</span>
             </button>
             <button type="button" class="data-download-choice" id="downloadPdfSummaryBtn" data-download-action="pdf">
-              <span class="t">📄 PDF สรุปยอดขาย</span>
-              <span class="d">เลือกเดือนและโหลดเป็น PDF</span>
+              <span class="t">📄 PDF รายการขายประจำเดือน</span>
+              <span class="d">เลือกเดือน/ทั้งหมด แล้วโหลดรายการขายประจำเดือน</span>
             </button>
             <button type="button" class="data-download-choice" id="downloadAiExportBtn" data-download-action="ai">
               <span class="t">🤖 AI Chatbot ZIP</span>
@@ -852,20 +917,32 @@
     </div>
   </div>
 
-  <!-- Modal เลือกเดือนสำหรับโหลด PDF -->
+  <!-- Modal เลือกรูปแบบสำหรับโหลด PDF -->
   <div id="pdf-month-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10001;justify-content:center;align-items:center;">
-    <div style="background:#fff;padding:16px;border-radius:12px;width:100%;max-width:340px;box-sizing:border-box;position:relative;">
+    <div style="background:#fff;padding:16px;border-radius:12px;width:100%;max-width:380px;box-sizing:border-box;position:relative;">
       <button type="button" id="pdfMonthCloseBtn" aria-label="ปิด" style="position:absolute;top:8px;right:10px;border:none;background:none;font-size:20px;cursor:pointer;">&times;</button>
-      <div style="font-weight:600;margin-bottom:12px;">เลือกเดือนสำหรับดาวน์โหลด PDF</div>
+      <div style="font-weight:600;margin-bottom:12px;">เลือกรูปแบบดาวน์โหลดรายการขายประจำเดือน</div>
 
       <div style="display:flex;flex-direction:column;gap:10px;">
-        <label for="pdfMonthSelect" style="font-size:13px;color:#555;">เดือน:</label>
-        <select id="pdfMonthSelect" style="padding:10px;border:1px solid #ddd;border-radius:8px;font-family:'Prompt',sans-serif;"></select>
+        <label for="pdfDownloadMode" style="font-size:13px;color:#555;">รูปแบบ:</label>
+        <select id="pdfDownloadMode" style="padding:10px;border:1px solid #ddd;border-radius:8px;font-family:'Prompt',sans-serif;">
+          <option value="month">แยกเดือน / เลือกเดือนเดียว</option>
+          <option value="all">ทั้งหมด</option>
+        </select>
+
+        <div id="pdfMonthSelectWrap" style="display:flex;flex-direction:column;gap:8px;">
+          <label for="pdfMonthSelect" style="font-size:13px;color:#555;">เดือน:</label>
+          <select id="pdfMonthSelect" style="padding:10px;border:1px solid #ddd;border-radius:8px;font-family:'Prompt',sans-serif;"></select>
+        </div>
+
+        <div id="pdfDownloadHint" style="font-size:12px;color:#777;line-height:1.5;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;">
+          โหมดแยกเดือนจะดาวน์โหลดเฉพาะเดือนที่เลือก ส่วนโหมดทั้งหมดจะรวมทุกเดือนในไฟล์เดียว
+        </div>
       </div>
 
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">
         <button type="button" class="btn" id="pdfMonthCancelBtn" style="background:#78909c;">ยกเลิก</button>
-        <button type="button" class="btn" id="pdfMonthOkBtn" style="background:#c62828;">ดาวน์โหลด PDF</button>
+        <button type="button" class="btn" id="pdfMonthOkBtn" style="background:#c62828;">ดาวน์โหลดรายการขาย</button>
       </div>
     </div>
   </div>
@@ -1399,7 +1476,7 @@
 
       const tableWrapper = document.createElement('div');
       tableWrapper.style.marginTop = '18px';
-      tableWrapper.innerHTML = '<h3 style="font-size:16px; color:#555; margin-bottom:10px;">📄 รายละเอียดบิลรายวัน</h3>';
+      tableWrapper.innerHTML = '<h3 style="font-size:16px; color:#555; margin-bottom:10px;">📄 รายละเอียดรายการขายรายวัน</h3>';
 
       const table = document.createElement('table');
       table.innerHTML = `<tbody></tbody>`;
@@ -1655,9 +1732,9 @@
             <div style="font-size:11px;color:#64748b;margin-top:4px;">ส่วนต่าง ${customerDiff > 0 ? '+' : ''}${customerDiff.toLocaleString()} คน</div>
           </div>
           <div class="year-compare-card diff ${diffClass(billDiff)}">
-            <div class="label">จำนวนบิล เดือนนี้ / เดือนก่อน</div>
-            <div class="value">${currentBills.toLocaleString()} / ${prevBills.toLocaleString()} บิล</div>
-            <div style="font-size:11px;color:#64748b;margin-top:4px;">ส่วนต่าง ${billDiff > 0 ? '+' : ''}${billDiff.toLocaleString()} บิล</div>
+            <div class="label">จำนวนรายการขาย เดือนนี้ / เดือนก่อน</div>
+            <div class="value">${currentBills.toLocaleString()} / ${prevBills.toLocaleString()} รายการ</div>
+            <div style="font-size:11px;color:#64748b;margin-top:4px;">ส่วนต่าง ${billDiff > 0 ? '+' : ''}${billDiff.toLocaleString()} รายการ</div>
           </div>
           <div class="year-compare-card">
             <div class="label">ยอดเดือนก่อนหลังวันที่ ${prevSameLimit}</div>
@@ -1707,7 +1784,7 @@
 
       // ใช้รูปแบบเดียวกับ Dashboard เทียบเดือนก่อน:
       // แถวบน = ยอดช่วงวันเดียวกัน + ส่วนต่าง
-      // แถวล่าง = จำนวนลูกค้า / จำนวนบิล / ยอดหลังช่วงเทียบ
+      // แถวล่าง = จำนวนลูกค้า / จำนวนรายการขาย / ยอดหลังช่วงเทียบ
       const currentPeriod = getMonthToDayTotal(monthKey, currentLimit);
       const prevSamePeriod = getMonthToDayTotal(prevYearMonth, prevSameLimit);
       const diffPeriod = currentPeriod - prevSamePeriod;
@@ -1775,9 +1852,9 @@
             <div style="font-size:11px;color:#64748b;margin-top:4px;">ส่วนต่าง ${customerDiff > 0 ? '+' : ''}${customerDiff.toLocaleString()} คน</div>
           </div>
           <div class="year-compare-card diff ${diffClass(billDiff)}">
-            <div class="label">จำนวนบิล ปีนี้ / ปีที่แล้ว</div>
-            <div class="value">${currentBills.toLocaleString()} / ${prevBills.toLocaleString()} บิล</div>
-            <div style="font-size:11px;color:#64748b;margin-top:4px;">ส่วนต่าง ${billDiff > 0 ? '+' : ''}${billDiff.toLocaleString()} บิล</div>
+            <div class="label">จำนวนรายการขาย ปีนี้ / ปีที่แล้ว</div>
+            <div class="value">${currentBills.toLocaleString()} / ${prevBills.toLocaleString()} รายการ</div>
+            <div style="font-size:11px;color:#64748b;margin-top:4px;">ส่วนต่าง ${billDiff > 0 ? '+' : ''}${billDiff.toLocaleString()} รายการ</div>
           </div>
           <div class="year-compare-card">
             <div class="label">ยอดปีที่แล้วหลังวันที่ ${prevSameLimit}</div>
@@ -1898,7 +1975,7 @@
 
       const tableWrapper = document.createElement('div');
       tableWrapper.style.marginTop = '10px';
-      tableWrapper.innerHTML = '<h3 style="font-size:16px; color:#555; margin-bottom:10px;">📄 รายละเอียดบิลรายวัน</h3>';
+      tableWrapper.innerHTML = '<h3 style="font-size:16px; color:#555; margin-bottom:10px;">📄 รายละเอียดรายการขายรายวัน</h3>';
 
       const table = document.createElement('table');
       table.innerHTML = `<tbody></tbody>`;
@@ -2884,21 +2961,21 @@
           {'หัวข้อ':'ช่วงข้อมูล', 'ค่า':rangeLabel},
           {'หัวข้อ':'เวลาสร้างไฟล์', 'ค่า':metadata.exported_at || new Date().toISOString()},
           {'หัวข้อ':'ยอดขายรวม', 'ค่า':totalSales},
-          {'หัวข้อ':'จำนวนบิล', 'ค่า':billCount},
+          {'หัวข้อ':'จำนวนรายการขาย', 'ค่า':billCount},
           {'หัวข้อ':'ลูกค้าไม่ซ้ำ', 'ค่า':uniqueCustomers},
-          {'หัวข้อ':'เฉลี่ยต่อบิล', 'ค่า':Math.round(aov)},
+          {'หัวข้อ':'เฉลี่ยต่อรายการ', 'ค่า':Math.round(aov)},
           {'หัวข้อ':'ค้างชำระรวม', 'ค่า':arTotal},
           {'หัวข้อ':'จำนวนค้างทำรวม', 'ค่า':pendingWorkCount},
           {'หัวข้อ':'จำนวนนัดหมายในช่วง', 'ค่า':appts.length},
-          {'หัวข้อ':'จำนวน record สต๊อกในช่วง', 'ค่า':inventory.length},
+          {'หัวข้อ':'จำนวนรายการสต๊อกในช่วง', 'ค่า':inventory.length},
           {'หัวข้อ':'หมายเหตุ', 'ค่า':'ไฟล์นี้มีข้อมูลจริง ใช้เฉพาะภายในคลินิก'}
         ];
         addSheet(wb, '00_สรุปภาพรวม', summaryRows, ['หัวข้อ','ค่า'], {widths:[{wch:26},{wch:40}]});
 
         const billRows = sales.slice().sort((a,b)=> String(a.date||'').localeCompare(String(b.date||''))).map(s => ({
           'วันที่': excelDate(s.date),
-          'เลขใบเสร็จ': s.disp_no || s.orig_no || '',
-          'สถานะใบเสร็จ': s.receipt_status || '',
+          'เลขรายการขาย': s.disp_no || s.orig_no || '',
+          'สถานะรายการขาย': s.receipt_status || '',
           'OPD': s.opd || '',
           'ชื่อ': s.name || s.customer_name || '',
           'เบอร์': s.phone || '',
@@ -2909,7 +2986,7 @@
           'ค้างทำ': pendingWorkText(s.pending_work),
           'หมายเหตุ': s.note || ''
         }));
-        addSheet(wb, '01_ยอดขายรายบิล', billRows, ['วันที่','เลขใบเสร็จ','สถานะใบเสร็จ','OPD','ชื่อ','เบอร์','รายการรวม','ยอดรวม','วิธีชำระ','ค้างชำระ','ค้างทำ','หมายเหตุ'], {
+        addSheet(wb, '01_ยอดขายรายรายการ', billRows, ['วันที่','เลขรายการขาย','สถานะรายการขาย','OPD','ชื่อ','เบอร์','รายการรวม','ยอดรวม','วิธีชำระ','ค้างชำระ','ค้างทำ','หมายเหตุ'], {
           widths:[{wch:12},{wch:18},{wch:14},{wch:8},{wch:18},{wch:14},{wch:42},{wch:12},{wch:12},{wch:12},{wch:28},{wch:28}]
         });
 
@@ -2917,7 +2994,7 @@
         for(const s of sales){
           const items = excelItemRowsFromSale(s);
           if(!items.length){
-            itemRows.push({'วันที่':excelDate(s.date),'เลขใบเสร็จ':s.disp_no||s.orig_no||'','OPD':s.opd||'','ชื่อ':s.name||s.customer_name||'','หมวด':'','รายการ':'','จำนวน':'','ราคา/หน่วย':'','รวมบรรทัด':'','ยอดบิล':excelNum(s.amount),'หมายเหตุ':s.note||''});
+            itemRows.push({'วันที่':excelDate(s.date),'เลขรายการขาย':s.disp_no||s.orig_no||'','OPD':s.opd||'','ชื่อ':s.name||s.customer_name||'','หมวด':'','รายการ':'','จำนวน':'','ราคา/หน่วย':'','รวมบรรทัด':'','ยอดรายการ':excelNum(s.amount),'หมายเหตุ':s.note||''});
             continue;
           }
           for(const it of items){
@@ -2925,7 +3002,7 @@
             const price = it.price === '' ? '' : excelNum(it.price);
             itemRows.push({
               'วันที่': excelDate(s.date),
-              'เลขใบเสร็จ': s.disp_no || s.orig_no || '',
+              'เลขรายการขาย': s.disp_no || s.orig_no || '',
               'OPD': s.opd || '',
               'ชื่อ': s.name || s.customer_name || '',
               'หมวด': it.category || '',
@@ -2933,19 +3010,19 @@
               'จำนวน': qty,
               'ราคา/หน่วย': price,
               'รวมบรรทัด': price === '' ? '' : qty * price,
-              'ยอดบิล': excelNum(s.amount),
+              'ยอดรายการ': excelNum(s.amount),
               'หมายเหตุ': s.note || ''
             });
           }
         }
-        addSheet(wb, '02_แยกรายสินค้า', itemRows, ['วันที่','เลขใบเสร็จ','OPD','ชื่อ','หมวด','รายการ','จำนวน','ราคา/หน่วย','รวมบรรทัด','ยอดบิล','หมายเหตุ'], {
+        addSheet(wb, '02_แยกรายสินค้า', itemRows, ['วันที่','เลขรายการขาย','OPD','ชื่อ','หมวด','รายการ','จำนวน','ราคา/หน่วย','รวมบรรทัด','ยอดรายการ','หมายเหตุ'], {
           widths:[{wch:12},{wch:18},{wch:8},{wch:18},{wch:16},{wch:24},{wch:10},{wch:12},{wch:12},{wch:12},{wch:28}]
         });
 
         const dailyRows = daily.slice().sort((a,b)=> String(a.date||'').localeCompare(String(b.date||''))).map(d => ({
           'วันที่': excelDate(d.date),
           'ยอดขายรวม': excelNum(d.total_sales),
-          'จำนวนบิล': excelNum(d.bill_count),
+          'จำนวนรายการขาย': excelNum(d.bill_count),
           'ลูกค้าไม่ซ้ำ': excelNum(d.unique_customers),
           'ค้างชำระรวม': excelNum(d.ar_total),
           'ค้างทำรวม': excelNum(d.pending_work_count),
@@ -2954,7 +3031,7 @@
           'เคส IV': excelNum(d.iv_case_count),
           'Top items': Array.isArray(d.top_items) ? d.top_items.map(x=>`${x.name || ''} ${x.qty || ''}`).join('\n') : excelSafe(d.top_items)
         }));
-        addSheet(wb, '03_สรุปรายวัน', dailyRows, ['วันที่','ยอดขายรวม','จำนวนบิล','ลูกค้าไม่ซ้ำ','ค้างชำระรวม','ค้างทำรวม','จำนวนนัด','เคสแพทย์','เคส IV','Top items'], {
+        addSheet(wb, '03_สรุปรายวัน', dailyRows, ['วันที่','ยอดขายรวม','จำนวนรายการขาย','ลูกค้าไม่ซ้ำ','ค้างชำระรวม','ค้างทำรวม','จำนวนนัด','เคสแพทย์','เคส IV','Top items'], {
           widths:[{wch:12},{wch:14},{wch:10},{wch:12},{wch:14},{wch:12},{wch:10},{wch:10},{wch:10},{wch:36}]
         });
 
@@ -2970,9 +3047,9 @@
             'วันเกิด': c.birth_date || c.birthday || '',
             'เดือนเกิด': c.birth_month || '',
             'VIP': c.vip || c.vip_level || '',
-            'จำนวนบิล': m.sale_count || 0,
+            'จำนวนรายการขาย': m.sale_count || 0,
             'ยอดรวม': Math.round(m.total_spent || 0),
-            'เฉลี่ย/บิล': m.sale_count ? Math.round((m.total_spent || 0) / m.sale_count) : 0,
+            'เฉลี่ย/รายการ': m.sale_count ? Math.round((m.total_spent || 0) / m.sale_count) : 0,
             'มาครั้งแรก': m.first_visit || '',
             'มาล่าสุด': m.last_visit || '',
             'รายการล่าสุด': (m.last_items || []).join('\n'),
@@ -2980,7 +3057,7 @@
             'หมายเหตุ': c.note || ''
           };
         });
-        addSheet(wb, '04_ลูกค้า', customerRows, ['OPD','ชื่อ','ชื่อเต็ม','เบอร์','วันเกิด','เดือนเกิด','VIP','จำนวนบิล','ยอดรวม','เฉลี่ย/บิล','มาครั้งแรก','มาล่าสุด','รายการล่าสุด','Profile','หมายเหตุ'], {
+        addSheet(wb, '04_ลูกค้า', customerRows, ['OPD','ชื่อ','ชื่อเต็ม','เบอร์','วันเกิด','เดือนเกิด','VIP','จำนวนรายการขาย','ยอดรวม','เฉลี่ย/รายการ','มาครั้งแรก','มาล่าสุด','รายการล่าสุด','Profile','หมายเหตุ'], {
           widths:[{wch:8},{wch:16},{wch:22},{wch:14},{wch:12},{wch:10},{wch:10},{wch:10},{wch:12},{wch:12},{wch:12},{wch:12},{wch:28},{wch:36},{wch:30}]
         });
 
@@ -3056,21 +3133,39 @@
     document.getElementById('downloadPdfBtn')?.addEventListener('click', openPdfMonthModal);
 
     function getAvailableMonthsForPdf() {
+      // โหมดเลือกเดือน: ให้เลือกจากเดือนทั้งหมดที่มีข้อมูล
+      // ถ้ามีการเลือกช่วงไว้ ให้แสดงเฉพาะเดือนในช่วงนั้นเพื่อให้สอดคล้องกับหน้ารายงาน
       if (isRangeActive()) {
         return monthsSorted.filter(m => m >= rangeStart && m <= rangeEnd);
       }
-      return selectedMonth ? [selectedMonth] : monthsSorted.slice();
+      return monthsSorted.slice();
+    }
+
+    function updatePdfDownloadModeUI(){
+      const mode = document.getElementById('pdfDownloadMode')?.value || 'month';
+      const monthWrap = document.getElementById('pdfMonthSelectWrap');
+      const okBtn = document.getElementById('pdfMonthOkBtn');
+      const hint = document.getElementById('pdfDownloadHint');
+
+      if(monthWrap) monthWrap.style.display = mode === 'all' ? 'none' : 'flex';
+      if(okBtn) okBtn.textContent = mode === 'all' ? 'ดาวน์โหลดทั้งหมด' : 'ดาวน์โหลดรายการขาย';
+      if(hint){
+        hint.textContent = mode === 'all'
+          ? 'โหมดทั้งหมดจะรวมทุกเดือนที่มีข้อมูลในไฟล์เดียว โดยแต่ละหน้าจะเป็น A4 เต็มหน้า อ่านตารางได้ชัดเจน'
+          : 'โหมดแยกเดือนจะดาวน์โหลดเฉพาะเดือนที่เลือก โดยใช้ A4 เต็มหน้าเหมือนรายงานเดิม';
+      }
     }
 
     function openPdfMonthModal() {
       const modal = document.getElementById('pdf-month-modal');
       const select = document.getElementById('pdfMonthSelect');
+      const modeSelect = document.getElementById('pdfDownloadMode');
       if (!modal || !select) return;
 
       const availableMonths = getAvailableMonthsForPdf();
 
       if (!availableMonths.length) {
-        alert('ไม่มีข้อมูลให้ดาวน์โหลด PDF');
+        alert('ไม่มีข้อมูลให้ดาวน์โหลดรายการขาย');
         return;
       }
 
@@ -3083,12 +3178,15 @@
         select.appendChild(option);
       });
 
+      if(modeSelect) modeSelect.value = 'month';
+
       if (selectedMonth && availableMonths.includes(selectedMonth)) {
         select.value = selectedMonth;
       } else {
         select.value = availableMonths[availableMonths.length - 1];
       }
 
+      updatePdfDownloadModeUI();
       modal.style.display = 'flex';
     }
 
@@ -3098,7 +3196,16 @@
     }
 
     async function confirmPdfMonthModal() {
+      const mode = document.getElementById('pdfDownloadMode')?.value || 'month';
       const select = document.getElementById('pdfMonthSelect');
+
+      if(mode === 'all'){
+        const months = getAvailableMonthsForPdf();
+        await generateAllMonthsPdf(months);
+        closePdfMonthModal();
+        return;
+      }
+
       if (!select || !select.value) {
         alert('กรุณาเลือกเดือน');
         return;
@@ -3108,6 +3215,7 @@
       closePdfMonthModal();
     }
 
+    document.getElementById('pdfDownloadMode')?.addEventListener('change', updatePdfDownloadModeUI);
     document.getElementById('pdfMonthCloseBtn')?.addEventListener('click', closePdfMonthModal);
     document.getElementById('pdfMonthCancelBtn')?.addEventListener('click', closePdfMonthModal);
     document.getElementById('pdfMonthOkBtn')?.addEventListener('click', confirmPdfMonthModal);
@@ -3163,7 +3271,7 @@
 
     function buildPdfHtml(monthKey){
       const rows = buildPdfRows(monthKey);
-      const pages = splitPdfRows(rows, 14, 16);
+      const pages = splitPdfRows(rows, 13, 15);
       const title = `รายการขายประจำเดือน ${monthLabel(monthKey)}`;
       const monthTotal = rows.reduce((sum, r) => sum + (r.amount || 0), 0);
 
@@ -3172,15 +3280,15 @@
           <div class="pdf-header">
             <div class="pdf-header-left">
               <div class="pdf-title">${escapeHtml(title)}</div>
-              <div class="pdf-subtitle">รายการขายเฉพาะเดือนที่เลือก</div>
             </div>
             <div class="pdf-header-right">
-              <div class="pdf-count">จำนวนบิลทั้งหมด: ${rows.length} รายการ</div>
+              <div class="pdf-count">จำนวนรายการทั้งหมด: ${rows.length} รายการ</div>
               <div class="pdf-total">ยอดรวมทั้งเดือน: <strong>${monthTotal.toLocaleString()} บาท</strong></div>
               <div class="pdf-page-no">หน้า ${pageIndex + 1} / ${pages.length}</div>
             </div>
           </div>
 
+          <div class="pdf-table-wrap">
           <table class="pdf-table">
             <thead>
               <tr>
@@ -3188,7 +3296,7 @@
                 <th style="width:10%;">วันที่</th>
                 <th style="width:18%;">ชื่อ</th>
                 <th style="width:39%;">รายการ</th>
-                <th style="width:12%;">ยอด/บิล</th>
+                <th style="width:12%;">ยอด/รายการ</th>
                 <th style="width:16%;">ยอดรวมสะสม</th>
               </tr>
             </thead>
@@ -3205,13 +3313,51 @@
               `).join('')}
             </tbody>
           </table>
+          </div>
 
           <div class="pdf-footer">
             <div>ระบบสรุปรายการขายประจำเดือน</div>
-            <div>ออกรายงานเมื่อ ${new Date().toLocaleDateString('th-TH')}</div>
           </div>
         </div>
       `).join('');
+    }
+
+    async function exportPdfAreaFullA4Landscape(filename){
+      const pdfArea = document.getElementById('pdf-print-area');
+      if (!pdfArea) {
+        alert('ไม่พบพื้นที่สร้างรายการขายประจำเดือน');
+        return false;
+      }
+
+      await document.fonts.ready;
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      const pages = Array.from(pdfArea.querySelectorAll('.pdf-page'));
+      if (!pages.length) {
+        alert('ไม่สามารถสร้างหน้ารายการขายประจำเดือนได้');
+        return false;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('l', 'mm', 'a4');
+      const pageWidth = 297;
+      const pageHeight = 210;
+
+      for (let i = 0; i < pages.length; i++) {
+        const canvas = await html2canvas(pages[i], {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff'
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        if (i > 0) doc.addPage('a4', 'l');
+        doc.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight);
+      }
+
+      doc.save(filename);
+      pdfArea.innerHTML = '';
+      return true;
     }
 
     async function generateMonthPdf(monthKey) {
@@ -3223,42 +3369,42 @@
 
       const pdfArea = document.getElementById('pdf-print-area');
       if (!pdfArea) {
-        alert('ไม่พบพื้นที่สร้าง PDF');
+        alert('ไม่พบพื้นที่สร้างรายการขายประจำเดือน');
         return;
       }
 
+      // ใช้หน้าตารายการขายประจำเดือนเดิม แต่ปรับตารางให้อ่านง่ายขึ้นบน A4 เต็มหน้า
       pdfArea.innerHTML = buildPdfHtml(monthKey);
 
-      await document.fonts.ready;
-      await new Promise(resolve => setTimeout(resolve, 300));
+      const safeMonth = monthKey.replace('-', '_');
+      await exportPdfAreaFullA4Landscape(`รายการขายประจำเดือน_${safeMonth}.pdf`);
+    }
 
-      const pages = Array.from(pdfArea.querySelectorAll('.pdf-page'));
-      if (!pages.length) {
-        alert('ไม่สามารถสร้างหน้า PDF ได้');
+    async function generateAllMonthsPdf(monthKeys) {
+      const months = (monthKeys || [])
+        .filter(monthKey => (groupedByMonth[monthKey] || []).length > 0)
+        .sort();
+
+      if (!months.length) {
+        alert('ไม่มีข้อมูลให้ดาวน์โหลดรายการขาย');
         return;
       }
 
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF('l', 'mm', 'a4');
+      const ok = confirm(`ต้องการดาวน์โหลดรายการขาย ทั้งหมด ${months.length} เดือนในไฟล์เดียวหรือไม่?`);
+      if(!ok) return;
 
-      for (let i = 0; i < pages.length; i++) {
-        const canvas = await html2canvas(pages[i], {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#ffffff'
-        });
-
-        const imgData = canvas.toDataURL('image/jpeg', 1.0);
-        const pageWidth = 297;
-        const pageHeight = 210;
-
-        if (i > 0) doc.addPage();
-        doc.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight);
+      const pdfArea = document.getElementById('pdf-print-area');
+      if (!pdfArea) {
+        alert('ไม่พบพื้นที่สร้างรายการขายประจำเดือน');
+        return;
       }
 
-      const safeMonth = monthKey.replace('-', '_');
-      doc.save(`รายการขาย_${safeMonth}.pdf`);
-      pdfArea.innerHTML = '';
+      // รวมทุกเดือน โดยคง pattern รายงานเดิมของแต่ละเดือน และใช้ A4 เต็มหน้า
+      pdfArea.innerHTML = months.map(monthKey => buildPdfHtml(monthKey)).join('');
+
+      const firstMonth = months[0].replace('-', '_');
+      const lastMonth = months[months.length - 1].replace('-', '_');
+      await exportPdfAreaFullA4Landscape(`รายการขายประจำเดือน_ทั้งหมด_${firstMonth}_ถึง_${lastMonth}.pdf`);
     }
 
     // ===== Month Range Modal =====
