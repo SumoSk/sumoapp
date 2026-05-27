@@ -4,11 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="format-detection" content="telephone=no" />
-  <title>Doctor Palmy Clinic | หมอปาล์มมี่คลินิกเวชกรรม ลำพูน คลินิกความงามและดูแลผิวพรรณ</title>
-  <meta name="description" content="Doctor Palmy Clinic หมอปาล์มมี่คลินิกเวชกรรม ลำพูน คลินิกความงาม คลินิกดูแลผิวพรรณ คลินิกดูแลผิวหน้า ปรับรูปหน้า ทรีตเมนต์ผิว และปรึกษาความงามในจังหวัดลำพูน" />
-  <meta name="keywords" content="Doctor Palmy Clinic, หมอปาล์มมี่คลินิก, คลินิกเวชกรรม ลำพูน, คลินิกความงาม ลำพูน, คลินิกผิวพรรณ ลำพูน, ดูแลผิวพรรณ ลำพูน, ปรึกษาความงาม ลำพูน" />
-  <meta property="og:title" content="Doctor Palmy Clinic | หมอปาล์มมี่คลินิกเวชกรรม ลำพูน" />
-  <meta property="og:description" content="Doctor Palmy Clinic ลำพูน ดูรูป โปรโมชัน และติดต่อผ่าน Facebook" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#fffdf8" />
+  <title>หมอปาล์มมี่คลินิก ลำพูน | Doctor Palmy Clinic คลินิกเวชกรรมความงาม</title>
+  <meta name="description" content="Doctor Palmy Clinic หมอปาล์มมี่คลินิกเวชกรรม ลำพูน ดูแลผิวพรรณ ปรับรูปหน้า ทรีตเมนต์ผิว และปรึกษาความงามโดยทีมแพทย์ ติดต่อผ่าน Facebook ได้ทันที" />
+  <meta name="keywords" content="หมอปาล์มมี่คลินิก, Doctor Palmy Clinic, คลินิกเวชกรรม ลำพูน, คลินิกความงาม ลำพูน, คลินิกผิวพรรณ ลำพูน, ปรับรูปหน้า ลำพูน, ทรีตเมนต์ผิว ลำพูน, คลินิกดูแลผิว ลำพูน" />
+  <meta property="og:title" content="หมอปาล์มมี่คลินิก ลำพูน | Doctor Palmy Clinic" />
+  <meta property="og:description" content="คลินิกเวชกรรมความงามลำพูน ดูแลผิวพรรณ ปรับรูปหน้า ทรีตเมนต์ผิว และติดต่อผ่าน Facebook" />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="{{ url_for('static', filename='clinic-hero.jpg') }}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -2618,6 +2620,111 @@
       }
     }
 
+
+    /* SEO Landing section — visible content for Google + clear Facebook CTA */
+    .seo-landing-section{
+      width:calc(100% - 22px);
+      margin:24px auto;
+    }
+    .seo-landing-shell{
+      border-radius:28px;
+      padding:18px;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(175,232,218,.34), transparent 34%),
+        linear-gradient(145deg, rgba(255,255,255,.88), rgba(248,253,250,.74));
+      border:1px solid rgba(19,43,37,.08);
+      box-shadow:0 18px 54px rgba(21,55,48,.07);
+    }
+    .seo-landing-kicker{
+      margin:0 0 8px;
+      font-size:10px;
+      letter-spacing:.15em;
+      text-transform:uppercase;
+      color:rgba(19,43,37,.45);
+      font-weight:700;
+    }
+    .seo-landing-title{
+      margin:0;
+      font-size:clamp(25px, 7vw, 34px);
+      line-height:1.12;
+      letter-spacing:-.04em;
+      color:#132b25;
+      font-weight:700;
+    }
+    .seo-landing-text{
+      margin:10px 0 0;
+      color:rgba(19,43,37,.68);
+      font-size:13px;
+      line-height:1.85;
+    }
+    .seo-service-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+      gap:10px;
+      margin-top:14px;
+    }
+    .seo-service-card{
+      min-height:104px;
+      border-radius:22px;
+      padding:15px;
+      background:rgba(255,255,255,.74);
+      border:1px solid rgba(19,43,37,.08);
+      box-shadow:0 10px 26px rgba(21,55,48,.055);
+    }
+    .seo-service-card h3{
+      margin:0;
+      color:#132b25;
+      font-size:15px;
+      line-height:1.35;
+      letter-spacing:-.015em;
+    }
+    .seo-service-card p{
+      margin:6px 0 0;
+      color:rgba(19,43,37,.58);
+      font-size:12px;
+      line-height:1.65;
+    }
+    .seo-cta-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:9px;
+      margin-top:16px;
+    }
+    .seo-cta-row .btn{
+      box-shadow:0 12px 28px rgba(15,118,110,.14);
+    }
+    .seo-cta-secondary{
+      background:#132b25;
+      color:#fff;
+    }
+    @media (min-width:768px){
+      .seo-landing-section{
+        width:min(calc(100% - 40px), var(--wide-max));
+        margin:38px auto;
+      }
+      .seo-landing-shell{
+        border-radius:38px;
+        padding:28px;
+      }
+      .seo-landing-title{
+        font-size:clamp(38px, 4.5vw, 54px);
+        max-width:760px;
+      }
+      .seo-landing-text{
+        font-size:14.5px;
+        max-width:74ch;
+      }
+      .seo-service-grid{
+        grid-template-columns:repeat(4, minmax(0, 1fr));
+        gap:12px;
+      }
+      .seo-service-card{
+        border-radius:26px;
+        min-height:128px;
+      }
+      .seo-service-card h3{font-size:16px;}
+    }
+
 </style>
 
   <script type="application/ld+json">
@@ -2625,11 +2732,29 @@
     "@context":"https://schema.org",
     "@type":"MedicalBusiness",
     "name":"Doctor Palmy Clinic - หมอปาล์มมี่คลินิกเวชกรรม ลำพูน",
-    "telephone":["093-6498865","061-4296596"],
+    "alternateName":"หมอปาล์มมี่คลินิก",
+    "description":"คลินิกเวชกรรมความงามในจังหวัดลำพูน ให้บริการปรึกษาความงาม ดูแลผิวพรรณ ทรีตเมนต์ผิว และปรับรูปหน้า ดูแลโดยแพทย์ ใช้ผลิตภัณฑ์ของแท้ผ่าน อย. ไทย ติดต่อผ่าน Facebook ของคลินิก",
+    "telephone":["093-649-8865","061-429-6596"],
+    "address":{
+      "@type":"PostalAddress",
+      "streetAddress":"341 หมู่ 4 ตำบลเวียงยอง อำเภอเมืองลำพูน",
+      "addressLocality":"เมืองลำพูน",
+      "addressRegion":"ลำพูน",
+      "postalCode":"51000",
+      "addressCountry":"TH"
+    },
     "areaServed":"Lamphun, Thailand",
-    "url":"https://www.facebook.com/100095416443479/",
+    "openingHoursSpecification":[
+      {
+        "@type":"OpeningHoursSpecification",
+        "dayOfWeek":["Monday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+        "opens":"11:00",
+        "closes":"19:30"
+      }
+    ],
     "sameAs":["https://www.facebook.com/100095416443479/"],
-    "description":" ดูแลผิวพรรณและความงาม ติดต่อรายละเอียดเพิ่มเติมผ่าน Facebook ของคลินิก"
+    "image":["{{ url_for('static', filename='clinic-hero-01.jpg') }}"],
+    "priceRange":"สอบถามรายละเอียดผ่าน Facebook"
   }
   </script></head>
 <body>
@@ -2655,10 +2780,11 @@
       <div class="hero-content">
         
         <h1 class="hero-title">Doctor<br>Palmy</h1>
-        <p class="thai-name">หมอปาล์มมี่คลินิกเวชกรรม ลำพูน</p>
+        <p class="thai-name">หมอปาล์มมี่คลินิกเวชกรรม ลำพูน | คลินิกดูแลผิวพรรณ ปรับรูปหน้า และปรึกษาความงาม</p>
         
         <div class="hero-actions">
-          <a class="btn btn-primary" href="https://www.facebook.com/100095416443479/" target="_blank" rel="noopener">ติดต่อผ่าน Facebook</a></div>
+          <a class="btn btn-primary" href="https://www.facebook.com/100095416443479/" target="_blank" rel="noopener">ติดต่อผ่าน Facebook</a>
+          <a class="btn btn-primary" href="#contact">ดูข้อมูลติดต่อ</a></div>
       </div></section>
 
     <section class="section promo-section reveal" id="updates" aria-label="โปรโมชันและอัปเดตล่าสุด">
@@ -2705,7 +2831,9 @@
       </noscript>
     </section>
 <section class="section reveal" aria-label="บรรยากาศคลินิก">
-      
+      <div class="section-label">
+        <h2>บรรยากาศคลินิก</h2>
+      </div>
       <div class="gallery-grid clinic-gallery-four">
         <div class="gallery-card mood-card">
           <img src="{{ url_for('static', filename='clinic-mood-01.jpg') }}" alt="บรรยากาศ Doctor Palmy Clinic ลำพูน รูปที่ 1" loading="lazy" onerror="this.style.opacity='.22'" />
@@ -2721,10 +2849,35 @@
         </div>
       </div>
 </section>
-<section class="clinic-mood-copy" aria-label="เกี่ยวกับหมอปาล์มมี่คลินิก">
-    <div class="mood-kicker">Doctor Palmy Clinic</div>
-    <p>หมอปาล์มมี่คลินิก เวชกรรมลำพูน โดยพญ.ปิยะฎา จินดาหลวง(หมอปาล์มมี่) เราดีไซน์ความสวยในแบบที่เป็นคุณอย่างมั่นใจและปลอดภัย เชี่ยวชาญด้านการปรับรูปหน้า และปรับโครงสร้างผิวพรรณอย่างละเอียดแบบเคสต่อเคส ดูแลโดยหมอปาล์มและทีมแพทย์ผู้เชี่ยวชาญ คัดสรรเทคโนโลยีชั้นนำและตัวยาแท้ผ่าน อย. 100% เพื่อผลลัพธ์ที่สวยละมุนเป็นธรรมชาติในเวอร์ชันที่ดีที่สุดของคุณ</p>
-    <p>เราพร้อมส่งมอบประสบการณ์การดูแลผิวพรรณที่เอ็กซ์คลูซีฟ สะอาด และได้มาตรฐานสากล สัมผัสความเปลี่ยนแปลงที่เหนือระดับและคำปรึกษาที่จริงใจได้แล้ววันนี้</p>
+<section class="seo-landing-section reveal" aria-label="ข้อมูลคลินิกสำหรับการค้นหาบน Google">
+    <div class="seo-landing-shell">
+      <div class="seo-landing-kicker">Beauty & Skin Clinic in Lamphun</div>
+      <h2 class="seo-landing-title">หมอปาล์มมี่คลินิกเวชกรรม ลำพูน</h2>
+      <p class="seo-landing-text">Doctor Palmy Clinic หมอปาล์มมี่คลินิกเวชกรรม ลำพูน โดย พญ.ปิยะฎา จินดาหลวง (หมอปาล์มมี่) ให้บริการปรึกษาความงาม ดูแลผิวพรรณ ทรีตเมนต์ผิว และปรับรูปหน้าแบบประเมินรายบุคคล ดีไซน์ความสวยในแบบที่เป็นคุณ พร้อมดูแลโดยแพทย์และทีมคลินิกในบรรยากาศสะอาด อบอุ่น และได้มาตรฐาน</p>
+      <p class="seo-landing-text">ทางคลินิกให้ความสำคัญกับความจริงใจในการดูแล ไม่มีเซลกดดันยอด ใช้ผลิตภัณฑ์และตัวยาของแท้ ผ่าน อย. ไทย เปิดกล่องและตรวจสอบให้ดูต่อหน้า พร้อมให้ลูกค้านำกล่องกลับได้ เพื่อความมั่นใจในทุกขั้นตอนของการเข้ารับบริการ</p>
+      <div class="seo-service-grid" aria-label="บริการหลักของ Doctor Palmy Clinic">
+        <article class="seo-service-card">
+          <h3>ปรึกษาความงาม</h3>
+          <p>รับคำแนะนำเบื้องต้นก่อนเข้ารับบริการ พร้อมประเมินตามความเหมาะสมของแต่ละบุคคล</p>
+        </article>
+        <article class="seo-service-card">
+          <h3>ดูแลผิวพรรณ</h3>
+          <p>โปรแกรมดูแลผิวหน้าและผิวพรรณสำหรับผู้ที่ต้องการดูแลผิวให้ดูสุขภาพดี</p>
+        </article>
+        <article class="seo-service-card">
+          <h3>ทรีตเมนต์ผิว</h3>
+          <p>บริการดูแลผิวในคลินิกเวชกรรมความงามลำพูน พร้อมบรรยากาศสะอาดและเป็นส่วนตัว</p>
+        </article>
+        <article class="seo-service-card">
+          <h3>ปรับรูปหน้า</h3>
+          <p>ให้คำปรึกษาเรื่องโครงหน้า กรอบหน้า และภาพรวมใบหน้าอย่างละเอียดแบบเคสต่อเคส</p>
+        </article>
+      </div>
+      <div class="seo-cta-row">
+        <a class="btn btn-primary" href="https://www.facebook.com/100095416443479/" target="_blank" rel="noopener">สอบถามผ่าน Facebook</a>
+        <a class="btn seo-cta-secondary" href="#contact">ดูเบอร์โทรและแผนที่</a>
+      </div>
+    </div>
   </section>
 
 <section class="contact-suite compact-contact" id="contact">
@@ -2835,7 +2988,7 @@
   <section class="seo-tail" aria-label="ข้อมูลสำหรับการค้นหา">
     <div class="seo-tail-frame">
       <div class="seo-tail-kicker">ข้อมูลสำหรับการค้นหา</div>
-      <p class="seo-tail-text">Doctor Palmy Clinic หมอปาล์มมี่คลินิกเวชกรรม ลำพูน · คลินิกเวชกรรม ลำพูน · คลินิกความงาม ลำพูน · คลินิกดูแลผิวพรรณ ลำพูน · คลินิกดูแลผิวหน้า ลำพูน · คลินิกหน้าใส ลำพูน · คลินิกปรับรูปหน้า ลำพูน · คลินิกเสริมความงาม ลำพูน · คลินิกผิวพรรณ ลำพูน · คลินิกดูแลริ้วรอย ลำพูน · คลินิกดูแลกรอบหน้า ลำพูน · คลินิกทรีตเมนต์ผิว ลำพูน · โปรแกรมดูแลผิว ลำพูน · โปรแกรมผิวฉ่ำ ลำพูน · ดูแลผิวพรรณ · ดูแลผิวหน้า · ดูแลผิวใส · ดูแลผิวสุขภาพดี · ดูแลรูปหน้า · ปรับรูปหน้า · ทรีตเมนต์ผิว · ปรึกษาความงาม · ปรึกษาปัญหาผิว · คลินิกความงามใกล้ฉัน ลำพูน · คลินิกผิวใกล้ฉัน ลำพูน · สำหรับผู้ที่ต้องการปรึกษาความงามและดูแลผิวพรรณในจังหวัดลำพูน</p>
+      <p class="seo-tail-text">Doctor Palmy Clinic หรือ หมอปาล์มมี่คลินิกเวชกรรม ลำพูน เป็นคลินิกเวชกรรมความงามสำหรับผู้ที่ต้องการปรึกษาการดูแลผิวพรรณ ทรีตเมนต์ผิว ดูแลผิวหน้า และปรับรูปหน้าในจังหวัดลำพูน สามารถดูรูปภาพ อัปเดตโปรโมชัน สอบถามรายละเอียด นัดหมาย และเปิดแผนที่ผ่านช่องทาง Facebook ของคลินิกได้โดยตรง</p>
     </div>
   </section>
     </div>
