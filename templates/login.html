@@ -2384,7 +2384,7 @@
     </section>
 <section class="section reveal" aria-label="บรรยากาศคลินิก">
       <div class="section-label">
-        <h2>บรรยากาศคลินิก</h2></div>
+        <h2></h2></div>
       <div class="gallery-grid">
         <div class="gallery-card tall">
           <img src="{{ url_for('static', filename='clinic-mood-01.jpg') }}" alt="บรรยากาศ Doctor Palmy Clinic ลำพูน" onerror="this.style.opacity='.22'" /></div>
@@ -2767,8 +2767,106 @@
       });
     }
 
-    initHeroCarousel();
-    initLatestUpdates();
+    /* =========================================================
+       Auto image loader
+       ใส่รูปเพิ่มได้โดยวางไฟล์ใน /static แล้วตั้งชื่อเรียงเลข:
+       - clinic-hero-01.jpg, clinic-hero-02.jpg, ...
+       - promo-01.jpg, promo-02.jpg, ...
+       รองรับ .jpg .jpeg .png .webp และจะดึงมาใส่ carousel ให้อัตโนมัติ
+       ========================================================= */
+    const STATIC_BASE = "{{ url_for('static', filename='') }}";
+
+    function pad2(value){
+      return String(value).padStart(2, '0');
+    }
+
+    function imageExists(src){
+      return new Promise(resolve => {
+        const img = new Image();
+        const timer = setTimeout(() => {
+          img.onload = null;
+          img.onerror = null;
+          resolve(false);
+        }, 1200);
+
+        img.onload = () => {
+          clearTimeout(timer);
+          resolve(src);
+        };
+        img.onerror = () => {
+          clearTimeout(timer);
+          resolve(false);
+        };
+        img.src = src;
+      });
+    }
+
+    async function findFirstExistingImage(prefix, index){
+      const padded = pad2(index);
+      const extensions = ['jpg', 'jpeg', 'png', 'webp'];
+      const names = [];
+      extensions.forEach(ext => names.push(`${prefix}-${padded}.${ext}`));
+      if (String(index) !== padded){
+        extensions.forEach(ext => names.push(`${prefix}-${index}.${ext}`));
+      }
+
+      const results = await Promise.all(names.map(name => imageExists(`${STATIC_BASE}${name}`)));
+      return results.find(Boolean) || null;
+    }
+
+    async function collectImages(prefix, maxCount){
+      const found = [];
+      let misses = 0;
+
+      for (let index = 1; index <= maxCount; index += 1){
+        const src = await findFirstExistingImage(prefix, index);
+        if (src){
+          found.push(src);
+          misses = 0;
+        } else {
+          misses += 1;
+          if (misses >= 8) break;
+        }
+      }
+      return found;
+    }
+
+    function renderHeroSlides(sources){
+      const track = document.getElementById('heroTrack');
+      if (!track || !sources.length) return;
+      track.innerHTML = sources.map(src => `
+        <div class="hero-slide">
+          <img src="${src}" alt="" draggable="false" />
+        </div>
+      `).join('');
+    }
+
+    function renderPromoSlides(sources){
+      const track = document.getElementById('updatesTrack');
+      if (!track || !sources.length) return;
+      track.innerHTML = sources.map((src, index) => `
+        <div class="updates-slide">
+          <a class="updates-card" href="https://www.facebook.com/100095416443479/" target="_blank" rel="noopener">
+            <img src="${src}" alt="โปรโมชัน Doctor Palmy Clinic ลำพูน รูปที่ ${index + 1}" loading="lazy" draggable="false" />
+          </a>
+        </div>
+      `).join('');
+    }
+
+    async function prepareDynamicImages(){
+      const [heroImages, promoImages] = await Promise.all([
+        collectImages('clinic-hero', 30),
+        collectImages('promo', 80)
+      ]);
+
+      renderHeroSlides(heroImages);
+      renderPromoSlides(promoImages);
+    }
+
+    prepareDynamicImages().finally(() => {
+      initHeroCarousel();
+      initLatestUpdates();
+    });
 
     const body = document.body;
     const staffFloatingBtn = document.getElementById('staffFloatingBtn');
