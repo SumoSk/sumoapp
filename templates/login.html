@@ -2296,6 +2296,328 @@
         grid-template-columns:repeat(auto-fit, minmax(min(100%, 320px), 1fr));
       }
     }
+
+    /* =========================================================
+       Clinic mood gallery — 4 clean boxes
+       บรรยากาศคลินิกเป็น 4 ช่องเท่ากัน
+       ========================================================= */
+    .clinic-gallery-four{
+      display:grid !important;
+      grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+      gap:clamp(10px, 2.8vw, 18px) !important;
+      align-items:stretch !important;
+    }
+    .clinic-gallery-four .mood-card{
+      width:100% !important;
+      height:auto !important;
+      aspect-ratio:1 / 1 !important;
+      border-radius:clamp(20px, 5vw, 30px) !important;
+      overflow:hidden !important;
+    }
+    .clinic-gallery-four .mood-card img{
+      width:100% !important;
+      height:100% !important;
+      max-width:100% !important;
+      object-fit:cover !important;
+      object-position:center !important;
+      display:block !important;
+    }
+    @media (min-width:768px){
+      .clinic-gallery-four{
+        grid-template-columns:repeat(4, minmax(0, 1fr)) !important;
+      }
+    }
+
+
+    /* =========================================================
+       Clinic mood gallery v5 — 4 boxes, original scale
+       4 ช่อง แต่คงสเกลเดิม: ไม่บีบเป็น 4 คอลัมน์บนจอใหญ่
+       ========================================================= */
+    .clinic-gallery-four{
+      display:grid !important;
+      grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+      gap:var(--card-gap, 12px) !important;
+      align-items:stretch !important;
+    }
+    .clinic-gallery-four .mood-card{
+      width:100% !important;
+      height:min(45vw, 188px) !important;
+      aspect-ratio:auto !important;
+      border-radius:22px !important;
+      overflow:hidden !important;
+    }
+    .clinic-gallery-four .mood-card img{
+      width:100% !important;
+      height:100% !important;
+      max-width:100% !important;
+      object-fit:cover !important;
+      object-position:center !important;
+      display:block !important;
+    }
+    @media (min-width:768px){
+      .clinic-gallery-four{
+        grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+        gap:var(--card-gap, 16px) !important;
+      }
+      .clinic-gallery-four .mood-card{
+        height:calc((clamp(390px, 50vw, 560px) - var(--card-gap, 16px)) / 2) !important;
+        border-radius:28px !important;
+      }
+    }
+    @media (min-width:1024px){
+      .clinic-gallery-four{
+        gap:var(--card-gap, 20px) !important;
+      }
+      .clinic-gallery-four .mood-card{
+        height:280px !important;
+      }
+    }
+
+
+    /* =========================================================
+       Clinic mood gallery v6 — 4 square boxes
+       ทำ 4 ช่องบรรยากาศคลินิกให้เป็นสี่เหลี่ยมจตุรัสจริง
+       ========================================================= */
+    .clinic-gallery-four{
+      display:grid !important;
+      grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+      gap:var(--card-gap, 12px) !important;
+      align-items:stretch !important;
+    }
+    .clinic-gallery-four .mood-card{
+      width:100% !important;
+      height:auto !important;
+      aspect-ratio:1 / 1 !important;
+      border-radius:22px !important;
+      overflow:hidden !important;
+    }
+    .clinic-gallery-four .mood-card img{
+      width:100% !important;
+      height:100% !important;
+      max-width:100% !important;
+      object-fit:cover !important;
+      object-position:center !important;
+      display:block !important;
+    }
+    @media (min-width:768px){
+      .clinic-gallery-four{
+        grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+        gap:var(--card-gap, 16px) !important;
+      }
+      .clinic-gallery-four .mood-card{
+        height:auto !important;
+        aspect-ratio:1 / 1 !important;
+        border-radius:28px !important;
+      }
+    }
+    @media (min-width:1024px){
+      .clinic-gallery-four{
+        gap:var(--card-gap, 20px) !important;
+      }
+      .clinic-gallery-four .mood-card{
+        height:auto !important;
+        aspect-ratio:1 / 1 !important;
+      }
+    }
+
+
+
+    /* =========================================================
+       v7 Mobile hero balance
+       ลดความสูง hero เฉพาะมือถือเท่านั้น เพื่อไม่ให้รูปยาวเกินไป
+       iPad / PC ยังใช้สเกลเดิมทั้งหมด
+       ========================================================= */
+    @media (max-width:767px){
+      .hero{
+        min-height:clamp(520px, 72svh, 640px) !important;
+        max-height:640px !important;
+      }
+      @supports (height:100dvh){
+        .hero{min-height:clamp(520px, 72dvh, 640px) !important;}
+      }
+      .hero-content{
+        padding:calc(76px + var(--safe-top)) var(--gutter) calc(44px + var(--safe-bottom)) !important;
+      }
+      .hero-slide img{
+        object-fit:cover !important;
+        object-position:center 38% !important;
+      }
+    }
+    @media (max-width:380px){
+      .hero{
+        min-height:clamp(490px, 70svh, 590px) !important;
+        max-height:590px !important;
+      }
+      @supports (height:100dvh){
+        .hero{min-height:clamp(490px, 70dvh, 590px) !important;}
+      }
+      .hero-content{
+        padding:calc(68px + var(--safe-top)) var(--gutter) calc(38px + var(--safe-bottom)) !important;
+      }
+    }
+
+
+    /* =========================================================
+       Contact Update v9 — 3 info cards + white address bar
+       ========================================================= */
+    .compact-contact .contact-compact-head{
+      margin-bottom:14px !important;
+    }
+    .compact-contact .contact-map-chip{
+      display:none !important;
+    }
+    .compact-contact .contact-compact-grid{
+      grid-template-columns:1fr !important;
+      gap:10px !important;
+    }
+    .compact-contact .contact-compact-item{
+      min-height:92px !important;
+    }
+    .compact-contact .contact-compact-main,
+    .compact-contact .contact-doctor-card,
+    .compact-contact .contact-hours-card{
+      grid-column:auto !important;
+    }
+    .compact-contact .contact-compact-main strong{
+      font-size:18px !important;
+      letter-spacing:-.02em !important;
+    }
+    .compact-contact .contact-compact-main small{
+      color:rgba(255,255,255,.74) !important;
+      font-size:12px !important;
+      line-height:1.45 !important;
+    }
+    .compact-contact .contact-doctor-card strong,
+    .compact-contact .contact-hours-card strong{
+      font-size:15px !important;
+      line-height:1.45 !important;
+      letter-spacing:-.015em !important;
+    }
+    .contact-phone-list{
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+      margin-top:8px;
+    }
+    .contact-phone-link{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:30px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(19,43,37,.08);
+      color:#132b25;
+      font-size:12.5px;
+      font-weight:800;
+      line-height:1;
+      text-decoration:none;
+    }
+    .compact-contact .contact-hours-card small{
+      display:block;
+      margin-top:7px;
+      color:rgba(19,43,37,.58) !important;
+      font-size:12px !important;
+      line-height:1.35 !important;
+      font-weight:700;
+    }
+    .compact-contact .contact-address-line{
+      grid-column:1 / -1 !important;
+      min-height:auto !important;
+      padding:14px !important;
+      display:flex !important;
+      flex-direction:row !important;
+      align-items:center !important;
+      justify-content:flex-start !important;
+      gap:12px !important;
+      border-radius:20px !important;
+      background:rgba(255,255,255,.82) !important;
+      border-color:rgba(19,43,37,.08) !important;
+      color:#132b25 !important;
+      box-shadow:0 14px 36px rgba(21,55,48,.07) !important;
+    }
+    .compact-contact .contact-address-line .address-map-btn{
+      flex:0 0 auto !important;
+      display:inline-flex !important;
+      align-items:center !important;
+      justify-content:center !important;
+      min-height:42px !important;
+      margin:0 !important;
+      padding:0 16px !important;
+      border-radius:999px !important;
+      background:#132b25 !important;
+      color:#fff !important;
+      font-size:13px !important;
+      font-weight:900 !important;
+      line-height:1 !important;
+      letter-spacing:-.01em !important;
+      text-transform:none !important;
+      box-shadow:0 10px 24px rgba(19,43,37,.16) !important;
+    }
+    .compact-contact .contact-address-line .contact-location-note{
+      margin:0 !important;
+      color:rgba(19,43,37,.70) !important;
+      font-size:13.5px !important;
+      line-height:1.62 !important;
+      font-weight:700 !important;
+      letter-spacing:-.005em !important;
+    }
+    @media (max-width:380px){
+      .compact-contact .contact-address-line{
+        align-items:flex-start !important;
+        gap:10px !important;
+      }
+      .compact-contact .contact-address-line .address-map-btn{
+        min-height:38px !important;
+        padding:0 13px !important;
+        font-size:12px !important;
+      }
+      .compact-contact .contact-address-line .contact-location-note{
+        font-size:12.5px !important;
+      }
+    }
+    @media (min-width:768px){
+      .compact-contact .contact-compact-grid{
+        grid-template-columns:repeat(3, minmax(0, 1fr)) !important;
+        gap:12px !important;
+      }
+      .compact-contact .contact-compact-item{
+        min-height:108px !important;
+      }
+      .compact-contact .contact-compact-main strong{
+        font-size:20px !important;
+      }
+      .compact-contact .contact-doctor-card strong,
+      .compact-contact .contact-hours-card strong{
+        font-size:16px !important;
+      }
+      .contact-phone-link{
+        font-size:13px;
+      }
+      .compact-contact .contact-address-line{
+        margin-top:0 !important;
+        padding:16px 18px !important;
+        border-radius:24px !important;
+      }
+      .compact-contact .contact-address-line .address-map-btn{
+        min-height:46px !important;
+        padding:0 20px !important;
+        font-size:14px !important;
+      }
+      .compact-contact .contact-address-line .contact-location-note{
+        font-size:15px !important;
+        line-height:1.58 !important;
+      }
+    }
+    @media (min-width:1120px){
+      .compact-contact .contact-compact-grid{
+        grid-template-columns:repeat(3, minmax(0, 1fr)) !important;
+      }
+      .compact-contact .contact-address-line .contact-location-note{
+        font-size:16px !important;
+      }
+    }
+
 </style>
 
   <script type="application/ld+json">
@@ -2383,17 +2705,21 @@
       </noscript>
     </section>
 <section class="section reveal" aria-label="บรรยากาศคลินิก">
-      <div class="section-label">
-        <h2></h2></div>
-      <div class="gallery-grid">
-        <div class="gallery-card tall">
-          <img src="{{ url_for('static', filename='clinic-mood-01.jpg') }}" alt="บรรยากาศ Doctor Palmy Clinic ลำพูน" onerror="this.style.opacity='.22'" /></div>
-        <div style="display:grid;gap:12px;">
-          <div class="gallery-card short">
-            <img src="{{ url_for('static', filename='clinic-mood-02.jpg') }}" alt="ห้องบริการคลินิกเวชกรรมความงามลำพูน" onerror="this.style.opacity='.22'" /></div>
-          <div class="gallery-card short">
-            <img src="{{ url_for('static', filename='doctor-palmy.jpg') }}" alt="Doctor Palmy Clinic หมอปาล์มมี่คลินิกเวชกรรม ลำพูน" onerror="this.style.opacity='.22'" /></div>
-        </div></div>
+      
+      <div class="gallery-grid clinic-gallery-four">
+        <div class="gallery-card mood-card">
+          <img src="{{ url_for('static', filename='clinic-mood-01.jpg') }}" alt="บรรยากาศ Doctor Palmy Clinic ลำพูน รูปที่ 1" loading="lazy" onerror="this.style.opacity='.22'" />
+        </div>
+        <div class="gallery-card mood-card">
+          <img src="{{ url_for('static', filename='clinic-mood-02.jpg') }}" alt="บรรยากาศ Doctor Palmy Clinic ลำพูน รูปที่ 2" loading="lazy" onerror="this.style.opacity='.22'" />
+        </div>
+        <div class="gallery-card mood-card">
+          <img src="{{ url_for('static', filename='clinic-mood-03.jpg') }}" alt="บรรยากาศ Doctor Palmy Clinic ลำพูน รูปที่ 3" loading="lazy" onerror="this.style.opacity='.22'" />
+        </div>
+        <div class="gallery-card mood-card">
+          <img src="{{ url_for('static', filename='clinic-mood-04.jpg') }}" alt="บรรยากาศ Doctor Palmy Clinic ลำพูน รูปที่ 4" loading="lazy" onerror="this.style.opacity='.22'" />
+        </div>
+      </div>
 </section>
 <section class="clinic-mood-copy" aria-label="เกี่ยวกับหมอปาล์มมี่คลินิก">
     <div class="mood-kicker">Doctor Palmy Clinic</div>
@@ -2408,24 +2734,32 @@
           <div class="contact-kicker compact-kicker">Contact</div>
           <h2 class="contact-title">ติดต่อเรา</h2>
         </div>
-        <a class="contact-map-chip" href="https://www.google.com/maps/search/?api=1&query=Doctor%20Palmy%20Clinic%20341%20%E0%B8%AB%E0%B8%A1%E0%B8%B9%E0%B9%88%204%20%E0%B8%95%E0%B8%B3%E0%B8%9A%E0%B8%A5%E0%B9%80%E0%B8%A7%E0%B8%B5%E0%B8%A2%E0%B8%87%E0%B8%A2%E0%B8%AD%E0%B8%87%20%E0%B8%AD%E0%B8%B3%E0%B9%80%E0%B8%A0%E0%B8%AD%E0%B9%80%E0%B8%A1%E0%B8%B7%E0%B8%AD%E0%B8%87%E0%B8%A5%E0%B8%B3%E0%B8%9E%E0%B8%B9%E0%B8%99%20%E0%B8%A5%E0%B8%B3%E0%B8%9E%E0%B8%B9%E0%B8%99%2051000" target="_blank" rel="noopener">เปิดแผนที่</a>
       </div>
 
       <div class="contact-compact-grid">
         <a class="contact-compact-item contact-compact-main" href="https://www.facebook.com/100095416443479/" target="_blank" rel="noopener">
-          <span>Facebook</span>
-          <strong>Doctor Palmy Clinic</strong>
+          <span>ช่องทางหลัก</span>
+          <strong>Facebook</strong>
+          <small>Doctor Palmy Clinic</small>
         </a>
-        <a class="contact-compact-item" href="tel:0936498865">
-          <span>โทร</span>
-          <strong>093-649-8865</strong>
-        </a>
-        <a class="contact-compact-item" href="tel:0614296596">
-          <span>โทร</span>
-          <strong>061-429-6596</strong>
-        </a>
+
+        <div class="contact-compact-item contact-doctor-card">
+          <span>ติดต่อคุณหมอ</span>
+          <strong>พญ.ปิยะฎา จินดาหลวง<br>(หมอปาล์มมี่)</strong>
+          <div class="contact-phone-list" aria-label="เบอร์โทรติดต่อ">
+            <a class="contact-phone-link" href="tel:0936498865">093-649-8865</a>
+            <a class="contact-phone-link" href="tel:0614296596">061-429-6596</a>
+          </div>
+        </div>
+
+        <div class="contact-compact-item contact-hours-card">
+          <span>เวลาทำการ</span>
+          <strong>เปิดทุกวัน<br>11.00-19.30น</strong>
+          <small>หยุดวันอังคาร</small>
+        </div>
+
         <a class="contact-compact-item contact-address-line" href="https://www.google.com/maps/search/?api=1&query=Doctor%20Palmy%20Clinic%20341%20%E0%B8%AB%E0%B8%A1%E0%B8%B9%E0%B9%88%204%20%E0%B8%95%E0%B8%B3%E0%B8%9A%E0%B8%A5%E0%B9%80%E0%B8%A7%E0%B8%B5%E0%B8%A2%E0%B8%87%E0%B8%A2%E0%B8%AD%E0%B8%87%20%E0%B8%AD%E0%B8%B3%E0%B9%80%E0%B8%A0%E0%B8%AD%E0%B9%80%E0%B8%A1%E0%B8%B7%E0%B8%AD%E0%B8%87%E0%B8%A5%E0%B8%B3%E0%B8%9E%E0%B8%B9%E0%B8%99%20%E0%B8%A5%E0%B8%B3%E0%B8%9E%E0%B8%B9%E0%B8%99%2051000" target="_blank" rel="noopener">
-          <span>Location</span>
+          <span class="address-map-btn">เปิดแผนที่</span>
           <small class="contact-location-note">📍 คลินิกตั้งอยู่เส้นโกลบอลเฮาท์ลำพูน ก่อนถึงสามแยกอำเภอลำพูน ข้างร้านชาบูยู เยื้องโรงเรียนใบบุญ และหมู่บ้านศุภาลัย วิลล์ (ในตึกร้านกาแฟ Balance)</small>
         </a>
       </div>
