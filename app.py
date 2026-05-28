@@ -89,10 +89,12 @@ def save_image_to_cloud(image_file):
 # =============================================================
 _LOGIN_ATTEMPTS: Dict[str, deque] = defaultdict(deque)
 _PIN_ATTEMPTS: Dict[str, deque] = defaultdict(deque)
+_PUBLIC_RECEIPT_ATTEMPTS: Dict[str, deque] = defaultdict(deque)
 
 RATE_WINDOW_SEC = 300
 MAX_LOGIN_ATTEMPTS = 10
 MAX_PIN_ATTEMPTS = 20
+MAX_PUBLIC_RECEIPT_ATTEMPTS = 30
 
 
 def _rate_limited(bucket: Dict[str, deque], max_events: int, window_sec: int) -> bool:
@@ -1107,6 +1109,177 @@ def receipt_records_for_pdf():
     except Exception as e:
         app.logger.error(f"/api/receipt_records_for_pdf error: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+
+
+
+def _digits_only(v: Any) -> str:
+    return re.sub(r"\D", "", str(v or ""))
+
+
+def _phone_digit_variants(v: Any) -> set:
+    d = _digits_only(v)
+    variants = set()
+    if d:
+        variants.add(d)
+        # รองรับกรณีกรอก/เก็บเบอร์แบบ +66 หรือ 66 แทน 0
+        if d.startswith("66") and len(d) >= 11:
+            variants.add("0" + d[2:])
+        if d.startswith("0") and len(d) >= 10:
+            variants.add("66" + d[1:])
+    return variants
+
+
+def _phone_matches(submitted_phone: Any, candidates: List[Any]) -> bool:
+    submitted = _phone_digit_variants(submitted_phone)
+    raw_submitted = _digits_only(submitted_phone)
+    # ต้องมีเบอร์อย่างน้อย 9 หลัก เพื่อกัน bot/การเดาสุ่มง่าย ๆ
+    if len(raw_submitted) < 9:
+        return False
+    for c in candidates or []:
+        cand = _phone_digit_variants(c)
+        if submitted & cand:
+            return True
+    return False
+
+
+def _public_patient_info(row: Dict[str, Any], customer: Optional[Dict[str, Any]] = None) -> str:
+    row = row or {}
+    customer = customer or {}
+    if row.get("patient_info"):
+        return str(row.get("patient_info") or "").strip()
+
+    lines: List[str] = []
+    show_name = (
+        customer.get("full_name")
+        or customer.get("name")
+        or row.get("name")
+        or ""
+    )
+    if show_name:
+        lines.append(str(show_name).strip())
+    if customer.get("national_id"):
+        lines.append(f"เลขบัตร: {customer.get('national_id')}")
+    if customer.get("address"):
+        lines.append(f"ที่อยู่: {customer.get('address')}")
+    return "\n".join([x for x in lines if x])
+
+# =============================================================
+# API — Public Receipt Download (QR / หน้าแรก)
+# =============================================================
+def _public_receipt_row(row: Dict[str, Any], customer: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Return only the fields that a verified customer needs for receipt download."""
+    row = dict(row or {})
+    customer = dict(customer or {})
+    opd_4 = normalize_opd(row.get("opd"))
+    raw_item = row.get("item")
+    if raw_item is None and row.get("items") is not None:
+        raw_item = row.get("items")
+
+    normalized_item_list = _ensure_item_list(raw_item)
+    item_texts = _coerce_items_to_text_list(normalized_item_list)
+
+    try:
+        amount = float(row.get("amount") or 0)
+    except Exception:
+        amount = 0.0
+
+    receipt_no = row.get("disp_no") or row.get("orig_no") or ""
+
+    return {
+        "id": str(row.get("id") or ""),
+        "date": safe_date_str(row.get("date")),
+        "opd": opd_4,
+        "name": row.get("name") or customer.get("name") or "",
+        "amount": amount,
+        "payment": row.get("payment") or row.get("payment_method") or "",
+        "note": row.get("note") or "",
+        "items": item_texts,
+        "orig_no": row.get("orig_no") or "",
+        "disp_no": row.get("disp_no") or "",
+        "receipt_no": receipt_no,
+        "receipt_status": row.get("receipt_status") or "recorded",
+        "patient_info": _public_patient_info(row, customer),
+        "created_at": row.get("created_at") or row.get("orig_issued_at") or "",
+    }
+
+
+@app.route("/api/public_receipt_lookup", methods=["POST"])
+def public_receipt_lookup():
+    """Public customer receipt lookup for the landing page QR flow.
+
+    Customer submits OPD + phone + service/receipt date. The response intentionally
+    returns only limited receipt fields and never exposes the generic /api/sales dataset.
+    """
+    try:
+        if _rate_limited(_PUBLIC_RECEIPT_ATTEMPTS, MAX_PUBLIC_RECEIPT_ATTEMPTS, RATE_WINDOW_SEC):
+            return jsonify({"success": False, "error": "too_many_requests"}), 429
+
+        data = request.get_json(silent=True) or {}
+        opd = normalize_opd(data.get("opd"))
+        phone = data.get("phone") or data.get("tel") or data.get("mobile")
+        date_s = safe_date_str(data.get("date") or data.get("receipt_date"))
+
+        if not opd or len(opd) != 4 or not opd.isdigit():
+            return jsonify({"success": False, "error": "invalid_opd"}), 400
+
+        if len(_digits_only(phone)) < 9:
+            return jsonify({"success": False, "error": "invalid_phone"}), 400
+
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_s or ""):
+            return jsonify({"success": False, "error": "invalid_date"}), 400
+
+        try:
+            datetime.strptime(date_s, "%Y-%m-%d")
+        except Exception:
+            return jsonify({"success": False, "error": "invalid_date"}), 400
+
+        customer_rows = (
+            supabase.table("customers")
+            .select("opd,name,full_name,phone,national_id,address")
+            .eq("opd", opd)
+            .limit(1)
+            .execute()
+            .data
+            or []
+        )
+        customer = customer_rows[0] if customer_rows else {}
+        customer_phone_ok = _phone_matches(phone, [customer.get("phone")]) if customer else False
+
+        rows = (
+            supabase.table("sales_records")
+            .select("*")
+            .eq("opd", opd)
+            .eq("date", date_s)
+            .order("created_at", desc=False)
+            .limit(50)
+            .execute()
+            .data
+            or []
+        )
+
+        verified_rows = []
+        for r in rows:
+            # ถ้าเบอร์ในทะเบียนลูกค้าตรง ให้โหลดทุกใบของ OPD+วันนั้นได้
+            # ถ้าเบอร์ทะเบียนไม่ตรง/ไม่มี ให้ลองเทียบเบอร์ที่บันทึกไว้ในบิลนั้นโดยตรง
+            if customer_phone_ok or _phone_matches(phone, [r.get("phone")]):
+                verified_rows.append(r)
+
+        out = [_public_receipt_row(r, customer) for r in verified_rows]
+
+        return jsonify({
+            "success": True,
+            "opd": opd,
+            "date": date_s,
+            "count": len(out),
+            "rows": out,
+        }), 200
+
+    except Exception as e:
+        app.logger.error(f"/api/public_receipt_lookup error: {e}")
+        return jsonify({"success": False, "error": "server_error"}), 500
+
 
 # =============================================================
 # API — Sales (IMPORTANT: Using core logic from old robust code)
