@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>เข้าสู่ระบบ - Palmy Clinic</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #0f766e;     /* สีเขียวตาม CI เดิม */
+      --primary-soft: #ccfbf1;
+      --error: #ef4444;
+      --text: #1e293b;
+      --bg-gradient: linear-gradient(135deg, #f0fdfa 0%, #fff 100%);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      margin: 0;
+      height: 100vh;
+      font-family: 'Prompt', sans-serif;
+      background: var(--bg-gradient);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      color: var(--text);
+    }
+
+    /* กล่องคอนเทนต์หลัก */
+    .app-container {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-height: 800px;
+    }
+
+    /* ส่วนหัว Logo + ข้อความ */
+    .header {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-top: 20px;
+    }
+
+    .logo-img {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      object-fit: cover;
+      margin-bottom: 15px;
+      box-shadow: 0 10px 25px rgba(15, 118, 110, 0.15);
+      background: #fff;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 5px 0;
+      color: var(--primary);
+    }
+
+    p {
+      font-size: 14px;
+      color: #64748b;
+      margin: 0;
+    }
+
+    /* จุดแสดงผล PIN */
+    .pin-display {
+      margin: 30px 0;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .dot.active {
+      background: var(--primary);
+      transform: scale(1.1);
+      box-shadow: 0 0 0 4px var(--primary-soft);
+    }
+
+    .dot.error {
+      background: var(--error);
+      animation: shake 0.3s ease-in-out;
+    }
+
+    /* ข้อความแจ้งเตือน */
+    .status-msg {
+      height: 20px;
+      font-size: 13px;
+      color: var(--error);
+      margin-bottom: 20px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .status-msg.show { opacity: 1; }
+
+    /* แป้นพิมพ์ตัวเลข */
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      padding-bottom: 30px;
+      width: 100%;
+    }
+
+    .key {
+      aspect-ratio: 1.4/1; /* ทรงผืนผ้านิดๆ กดง่าย */
+      border: none;
+      background: #fff;
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--text);
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #f1f5f9;
+      transition: transform 0.1s, background 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+
+    .key:active {
+      transform: translateY(4px);
+      box-shadow: none;
+      background: #f8fafc;
+    }
+
+    /* ปุ่มฟังก์ชันพิเศษ (ลบ / สแกนหน้า) */
+    .key.action {
+      background: transparent;
+      box-shadow: none;
+      color: #64748b;
+    }
+    .key.action:active { transform: scale(0.95); }
+
+    /* หน้าจอตอนล็อค */
+    .locked-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(5px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 99;
+      display: none;
+    }
+    .lock-icon {
+      font-size: 40px;
+      color: var(--error);
+      margin-bottom: 10px;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    /* Responsive ปรับให้ปุ่มกลมถ้าจอใหญ่พอ */
+    @media (min-width: 480px) {
+      .app-container {
+        border: 1px solid #e2e8f0;
+        border-radius: 40px;
+        height: auto;
+        min-height: 700px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.05);
+        background: #fff;
+      }
+      body { background: #f8fafc; }
+      .key { aspect-ratio: 1/1; border-radius: 50%; width: 70px; margin: 0 auto; }
+      .keypad { gap: 20px; }
+    }
+
+    /* ปุ่มกลับหน้าเพจหลัก */
+    .main-page-link-wrap {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding: 0 0 max(16px, env(safe-area-inset-bottom));
+      margin-top: -8px;
+    }
+
+    .main-page-link {
+      width: min(100%, 320px);
+      min-height: 48px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      color: #ffffff;
+      background:
+        linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+      box-shadow: 0 14px 30px rgba(15, 118, 110, 0.22);
+      border: 1px solid rgba(255,255,255,0.65);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    }
+
+    .main-page-link::before {
+      content: "←";
+      font-size: 17px;
+      line-height: 1;
+      transform: translateY(-1px);
+    }
+
+    .main-page-link:active {
+      transform: translateY(2px) scale(0.99);
+      box-shadow: 0 8px 18px rgba(15, 118, 110, 0.18);
+      opacity: 0.92;
+    }
+
+    @media (max-height: 640px) {
+      .keypad {
+        gap: 10px;
+        padding-bottom: 18px;
+      }
+
+      .main-page-link {
+        min-height: 44px;
+        font-size: 13px;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <div class="header">
+      <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" class="logo-img" onerror="this.src='https://placehold.co/100x100?text=Clinic'">
+      <h1>Doctor Palmy Clinic</h1>
+      </div>
+
+    <div>
+      <div class="pin-display" id="pinDisplay">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      </div>
+      <div class="status-msg" id="msg">รหัสไม่ถูกต้อง (เหลือ 2 ครั้ง)</div>
+    </div>
+
+    <div class="keypad" id="keypad">
+      <button class="key" onclick="addPin(1)">1</button>
+      <button class="key" onclick="addPin(2)">2</button>
+      <button class="key" onclick="addPin(3)">3</button>
+      <button class="key" onclick="addPin(4)">4</button>
+      <button class="key" onclick="addPin(5)">5</button>
+      <button class="key" onclick="addPin(6)">6</button>
+      <button class="key" onclick="addPin(7)">7</button>
+      <button class="key" onclick="addPin(8)">8</button>
+      <button class="key" onclick="addPin(9)">9</button>
+      
+      <button class="key action">
+         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 3a5 5 0 0 0-5 5v1"></path>
+            <path d="M16 3a5 5 0 0 1 5 5v1"></path>
+            <path d="M3 15v1a5 5 0 0 0 5 5"></path>
+            <path d="M21 15v1a5 5 0 0 1-5 5"></path>
+            <path d="M8 11h0.01"></path> <path d="M16 11h0.01"></path>
+            <path d="M12 16a3.5 3.5 0 0 0 0-7 3.5 3.5 0 0 0 0 7z"></path>
+         </svg>
+      </button>
+      
+      <button class="key" onclick="addPin(0)">0</button>
+      
+      <button class="key action" onclick="delPin()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+          <line x1="18" y1="9" x2="12" y2="15"></line>
+          <line x1="12" y1="9" x2="18" y2="15"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="main-page-link-wrap">
+      <a class="main-page-link" href="{{ url_for('login') }}">เข้าสู่เพจหลัก</a>
+    </div>
+  </div>
+
+  <div class="locked-overlay" id="lockedScreen">
+    <div class="lock-icon">
+      <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+    </div>
+    <h2 style="color:#ef4444; margin:0;">ระบบถูกล็อค</h2>
+    <p style="margin-top:5px;">คุณใส่รหัสผิดเกิน 3 ครั้ง</p>
+    <p style="font-size:12px; margin-top:20px;">กรุณาติดต่อผู้ดูแลระบบ</p>
+  </div>
+
+  <script>
+    let currentPin = '';
+    let attempts = 0;
+    const MAX_ATTEMPTS = 3;
+    
+    // UI Elements
+    const dots = document.querySelectorAll('.dot');
+    const msg = document.getElementById('msg');
+    const lockedScreen = document.getElementById('lockedScreen');
+
+    function updateDisplay() {
+      // อัปเดตจุดสีเขียว
+      dots.forEach((dot, index) => {
+        if (index < currentPin.length) {
+          dot.classList.add('active');
+        } else {
+          dot.classList.remove('active');
+          dot.classList.remove('error'); // เคลียร์สถานะ error เมื่อพิมพ์ใหม่
+        }
+      });
+      msg.classList.remove('show');
+    }
+
+    function addPin(num) {
+      if (attempts >= MAX_ATTEMPTS) return; // ล็อคแล้วห้ามกด
+      if (currentPin.length < 6) {
+        currentPin += num;
+        updateDisplay();
+        
+        // ถ้าครบ 6 หลัก ส่งตรวจสอบทันที (จำลองการส่ง)
+        if (currentPin.length === 6) {
+          setTimeout(submitPin, 100);
+        }
+      }
+    }
+
+    function delPin() {
+      if (currentPin.length > 0) {
+        currentPin = currentPin.slice(0, -1);
+        updateDisplay();
+      }
+    }
+
+    function submitPin() {
+      // ตรงนี้คือส่วนที่ยิงไปหา Server Flask
+      // fetch('/pin-login', { ... }) 
+      
+      // *** จำลองการยิงข้อมูล (Mockup) ***
+      // ให้แก้ Logic ตรงนี้เพื่อต่อกับ Backend จริง
+      fetch('/pin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: currentPin })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          // ผ่าน: ไปหน้า Dashboard
+          window.location.href = '/dashboard';
+        } else {
+          // ไม่ผ่าน: เรียกฟังก์ชันจัดการ Error
+          handleError();
+        }
+      })
+      .catch(err => {
+        // กรณีต่อ Server ไม่ได้ หรือเทสอยู่ ให้สมมติว่าผิดไปก่อน
+        handleError();
+      });
+    }
+
+    function handleError() {
+      attempts++;
+      currentPin = ''; // ล้าง PIN
+      
+      // อนิเมชั่นสั่นๆ ที่จุด
+      dots.forEach(d => d.classList.add('error'));
+      setTimeout(() => updateDisplay(), 400);
+
+      // แสดงข้อความเตือน
+      if (attempts < MAX_ATTEMPTS) {
+        msg.textContent = `รหัสไม่ถูกต้อง (เหลือโอกาส ${MAX_ATTEMPTS - attempts} ครั้ง)`;
+        msg.classList.add('show');
+      } else {
+        // ล็อคระบบ
+        setTimeout(() => {
+            lockedScreen.style.display = 'flex';
+        }, 300);
+      }
+    }
+  </script>
+</body>
+</html>

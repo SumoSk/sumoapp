@@ -3767,11 +3767,15 @@
       updateDisplay();
     }
 
+    function goStaffPinPage(){
+      window.location.href = '{{ url_for("backuplogin2") }}';
+    }
+
     if (staffFloatingBtn) staffFloatingBtn.addEventListener('click', openAccessChoiceModal);
-    if (staffGlobalBtn) staffGlobalBtn.addEventListener('click', openAccessChoiceModal);
+    if (staffGlobalBtn) staffGlobalBtn.addEventListener('click', goStaffPinPage);
     if (accessCloseBtn) accessCloseBtn.addEventListener('click', closeAccessChoiceModal);
     if (accessChoiceModal) accessChoiceModal.addEventListener('click', closeAccessChoiceModal);
-    if (openStaffPinBtn) openStaffPinBtn.addEventListener('click', openPinModal);
+    if (openStaffPinBtn) openStaffPinBtn.addEventListener('click', goStaffPinPage);
     if (openReceiptLookupBtn) openReceiptLookupBtn.addEventListener('click', openReceiptModal);
     if (receiptCloseBtn) receiptCloseBtn.addEventListener('click', closeReceiptModal);
     if (receiptModal) receiptModal.addEventListener('click', closeReceiptModal);

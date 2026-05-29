@@ -506,6 +506,7 @@ def _receipt_range_bounds(range_key: str) -> Tuple[str, str, str]:
 # Auth Views
 # =============================================================
 @app.route("/", methods=["GET", "POST"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
     error = None
     if request.method == "POST":
@@ -543,6 +544,11 @@ def login():
             error = "เกิดข้อผิดพลาดในการเชื่อมต่อกับระบบ"
 
     return render_template("login.html", error=error)
+
+
+@app.route("/backuplogin2")
+def backuplogin2():
+    return render_template("backuplogin2.html")
 
 
 @app.route("/logout")
