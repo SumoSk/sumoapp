@@ -1,0 +1,205 @@
+{% extends "base_public.html" %}
+
+{% block title %}{% if post %}แก้ไขบทความ{% else %}เขียนโพสต์ใหม่{% endif %} | Doctor Palmy Clinic{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='landingpage/css/editor.css') }}">
+<style>
+  .editor-actions .btn.danger {
+    background: #b42318;
+    color: #fff;
+    border-color: rgba(180, 35, 24, .18);
+  }
+
+  .editor-actions .btn.danger:hover {
+    filter: brightness(.96);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<section class="hero-page">
+  <span class="badge">Admin Editor</span>
+  <h1>{% if post %}แก้ไขบทความ{% else %}เขียนโพสต์ใหม่{% endif %}</h1>
+  <p>
+    ใช้หน้านี้สำหรับสร้างและแก้ไขบทความของเว็บไซต์
+    โดยเลือกได้ว่าจะเป็นบทความความงามของคลินิก หรือบทความทั่วไป
+  </p>
+</section>
+
+<section class="editor-wrap">
+  <form id="postForm" class="editor-card" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="id" value="{{ post.id if post else '' }}">
+
+    <label>
+      ประเภทบทความ
+      {% set pt = post.post_type if post and post.post_type else 'beauty' %}
+      <select name="post_type" id="postTypeSelect">
+        <option value="beauty" {% if pt == 'beauty' %}selected{% endif %}>บทความความงาม / คลินิก</option>
+        <option value="general" {% if pt == 'general' %}selected{% endif %}>บทความทั่วไป</option>
+      </select>
+      <small>
+        บทความความงามจะแสดงผู้เขียน ผู้ตรวจทาน และส่วนท้ายติดต่อคลินิก
+        ส่วนบทความทั่วไปจะแสดงแค่หัวข้อ รูป และเนื้อหา
+      </small>
+    </label>
+
+    <label>
+      หัวข้อบทความ
+      <input name="title" required value="{{ post.title if post else '' }}" placeholder="เช่น โบท็อกซ์กี่วันเห็นผล หรือ 5 สิ่งน่าสนใจในลำพูน">
+    </label>
+
+    <label>
+      Slug / ลิงก์บทความ
+      <input name="slug" value="{{ post.slug if post else '' }}" placeholder="botox-how-many-days">
+      <small>แนะนำใช้ภาษาอังกฤษ เช่น botox-before-after-care หรือ lamphun-interesting-places</small>
+    </label>
+
+    <label>
+      หมวดหมู่
+      <input name="category" value="{{ post.category if post else '' }}" placeholder="เช่น โบท็อกซ์, ฟิลเลอร์, ผิวหน้า, ลำพูน, บทความทั่วไป">
+    </label>
+
+    <label>
+      คำอธิบายสั้น / สรุปบนสุดของบทความ
+      <textarea name="excerpt" rows="3" placeholder="สรุปเนื้อหา 2-4 บรรทัด เพื่อให้คนอ่านเข้าใจประเด็นเร็ว">{{ post.excerpt if post else '' }}</textarea>
+    </label>
+
+    <label>
+      เนื้อหาบทความ
+      <textarea name="content_text" rows="18" placeholder="เขียนเนื้อหาหลักของบทความที่นี่&#10;&#10;แนะนำโครง:&#10;## หัวข้อย่อย&#10;...">{{ post.content_text if post else '' }}</textarea>
+      <small>
+        ถ้าเป็นบทความความงาม แนะนำให้มีข้อควรระวังและคำว่า “ผลลัพธ์ขึ้นอยู่กับแต่ละบุคคล”
+        ถ้าเป็นบทความทั่วไป เขียนเป็นบทความทั่วไปได้เลย
+      </small>
+    </label>
+
+    <label>
+      รูปหน้าปกบทความ
+      <input type="file" name="cover_image" accept="image/*">
+    </label>
+
+    {% if post and post.cover_image_url %}
+      <div class="current-image">
+        <p>รูปหน้าปกปัจจุบัน</p>
+        <img src="{{ post.cover_image_url }}" alt="{{ post.title }}">
+      </div>
+    {% endif %}
+
+    <div class="beauty-only-fields">
+      <div class="two-col">
+        <label>
+          ผู้เขียน
+          <input name="author" value="{{ post.author if post else 'Doctor Palmy Clinic' }}">
+        </label>
+
+        <label>
+          ผู้ตรวจทาน
+          <input name="reviewer" value="{{ post.reviewer if post else 'พญ.ปิยะฎา จินดาหลวง' }}">
+        </label>
+      </div>
+    </div>
+
+    <label>
+      SEO Title
+      <input name="meta_title" value="{{ post.meta_title if post else '' }}" placeholder="ถ้าเว้นว่างจะใช้หัวข้อบทความ">
+    </label>
+
+    <label>
+      SEO Description
+      <textarea name="meta_description" rows="3" placeholder="คำอธิบายสำหรับหน้าค้นหา">{{ post.meta_description if post else '' }}</textarea>
+    </label>
+
+    <label>
+      สถานะ
+      <select name="status">
+        {% set st = post.status if post else 'draft' %}
+        <option value="draft" {% if st == 'draft' %}selected{% endif %}>ฉบับร่าง</option>
+        <option value="published" {% if st == 'published' %}selected{% endif %}>เผยแพร่</option>
+        <option value="archived" {% if st == 'archived' %}selected{% endif %}>ซ่อน</option>
+      </select>
+    </label>
+
+    <div class="editor-actions">
+      <button class="btn" type="submit">บันทึก</button>
+      <a class="btn light" href="/articles/">กลับหน้าบทความ</a>
+
+      {% if post and post.slug %}
+        <a class="btn light" href="/articles/{{ post.slug }}/" target="_blank">ดูบทความ</a>
+      {% endif %}
+
+      {% if post and post.id %}
+        <button class="btn danger" type="button" id="deletePostBtn" data-post-id="{{ post.id }}">ลบบทความ</button>
+      {% endif %}
+    </div>
+  </form>
+
+  <aside class="editor-help">
+    <h2>ประเภทบทความ</h2>
+
+    <div class="card">
+      <h3>บทความความงาม</h3>
+      <p>เหมาะกับโบท็อกซ์ ฟิลเลอร์ ผิว สิว ฝ้า หรือเรื่องที่เกี่ยวกับบริการคลินิก</p>
+      <p>หน้าเว็บจะแสดงผู้เขียน ผู้ตรวจทาน และส่วนท้ายสอบถามคลินิก</p>
+    </div>
+
+    <div class="card">
+      <h3>บทความทั่วไป</h3>
+      <p>เหมาะกับบทความทั่วไป บทความท้องถิ่นลำพูน ไลฟ์สไตล์ หรือเรื่องน่าสนใจอื่น ๆ</p>
+      <p>หน้าเว็บจะแสดงแค่หัวข้อ รูป และเนื้อหา</p>
+    </div>
+
+    <h2>แนวทางเขียนบทความให้อ่านง่าย</h2>
+    <ol>
+      <li>หัวข้อชัด ตรงกับเรื่องที่ผู้อ่านสนใจ</li>
+      <li>ย่อหน้าแรกสรุปประเด็นให้เข้าใจเร็ว</li>
+      <li>ใช้หัวข้อย่อยอ่านง่าย</li>
+      <li>หลีกเลี่ยงข้อความเกินจริง</li>
+      <li>ใส่ข้อมูลเฉพาะพื้นที่/คลินิกเมื่อเกี่ยวข้อง</li>
+    </ol>
+  </aside>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='landingpage/js/editor.js') }}"></script>
+<script>
+  const deletePostBtn = document.getElementById("deletePostBtn");
+
+  if (deletePostBtn) {
+    deletePostBtn.addEventListener("click", async () => {
+      const postId = deletePostBtn.getAttribute("data-post-id");
+      if (!postId) return;
+
+      const ok = confirm("ต้องการลบบทความนี้ถาวรใช่ไหม? การลบนี้จะลบรูปและไฟล์ที่ผูกกับบทความด้วย");
+      if (!ok) return;
+
+      const oldText = deletePostBtn.textContent;
+      deletePostBtn.disabled = true;
+      deletePostBtn.textContent = "กำลังลบ...";
+
+      try {
+        const res = await fetch("/api/site/posts/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: postId })
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "ลบบทความไม่สำเร็จ");
+        }
+
+        alert("ลบบทความสำเร็จ");
+        window.location.href = "/articles/";
+      } catch (err) {
+        alert(err.message || "ลบบทความไม่สำเร็จ");
+        deletePostBtn.disabled = false;
+        deletePostBtn.textContent = oldText || "ลบบทความ";
+      }
+    });
+  }
+</script>
+{% endblock %}

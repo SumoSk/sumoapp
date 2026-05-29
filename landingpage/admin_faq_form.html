@@ -1,0 +1,369 @@
+{% extends "base_public.html" %}
+
+{% block title %}จัดการ FAQ | Doctor Palmy Clinic{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='landingpage/css/editor.css') }}">
+
+<style>
+  .admin-layout {
+    width: min(100% - 28px, 1180px);
+    margin: 24px auto 44px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 390px;
+    gap: 18px;
+    align-items: start;
+  }
+
+  .admin-card {
+    background: rgba(255,255,255,.92);
+    border: 1px solid rgba(23,51,45,.08);
+    border-radius: 30px;
+    padding: 22px;
+    box-shadow: 0 18px 44px rgba(21,55,48,.08);
+  }
+
+  .admin-card h2 {
+    margin: 0 0 14px;
+    color: #17332d;
+    font-size: clamp(24px, 5vw, 34px);
+    line-height: 1.12;
+    letter-spacing: -.04em;
+  }
+
+  .admin-card p {
+    color: rgba(23,51,45,.62);
+    font-size: 13px;
+    line-height: 1.75;
+  }
+
+  .admin-form label {
+    display: block;
+    margin-bottom: 16px;
+    color: #17332d;
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  .admin-form input,
+  .admin-form textarea,
+  .admin-form select {
+    width: 100%;
+    margin-top: 6px;
+    border: 1px solid rgba(23,51,45,.16);
+    border-radius: 16px;
+    padding: 12px 14px;
+    font: inherit;
+    background: #fff;
+    color: #17332d;
+    outline: none;
+  }
+
+  .admin-form textarea {
+    resize: vertical;
+  }
+
+  .admin-form input:focus,
+  .admin-form textarea:focus,
+  .admin-form select:focus {
+    border-color: rgba(15,118,110,.38);
+    box-shadow: 0 0 0 4px rgba(15,118,110,.08);
+  }
+
+  .admin-form small {
+    display: block;
+    margin-top: 5px;
+    color: rgba(23,51,45,.52);
+    font-weight: 400;
+    line-height: 1.55;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .admin-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+
+  .admin-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .admin-list-item {
+    border-radius: 22px;
+    padding: 14px;
+    background:
+      radial-gradient(circle at 12% 0%, rgba(245,222,216,.52), transparent 34%),
+      linear-gradient(145deg, rgba(255,255,255,.96), rgba(248,253,250,.82));
+    border: 1px solid rgba(23,51,45,.08);
+  }
+
+  .admin-list-item h3 {
+    margin: 0;
+    color: #17332d;
+    font-size: 16px;
+    line-height: 1.45;
+  }
+
+  .admin-list-item p {
+    margin: 6px 0 0;
+    font-size: 12px;
+    line-height: 1.65;
+  }
+
+  .admin-list-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .admin-list-meta span {
+    display: inline-flex;
+    min-height: 24px;
+    align-items: center;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba(15,118,110,.10);
+    color: #0f766e;
+    font-size: 10px;
+    font-weight: 900;
+  }
+
+  .admin-list-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .admin-list-actions a,
+  .admin-list-actions button {
+    min-height: 36px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(23,51,45,.12);
+    background: #fff;
+    color: #17332d;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .admin-list-actions button.danger {
+    color: #b42318;
+    background: #fff6f4;
+  }
+
+  .admin-empty {
+    border-radius: 24px;
+    padding: 18px;
+    background: #fff;
+    border: 1px dashed rgba(23,51,45,.18);
+  }
+
+  @media (max-width: 960px) {
+    .admin-layout { grid-template-columns: 1fr; }
+    .two-col { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<section class="hero-page">
+  <span class="badge">Admin FAQ</span>
+  <h1>จัดการคำถามยอดฮิต</h1>
+  <p>
+    ใช้เพิ่มคำถามและคำตอบที่พบบ่อย เช่น เวลาเปิดทำการ การจองคิว การเตรียมตัวก่อนรับบริการ
+    และข้อควรรู้หลังรับบริการ
+  </p>
+</section>
+
+<section class="admin-layout">
+  <form id="faqForm" class="admin-card admin-form" method="post">
+    <h2>{% if faq %}แก้ไข FAQ{% else %}เพิ่มคำถามใหม่{% endif %}</h2>
+
+    <input type="hidden" name="id" value="{{ faq.id if faq else '' }}">
+
+    <label>
+      คำถาม
+      <input
+        name="question"
+        required
+        value="{{ faq.question if faq else '' }}"
+        placeholder="เช่น ต้องจองคิวก่อนไหม?"
+      >
+    </label>
+
+    <label>
+      คำตอบ
+      <textarea
+        name="answer"
+        rows="7"
+        required
+        placeholder="ตอบให้สั้น ชัดเจน อ่านง่าย และไม่สัญญาผลลัพธ์เกินจริง">{{ faq.answer if faq else '' }}</textarea>
+    </label>
+
+    <div class="two-col">
+      <label>
+        หมวดหมู่
+        <input
+          name="category"
+          value="{{ faq.category if faq else '' }}"
+          placeholder="เช่น ติดต่อ, โบท็อกซ์, ฟิลเลอร์, หลังทำ"
+        >
+      </label>
+
+      <label>
+        ลำดับการแสดงผล
+        <input
+          name="sort_order"
+          type="number"
+          value="{{ faq.sort_order if faq and faq.sort_order is not none else '' }}"
+          placeholder="เช่น 1"
+        >
+        <small>เลขน้อยจะแสดงก่อน</small>
+      </label>
+    </div>
+
+    <label>
+      สถานะ
+      {% set st = faq.status if faq and faq.status else 'published' %}
+      <select name="status">
+        <option value="published" {% if st == 'published' %}selected{% endif %}>เผยแพร่</option>
+        <option value="draft" {% if st == 'draft' %}selected{% endif %}>ฉบับร่าง</option>
+        <option value="archived" {% if st == 'archived' %}selected{% endif %}>ซ่อน</option>
+      </select>
+    </label>
+
+    <div class="admin-actions">
+      <button class="btn" type="submit">บันทึก FAQ</button>
+      <a class="btn light" href="/faq/">ดูหน้า FAQ</a>
+      <a class="btn light" href="/site-admin/faqs/">ล้างฟอร์ม</a>
+    </div>
+  </form>
+
+  <aside class="admin-card">
+    <h2>คำถามที่มีอยู่</h2>
+    <p>รายการคำถามที่บันทึกไว้ สามารถกดแก้ไขหรือลบได้</p>
+
+    <div class="admin-list">
+      {% for f in faqs %}
+        <article class="admin-list-item">
+          <div class="admin-list-meta">
+            {% if f.category %}<span>{{ f.category }}</span>{% endif %}
+            {% if f.status %}<span>{{ f.status }}</span>{% endif %}
+          </div>
+
+          <h3>{{ f.question }}</h3>
+          {% if f.answer %}
+            <p>{{ f.answer[:140] }}{% if f.answer|length > 140 %}...{% endif %}</p>
+          {% endif %}
+
+          <div class="admin-list-actions">
+            <a href="/site-admin/faqs/{{ f.id }}/edit">แก้ไข</a>
+            <button class="danger" type="button" data-delete-faq="{{ f.id }}">ลบ</button>
+          </div>
+        </article>
+      {% else %}
+        <div class="admin-empty">
+          <h3>ยังไม่มี FAQ</h3>
+          <p>เริ่มเพิ่มคำถามแรกได้จากฟอร์มด้านซ้าย</p>
+        </div>
+      {% endfor %}
+    </div>
+  </aside>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const faqForm = document.getElementById("faqForm");
+
+  if (faqForm) {
+    faqForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const submitBtn = faqForm.querySelector('button[type="submit"]');
+      const oldText = submitBtn ? submitBtn.textContent : "";
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "กำลังบันทึก...";
+      }
+
+      try {
+        const fd = new FormData(faqForm);
+
+        const res = await fetch("/api/site/faqs/save", {
+          method: "POST",
+          body: fd
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "บันทึก FAQ ไม่สำเร็จ");
+        }
+
+        alert("บันทึก FAQ สำเร็จ");
+        window.location.href = "/site-admin/faqs/";
+      } catch (err) {
+        alert(err.message || "เกิดข้อผิดพลาด");
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = oldText || "บันทึก FAQ";
+        }
+      }
+    });
+  }
+
+  document.querySelectorAll("[data-delete-faq]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.getAttribute("data-delete-faq");
+      if (!id) return;
+
+      if (!confirm("ต้องการลบ FAQ นี้ใช่ไหม?")) return;
+
+      btn.disabled = true;
+      const oldText = btn.textContent;
+      btn.textContent = "กำลังลบ...";
+
+      try {
+        const fd = new FormData();
+        fd.append("id", id);
+
+        const res = await fetch("/api/site/faqs/delete", {
+          method: "POST",
+          body: fd
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "ลบ FAQ ไม่สำเร็จ");
+        }
+
+        alert("ลบ FAQ สำเร็จ");
+        window.location.reload();
+      } catch (err) {
+        alert(err.message || "เกิดข้อผิดพลาด");
+        btn.disabled = false;
+        btn.textContent = oldText || "ลบ";
+      }
+    });
+  });
+</script>
+{% endblock %}

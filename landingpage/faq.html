@@ -1,0 +1,145 @@
+{% extends "base_public.html" %}
+
+{% block title %}คำถามยอดฮิต | Doctor Palmy Clinic ลำพูน{% endblock %}
+{% block meta_description %}รวมคำถามยอดฮิตเกี่ยวกับ Doctor Palmy Clinic หมอปาล์มมี่คลินิกเวชกรรม ลำพูน การติดต่อ เวลาเปิดทำการ โบท็อกซ์ ฟิลเลอร์ และการดูแลก่อน-หลังรับบริการ{% endblock %}
+
+{% block head %}
+{% if faqs %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {% for f in faqs %}
+    {
+      "@type": "Question",
+      "name": {{ f.question|tojson }},
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": {{ f.answer|tojson }}
+      }
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+  <div class="hero-panel">
+    <div class="hero-copy">
+      <span class="eyebrow">FAQ</span>
+      <h1 class="display-title">คำถามยอดฮิต</h1>
+      <p>
+        รวมคำถามที่พบบ่อยเกี่ยวกับ Doctor Palmy Clinic ลำพูน
+        การติดต่อ เวลาเปิดทำการ และข้อมูลเบื้องต้นก่อนเข้ารับบริการ
+      </p>
+    </div>
+
+    <aside class="hero-side-card">
+      <span class="card-label">Quick Answers</span>
+      <strong>ตอบแบบอ่านง่าย</strong>
+      <p>รวมคำตอบสำคัญ เพื่อช่วยให้ตัดสินใจก่อนสอบถามหรือนัดหมายได้ง่ายขึ้น</p>
+    </aside>
+  </div>
+</section>
+
+{% if is_admin %}
+<div class="admin-bar">
+  <strong>โหมดจัดการ FAQ</strong>
+  <a class="btn light" href="/site-admin/faqs/">+ เพิ่มหรือแก้คำถาม</a>
+</div>
+{% endif %}
+
+<section class="section faq-section">
+  <div class="section-head">
+    <div>
+      <span class="section-label">Questions & Answers</span>
+      <h2>คำถามและคำตอบ</h2>
+      <p>คำตอบสำคัญที่คนมักถามก่อนติดต่อหรือเข้ารับบริการกับคลินิก</p>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn" href="/contact/">ติดต่อคลินิก</a>
+    </div>
+  </div>
+
+  <div class="faq-list">
+    {% for f in faqs %}
+      <article class="faq-item">
+        <button class="faq-question" type="button" aria-expanded="{% if loop.first %}true{% else %}false{% endif %}">
+          <span>
+            {% if f.category %}
+              <em>{{ f.category }}</em>
+            {% else %}
+              <em>FAQ</em>
+            {% endif %}
+            <strong>{{ f.question }}</strong>
+          </span>
+          <i>+</i>
+        </button>
+
+        <div class="faq-answer {% if loop.first %}open{% endif %}">
+          <p>{{ f.answer }}</p>
+        </div>
+      </article>
+    {% else %}
+      <article class="content-card">
+        <div class="card-body">
+          <span class="pill">Coming Soon</span>
+          <h3>ยังไม่มีคำถาม</h3>
+          <p>สามารถเพิ่ม FAQ ได้จากหน้าแอดมินภายหลัง</p>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="note-panel" style="padding:clamp(20px,4vw,30px);">
+    <div class="section-head" style="margin-bottom:0;">
+      <div>
+        <span class="section-label">Need Help?</span>
+        <h2>ยังมีคำถามเพิ่มเติม?</h2>
+        <p>
+          สามารถสอบถามบริการ โปรโมชัน หรือจองคิวผ่าน Facebook ของ Doctor Palmy Clinic ได้โดยตรง
+        </p>
+      </div>
+
+      <div class="section-actions">
+        <a class="btn" href="https://www.facebook.com/100095416443479/" target="_blank" rel="noopener">
+          สอบถามผ่าน Facebook
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll(".faq-question").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const answer = btn.parentElement.querySelector(".faq-answer");
+      const isOpen = answer.classList.contains("open");
+
+      document.querySelectorAll(".faq-answer").forEach((item) => {
+        item.classList.remove("open");
+      });
+
+      document.querySelectorAll(".faq-question").forEach((item) => {
+        item.setAttribute("aria-expanded", "false");
+      });
+
+      if (!isOpen) {
+        answer.classList.add("open");
+        btn.setAttribute("aria-expanded", "true");
+      }
+    });
+  });
+</script>
+{% endblock %}

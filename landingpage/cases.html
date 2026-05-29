@@ -1,0 +1,146 @@
+{% extends "base_public.html" %}
+
+{% block title %}เคสจริงและตัวอย่างการดูแล | Doctor Palmy Clinic ลำพูน{% endblock %}
+{% block meta_description %}รวมเคสจริงและตัวอย่างการดูแลจาก Doctor Palmy Clinic ลำพูน พร้อมข้อควรทราบว่าผลลัพธ์ขึ้นอยู่กับแต่ละบุคคล{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+  <div class="hero-panel">
+    <div class="hero-copy">
+      <span class="eyebrow">Real Cases</span>
+      <h1 class="display-title">เคสจริงและตัวอย่างการดูแล</h1>
+      <p>
+        ตัวอย่างแนวทางการประเมินและดูแลแบบรายบุคคล
+        ผลลัพธ์ขึ้นอยู่กับแต่ละบุคคล และควรได้รับการประเมินก่อนรับบริการ
+      </p>
+    </div>
+
+    <aside class="hero-side-card">
+      <span class="card-label">Care Note</span>
+      <strong>ดูเคสเพื่อเป็นข้อมูลประกอบ</strong>
+      <p>ผลลัพธ์อาจแตกต่างกันตามสภาพผิว ปัญหาเดิม และการดูแลหลังรับบริการ</p>
+    </aside>
+  </div>
+</section>
+
+{% if is_admin %}
+<div class="admin-bar">
+  <strong>โหมดจัดการเคสจริง</strong>
+  <a class="btn light" href="/site-admin/cases/">+ เพิ่มหรือแก้เคส</a>
+</div>
+{% endif %}
+
+<section class="section">
+  <div class="section-head">
+    <div>
+      <span class="section-label">Before & After</span>
+      <h2>ตัวอย่างเคส</h2>
+      <p>เล่าแนวทางการดูแลอย่างระมัดระวัง ไม่สัญญาผลลัพธ์เกินจริง</p>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn" href="/contact/">ปรึกษาคลินิก</a>
+    </div>
+  </div>
+
+  <div class="case-grid">
+    {% for c in cases %}
+      <article class="case-card">
+        {% if c.before_image_url or c.after_image_url %}
+          <div class="case-image-pair">
+            {% if c.before_image_url %}
+              <figure>
+                <img src="{{ c.before_image_url }}" alt="ก่อนดูแล {{ c.title }}" loading="lazy">
+                <figcaption>Before</figcaption>
+              </figure>
+            {% endif %}
+
+            {% if c.after_image_url %}
+              <figure>
+                <img src="{{ c.after_image_url }}" alt="หลังดูแล {{ c.title }}" loading="lazy">
+                <figcaption>After</figcaption>
+              </figure>
+            {% endif %}
+          </div>
+        {% else %}
+          <div class="empty-media">
+            <div>
+              <span>Doctor Palmy</span>
+              <strong>Case</strong>
+            </div>
+          </div>
+        {% endif %}
+
+        <div class="case-card-body">
+          {% if c.category %}
+            <span class="pill">{{ c.category }}</span>
+          {% endif %}
+
+          <h3>{{ c.title }}</h3>
+
+          {% if c.summary %}
+            <p class="case-summary">{{ c.summary }}</p>
+          {% endif %}
+
+          <div class="case-detail-list">
+            {% if c.problem_text %}
+              <div><span>Concern</span><p>{{ c.problem_text }}</p></div>
+            {% endif %}
+
+            {% if c.assessment_text %}
+              <div><span>Assessment</span><p>{{ c.assessment_text }}</p></div>
+            {% endif %}
+
+            {% if c.care_text %}
+              <div><span>Care</span><p>{{ c.care_text }}</p></div>
+            {% endif %}
+
+            {% if c.result_text %}
+              <div><span>Result</span><p>{{ c.result_text }}</p></div>
+            {% endif %}
+          </div>
+
+          <p class="case-caution">
+            {{ c.caution or 'ผลลัพธ์ขึ้นอยู่กับแต่ละบุคคล ควรเข้ารับการประเมินก่อนรับบริการ' }}
+          </p>
+        </div>
+      </article>
+    {% else %}
+      <article class="case-card">
+        <div class="empty-media">
+          <div>
+            <span>Doctor Palmy</span>
+            <strong>Case</strong>
+          </div>
+        </div>
+
+        <div class="case-card-body">
+          <span class="pill">Coming Soon</span>
+          <h3>ยังไม่มีเคสจริง</h3>
+          <p class="case-summary">สามารถเพิ่มเคสจริงได้จากหน้าแอดมินภายหลัง</p>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="note-panel" style="padding:clamp(20px,4vw,30px);">
+    <div class="section-head" style="margin-bottom:0;">
+      <div>
+        <span class="section-label">Safety First</span>
+        <h2>ก่อนเปรียบเทียบผลลัพธ์</h2>
+        <p>
+          รูปตัวอย่างเป็นข้อมูลประกอบเท่านั้น ผลลัพธ์ขึ้นอยู่กับแต่ละบุคคล
+          ควรเข้ารับการประเมินก่อนตัดสินใจรับบริการ
+        </p>
+      </div>
+      <div class="section-actions">
+        <a class="btn light" href="/contact/">สอบถามเพิ่มเติม</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

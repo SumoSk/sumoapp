@@ -3,7 +3,9 @@ from __future__ import annotations
 import os
 import re
 import json
+import html
 import time
+import uuid
 import hashlib
 import zipfile
 from datetime import datetime, timedelta, timezone
@@ -20,9 +22,12 @@ from flask import (
     url_for,
     session,
     jsonify,
+    Response,
     send_file,
 )
 from werkzeug.security import check_password_hash
+from jinja2 import ChoiceLoader, FileSystemLoader
+from markupsafe import Markup
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from functools import wraps
@@ -43,6 +48,17 @@ env_path = Path(__file__).resolve().parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
 app = Flask(__name__)
+
+# =============================================================
+# Template folders
+# =============================================================
+# templates/      = ระบบคลินิกเดิม
+# landingpage/    = หน้า public สำหรับ SEO / AI Search
+BASE_DIR = Path(__file__).resolve().parent
+app.jinja_loader = ChoiceLoader([
+    FileSystemLoader(BASE_DIR / "templates"),
+    FileSystemLoader(BASE_DIR / "landingpage"),
+])
 app.secret_key = os.getenv("FLASK_SECRET_KEY", os.urandom(32))
 
 app.config.update(
@@ -514,6 +530,25 @@ def login():
             error = "พยายามเข้าสู่ระบบถี่เกินไป กรุณารอสักครู่"
             return render_template("login.html", error=error), 429
 
+        # ระบบหลักใช้ PIN เป็นหลักเหมือน adminW โดยตรวจจาก users.pin แหล่งเดียวกัน
+        # แต่ตั้งเฉพาะ session ระบบคลินิก ไม่แตะ session adminW
+        pin = (request.form.get("pin") or "").strip()
+        if pin:
+            try:
+                result = supabase.table("users").select("*").eq("pin", pin).single().execute()
+                user = result.data
+                if user:
+                    session.permanent = True
+                    session["username"] = user.get("username")
+                    session["role"] = user.get("role", "")
+                    return redirect(url_for("dashboard"))
+                error = "PIN ไม่ถูกต้อง"
+            except Exception:
+                error = "เกิดข้อผิดพลาดในการตรวจสอบ PIN"
+
+            return render_template("login.html", error=error)
+
+        # สำรองไว้เผื่อ template เก่ายังส่ง username/password อยู่
         username = (request.form.get("username") or "").strip()
         password = (request.form.get("password") or "").strip()
 
@@ -536,6 +571,8 @@ def login():
 
                 if ok or stored == password:
                     session.permanent = True
+                    # Login ระบบหลัก: ตั้งเฉพาะ session ระบบคลินิก
+                    # ไม่แตะ session adminW เพื่อให้สองโหมดแยกหน้าที่กันชัดเจน
                     session["username"] = user.get("username", username)
                     session["role"] = user.get("role", "")
                     return redirect(url_for("dashboard"))
@@ -554,7 +591,9 @@ def backuplogin2():
 @app.route("/logout")
 @login_required
 def logout():
-    session.clear()
+    # Logout ระบบหลักเท่านั้น ไม่ล้าง session adminW
+    session.pop("username", None)
+    session.pop("role", None)
     return redirect(url_for("login"))
 
 
@@ -569,6 +608,7 @@ def pin_login():
         result = supabase.table("users").select("*").eq("pin", pin).single().execute()
         user = result.data
         if user:
+            # PIN Login ระบบหลัก: ใช้ PIN เดียวกับ adminW แต่ตั้งเฉพาะ session ระบบคลินิก
             session.permanent = True
             session["username"] = user.get("username")
             session["role"] = user.get("role", "")
@@ -4643,10 +4683,1311 @@ def api_idcard_extract():
         return jsonify({"error": str(e)}), 500
 
 
-if __name__ == "__main__":
-    app.run(debug=True)
 
-    # =============================================================
+# =============================================================
+# Public SEO / AI Landing Content System
+# =============================================================
+# จุดประสงค์:
+# - เก็บหน้าแรกเดิมไว้เหมือนเดิม
+# - เพิ่มหน้า public แยก: services, articles, faq, reviews, cases, contact
+# - ให้ AI/Google อ่านเนื้อหาเป็น HTML จริง
+# - ให้ adminW เขียน/แก้บทความจากหน้าเว็บได้ โดยใช้ PIN เดียวกับระบบหลัก แต่ session แยกกัน
+# - ฝากรูปไว้ Cloudinary และลบรูปได้จาก public_id
+
+SITE_POST_STATUS = {"draft", "published", "archived"}
+SITE_OWNER_TYPES = {"post", "service", "faq", "review", "case", "page", "other"}
+
+
+def _site_now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def _site_logged_in() -> bool:
+    """เช็ก login adminW แยกจาก login ระบบหลัก.
+
+    adminW ใช้ PIN ชุดเดียวกับตาราง users เหมือนระบบหลัก
+    แต่ตั้ง session คนละชุดและไม่ตั้ง session["username"]
+    จึงไม่พาเข้า dashboard ระบบคลินิก และไม่ทำให้สิทธิ์สองฝั่งปนกัน.
+    """
+    return bool(session.get("site_admin_logged_in") is True or session.get("adminW_logged_in") is True)
+
+
+def _site_is_admin() -> bool:
+    """ให้หน้า public รู้ว่า login adminW อยู่หรือไม่.
+
+    ปุ่มเพิ่ม/แก้ไข/ลบใน template จะถูกครอบด้วย `{% if is_admin %}`
+    ดังนั้นค่านี้ต้องอิงจาก session adminW ไม่ใช่ปิดตายเป็น False.
+    ลูกค้าทั่วไปที่ไม่ได้ login adminW จะยังไม่เห็นปุ่มจัดการเหมือนเดิม.
+    """
+    return _site_logged_in()
+
+
+def _site_admin_username() -> str:
+    return str(session.get("site_admin_username") or session.get("adminW_username") or "")
+
+
+def _site_enable_admin_mode(username: str = "", role: str = "") -> None:
+    """เปิด session adminW เท่านั้น ไม่ยุ่ง session ระบบคลินิกเดิม."""
+    session.permanent = True
+    adminw_name = username or "adminW"
+    role_name = role or ""
+
+    # key เดิมยังคงไว้เพื่อไม่ให้ route/template เก่าเสีย
+    session["site_admin_logged_in"] = True
+    session["site_admin_username"] = adminw_name
+    session["site_admin_role"] = role_name
+
+    # key ใหม่ตามชื่อที่ตกลงกัน: adminW
+    session["adminW_logged_in"] = True
+    session["adminW_username"] = adminw_name
+    session["adminW_role"] = role_name
+
+
+def _site_disable_admin_mode() -> None:
+    """ล้างเฉพาะ session adminW ไม่แตะ session ระบบหลัก."""
+    session.pop("site_admin_logged_in", None)
+    session.pop("site_admin_username", None)
+    session.pop("site_admin_role", None)
+    session.pop("site_admin_mode", None)  # ล้างค่าเก่าจากเวอร์ชันก่อนกัน session ค้าง
+    session.pop("adminW_logged_in", None)
+    session.pop("adminW_username", None)
+    session.pop("adminW_role", None)
+
+
+def site_admin_required(view_func):
+    """ล็อกหน้า /site-admin/... และ API /api/site/... ด้วย login adminW เท่านั้น."""
+    @wraps(view_func)
+    def wrapper(*args, **kwargs):
+        if not _site_logged_in():
+            if request.path.startswith("/api/"):
+                return jsonify({
+                    "success": False,
+                    "error": "ต้องเข้าสู่ระบบ adminW ก่อน"
+                }), 403
+
+            next_url = request.path
+            if request.query_string:
+                next_url += "?" + request.query_string.decode("utf-8", errors="ignore")
+            return redirect(url_for("site_admin_login", next=next_url))
+
+        return view_func(*args, **kwargs)
+
+    return wrapper
+
+
+@app.context_processor
+def inject_site_admin_state():
+    return {
+        "is_admin": _site_is_admin(),
+        "site_admin_logged_in": _site_logged_in(),
+        "site_admin_username": _site_admin_username(),
+        "adminW_logged_in": _site_logged_in(),
+        "adminW_username": _site_admin_username(),
+    }
+
+
+def _site_status_to_active(data: Any, default: bool = True) -> bool:
+    """รองรับฟอร์ม admin ที่ส่ง status=published/draft/archived และ API ที่ส่ง is_active."""
+    try:
+        status = _site_text(data.get("status")) if hasattr(data, "get") else ""
+        if status:
+            return status == "published"
+        if hasattr(data, "get") and data.get("is_active") is not None:
+            return _site_bool(data.get("is_active"), default)
+    except Exception:
+        pass
+    return default
+
+
+def _site_slugify(value: Any, fallback_prefix: str = "item") -> str:
+    s = str(value or "").strip().lower()
+    s = re.sub(r"[^a-z0-9ก-๙]+", "-", s)
+    s = re.sub(r"-+", "-", s).strip("-")
+    if not s:
+        s = f"{fallback_prefix}-{int(time.time())}"
+    return s[:180]
+
+
+def _site_text(v: Any) -> str:
+    return str(v or "").strip()
+
+
+def _site_bool(v: Any, default: bool = True) -> bool:
+    if isinstance(v, bool):
+        return v
+    s = str(v if v is not None else "").strip().lower()
+    if not s:
+        return default
+    return s in {"1", "true", "yes", "y", "on", "active", "published"}
+
+
+def _site_int(v: Any, default: int = 0) -> int:
+    try:
+        if v in (None, ""):
+            return default
+        return int(float(v))
+    except Exception:
+        return default
+
+
+def _site_plain_text_to_html(text: str) -> str:
+    """แปลงข้อความธรรมดาให้เป็น HTML ปลอดภัยเบื้องต้น.
+
+    รองรับรูปแบบง่าย ๆ:
+    ## หัวข้อใหญ่ -> <h2>
+    ### หัวข้อย่อย -> <h3>
+    - รายการ -> <ul><li>
+    บรรทัดว่าง -> แยกย่อหน้า
+    """
+    text = str(text or "").replace("\r\n", "\n").replace("\r", "\n")
+    lines = text.split("\n")
+    out: List[str] = []
+    para: List[str] = []
+    ul_open = False
+
+    def flush_para() -> None:
+        nonlocal para
+        if para:
+            joined = "<br>".join(html.escape(x.strip()) for x in para if x.strip())
+            if joined:
+                out.append(f"<p>{joined}</p>")
+            para = []
+
+    def close_ul() -> None:
+        nonlocal ul_open
+        if ul_open:
+            out.append("</ul>")
+            ul_open = False
+
+    for raw in lines:
+        line = raw.strip()
+        if not line:
+            flush_para()
+            close_ul()
+            continue
+        if line.startswith("### "):
+            flush_para(); close_ul()
+            out.append(f"<h3>{html.escape(line[4:].strip())}</h3>")
+            continue
+        if line.startswith("## "):
+            flush_para(); close_ul()
+            out.append(f"<h2>{html.escape(line[3:].strip())}</h2>")
+            continue
+        if line.startswith("- "):
+            flush_para()
+            if not ul_open:
+                out.append("<ul>")
+                ul_open = True
+            out.append(f"<li>{html.escape(line[2:].strip())}</li>")
+            continue
+        close_ul()
+        para.append(line)
+
+    flush_para()
+    close_ul()
+    return "\n".join(out)
+
+
+def _site_safe_json_load(v: Any, default: Any = None) -> Any:
+    if default is None:
+        default = {}
+    if isinstance(v, (dict, list)):
+        return v
+    if not v:
+        return default
+    try:
+        return json.loads(str(v))
+    except Exception:
+        return default
+
+
+def _site_fetch_all(table_name: str, select_expr: str = "*", public_only: bool = False, order_by: Optional[str] = None, desc: bool = False) -> List[Dict[str, Any]]:
+    """ดึงข้อมูลจาก Supabase แบบไม่ทำให้หน้า public พังถ้าตารางยังไม่ได้สร้าง."""
+    try:
+        q = supabase.table(table_name).select(select_expr)
+        if public_only:
+            if table_name == "site_posts":
+                q = q.eq("status", "published")
+            elif table_name in {"site_services", "site_faqs", "site_reviews", "site_cases"}:
+                q = q.eq("is_active", True)
+        if order_by:
+            q = q.order(order_by, desc=desc)
+        return q.execute().data or []
+    except Exception as e:
+        app.logger.warning(f"site_fetch_all failed table={table_name}: {e}")
+        return []
+
+
+def _site_fetch_one(table_name: str, field: str, value: Any, select_expr: str = "*") -> Optional[Dict[str, Any]]:
+    try:
+        rows = (
+            supabase.table(table_name)
+            .select(select_expr)
+            .eq(field, value)
+            .limit(1)
+            .execute()
+            .data
+            or []
+        )
+        return rows[0] if rows else None
+    except Exception as e:
+        app.logger.warning(f"site_fetch_one failed table={table_name}: {e}")
+        return None
+
+
+def _site_delete_cloudinary(public_id: Optional[str]) -> None:
+    if not public_id:
+        return
+    try:
+        cloudinary.uploader.destroy(public_id, resource_type="image")
+    except Exception as e:
+        app.logger.warning(f"Cloudinary delete failed for {public_id}: {e}")
+
+
+def _site_upload_image(file_obj: Any, folder: str) -> Dict[str, Any]:
+    if hasattr(file_obj, "seek"):
+        try:
+            file_obj.seek(0)
+        except Exception:
+            pass
+    result = cloudinary.uploader.upload(file_obj, folder=folder, resource_type="image")
+    return {
+        "image_url": result.get("secure_url") or result.get("url"),
+        "cloudinary_public_id": result.get("public_id"),
+    }
+
+
+def _site_settings_map() -> Dict[str, Any]:
+    rows = _site_fetch_all("site_settings")
+    out: Dict[str, Any] = {}
+    for r in rows:
+        k = r.get("setting_key")
+        if not k:
+            continue
+        out[str(k)] = _site_safe_json_load(r.get("setting_value"), r.get("setting_value"))
+    return out
+
+
+def _site_post_public_filter(row: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """หน้า public แสดงเฉพาะบทความที่ published เท่านั้น.
+
+    การแก้ไข draft/archived ทำจาก /site-admin/... โดยตรง ไม่ใช้ปุ่มบนหน้า public.
+    """
+    if not row:
+        return None
+    if row.get("status") != "published":
+        return None
+    return row
+
+
+# -----------------------------
+# Public pages
+# -----------------------------
+@app.route("/services/")
+def public_services():
+    services = _site_fetch_all("site_services", public_only=True, order_by="sort_order", desc=False)
+    return render_template("services.html", services=services, is_admin=_site_is_admin())
+
+
+@app.route("/articles/")
+def public_articles():
+    posts = _site_fetch_all("site_posts", public_only=True, order_by="published_at", desc=True)
+    return render_template("articles.html", posts=posts, is_admin=_site_is_admin())
+
+
+@app.route("/articles/<slug>/")
+def public_article_detail(slug):
+    post = _site_fetch_one("site_posts", "slug", slug)
+    post = _site_post_public_filter(post)
+    if not post:
+        return render_template("article_detail.html", post=None, faqs=[], related=[], body_html=Markup(""), is_admin=_site_is_admin()), 404
+
+    faqs = []
+    try:
+        faqs = (
+            supabase.table("site_post_faqs")
+            .select("*")
+            .eq("post_id", post.get("id"))
+            .eq("is_active", True)
+            .order("sort_order", desc=False)
+            .execute()
+            .data
+            or []
+        )
+    except Exception as e:
+        app.logger.warning(f"site_post_faqs fetch failed: {e}")
+
+    related = []
+    try:
+        q = (
+            supabase.table("site_posts")
+            .select("id,title,slug,excerpt,cover_image_url,category,published_at,updated_at")
+            .eq("status", "published")
+            .neq("id", post.get("id"))
+            .order("published_at", desc=True)
+            .limit(6)
+        )
+        if post.get("category"):
+            q = q.eq("category", post.get("category"))
+        related = q.execute().data or []
+    except Exception as e:
+        app.logger.warning(f"related posts fetch failed: {e}")
+
+    body_html_raw = post.get("content_html") or _site_plain_text_to_html(post.get("content_text") or "")
+    return render_template(
+        "article_detail.html",
+        post=post,
+        faqs=faqs,
+        related=related,
+        body_html=Markup(body_html_raw),
+        is_admin=_site_is_admin(),
+    )
+
+
+@app.route("/faq/")
+def public_faq():
+    faqs = _site_fetch_all("site_faqs", public_only=True, order_by="sort_order", desc=False)
+    return render_template("faq.html", faqs=faqs, is_admin=_site_is_admin())
+
+
+@app.route("/reviews/")
+def public_reviews():
+    reviews = _site_fetch_all("site_reviews", public_only=True, order_by="sort_order", desc=False)
+    return render_template("reviews.html", reviews=reviews, is_admin=_site_is_admin())
+
+
+@app.route("/cases/")
+def public_cases():
+    cases = _site_fetch_all("site_cases", public_only=True, order_by="sort_order", desc=False)
+    return render_template("cases.html", cases=cases, is_admin=_site_is_admin())
+
+
+@app.route("/contact/")
+def public_contact():
+    settings = _site_settings_map()
+    return render_template("contact.html", settings=settings, is_admin=_site_is_admin())
+
+
+# -----------------------------
+# Admin editor pages
+# -----------------------------
+@app.route("/site-admin/login", methods=["GET", "POST"])
+def site_admin_login():
+    """หน้า Login adminW แยกจาก Login ระบบหลัก.
+
+    ใช้ PIN เดียวกับตาราง users แต่ตั้ง session คนละชุด:
+    - site_admin_logged_in / adminW_logged_in
+    - site_admin_username / adminW_username
+    ไม่ตั้ง session["username"] จึงไม่ถือว่า login เข้าระบบคลินิกเดิม.
+    """
+    error = None
+    next_url = (request.args.get("next") or request.form.get("next") or url_for("site_admin_home")).strip()
+    if not next_url.startswith("/") or next_url.startswith("//"):
+        next_url = url_for("site_admin_home")
+
+    if request.method == "GET" and _site_logged_in():
+        return redirect(next_url)
+
+    if request.method == "POST":
+        if _rate_limited(_PIN_ATTEMPTS, MAX_PIN_ATTEMPTS, RATE_WINDOW_SEC):
+            error = "พยายามเข้าสู่ระบบถี่เกินไป กรุณารอสักครู่"
+        else:
+            pin = (request.form.get("pin") or "").strip()
+            if not pin:
+                error = "กรุณาใส่ PIN"
+            else:
+                try:
+                    result = supabase.table("users").select("*").eq("pin", pin).single().execute()
+                    user = result.data
+                    if user:
+                        _site_enable_admin_mode(
+                            username=user.get("username") or "adminW",
+                            role=user.get("role") or "",
+                        )
+                        return redirect(next_url)
+                    error = "PIN ไม่ถูกต้อง"
+                except Exception as e:
+                    app.logger.error(f"SITE ADMIN PIN LOGIN ERROR: {e}")
+                    error = "เกิดข้อผิดพลาดในการตรวจสอบ PIN"
+
+    safe_next = html.escape(next_url, quote=True)
+    safe_error = html.escape(error or "", quote=True)
+
+    return f"""
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>เข้าสู่ adminW | Doctor Palmy Clinic</title>
+  <style>
+    :root {{
+      --deep:#17332d;
+      --muted:rgba(23,51,45,.62);
+      --soft:#eef8f3;
+      --paper:#fffdf8;
+      --line:rgba(23,51,45,.10);
+    }}
+    *{{box-sizing:border-box}}
+    body {{
+      min-height:100vh;
+      margin:0;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,sans-serif;
+      color:var(--deep);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(245,222,216,.72), transparent 34%),
+        radial-gradient(circle at 100% 18%, rgba(175,232,218,.44), transparent 34%),
+        linear-gradient(145deg,var(--paper),var(--soft));
+      display:grid;
+      place-items:center;
+      padding:22px;
+    }}
+    .login-card {{
+      width:min(100%,440px);
+      border-radius:34px;
+      padding:28px;
+      background:rgba(255,255,255,.88);
+      border:1px solid var(--line);
+      box-shadow:0 24px 70px rgba(21,55,48,.12);
+      backdrop-filter:blur(18px);
+    }}
+    .badge {{
+      display:inline-flex;
+      margin-bottom:12px;
+      padding:7px 11px;
+      border-radius:999px;
+      background:rgba(15,118,110,.10);
+      color:#0f766e;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }}
+    h1 {{
+      margin:0;
+      font-size:clamp(30px,7vw,46px);
+      line-height:1.02;
+      letter-spacing:-.055em;
+    }}
+    p {{
+      margin:12px 0 0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.75;
+    }}
+    label {{
+      display:block;
+      margin-top:20px;
+      font-size:13px;
+      font-weight:900;
+    }}
+    input {{
+      width:100%;
+      margin-top:8px;
+      border:1px solid rgba(23,51,45,.14);
+      border-radius:18px;
+      padding:14px 15px;
+      font:inherit;
+      font-size:22px;
+      letter-spacing:.18em;
+      text-align:center;
+      color:var(--deep);
+      background:#fff;
+      outline:none;
+    }}
+    input:focus {{
+      border-color:rgba(15,118,110,.42);
+      box-shadow:0 0 0 5px rgba(15,118,110,.08);
+    }}
+    .error {{
+      margin-top:14px;
+      padding:12px 14px;
+      border-radius:18px;
+      background:#fff1ee;
+      color:#b42318;
+      font-size:13px;
+      line-height:1.55;
+      font-weight:800;
+    }}
+    .actions {{
+      display:grid;
+      gap:10px;
+      margin-top:18px;
+    }}
+    button, a.btn {{
+      min-height:46px;
+      border:0;
+      border-radius:999px;
+      padding:11px 16px;
+      background:var(--deep);
+      color:#fff;
+      font:inherit;
+      font-size:13px;
+      font-weight:900;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+    }}
+    a.btn.light {{
+      background:#fff;
+      color:var(--deep);
+      border:1px solid var(--line);
+    }}
+    .hint {{
+      margin-top:14px;
+      color:rgba(23,51,45,.46);
+      font-size:12px;
+      line-height:1.65;
+    }}
+  </style>
+</head>
+<body>
+  <form class="login-card" method="post" action="/site-admin/login">
+    <span class="badge">adminW</span>
+    <h1>เข้าสู่ adminW</h1>
+    <p>ใช้ PIN ชุดเดียวกับระบบหลัก แต่หน้านี้ใช้เฉพาะ adminW สำหรับจัดการบทความ บริการ FAQ รีวิว และเคสจริง ไม่พาเข้า Dashboard ระบบคลินิก</p>
+
+    <input type="hidden" name="next" value="{safe_next}">
+
+    <label>
+      PIN เดียวกับระบบหลัก
+      <input name="pin" type="password" inputmode="numeric" autocomplete="one-time-code" maxlength="12" required autofocus>
+    </label>
+
+    {f'<div class="error">{safe_error}</div>' if error else ''}
+
+    <div class="actions">
+      <button type="submit">เข้าสู่ adminW</button>
+      <a class="btn light" href="/">กลับหน้าเว็บ</a>
+    </div>
+
+    <div class="hint">
+      adminW แยกหน้าที่จากระบบหลักชัดเจน: ใช้ PIN เดียวกัน แต่ session และสิทธิ์คนละชุด
+    </div>
+  </form>
+</body>
+</html>
+"""
+
+
+@app.route("/site-admin/")
+@site_admin_required
+def site_admin_home():
+    username = html.escape(_site_admin_username() or "adminW")
+    return f"""
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>adminW | Doctor Palmy Clinic</title>
+  <style>
+    :root{{--deep:#17332d;--muted:rgba(23,51,45,.62);--soft:#eef8f3;--paper:#fffdf8;}}
+    *{{box-sizing:border-box}}
+    body{{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,sans-serif;background:linear-gradient(145deg,var(--paper),var(--soft));color:var(--deep);}}
+    .wrap{{width:min(100% - 28px,980px);margin:28px auto 44px;}}
+    .hero{{border-radius:34px;padding:clamp(22px,5vw,42px);background:rgba(255,255,255,.86);border:1px solid rgba(23,51,45,.08);box-shadow:0 24px 70px rgba(21,55,48,.10);}}
+    .badge{{display:inline-flex;margin-bottom:12px;padding:7px 11px;border-radius:999px;background:rgba(15,118,110,.10);color:#0f766e;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;}}
+    h1{{margin:0;font-size:clamp(34px,7vw,62px);line-height:1;letter-spacing:-.055em}}
+    p{{margin:12px 0 0;color:var(--muted);font-size:14px;line-height:1.8}}
+    .grid{{display:grid;grid-template-columns:1fr;gap:12px;margin-top:18px}}
+    a.card{{display:block;text-decoration:none;color:inherit;border-radius:26px;padding:18px;background:rgba(255,255,255,.82);border:1px solid rgba(23,51,45,.08);box-shadow:0 14px 38px rgba(21,55,48,.06)}}
+    a.card strong{{display:block;font-size:22px;line-height:1.2;letter-spacing:-.035em}}
+    a.card span{{display:block;margin-top:6px;color:var(--muted);font-size:13px;line-height:1.65}}
+    .actions{{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}}
+    .btn{{min-height:42px;padding:10px 16px;border-radius:999px;background:#17332d;color:#fff;text-decoration:none;font-weight:900;font-size:13px;display:inline-flex;align-items:center;justify-content:center}}
+    .btn.light{{background:#fff;color:#17332d;border:1px solid rgba(23,51,45,.10)}}
+    .status{{margin-top:12px;color:rgba(23,51,45,.48);font-size:12px;font-weight:800}}
+    @media(min-width:760px){{.grid{{grid-template-columns:repeat(2,minmax(0,1fr))}}}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <span class="badge">adminW</span>
+      <h1>adminW</h1>
+      <p>จัดการบทความ บริการ FAQ รีวิว และเคสจริงจาก adminW เท่านั้น ระบบนี้ใช้ PIN เดียวกับระบบหลัก แต่ไม่ใช่ login หลังบ้านคลินิก</p>
+      <div class="status">เข้าสู่ adminW ในชื่อ: {username}</div>
+      <div class="actions">
+        <a class="btn" href="/site-admin/posts/new">+ เขียนบทความ</a>
+        <a class="btn light" href="/">ดูหน้าเว็บ</a>
+        <a class="btn light" href="/site-admin/logout">ออกจาก adminW</a>
+      </div>
+    </section>
+
+    <section class="grid">
+      <a class="card" href="/site-admin/posts/new"><strong>เขียนบทความ</strong><span>เพิ่มบทความความงามหรือบทความทั่วไป</span></a>
+      <a class="card" href="/site-admin/services/"><strong>จัดการบริการ</strong><span>เพิ่ม แก้ไข หรือซ่อนบริการของคลินิก</span></a>
+      <a class="card" href="/site-admin/faqs/"><strong>จัดการ FAQ</strong><span>เพิ่มคำถามยอดฮิตและคำตอบ</span></a>
+      <a class="card" href="/site-admin/reviews/"><strong>จัดการรีวิว</strong><span>เพิ่มรีวิวหรือความประทับใจจากลูกค้า</span></a>
+      <a class="card" href="/site-admin/cases/"><strong>จัดการเคสจริง</strong><span>เพิ่มตัวอย่างเคสและแนวทางการดูแล</span></a>
+    </section>
+  </main>
+</body>
+</html>
+"""
+
+
+@app.route("/site-admin/logout")
+def site_admin_logout():
+    _site_disable_admin_mode()
+    return redirect(url_for("site_admin_login"))
+
+
+@app.route("/site-admin/exit")
+def site_admin_exit():
+    """รองรับลิงก์เก่าจากเวอร์ชันก่อน ให้ทำงานเหมือน logout adminW."""
+    _site_disable_admin_mode()
+    return redirect(url_for("site_admin_login"))
+
+
+@app.route("/site-admin/posts/new")
+@site_admin_required
+def site_post_new():
+    return render_template("admin_post_form.html", post=None, faqs=[])
+
+
+@app.route("/site-admin/posts/<post_id>/edit")
+@site_admin_required
+def site_post_edit(post_id):
+    post = _site_fetch_one("site_posts", "id", post_id)
+    if not post:
+        return "ไม่พบโพสต์", 404
+    faqs = []
+    try:
+        faqs = (
+            supabase.table("site_post_faqs")
+            .select("*")
+            .eq("post_id", post_id)
+            .order("sort_order", desc=False)
+            .execute()
+            .data
+            or []
+        )
+    except Exception:
+        pass
+    return render_template("admin_post_form.html", post=post, faqs=faqs)
+
+
+@app.route("/site-admin/services")
+@app.route("/site-admin/services/")
+@site_admin_required
+def site_services_admin():
+    services = _site_fetch_all("site_services", order_by="sort_order", desc=False)
+    return render_template("admin_service_form.html", services=services, service=None)
+
+
+@app.route("/site-admin/services/<service_id>/edit")
+@site_admin_required
+def site_service_edit(service_id):
+    service = _site_fetch_one("site_services", "id", service_id)
+    if not service:
+        return "ไม่พบบริการ", 404
+    services = _site_fetch_all("site_services", order_by="sort_order", desc=False)
+    return render_template("admin_service_form.html", services=services, service=service)
+
+
+@app.route("/site-admin/faqs")
+@app.route("/site-admin/faqs/")
+@site_admin_required
+def site_faqs_admin():
+    faqs = _site_fetch_all("site_faqs", order_by="sort_order", desc=False)
+    return render_template("admin_faq_form.html", faqs=faqs, faq=None)
+
+
+@app.route("/site-admin/faqs/<faq_id>/edit")
+@site_admin_required
+def site_faq_edit(faq_id):
+    faq = _site_fetch_one("site_faqs", "id", faq_id)
+    if not faq:
+        return "ไม่พบ FAQ", 404
+    faqs = _site_fetch_all("site_faqs", order_by="sort_order", desc=False)
+    return render_template("admin_faq_form.html", faqs=faqs, faq=faq)
+
+
+@app.route("/site-admin/reviews")
+@app.route("/site-admin/reviews/")
+@site_admin_required
+def site_reviews_admin():
+    reviews = _site_fetch_all("site_reviews", order_by="sort_order", desc=False)
+    return render_template("admin_review_form.html", reviews=reviews, review=None)
+
+
+@app.route("/site-admin/reviews/<review_id>/edit")
+@site_admin_required
+def site_review_edit(review_id):
+    review = _site_fetch_one("site_reviews", "id", review_id)
+    if not review:
+        return "ไม่พบรีวิว", 404
+    reviews = _site_fetch_all("site_reviews", order_by="sort_order", desc=False)
+    return render_template("admin_review_form.html", reviews=reviews, review=review)
+
+
+@app.route("/site-admin/cases")
+@app.route("/site-admin/cases/")
+@site_admin_required
+def site_cases_admin():
+    cases = _site_fetch_all("site_cases", order_by="sort_order", desc=False)
+    return render_template("admin_case_form.html", cases=cases, case=None)
+
+
+@app.route("/site-admin/cases/<case_id>/edit")
+@site_admin_required
+def site_case_edit(case_id):
+    case = _site_fetch_one("site_cases", "id", case_id)
+    if not case:
+        return "ไม่พบเคส", 404
+    cases = _site_fetch_all("site_cases", order_by="sort_order", desc=False)
+    return render_template("admin_case_form.html", cases=cases, case=case)
+
+
+# -----------------------------
+# API: Posts
+# -----------------------------
+@app.route("/api/site/posts/save", methods=["POST"])
+@site_admin_required
+def api_site_posts_save():
+    try:
+        data = request.form if request.form else (request.get_json(silent=True) or {})
+        post_id = _site_text(data.get("id"))
+        title = _site_text(data.get("title"))
+        if not title:
+            return jsonify({"success": False, "error": "missing_title"}), 400
+
+        slug = _site_text(data.get("slug")) or _site_slugify(title, "post")
+        status = _site_text(data.get("status") or "draft")
+        if status not in SITE_POST_STATUS:
+            status = "draft"
+
+        # post_type controls how the article is displayed.
+        # beauty  = clinic/beauty article: show author, reviewer, medical disclaimer, clinic CTA.
+        # general = normal article: show only title, image, and article body.
+        post_type = _site_text(data.get("post_type") or "beauty")
+        if post_type not in {"beauty", "general"}:
+            post_type = "beauty"
+
+        content_text = _site_text(data.get("content_text"))
+        payload: Dict[str, Any] = {
+            "title": title,
+            "slug": slug,
+            "category": _site_text(data.get("category")) or None,
+            "excerpt": _site_text(data.get("excerpt")) or None,
+            "content_text": content_text,
+            "content_html": _site_plain_text_to_html(content_text),
+            "post_type": post_type,
+            "author": (_site_text(data.get("author")) or "Doctor Palmy Clinic") if post_type == "beauty" else None,
+            "reviewer": (_site_text(data.get("reviewer")) or "พญ.ปิยะฎา จินดาหลวง") if post_type == "beauty" else None,
+            "status": status,
+            "meta_title": _site_text(data.get("meta_title")) or title,
+            "meta_description": _site_text(data.get("meta_description")) or _site_text(data.get("excerpt")) or None,
+            "sort_order": _site_int(data.get("sort_order"), 0),
+            "updated_at": _site_now_iso(),
+        }
+
+        keywords_raw = data.get("keywords")
+        if keywords_raw:
+            if isinstance(keywords_raw, list):
+                payload["keywords"] = keywords_raw
+            else:
+                payload["keywords"] = [x.strip() for x in str(keywords_raw).split(",") if x.strip()]
+
+        old_row = _site_fetch_one("site_posts", "id", post_id) if post_id else None
+
+        # Published date
+        if status == "published":
+            if old_row and old_row.get("published_at"):
+                payload["published_at"] = old_row.get("published_at")
+            else:
+                payload["published_at"] = _site_now_iso()
+
+        cover = request.files.get("cover_image") if request.files else None
+        if cover and _is_allowed_image_file(cover):
+            uploaded = _site_upload_image(cover, f"site_posts/{slug}/cover")
+            payload["cover_image_url"] = uploaded.get("image_url")
+            payload["cover_cloudinary_public_id"] = uploaded.get("cloudinary_public_id")
+            if old_row and old_row.get("cover_cloudinary_public_id"):
+                _site_delete_cloudinary(old_row.get("cover_cloudinary_public_id"))
+
+        if post_id:
+            res = supabase.table("site_posts").update(payload).eq("id", post_id).execute()
+            row = (res.data or [dict(payload, id=post_id)])[0]
+        else:
+            payload["created_at"] = _site_now_iso()
+            res = supabase.table("site_posts").insert(payload).execute()
+            row = (res.data or [payload])[0]
+
+        return jsonify({
+            "success": True,
+            "row": row,
+            "url": url_for("public_article_detail", slug=row.get("slug") or slug),
+        })
+    except Exception as e:
+        app.logger.error(f"/api/site/posts/save error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/site/posts/archive", methods=["POST"])
+@site_admin_required
+def api_site_posts_archive():
+    try:
+        data = request.get_json(silent=True) or {}
+        post_id = data.get("id")
+        if not post_id:
+            return jsonify({"success": False, "error": "missing_id"}), 400
+        supabase.table("site_posts").update({"status": "archived", "updated_at": _site_now_iso()}).eq("id", post_id).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/site/posts/delete", methods=["POST"])
+@site_admin_required
+def api_site_posts_delete():
+    """ลบถาวร: ลบ cover + media ที่ผูกกับ post_id + row. ปกติแนะนำ archive แทน."""
+    try:
+        data = request.get_json(silent=True) or {}
+        post_id = data.get("id")
+        if not post_id:
+            return jsonify({"success": False, "error": "missing_id"}), 400
+        post = _site_fetch_one("site_posts", "id", post_id)
+        if not post:
+            return jsonify({"success": False, "error": "not_found"}), 404
+        _site_delete_cloudinary(post.get("cover_cloudinary_public_id"))
+        try:
+            media_rows = supabase.table("site_media").select("*").eq("owner_type", "post").eq("owner_id", post_id).execute().data or []
+            for m in media_rows:
+                _site_delete_cloudinary(m.get("cloudinary_public_id"))
+            supabase.table("site_media").delete().eq("owner_type", "post").eq("owner_id", post_id).execute()
+        except Exception as e:
+            app.logger.warning(f"delete post media failed: {e}")
+        supabase.table("site_posts").delete().eq("id", post_id).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# -----------------------------
+# API: Media upload/delete for editor
+# -----------------------------
+@app.route("/api/site/media/upload", methods=["POST"])
+@site_admin_required
+def api_site_media_upload():
+    try:
+        image = request.files.get("image") or request.files.get("file")
+        if not image or not _is_allowed_image_file(image):
+            return jsonify({"success": False, "error": "invalid_image"}), 400
+        owner_type = _site_text(request.form.get("owner_type") or "post")
+        if owner_type not in SITE_OWNER_TYPES:
+            owner_type = "other"
+        owner_id = _site_text(request.form.get("owner_id")) or None
+        related_slug = _site_slugify(request.form.get("related_slug") or "draft", "media")
+        role = _site_text(request.form.get("role") or "inline")
+        alt_text = _site_text(request.form.get("alt_text"))
+
+        uploaded = _site_upload_image(image, f"site_media/{owner_type}/{related_slug}")
+        payload = {
+            "owner_type": owner_type,
+            "owner_id": owner_id,
+            "related_slug": related_slug,
+            "image_url": uploaded.get("image_url"),
+            "cloudinary_public_id": uploaded.get("cloudinary_public_id"),
+            "alt_text": alt_text or None,
+            "role": role,
+            "sort_order": _site_int(request.form.get("sort_order"), 0),
+            "created_by": session.get("username"),
+            "created_at": _site_now_iso(),
+        }
+        res = supabase.table("site_media").insert(payload).execute()
+        row = (res.data or [payload])[0]
+        return jsonify({"success": True, "row": row, "url": row.get("image_url")})
+    except Exception as e:
+        app.logger.error(f"/api/site/media/upload error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/site/media/delete", methods=["POST"])
+@site_admin_required
+def api_site_media_delete():
+    try:
+        data = request.get_json(silent=True) or {}
+        media_id = data.get("id")
+        if not media_id:
+            return jsonify({"success": False, "error": "missing_id"}), 400
+        media = _site_fetch_one("site_media", "id", media_id)
+        if not media:
+            return jsonify({"success": False, "error": "not_found"}), 404
+        _site_delete_cloudinary(media.get("cloudinary_public_id"))
+        supabase.table("site_media").delete().eq("id", media_id).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        app.logger.error(f"/api/site/media/delete error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# -----------------------------
+# API: Services / FAQ / Reviews / Cases / Settings
+# -----------------------------
+@app.route("/api/site/services/save", methods=["POST"])
+@site_admin_required
+def api_site_services_save():
+    try:
+        data = request.form if request.form else (request.get_json(silent=True) or {})
+        row_id = _site_text(data.get("id"))
+        name = _site_text(data.get("name"))
+        if not name:
+            return jsonify({"success": False, "error": "missing_name"}), 400
+        slug = _site_text(data.get("slug")) or _site_slugify(name, "service")
+        old = _site_fetch_one("site_services", "id", row_id) if row_id else None
+        payload = {
+            "slug": slug,
+            "name": name,
+            "category": _site_text(data.get("category")) or None,
+            "summary": _site_text(data.get("summary")) or None,
+            "detail": _site_text(data.get("detail")) or None,
+            "caution": _site_text(data.get("caution")) or None,
+            "meta_title": _site_text(data.get("meta_title")) or name,
+            "meta_description": _site_text(data.get("meta_description")) or _site_text(data.get("summary")) or None,
+            "sort_order": _site_int(data.get("sort_order"), 0),
+            "is_active": _site_status_to_active(data, True),
+            "updated_at": _site_now_iso(),
+        }
+        if _site_text(data.get("remove_image")) == "1" and old:
+            payload["image_url"] = None
+            payload["cloudinary_public_id"] = None
+            _site_delete_cloudinary(old.get("cloudinary_public_id"))
+        image = request.files.get("image") if request.files else None
+        if image and _is_allowed_image_file(image):
+            uploaded = _site_upload_image(image, f"site_services/{slug}")
+            payload["image_url"] = uploaded.get("image_url")
+            payload["cloudinary_public_id"] = uploaded.get("cloudinary_public_id")
+            if old and old.get("cloudinary_public_id"):
+                _site_delete_cloudinary(old.get("cloudinary_public_id"))
+        if row_id:
+            res = supabase.table("site_services").update(payload).eq("id", row_id).execute()
+            row = (res.data or [dict(payload, id=row_id)])[0]
+        else:
+            payload["created_at"] = _site_now_iso()
+            res = supabase.table("site_services").insert(payload).execute()
+            row = (res.data or [payload])[0]
+        return jsonify({"success": True, "row": row})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/site/faqs/save", methods=["POST"])
+@site_admin_required
+def api_site_faqs_save():
+    try:
+        data = request.get_json(silent=True) or request.form or {}
+        row_id = _site_text(data.get("id"))
+        question = _site_text(data.get("question"))
+        answer = _site_text(data.get("answer"))
+        if not question or not answer:
+            return jsonify({"success": False, "error": "question_answer_required"}), 400
+        payload = {
+            "question": question,
+            "answer": answer,
+            "category": _site_text(data.get("category")) or None,
+            "sort_order": _site_int(data.get("sort_order"), 0),
+            "is_active": _site_status_to_active(data, True),
+            "updated_at": _site_now_iso(),
+        }
+        if row_id:
+            res = supabase.table("site_faqs").update(payload).eq("id", row_id).execute()
+            row = (res.data or [dict(payload, id=row_id)])[0]
+        else:
+            payload["created_at"] = _site_now_iso()
+            res = supabase.table("site_faqs").insert(payload).execute()
+            row = (res.data or [payload])[0]
+        return jsonify({"success": True, "row": row})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/site/reviews/save", methods=["POST"])
+@site_admin_required
+def api_site_reviews_save():
+    try:
+        data = request.form if request.form else (request.get_json(silent=True) or {})
+        row_id = _site_text(data.get("id"))
+        content = _site_text(data.get("content"))
+        if not content:
+            return jsonify({"success": False, "error": "missing_content"}), 400
+        old = _site_fetch_one("site_reviews", "id", row_id) if row_id else None
+        payload = {
+            "reviewer_name": _site_text(data.get("reviewer_name")) or None,
+            "title": _site_text(data.get("title")) or None,
+            "content": content,
+            "source": _site_text(data.get("source")) or None,
+            "rating": _site_int(data.get("rating"), 0) or None,
+            "sort_order": _site_int(data.get("sort_order"), 0),
+            "is_active": _site_status_to_active(data, True),
+            "consent_confirmed": _site_bool(data.get("consent_confirmed"), False),
+            "updated_at": _site_now_iso(),
+        }
+        if _site_text(data.get("remove_image")) == "1" and old:
+            payload["image_url"] = None
+            payload["cloudinary_public_id"] = None
+            _site_delete_cloudinary(old.get("cloudinary_public_id"))
+        image = request.files.get("image") if request.files else None
+        if image and _is_allowed_image_file(image):
+            uploaded = _site_upload_image(image, "site_reviews")
+            payload["image_url"] = uploaded.get("image_url")
+            payload["cloudinary_public_id"] = uploaded.get("cloudinary_public_id")
+            if old and old.get("cloudinary_public_id"):
+                _site_delete_cloudinary(old.get("cloudinary_public_id"))
+        if row_id:
+            res = supabase.table("site_reviews").update(payload).eq("id", row_id).execute()
+            row = (res.data or [dict(payload, id=row_id)])[0]
+        else:
+            payload["created_at"] = _site_now_iso()
+            res = supabase.table("site_reviews").insert(payload).execute()
+            row = (res.data or [payload])[0]
+        return jsonify({"success": True, "row": row})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/site/cases/save", methods=["POST"])
+@site_admin_required
+def api_site_cases_save():
+    try:
+        data = request.form if request.form else (request.get_json(silent=True) or {})
+        row_id = _site_text(data.get("id"))
+        title = _site_text(data.get("title"))
+        if not title:
+            return jsonify({"success": False, "error": "missing_title"}), 400
+        slug = _site_text(data.get("slug")) or _site_slugify(title, "case")
+        old = _site_fetch_one("site_cases", "id", row_id) if row_id else None
+        payload = {
+            "slug": slug,
+            "title": title,
+            "category": _site_text(data.get("category")) or None,
+            "summary": _site_text(data.get("summary")) or None,
+            "problem_text": _site_text(data.get("problem_text")) or None,
+            "assessment_text": _site_text(data.get("assessment_text")) or None,
+            "care_text": _site_text(data.get("care_text")) or None,
+            "result_text": _site_text(data.get("result_text")) or None,
+            "caution": _site_text(data.get("caution")) or "ผลลัพธ์ขึ้นอยู่กับแต่ละบุคคล ควรเข้ารับการประเมินโดยแพทย์ก่อนรับบริการ",
+            "consent_confirmed": _site_bool(data.get("consent_confirmed"), False),
+            "sort_order": _site_int(data.get("sort_order"), 0),
+            "is_active": _site_status_to_active(data, True),
+            "updated_at": _site_now_iso(),
+        }
+        if _site_text(data.get("remove_before_image")) == "1" and old:
+            payload["before_image_url"] = None
+            payload["before_cloudinary_public_id"] = None
+            _site_delete_cloudinary(old.get("before_cloudinary_public_id"))
+        if _site_text(data.get("remove_after_image")) == "1" and old:
+            payload["after_image_url"] = None
+            payload["after_cloudinary_public_id"] = None
+            _site_delete_cloudinary(old.get("after_cloudinary_public_id"))
+        before_img = request.files.get("before_image") if request.files else None
+        after_img = request.files.get("after_image") if request.files else None
+        if before_img and _is_allowed_image_file(before_img):
+            uploaded = _site_upload_image(before_img, f"site_cases/{slug}/before")
+            payload["before_image_url"] = uploaded.get("image_url")
+            payload["before_cloudinary_public_id"] = uploaded.get("cloudinary_public_id")
+            if old and old.get("before_cloudinary_public_id"):
+                _site_delete_cloudinary(old.get("before_cloudinary_public_id"))
+        if after_img and _is_allowed_image_file(after_img):
+            uploaded = _site_upload_image(after_img, f"site_cases/{slug}/after")
+            payload["after_image_url"] = uploaded.get("image_url")
+            payload["after_cloudinary_public_id"] = uploaded.get("cloudinary_public_id")
+            if old and old.get("after_cloudinary_public_id"):
+                _site_delete_cloudinary(old.get("after_cloudinary_public_id"))
+        if row_id:
+            res = supabase.table("site_cases").update(payload).eq("id", row_id).execute()
+            row = (res.data or [dict(payload, id=row_id)])[0]
+        else:
+            payload["created_at"] = _site_now_iso()
+            res = supabase.table("site_cases").insert(payload).execute()
+            row = (res.data or [payload])[0]
+        return jsonify({"success": True, "row": row})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/site/content/delete", methods=["POST"])
+@site_admin_required
+def api_site_content_delete():
+    """ลบรายการทั่วไปจากตาราง site_* แบบ soft delete เมื่อทำได้."""
+    try:
+        data = request.get_json(silent=True) or {}
+        table_key = _site_text(data.get("type"))
+        row_id = data.get("id")
+        table_map = {
+            "service": "site_services",
+            "faq": "site_faqs",
+            "review": "site_reviews",
+            "case": "site_cases",
+        }
+        table = table_map.get(table_key)
+        if not table or not row_id:
+            return jsonify({"success": False, "error": "invalid_type_or_id"}), 400
+        if table == "site_faqs":
+            supabase.table(table).update({"is_active": False, "updated_at": _site_now_iso()}).eq("id", row_id).execute()
+        else:
+            supabase.table(table).update({"is_active": False, "updated_at": _site_now_iso()}).eq("id", row_id).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+
+@app.route("/api/site/services/delete", methods=["POST"])
+@site_admin_required
+def api_site_services_delete():
+    return _api_site_soft_delete("service")
+
+
+@app.route("/api/site/faqs/delete", methods=["POST"])
+@site_admin_required
+def api_site_faqs_delete():
+    return _api_site_soft_delete("faq")
+
+
+@app.route("/api/site/reviews/delete", methods=["POST"])
+@site_admin_required
+def api_site_reviews_delete():
+    return _api_site_soft_delete("review")
+
+
+@app.route("/api/site/cases/delete", methods=["POST"])
+@site_admin_required
+def api_site_cases_delete():
+    return _api_site_soft_delete("case")
+
+
+def _api_site_soft_delete(table_key: str):
+    """รองรับปุ่มลบจากหน้า admin form: soft delete โดยตั้ง is_active=False."""
+    try:
+        data = request.get_json(silent=True) or {}
+        if not data and request.form:
+            data = request.form
+        row_id = data.get("id")
+        table_map = {
+            "service": "site_services",
+            "faq": "site_faqs",
+            "review": "site_reviews",
+            "case": "site_cases",
+        }
+        table = table_map.get(table_key)
+        if not table or not row_id:
+            return jsonify({"success": False, "error": "invalid_type_or_id"}), 400
+        supabase.table(table).update({"is_active": False, "updated_at": _site_now_iso()}).eq("id", row_id).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/site/settings/save", methods=["POST"])
+@site_admin_required
+def api_site_settings_save():
+    try:
+        data = request.get_json(silent=True) or {}
+        key = _site_text(data.get("setting_key"))
+        value = data.get("setting_value")
+        if not key:
+            return jsonify({"success": False, "error": "missing_setting_key"}), 400
+        payload = {"setting_key": key, "setting_value": value or {}, "updated_at": _site_now_iso()}
+        try:
+            res = supabase.table("site_settings").upsert(payload, on_conflict="setting_key").execute()
+        except Exception:
+            existing = _site_fetch_one("site_settings", "setting_key", key)
+            if existing:
+                res = supabase.table("site_settings").update(payload).eq("setting_key", key).execute()
+            else:
+                payload["created_at"] = _site_now_iso()
+                res = supabase.table("site_settings").insert(payload).execute()
+        row = (res.data or [payload])[0]
+        return jsonify({"success": True, "row": row})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# -----------------------------
+# Technical SEO: sitemap + robots
+# -----------------------------
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    try:
+        urls: List[str] = []
+        # หน้าแรกเดิม endpoint login มี route / อยู่แล้วใน app.py เดิม
+        try:
+            urls.append(url_for("login", _external=True))
+        except Exception:
+            urls.append(request.url_root.rstrip("/") + "/")
+
+        for endpoint in [
+            "public_services",
+            "public_articles",
+            "public_faq",
+            "public_reviews",
+            "public_cases",
+            "public_contact",
+        ]:
+            try:
+                urls.append(url_for(endpoint, _external=True))
+            except Exception:
+                pass
+
+        url_items: List[str] = []
+        for u in dict.fromkeys(urls):
+            url_items.append(f"  <url><loc>{html.escape(u)}</loc></url>")
+
+        posts = _site_fetch_all("site_posts", select_expr="slug,updated_at,published_at,status", public_only=True, order_by="published_at", desc=True)
+        for p in posts:
+            slug = p.get("slug")
+            if not slug:
+                continue
+            u = url_for("public_article_detail", slug=slug, _external=True)
+            lastmod = str(p.get("updated_at") or p.get("published_at") or "")[:10]
+            if lastmod:
+                url_items.append(f"  <url><loc>{html.escape(u)}</loc><lastmod>{html.escape(lastmod)}</lastmod></url>")
+            else:
+                url_items.append(f"  <url><loc>{html.escape(u)}</loc></url>")
+
+        xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        xml += "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n"
+        xml += "\n".join(url_items)
+        xml += "\n</urlset>\n"
+        return Response(xml, mimetype="application/xml")
+    except Exception as e:
+        app.logger.error(f"sitemap.xml error: {e}")
+        return Response("", mimetype="application/xml")
+
+
+@app.route("/robots.txt")
+def robots_txt():
+    root = request.url_root.rstrip("/")
+    body = f"""User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /record_sales
+Disallow: /sale_summary
+Disallow: /record_customer
+Disallow: /customer_list
+Disallow: /oldsaledata
+Disallow: /inventory
+Disallow: /appointments
+Disallow: /crm
+Disallow: /staff
+Disallow: /tax
+Disallow: /tax2
+Disallow: /appsettings
+Disallow: /site-admin/
+Disallow: /logout
+
+Sitemap: {root}/sitemap.xml
+"""
+    return Response(body, mimetype="text/plain")
+
+
+# =============================================================
 # TAX DISPLAY ADDITIONS (เพิ่มใน app.py)
 # สำหรับคอลัมน์ sales_records.tax_display = 'show' / 'noshow'
 # อ้างอิงจาก app.py เดิมที่มี /api/sales ใช้งาน select('*') อยู่แล้ว
@@ -5806,3 +7147,6 @@ def export_notebooklm_markdown():
 # แบบนี้ frontend จะได้ค่า show/noshow แน่นอนเสมอ
 # -----------------------------
 
+
+if __name__ == "__main__":
+    app.run(debug=True)

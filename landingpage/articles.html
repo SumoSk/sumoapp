@@ -1,0 +1,153 @@
+{% extends "base_public.html" %}
+
+{% block title %}บทความและความรู้ | Doctor Palmy Clinic ลำพูน{% endblock %}
+{% block meta_description %}รวมบทความความรู้ บทความความงาม บทความทั่วไป และเรื่องน่าสนใจจาก Doctor Palmy Clinic หมอปาล์มมี่คลินิกเวชกรรม ลำพูน{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+  <div class="hero-panel">
+    <div class="hero-copy">
+      <span class="eyebrow">Articles</span>
+      <h1 class="display-title">บทความและความรู้</h1>
+      <p>
+        รวมบทความความงาม การดูแลผิวพรรณ คำถามที่พบบ่อย
+        และเรื่องน่าสนใจเกี่ยวกับสุขภาพ ความงาม และลำพูน
+      </p>
+    </div>
+
+    <aside class="hero-side-card">
+      <span class="card-label">Knowledge Hub</span>
+      <strong>อ่านง่าย เข้าใจเร็ว</strong>
+      <p>คัดเนื้อหาให้เป็นหัวข้อชัดเจน เหมาะกับคนที่อยากหาข้อมูลก่อนตัดสินใจ</p>
+    </aside>
+  </div>
+</section>
+
+{% if is_admin %}
+<div class="admin-bar">
+  <strong>โหมดจัดการบทความ</strong>
+  <a class="btn light" href="/site-admin/posts/new">+ เขียนโพสต์ใหม่</a>
+</div>
+{% endif %}
+
+<section class="section">
+  <div class="section-head">
+    <div>
+      <span class="section-label">Latest Posts</span>
+      <h2>บทความล่าสุด</h2>
+      <p>เลือกอ่านตามเรื่องที่สนใจ ทั้งบทความความงามและบทความทั่วไป</p>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn light" href="/faq/">ดูคำถามยอดฮิต</a>
+      <a class="btn" href="/contact/">ติดต่อคลินิก</a>
+    </div>
+  </div>
+
+  <div class="article-grid">
+    {% for p in posts %}
+      {% set pt = p.post_type if p.post_type is defined and p.post_type else 'beauty' %}
+
+      <article class="article-card {% if pt == 'general' %}general-post{% else %}beauty-post{% endif %}">
+        {% if p.cover_image_url %}
+          <a class="article-image" href="/articles/{{ p.slug }}/">
+            <img src="{{ p.cover_image_url }}" alt="{{ p.title }}" loading="lazy">
+          </a>
+        {% else %}
+          <a class="article-placeholder" href="/articles/{{ p.slug }}/">
+            <span>Doctor Palmy</span>
+            <strong>Article</strong>
+          </a>
+        {% endif %}
+
+        <div class="article-card-body">
+          <div class="article-meta-row">
+            {% if pt == 'general' %}
+              <span class="article-type-pill general">บทความทั่วไป</span>
+            {% else %}
+              <span class="article-type-pill beauty">บทความความงาม</span>
+            {% endif %}
+
+            {% if p.category %}
+              <span class="article-category-pill">{{ p.category }}</span>
+            {% endif %}
+          </div>
+
+          <h3><a href="/articles/{{ p.slug }}/">{{ p.title }}</a></h3>
+
+          {% if p.excerpt %}
+            <p class="article-excerpt">{{ p.excerpt }}</p>
+          {% endif %}
+
+          <div class="article-bottom">
+            <p>
+              {% if p.published_at %}
+                เผยแพร่ {{ p.published_at[:10] }}
+              {% elif p.created_at %}
+                สร้างเมื่อ {{ p.created_at[:10] }}
+              {% else %}
+                Doctor Palmy Clinic
+              {% endif %}
+            </p>
+
+            <div class="article-actions">
+              <a class="btn light" href="/articles/{{ p.slug }}/">อ่านต่อ</a>
+
+              {% if is_admin %}
+                <a class="btn light" href="/site-admin/posts/{{ p.id }}/edit">แก้ไข</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </article>
+    {% else %}
+      <article class="article-card">
+        <a class="article-placeholder" href="{% if is_admin %}/site-admin/posts/new{% else %}/articles/{% endif %}">
+          <span>Doctor Palmy</span>
+          <strong>Article</strong>
+        </a>
+
+        <div class="article-card-body">
+          <div class="article-meta-row">
+            <span class="article-type-pill beauty">Coming Soon</span>
+          </div>
+
+          <h3>ยังไม่มีบทความ</h3>
+          <p class="article-excerpt">
+            เร็ว ๆ นี้จะมีบทความความรู้และเรื่องน่าสนใจให้เลือกอ่าน
+          </p>
+
+          {% if is_admin %}
+            <a class="btn" href="/site-admin/posts/new">+ เขียนโพสต์แรก</a>
+          {% endif %}
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="soft-panel" style="padding:clamp(20px,4vw,30px);">
+    <div class="section-head" style="margin-bottom:0;">
+      <div>
+        <span class="section-label">Content Guide</span>
+        <h2>เลือกอ่านตามความสนใจ</h2>
+        <p>
+          บทความความงามเหมาะกับเรื่องการดูแลผิวพรรณ โบท็อกซ์ ฟิลเลอร์ สิว ฝ้า
+          ส่วนบทความทั่วไปเหมาะกับเรื่องสุขภาพ ไลฟ์สไตล์ และเรื่องน่าสนใจในลำพูน
+        </p>
+      </div>
+
+      <div class="section-actions">
+        {% if is_admin %}
+          <a class="btn light" href="/site-admin/posts/new">เขียนบทความใหม่</a>
+        {% else %}
+          <a class="btn light" href="/contact/">ติดต่อคลินิก</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

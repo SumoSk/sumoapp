@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Doctor Palmy Clinic{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Doctor Palmy Clinic คลินิกเวชกรรมความงามลำพูน{% endblock %}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='landingpage/css/public.css') }}">
+  {% block head %}{% endblock %}
+</head>
+
+<body>
+  <header class="public-header">
+    <a class="brand" href="/">
+      <span class="brand-mark">P</span>
+      <span>
+        <strong>Doctor Palmy Clinic</strong>
+        <small>หมอปาล์มมี่คลินิกเวชกรรม ลำพูน</small>
+      </span>
+    </a>
+
+    <nav class="top-nav">
+      <a href="/services/">บริการ</a>
+      <a href="/articles/">บทความ</a>
+      <a href="/faq/">FAQ</a>
+      <a href="/reviews/">รีวิว</a>
+      <a href="/cases/">เคสจริง</a>
+      <a href="/contact/">ติดต่อ</a>
+
+      <a
+        href="/site-admin/login"
+        rel="nofollow"
+        title="เข้าสู่ adminW เพื่อแก้หน้าเว็บ"
+        style="
+          background:rgba(19,43,37,.08);
+          color:#132b25;
+          border:1px solid rgba(19,43,37,.12);
+        "
+      >
+        adminW
+      </a>
+    </nav>
+
+    <a class="header-cta" href="https://www.facebook.com/100095416443479/" target="_blank" rel="noopener">
+      สอบถาม
+    </a>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <a class="float-facebook" href="https://www.facebook.com/100095416443479/" target="_blank" rel="noopener">
+    Facebook
+  </a>
+
+  <footer class="public-footer">
+    <p>Doctor Palmy Clinic — คลินิกเวชกรรมความงาม ลำพูน</p>
+    <p>เนื้อหาในเว็บไซต์เป็นข้อมูลทั่วไป ควรปรึกษาแพทย์ก่อนรับบริการ ผลลัพธ์ขึ้นอยู่กับแต่ละบุคคล</p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='landingpage/js/public.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

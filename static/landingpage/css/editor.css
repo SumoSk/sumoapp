@@ -1,0 +1,109 @@
+.editor-wrap {
+  width: min(100% - 28px, 1120px);
+  margin: 24px auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 18px;
+}
+
+.editor-card,
+.editor-help {
+  background: white;
+  border-radius: 28px;
+  padding: 22px;
+  box-shadow: 0 14px 34px rgba(0,0,0,.06);
+  border: 1px solid rgba(23,51,45,.06);
+}
+
+.editor-card label {
+  display: block;
+  margin-bottom: 16px;
+  font-weight: 800;
+}
+
+.editor-card input,
+.editor-card textarea,
+.editor-card select {
+  width: 100%;
+  margin-top: 6px;
+  border: 1px solid rgba(23,51,45,.16);
+  border-radius: 16px;
+  padding: 12px 14px;
+  font: inherit;
+  background: #fff;
+  color: #17332d;
+}
+
+.editor-card textarea {
+  resize: vertical;
+}
+
+.editor-card small {
+  display: block;
+  margin-top: 5px;
+  color: #7b8b86;
+  font-weight: 400;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.current-image {
+  margin: 12px 0 20px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #f8f4ed;
+}
+
+.current-image img {
+  width: min(100%, 420px);
+  border-radius: 16px;
+  display: block;
+}
+
+.editor-help ol {
+  padding-left: 20px;
+}
+
+.editor-help li {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 900px) {
+  .editor-wrap {
+    grid-template-columns: 1fr;
+  }
+
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+}
+/* ============================================================
+   General / Beauty article editor additions
+   ============================================================ */
+
+.beauty-only-fields {
+  margin: 0;
+}
+
+.editor-help .card {
+  margin-bottom: 12px;
+}
+
+.general-article {
+  max-width: 920px;
+}
+
+.general-article h1 {
+  margin-bottom: 10px;
+}

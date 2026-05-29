@@ -1,0 +1,512 @@
+{% extends "base_public.html" %}
+
+{% block title %}จัดการเคสจริง | Doctor Palmy Clinic{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='landingpage/css/editor.css') }}">
+
+<style>
+  .admin-layout {
+    width: min(100% - 28px, 1180px);
+    margin: 24px auto 44px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 390px;
+    gap: 18px;
+    align-items: start;
+  }
+
+  .admin-card {
+    background: rgba(255,255,255,.92);
+    border: 1px solid rgba(23,51,45,.08);
+    border-radius: 30px;
+    padding: 22px;
+    box-shadow: 0 18px 44px rgba(21,55,48,.08);
+  }
+
+  .admin-card h2 {
+    margin: 0 0 14px;
+    color: #17332d;
+    font-size: clamp(24px, 5vw, 34px);
+    line-height: 1.12;
+    letter-spacing: -.04em;
+  }
+
+  .admin-card p {
+    color: rgba(23,51,45,.62);
+    font-size: 13px;
+    line-height: 1.75;
+  }
+
+  .admin-form label {
+    display: block;
+    margin-bottom: 16px;
+    color: #17332d;
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  .admin-form input,
+  .admin-form textarea,
+  .admin-form select {
+    width: 100%;
+    margin-top: 6px;
+    border: 1px solid rgba(23,51,45,.16);
+    border-radius: 16px;
+    padding: 12px 14px;
+    font: inherit;
+    background: #fff;
+    color: #17332d;
+    outline: none;
+  }
+
+  .admin-form textarea {
+    resize: vertical;
+  }
+
+  .admin-form input:focus,
+  .admin-form textarea:focus,
+  .admin-form select:focus {
+    border-color: rgba(15,118,110,.38);
+    box-shadow: 0 0 0 4px rgba(15,118,110,.08);
+  }
+
+  .admin-form small {
+    display: block;
+    margin-top: 5px;
+    color: rgba(23,51,45,.52);
+    font-weight: 400;
+    line-height: 1.55;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .admin-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+
+  .current-image-pair {
+    margin: 12px 0 18px;
+    padding: 14px;
+    border-radius: 20px;
+    background: #f8f4ed;
+    border: 1px solid rgba(23,51,45,.08);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .current-image-pair img {
+    width: 100%;
+    border-radius: 16px;
+    display: block;
+  }
+
+  .admin-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .admin-list-item {
+    border-radius: 22px;
+    padding: 14px;
+    background:
+      radial-gradient(circle at 12% 0%, rgba(245,222,216,.52), transparent 34%),
+      linear-gradient(145deg, rgba(255,255,255,.96), rgba(248,253,250,.82));
+    border: 1px solid rgba(23,51,45,.08);
+  }
+
+  .admin-list-item h3 {
+    margin: 0;
+    color: #17332d;
+    font-size: 16px;
+    line-height: 1.45;
+  }
+
+  .admin-list-item p {
+    margin: 6px 0 0;
+    font-size: 12px;
+    line-height: 1.65;
+  }
+
+  .admin-case-thumbs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .admin-case-thumbs div {
+    aspect-ratio: 4 / 5;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #eef8f3;
+    position: relative;
+  }
+
+  .admin-case-thumbs img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .admin-case-thumbs span {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    border-radius: 999px;
+    padding: 4px 8px;
+    background: rgba(19,43,37,.72);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 900;
+  }
+
+  .admin-list-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .admin-list-meta span {
+    display: inline-flex;
+    min-height: 24px;
+    align-items: center;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba(15,118,110,.10);
+    color: #0f766e;
+    font-size: 10px;
+    font-weight: 900;
+  }
+
+  .admin-list-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .admin-list-actions a,
+  .admin-list-actions button {
+    min-height: 36px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(23,51,45,.12);
+    background: #fff;
+    color: #17332d;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .admin-list-actions button.danger {
+    color: #b42318;
+    background: #fff6f4;
+  }
+
+  .admin-empty {
+    border-radius: 24px;
+    padding: 18px;
+    background: #fff;
+    border: 1px dashed rgba(23,51,45,.18);
+  }
+
+  @media (max-width: 960px) {
+    .admin-layout { grid-template-columns: 1fr; }
+    .two-col, .current-image-pair { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<section class="hero-page">
+  <span class="badge">Admin Cases</span>
+  <h1>จัดการเคสจริง</h1>
+  <p>
+    ใช้เพิ่มตัวอย่างเคสจริงหรือแนวทางการดูแล ควรใช้ข้อมูลที่ได้รับอนุญาตแล้ว
+    ปิดข้อมูลส่วนตัว และไม่สัญญาผลลัพธ์เกินจริง
+  </p>
+</section>
+
+<section class="admin-layout">
+  <form id="caseForm" class="admin-card admin-form" method="post" enctype="multipart/form-data">
+    <h2>{% if case %}แก้ไขเคส{% else %}เพิ่มเคสใหม่{% endif %}</h2>
+
+    <input type="hidden" name="id" value="{{ case.id if case else '' }}">
+
+    <label>
+      ชื่อเคส
+      <input
+        name="title"
+        required
+        value="{{ case.title if case else '' }}"
+        placeholder="เช่น ตัวอย่างการดูแลผิวหมองคล้ำ"
+      >
+    </label>
+
+    <div class="two-col">
+      <label>
+        หมวดหมู่
+        <input
+          name="category"
+          value="{{ case.category if case else '' }}"
+          placeholder="เช่น งานผิว, สิว, ฝ้า, ปรับรูปหน้า"
+        >
+      </label>
+
+      <label>
+        ลำดับการแสดงผล
+        <input
+          name="sort_order"
+          type="number"
+          value="{{ case.sort_order if case and case.sort_order is not none else '' }}"
+          placeholder="เช่น 1"
+        >
+      </label>
+    </div>
+
+    <label>
+      สรุปเคส
+      <textarea
+        name="summary"
+        rows="3"
+        placeholder="สรุปภาพรวมเคสแบบสั้น อ่านง่าย">{{ case.summary if case else '' }}</textarea>
+    </label>
+
+    <label>
+      ปัญหาก่อนมา
+      <textarea
+        name="problem_text"
+        rows="3"
+        placeholder="เช่น ผิวหมองคล้ำ รูขุมขนกว้าง หรือกังวลเรื่องริ้วรอย">{{ case.problem_text if case else '' }}</textarea>
+    </label>
+
+    <label>
+      แนวทางประเมิน
+      <textarea
+        name="assessment_text"
+        rows="3"
+        placeholder="อธิบายการประเมินโดยรวม เช่น ประเมินสภาพผิว ประวัติ และเป้าหมายของลูกค้า">{{ case.assessment_text if case else '' }}</textarea>
+    </label>
+
+    <label>
+      การดูแล
+      <textarea
+        name="care_text"
+        rows="4"
+        placeholder="อธิบายแนวทางการดูแลที่ใช้แบบไม่ลงรายละเอียดเกินจำเป็น">{{ case.care_text if case else '' }}</textarea>
+    </label>
+
+    <label>
+      ผลลัพธ์โดยสรุป
+      <textarea
+        name="result_text"
+        rows="3"
+        placeholder="อธิบายผลลัพธ์แบบระมัดระวัง ไม่สัญญาผลเกินจริง">{{ case.result_text if case else '' }}</textarea>
+    </label>
+
+    <label>
+      ข้อควรทราบ
+      <textarea
+        name="caution"
+        rows="3"
+        placeholder="เช่น ผลลัพธ์ขึ้นอยู่กับแต่ละบุคคล ควรเข้ารับการประเมินก่อนรับบริการ">{{ case.caution if case else '' }}</textarea>
+    </label>
+
+    <div class="two-col">
+      <label>
+        รูปก่อนดูแล
+        <input type="file" name="before_image" accept="image/*">
+      </label>
+
+      <label>
+        รูปหลังดูแล
+        <input type="file" name="after_image" accept="image/*">
+      </label>
+    </div>
+
+    {% if case and (case.before_image_url or case.after_image_url) %}
+      <div class="current-image-pair">
+        {% if case.before_image_url %}
+          <div>
+            <p><strong>รูปก่อนดูแล</strong></p>
+            <img src="{{ case.before_image_url }}" alt="ก่อนดูแล {{ case.title }}">
+            <label style="margin-top:12px;">
+              <input type="checkbox" name="remove_before_image" value="1" style="width:auto;margin-right:6px;">
+              ลบรูปก่อนดูแล
+            </label>
+          </div>
+        {% endif %}
+
+        {% if case.after_image_url %}
+          <div>
+            <p><strong>รูปหลังดูแล</strong></p>
+            <img src="{{ case.after_image_url }}" alt="หลังดูแล {{ case.title }}">
+            <label style="margin-top:12px;">
+              <input type="checkbox" name="remove_after_image" value="1" style="width:auto;margin-right:6px;">
+              ลบรูปหลังดูแล
+            </label>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <label>
+      สถานะ
+      {% set st = case.status if case and case.status else 'published' %}
+      <select name="status">
+        <option value="published" {% if st == 'published' %}selected{% endif %}>เผยแพร่</option>
+        <option value="draft" {% if st == 'draft' %}selected{% endif %}>ฉบับร่าง</option>
+        <option value="archived" {% if st == 'archived' %}selected{% endif %}>ซ่อน</option>
+      </select>
+    </label>
+
+    <div class="admin-actions">
+      <button class="btn" type="submit">บันทึกเคส</button>
+      <a class="btn light" href="/cases/">ดูหน้าเคสจริง</a>
+      <a class="btn light" href="/site-admin/cases/">ล้างฟอร์ม</a>
+    </div>
+  </form>
+
+  <aside class="admin-card">
+    <h2>เคสที่มีอยู่</h2>
+    <p>รายการเคสที่บันทึกไว้ สามารถกดแก้ไขหรือลบได้</p>
+
+    <div class="admin-list">
+      {% for c in cases %}
+        <article class="admin-list-item">
+          {% if c.before_image_url or c.after_image_url %}
+            <div class="admin-case-thumbs">
+              {% if c.before_image_url %}
+                <div>
+                  <img src="{{ c.before_image_url }}" alt="ก่อนดูแล {{ c.title }}">
+                  <span>Before</span>
+                </div>
+              {% endif %}
+              {% if c.after_image_url %}
+                <div>
+                  <img src="{{ c.after_image_url }}" alt="หลังดูแล {{ c.title }}">
+                  <span>After</span>
+                </div>
+              {% endif %}
+            </div>
+          {% endif %}
+
+          <div class="admin-list-meta">
+            {% if c.category %}<span>{{ c.category }}</span>{% endif %}
+            {% if c.status %}<span>{{ c.status }}</span>{% endif %}
+          </div>
+
+          <h3>{{ c.title }}</h3>
+          {% if c.summary %}
+            <p>{{ c.summary[:140] }}{% if c.summary|length > 140 %}...{% endif %}</p>
+          {% endif %}
+
+          <div class="admin-list-actions">
+            <a href="/site-admin/cases/{{ c.id }}/edit">แก้ไข</a>
+            <button class="danger" type="button" data-delete-case="{{ c.id }}">ลบ</button>
+          </div>
+        </article>
+      {% else %}
+        <div class="admin-empty">
+          <h3>ยังไม่มีเคสจริง</h3>
+          <p>เริ่มเพิ่มเคสแรกได้จากฟอร์มด้านซ้าย</p>
+        </div>
+      {% endfor %}
+    </div>
+  </aside>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const caseForm = document.getElementById("caseForm");
+
+  if (caseForm) {
+    caseForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const submitBtn = caseForm.querySelector('button[type="submit"]');
+      const oldText = submitBtn ? submitBtn.textContent : "";
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "กำลังบันทึก...";
+      }
+
+      try {
+        const fd = new FormData(caseForm);
+
+        const res = await fetch("/api/site/cases/save", {
+          method: "POST",
+          body: fd
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "บันทึกเคสไม่สำเร็จ");
+        }
+
+        alert("บันทึกเคสสำเร็จ");
+        window.location.href = "/site-admin/cases/";
+      } catch (err) {
+        alert(err.message || "เกิดข้อผิดพลาด");
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = oldText || "บันทึกเคส";
+        }
+      }
+    });
+  }
+
+  document.querySelectorAll("[data-delete-case]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.getAttribute("data-delete-case");
+      if (!id) return;
+
+      if (!confirm("ต้องการลบเคสนี้ใช่ไหม?")) return;
+
+      btn.disabled = true;
+      const oldText = btn.textContent;
+      btn.textContent = "กำลังลบ...";
+
+      try {
+        const fd = new FormData();
+        fd.append("id", id);
+
+        const res = await fetch("/api/site/cases/delete", {
+          method: "POST",
+          body: fd
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "ลบเคสไม่สำเร็จ");
+        }
+
+        alert("ลบเคสสำเร็จ");
+        window.location.reload();
+      } catch (err) {
+        alert(err.message || "เกิดข้อผิดพลาด");
+        btn.disabled = false;
+        btn.textContent = oldText || "ลบ";
+      }
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,429 @@
+{% extends "base_public.html" %}
+
+{% block title %}จัดการบริการ | Doctor Palmy Clinic{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='landingpage/css/editor.css') }}">
+
+<style>
+  .service-admin-layout {
+    width: min(100% - 28px, 1180px);
+    margin: 24px auto 44px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 18px;
+    align-items: start;
+  }
+
+  .service-admin-card {
+    background: rgba(255,255,255,.92);
+    border: 1px solid rgba(23,51,45,.08);
+    border-radius: 30px;
+    padding: 22px;
+    box-shadow: 0 18px 44px rgba(21,55,48,.08);
+  }
+
+  .service-admin-card h2 {
+    margin: 0 0 14px;
+    color: #17332d;
+    font-size: clamp(24px, 5vw, 34px);
+    line-height: 1.12;
+    letter-spacing: -.04em;
+  }
+
+  .service-admin-card p {
+    color: rgba(23,51,45,.62);
+    font-size: 13px;
+    line-height: 1.75;
+  }
+
+  .service-admin-form label {
+    display: block;
+    margin-bottom: 16px;
+    color: #17332d;
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  .service-admin-form input,
+  .service-admin-form textarea,
+  .service-admin-form select {
+    width: 100%;
+    margin-top: 6px;
+    border: 1px solid rgba(23,51,45,.16);
+    border-radius: 16px;
+    padding: 12px 14px;
+    font: inherit;
+    background: #fff;
+    color: #17332d;
+    outline: none;
+  }
+
+  .service-admin-form textarea {
+    resize: vertical;
+  }
+
+  .service-admin-form input:focus,
+  .service-admin-form textarea:focus,
+  .service-admin-form select:focus {
+    border-color: rgba(15,118,110,.38);
+    box-shadow: 0 0 0 4px rgba(15,118,110,.08);
+  }
+
+  .service-admin-form small {
+    display: block;
+    margin-top: 5px;
+    color: rgba(23,51,45,.52);
+    font-weight: 400;
+    line-height: 1.55;
+  }
+
+  .service-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .service-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+
+  .service-current-image {
+    margin: 12px 0 18px;
+    padding: 14px;
+    border-radius: 20px;
+    background: #f8f4ed;
+    border: 1px solid rgba(23,51,45,.08);
+  }
+
+  .service-current-image img {
+    width: min(100%, 420px);
+    border-radius: 16px;
+    display: block;
+  }
+
+  .service-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .service-list-item {
+    border-radius: 22px;
+    padding: 14px;
+    background:
+      radial-gradient(circle at 12% 0%, rgba(245,222,216,.52), transparent 34%),
+      linear-gradient(145deg, rgba(255,255,255,.96), rgba(248,253,250,.82));
+    border: 1px solid rgba(23,51,45,.08);
+  }
+
+  .service-list-item h3 {
+    margin: 0;
+    color: #17332d;
+    font-size: 17px;
+    line-height: 1.35;
+  }
+
+  .service-list-item p {
+    margin: 6px 0 0;
+    font-size: 12px;
+    line-height: 1.65;
+  }
+
+  .service-list-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .service-list-meta span {
+    display: inline-flex;
+    min-height: 24px;
+    align-items: center;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba(15,118,110,.10);
+    color: #0f766e;
+    font-size: 10px;
+    font-weight: 900;
+  }
+
+  .service-list-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .service-list-actions a,
+  .service-list-actions button {
+    min-height: 36px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(23,51,45,.12);
+    background: #fff;
+    color: #17332d;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .service-list-actions button.danger {
+    color: #b42318;
+    background: #fff6f4;
+  }
+
+  .service-empty {
+    border-radius: 24px;
+    padding: 18px;
+    background: #fff;
+    border: 1px dashed rgba(23,51,45,.18);
+  }
+
+  @media (max-width: 960px) {
+    .service-admin-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .service-two-col {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<section class="hero-page">
+  <span class="badge">Admin Services</span>
+  <h1>จัดการบริการของคลินิก</h1>
+  <p>
+    ใช้หน้านี้สำหรับเพิ่ม แก้ไข และจัดข้อมูลบริการที่จะแสดงในหน้า “บริการของเรา”
+    ข้อมูลที่กรอกควรอ่านง่าย กระชับ และไม่สัญญาผลลัพธ์เกินจริง
+  </p>
+</section>
+
+<section class="service-admin-layout">
+  <form id="serviceForm" class="service-admin-card service-admin-form" method="post" enctype="multipart/form-data">
+    <h2>{% if service %}แก้ไขบริการ{% else %}เพิ่มบริการใหม่{% endif %}</h2>
+
+    <input type="hidden" name="id" value="{{ service.id if service else '' }}">
+
+    <label>
+      ชื่อบริการ
+      <input
+        name="name"
+        required
+        value="{{ service.name if service else '' }}"
+        placeholder="เช่น โบท็อกซ์, ฟิลเลอร์, ทรีตเมนต์ผิว, ดูแลสิว ฝ้า กระ"
+      >
+    </label>
+
+    <div class="service-two-col">
+      <label>
+        หมวดหมู่
+        <input
+          name="category"
+          value="{{ service.category if service else '' }}"
+          placeholder="เช่น ปรับรูปหน้า, งานผิว, ทรีตเมนต์, ปัญหาผิว"
+        >
+      </label>
+
+      <label>
+        ลำดับการแสดงผล
+        <input
+          name="sort_order"
+          type="number"
+          value="{{ service.sort_order if service and service.sort_order is not none else '' }}"
+          placeholder="เช่น 1"
+        >
+        <small>เลขน้อยจะแสดงก่อน ถ้าไม่ใช้ปล่อยว่างได้</small>
+      </label>
+    </div>
+
+    <label>
+      คำอธิบายสั้น
+      <textarea
+        name="summary"
+        rows="3"
+        placeholder="สรุปบริการแบบสั้น อ่านง่าย 1-3 บรรทัด">{{ service.summary if service else '' }}</textarea>
+    </label>
+
+    <label>
+      รายละเอียดบริการ
+      <textarea
+        name="detail"
+        rows="8"
+        placeholder="อธิบายบริการ เหมาะกับใคร ช่วยดูแลเรื่องอะไร และควรประเมินอะไรก่อนรับบริการ">{{ service.detail if service else '' }}</textarea>
+    </label>
+
+    <label>
+      ข้อควรทราบ / ข้อควรระวัง
+      <textarea
+        name="caution"
+        rows="4"
+        placeholder="เช่น ผลลัพธ์ขึ้นอยู่กับแต่ละบุคคล ควรเข้ารับการประเมินก่อนรับบริการ">{{ service.caution if service else '' }}</textarea>
+    </label>
+
+    <label>
+      รูปบริการ
+      <input type="file" name="image" accept="image/*">
+      <small>ถ้าไม่อัปโหลดรูป ระบบจะแสดงกล่องบริการแบบไม่มีรูปแทน</small>
+    </label>
+
+    {% if service and service.image_url %}
+      <div class="service-current-image">
+        <p><strong>รูปปัจจุบัน</strong></p>
+        <img src="{{ service.image_url }}" alt="{{ service.name }}">
+        <label style="margin-top:12px;">
+          <input type="checkbox" name="remove_image" value="1" style="width:auto;margin-right:6px;">
+          ลบรูปนี้
+        </label>
+      </div>
+    {% endif %}
+
+    <label>
+      สถานะ
+      {% set st = service.status if service and service.status else 'published' %}
+      <select name="status">
+        <option value="published" {% if st == 'published' %}selected{% endif %}>เผยแพร่</option>
+        <option value="draft" {% if st == 'draft' %}selected{% endif %}>ฉบับร่าง</option>
+        <option value="archived" {% if st == 'archived' %}selected{% endif %}>ซ่อน</option>
+      </select>
+    </label>
+
+    <div class="service-actions">
+      <button class="btn" type="submit">บันทึกบริการ</button>
+      <a class="btn light" href="/services/">ดูหน้าบริการ</a>
+      <a class="btn light" href="/site-admin/services/">ล้างฟอร์ม</a>
+    </div>
+  </form>
+
+  <aside class="service-admin-card">
+    <h2>บริการที่มีอยู่</h2>
+    <p>
+      รายการด้านล่างคือบริการที่มีในระบบ สามารถกดแก้ไขเพื่อปรับข้อมูลได้
+    </p>
+
+    <div class="service-list">
+      {% for s in services %}
+        <article class="service-list-item">
+          <div class="service-list-meta">
+            {% if s.category %}
+              <span>{{ s.category }}</span>
+            {% endif %}
+            {% if s.status %}
+              <span>{{ s.status }}</span>
+            {% endif %}
+          </div>
+
+          <h3>{{ s.name }}</h3>
+
+          {% if s.summary %}
+            <p>{{ s.summary }}</p>
+          {% endif %}
+
+          <div class="service-list-actions">
+            <a href="/site-admin/services/{{ s.id }}/edit">แก้ไข</a>
+            <button class="danger" type="button" data-delete-service="{{ s.id }}">ลบ</button>
+          </div>
+        </article>
+      {% else %}
+        <div class="service-empty">
+          <h3>ยังไม่มีบริการ</h3>
+          <p>เริ่มเพิ่มบริการแรกได้จากฟอร์มด้านซ้าย</p>
+        </div>
+      {% endfor %}
+    </div>
+  </aside>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const serviceForm = document.getElementById("serviceForm");
+
+  if (serviceForm) {
+    serviceForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const submitBtn = serviceForm.querySelector('button[type="submit"]');
+      const oldText = submitBtn ? submitBtn.textContent : "";
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "กำลังบันทึก...";
+      }
+
+      try {
+        const fd = new FormData(serviceForm);
+
+        const res = await fetch("/api/site/services/save", {
+          method: "POST",
+          body: fd
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "บันทึกบริการไม่สำเร็จ");
+        }
+
+        alert("บันทึกบริการสำเร็จ");
+        window.location.href = "/site-admin/services/";
+      } catch (err) {
+        alert(err.message || "เกิดข้อผิดพลาด");
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = oldText || "บันทึกบริการ";
+        }
+      }
+    });
+  }
+
+  document.querySelectorAll("[data-delete-service]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.getAttribute("data-delete-service");
+
+      if (!id) return;
+
+      const ok = confirm("ต้องการลบบริการนี้ใช่ไหม?");
+      if (!ok) return;
+
+      btn.disabled = true;
+      const oldText = btn.textContent;
+      btn.textContent = "กำลังลบ...";
+
+      try {
+        const fd = new FormData();
+        fd.append("id", id);
+
+        const res = await fetch("/api/site/services/delete", {
+          method: "POST",
+          body: fd
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "ลบบริการไม่สำเร็จ");
+        }
+
+        alert("ลบบริการสำเร็จ");
+        window.location.reload();
+      } catch (err) {
+        alert(err.message || "เกิดข้อผิดพลาด");
+        btn.disabled = false;
+        btn.textContent = oldText || "ลบ";
+      }
+    });
+  });
+</script>
+{% endblock %}

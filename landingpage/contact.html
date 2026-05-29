@@ -1,0 +1,155 @@
+{% extends "base_public.html" %}
+
+{% block title %}ติดต่อ Doctor Palmy Clinic ลำพูน | หมอปาล์มมี่คลินิกเวชกรรม{% endblock %}
+{% block meta_description %}ติดต่อ Doctor Palmy Clinic หมอปาล์มมี่คลินิกเวชกรรม ลำพูน ดูเวลาเปิดทำการ เบอร์โทร Facebook แผนที่ และจุดสังเกตคลินิก{% endblock %}
+
+{% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "MedicalBusiness",
+  "name": "Doctor Palmy Clinic",
+  "alternateName": "หมอปาล์มมี่คลินิกเวชกรรม ลำพูน",
+  "description": "คลินิกเวชกรรมความงามในจังหวัดลำพูน ดูแลโดย พญ.ปิยะฎา จินดาหลวง ให้บริการปรึกษาความงาม ดูแลผิวพรรณ ทรีตเมนต์ผิว และปรับรูปหน้า",
+  "telephone": ["093-649-8865", "061-429-6596"],
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "341 หมู่ 4 ตำบลเวียงยอง อำเภอเมืองลำพูน",
+    "addressLocality": "เมืองลำพูน",
+    "addressRegion": "ลำพูน",
+    "postalCode": "51000",
+    "addressCountry": "TH"
+  },
+  "openingHoursSpecification": [
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+      "opens": "11:00",
+      "closes": "19:30"
+    }
+  ],
+  "sameAs": [
+    "https://www.facebook.com/100095416443479/"
+  ],
+  "url": {{ request.url_root|tojson }},
+  "priceRange": "สอบถามรายละเอียดผ่าน Facebook"
+}
+</script>
+{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+  <div class="hero-panel">
+    <div class="hero-copy">
+      <span class="eyebrow">Contact</span>
+      <h1 class="display-title">ติดต่อ Doctor Palmy Clinic</h1>
+      <p>
+        หมอปาล์มมี่คลินิกเวชกรรม ลำพูน ดูแลโดย พญ.ปิยะฎา จินดาหลวง
+        สอบถามบริการ จองคิว หรือดูเส้นทางมายังคลินิกได้จากช่องทางด้านล่าง
+      </p>
+
+      <div class="section-actions" style="margin-top:18px;">
+        <a class="btn" href="https://www.facebook.com/100095416443479/" target="_blank" rel="noopener">เปิด Facebook</a>
+        <a class="btn light" href="tel:0936498865">โทร 093-649-8865</a>
+      </div>
+    </div>
+
+    <aside class="hero-side-card">
+      <span class="card-label">Clinic Hours</span>
+      <strong>เปิดทุกวัน 11.00-19.30 น.</strong>
+      <p>หยุดวันอังคาร แนะนำให้สอบถามหรือจองคิวก่อนเข้ารับบริการ</p>
+    </aside>
+  </div>
+</section>
+
+<section class="section">
+  <div class="contact-grid">
+    <article class="contact-main">
+      <div>
+        <span class="card-label">Main Channel</span>
+        <h2>สอบถามและจองคิวผ่าน Facebook</h2>
+        <p>
+          ช่องทางหลักสำหรับสอบถามบริการ โปรโมชัน การจองคิว
+          และการเดินทางมายัง Doctor Palmy Clinic ลำพูน
+        </p>
+      </div>
+
+      <div class="contact-actions">
+        <a class="btn light" href="https://www.facebook.com/100095416443479/" target="_blank" rel="noopener">เปิด Facebook</a>
+        <a class="btn light" href="tel:0614296596">โทร 061-429-6596</a>
+      </div>
+    </article>
+
+    <article class="contact-info-card">
+      <span class="card-label">Clinic</span>
+      <h3>หมอปาล์มมี่คลินิกเวชกรรม ลำพูน</h3>
+      <p>Doctor Palmy Clinic</p>
+    </article>
+
+    <article class="contact-info-card">
+      <span class="card-label">Doctor</span>
+      <h3>พญ.ปิยะฎา จินดาหลวง</h3>
+      <p>หมอปาล์มมี่</p>
+    </article>
+
+    <article class="contact-info-card">
+      <span class="card-label">Phone</span>
+      <h3>โทรติดต่อ</h3>
+      <div class="phone-pills">
+        <a href="tel:0936498865">093-649-8865</a>
+        <a href="tel:0614296596">061-429-6596</a>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="section">
+  <div class="map-layout">
+    <article class="contact-info-card">
+      <span class="card-label">Location</span>
+      <h3>ที่ตั้งคลินิก</h3>
+
+      <p>
+        341 หมู่ 4 ตำบลเวียงยอง อำเภอเมืองลำพูน จังหวัดลำพูน 51000
+      </p>
+
+      <p>
+        <strong>จุดสังเกต:</strong>
+        คลินิกตั้งอยู่เส้นโกลบอลเฮาท์ลำพูน ก่อนถึงสามแยกอำเภอลำพูน
+        ข้างร้านชาบูยู เยื้องโรงเรียนใบบุญ และหมู่บ้านศุภาลัย วิลล์
+        ในตึกร้านกาแฟ Balance
+      </p>
+
+      <div class="contact-actions">
+        <a class="btn" href="https://www.google.com/maps/search/?api=1&query=Doctor%20Palmy%20Clinic%20%E0%B8%A5%E0%B8%B3%E0%B8%9E%E0%B8%B9%E0%B8%99" target="_blank" rel="noopener">
+          เปิด Google Maps
+        </a>
+        <a class="btn light" href="/">กลับหน้าแรก</a>
+      </div>
+    </article>
+
+    <div class="map-frame">
+      <iframe
+        title="แผนที่ Doctor Palmy Clinic ลำพูน"
+        src="https://www.google.com/maps?q=Doctor%20Palmy%20Clinic%20%E0%B8%A5%E0%B8%B3%E0%B8%9E%E0%B8%B9%E0%B8%99&output=embed"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade">
+      </iframe>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="note-panel" style="padding:clamp(20px,4vw,30px);">
+    <span class="section-label">Before Visit</span>
+    <h2 style="margin:0;font-size:clamp(24px,4vw,34px);line-height:1.14;letter-spacing:-.04em;">ก่อนเข้ารับบริการ</h2>
+    <p style="max-width:820px;margin:10px 0 0;color:var(--muted);">
+      สามารถส่งรูปหรือสอบถามปัญหาที่ต้องการดูแลผ่าน Facebook ของคลินิกก่อนเข้ารับบริการได้
+      เพื่อให้ทีมงานช่วยแนะนำเบื้องต้นและจัดคิวให้เหมาะสม
+      ข้อมูลบริการเป็นข้อมูลทั่วไป ผลลัพธ์ขึ้นอยู่กับแต่ละบุคคล
+    </p>
+  </div>
+</section>
+
+{% endblock %}

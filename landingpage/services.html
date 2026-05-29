@@ -1,0 +1,194 @@
+{% extends "base_public.html" %}
+
+{% block title %}บริการของเรา | Doctor Palmy Clinic ลำพูน{% endblock %}
+{% block meta_description %}รวมบริการของ Doctor Palmy Clinic หมอปาล์มมี่คลินิกเวชกรรม ลำพูน ดูแลผิวพรรณ ปรับรูปหน้า โบท็อกซ์ ฟิลเลอร์ ทรีตเมนต์ผิว และบริการความงามอื่น ๆ{% endblock %}
+
+{% block head %}
+{% if services %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "บริการของ Doctor Palmy Clinic ลำพูน",
+  "itemListElement": [
+    {% for s in services %}
+    {
+      "@type": "ListItem",
+      "position": {{ loop.index }},
+      "item": {
+        "@type": "Service",
+        "name": {{ s.name|tojson }},
+        "description": {{ (s.summary or s.detail or '')|tojson }},
+        "provider": {
+          "@type": "MedicalBusiness",
+          "name": "Doctor Palmy Clinic"
+        },
+        "areaServed": "ลำพูน"
+      }
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+  <div class="hero-panel">
+    <div class="hero-copy">
+      <span class="eyebrow">Our Services</span>
+      <h1 class="display-title">บริการของเรา</h1>
+      <p>
+        ดูแลผิวพรรณ ปรับรูปหน้า และวางแผนความงามตามความเหมาะสมของแต่ละบุคคล
+        โดยเริ่มจากการประเมินปัญหาและเป้าหมายก่อนรับบริการ
+      </p>
+
+      <div class="section-actions" style="margin-top:18px;">
+        <a class="btn" href="#service-list">ดูบริการทั้งหมด</a>
+        <a class="btn light" href="/contact/">ติดต่อคลินิก</a>
+      </div>
+    </div>
+
+    <aside class="hero-side-card">
+      <span class="card-label">Doctor Palmy Clinic</span>
+      <strong>ประเมินก่อนเลือกบริการ</strong>
+      <p>
+        เพราะผิวและรูปหน้าของแต่ละคนต่างกัน การประเมินก่อนทำช่วยให้เลือกแนวทางได้เหมาะสมขึ้น
+      </p>
+    </aside>
+  </div>
+</section>
+
+{% if is_admin %}
+<div class="admin-bar">
+  <strong>โหมดจัดการเว็บไซต์</strong>
+  <a class="btn light" href="/site-admin/services/">+ เพิ่มหรือแก้บริการ</a>
+</div>
+{% endif %}
+
+<section class="section">
+  <div class="service-highlights">
+    <article>
+      <strong>ดูแลเป็นรายบุคคล</strong>
+      <span>เลือกแนวทางตามสภาพผิว ความกังวล และข้อจำกัดของแต่ละคน</span>
+    </article>
+    <article>
+      <strong>ข้อมูลชัดเจนก่อนตัดสินใจ</strong>
+      <span>อธิบายข้อควรทราบและการดูแลหลังรับบริการอย่างเหมาะสม</span>
+    </article>
+    <article>
+      <strong>ติดตามได้เมื่อมีข้อสงสัย</strong>
+      <span>สามารถสอบถามคลินิกผ่าน Facebook หรือช่องทางติดต่อของคลินิก</span>
+    </article>
+  </div>
+</section>
+
+<section class="section" id="service-list">
+  <div class="section-head">
+    <div>
+      <span class="section-label">Beauty & Skin Care</span>
+      <h2>บริการทั้งหมด</h2>
+      <p>เลือกดูบริการที่สนใจ แล้วสอบถามรายละเอียดเพิ่มเติมก่อนนัดหมายได้โดยตรง</p>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn light" href="/faq/">อ่าน FAQ</a>
+      <a class="btn" href="/contact/">สอบถามบริการ</a>
+    </div>
+  </div>
+
+  <div class="service-grid">
+    {% for s in services %}
+      <article class="service-card">
+        {% if s.image_url %}
+          <div class="media">
+            <img src="{{ s.image_url }}" alt="{{ s.name }}" loading="lazy">
+          </div>
+        {% else %}
+          <div class="service-icon-box">
+            <span>Service</span>
+            <strong>{{ loop.index }}</strong>
+          </div>
+        {% endif %}
+
+        <div class="service-card-body">
+          {% if s.category %}
+            <span class="pill">{{ s.category }}</span>
+          {% else %}
+            <span class="pill">Service</span>
+          {% endif %}
+
+          <h3>{{ s.name }}</h3>
+
+          {% if s.summary %}
+            <p class="service-summary">{{ s.summary }}</p>
+          {% endif %}
+
+          {% if s.detail %}
+            <p class="service-detail">{{ s.detail }}</p>
+          {% endif %}
+
+          {% if s.caution %}
+            <p class="service-caution">
+              <strong>ข้อควรทราบ:</strong> {{ s.caution }}
+            </p>
+          {% endif %}
+        </div>
+      </article>
+    {% else %}
+      <article class="service-card">
+        <div class="service-icon-box">
+          <span>Doctor Palmy</span>
+          <strong>Service</strong>
+        </div>
+        <div class="service-card-body">
+          <span class="pill">Coming Soon</span>
+          <h3>ยังไม่มีข้อมูลบริการ</h3>
+          <p class="service-summary">สามารถเพิ่มข้อมูลบริการจากหน้าแอดมินได้ภายหลัง</p>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="soft-panel" style="padding:clamp(20px,4vw,32px);">
+    <div class="section-head" style="margin-bottom:16px;">
+      <div>
+        <span class="section-label">How We Care</span>
+        <h2>ขั้นตอนก่อนรับบริการ</h2>
+        <p>เริ่มจากการสอบถาม ประเมิน และเลือกแนวทางที่เหมาะสมก่อนรับบริการจริง</p>
+      </div>
+    </div>
+
+    <div class="process-list">
+      <article><span>Step 1</span><h3>สอบถามข้อมูล</h3><p>แจ้งบริการที่สนใจและเวลาที่สะดวก</p></article>
+      <article><span>Step 2</span><h3>ประเมินเบื้องต้น</h3><p>พูดคุยปัญหา ประวัติ และข้อควรระวัง</p></article>
+      <article><span>Step 3</span><h3>วางแผนดูแล</h3><p>เลือกแนวทางตามความเหมาะสมของแต่ละคน</p></article>
+      <article><span>Step 4</span><h3>ดูแลหลังบริการ</h3><p>รับคำแนะนำและติดตามเมื่อจำเป็น</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="note-panel" style="padding:clamp(20px,4vw,30px);">
+    <div class="section-head" style="margin-bottom:0;">
+      <div>
+        <span class="section-label">Important Note</span>
+        <h2>ก่อนเลือกบริการ</h2>
+        <p>
+          ข้อมูลบริการในเว็บไซต์เป็นข้อมูลทั่วไป ผลลัพธ์ขึ้นอยู่กับแต่ละบุคคล
+          ควรเข้ารับการประเมินก่อนตัดสินใจรับบริการ
+        </p>
+      </div>
+
+      <div class="section-actions">
+        <a class="btn" href="https://www.facebook.com/100095416443479/" target="_blank" rel="noopener">สอบถามผ่าน Facebook</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

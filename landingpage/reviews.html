@@ -1,0 +1,125 @@
+{% extends "base_public.html" %}
+
+{% block title %}รีวิวจากลูกค้า | Doctor Palmy Clinic ลำพูน{% endblock %}
+{% block meta_description %}รวมรีวิวและความประทับใจจากลูกค้า Doctor Palmy Clinic หมอปาล์มมี่คลินิกเวชกรรม คลินิกความงามลำพูน{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+  <div class="hero-panel">
+    <div class="hero-copy">
+      <span class="eyebrow">Reviews</span>
+      <h1 class="display-title">รีวิวจากลูกค้า</h1>
+      <p>
+        รวมความประทับใจจากผู้รับบริการกับ Doctor Palmy Clinic
+        หมอปาล์มมี่คลินิกเวชกรรม ลำพูน
+      </p>
+    </div>
+
+    <aside class="hero-side-card">
+      <span class="card-label">Customer Voice</span>
+      <strong>ประสบการณ์จากผู้รับบริการ</strong>
+      <p>รีวิวช่วยให้เห็นบรรยากาศ การดูแล และความใส่ใจของคลินิกได้ชัดเจนขึ้น</p>
+    </aside>
+  </div>
+</section>
+
+{% if is_admin %}
+<div class="admin-bar">
+  <strong>โหมดจัดการรีวิว</strong>
+  <a class="btn light" href="/site-admin/reviews/">+ เพิ่มหรือแก้รีวิว</a>
+</div>
+{% endif %}
+
+<section class="section">
+  <div class="section-head">
+    <div>
+      <span class="section-label">Trust & Care</span>
+      <h2>เสียงจากลูกค้า</h2>
+      <p>รีวิวที่นำมาเผยแพร่ควรได้รับอนุญาต และปิดข้อมูลส่วนตัวให้เหมาะสม</p>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn" href="https://www.facebook.com/100095416443479/" target="_blank" rel="noopener">
+        ดู Facebook
+      </a>
+    </div>
+  </div>
+
+  <div class="review-grid">
+    {% for r in reviews %}
+      <article class="review-card">
+        {% if r.image_url %}
+          <div class="review-image">
+            <img src="{{ r.image_url }}" alt="{{ r.title or 'รีวิว Doctor Palmy Clinic' }}" loading="lazy">
+          </div>
+        {% else %}
+          <div class="review-placeholder">
+            <span>Doctor Palmy Clinic</span>
+            <strong>Review</strong>
+          </div>
+        {% endif %}
+
+        <div class="review-body">
+          <div class="review-topline">
+            {% if r.rating %}
+              <span class="review-rating">{{ r.rating }} / 5</span>
+            {% else %}
+              <span class="review-rating">Review</span>
+            {% endif %}
+
+            {% if r.source %}
+              <span class="review-source">{{ r.source }}</span>
+            {% endif %}
+          </div>
+
+          <h3>{{ r.title or 'รีวิวจากลูกค้า' }}</h3>
+
+          {% if r.content %}
+            <p class="review-content">“{{ r.content }}”</p>
+          {% endif %}
+
+          {% if r.reviewer_name %}
+            <p class="review-name">— {{ r.reviewer_name }}</p>
+          {% endif %}
+        </div>
+      </article>
+    {% else %}
+      <article class="review-card">
+        <div class="review-placeholder">
+          <span>Doctor Palmy Clinic</span>
+          <strong>Review</strong>
+        </div>
+
+        <div class="review-body">
+          <span class="review-rating">Coming Soon</span>
+          <h3>ยังไม่มีรีวิว</h3>
+          <p class="review-content">
+            สามารถเพิ่มรีวิวจากหน้าแอดมินภายหลังได้
+          </p>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="note-panel" style="padding:clamp(20px,4vw,30px);">
+    <div class="section-head" style="margin-bottom:0;">
+      <div>
+        <span class="section-label">Important Note</span>
+        <h2>หมายเหตุเรื่องรีวิว</h2>
+        <p>
+          รีวิวเป็นประสบการณ์เฉพาะบุคคล ผลลัพธ์และความรู้สึกหลังรับบริการอาจแตกต่างกัน
+          ควรสอบถามและประเมินความเหมาะสมก่อนเข้ารับบริการ
+        </p>
+      </div>
+
+      <div class="section-actions">
+        <a class="btn light" href="/contact/">ติดต่อคลินิก</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

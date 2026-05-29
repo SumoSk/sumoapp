@@ -398,6 +398,89 @@
   }
   .btn-mini:hover{ opacity:.92; }
 
+
+  /* ============================================================
+     Site Admin entry button at the bottom of dashboard
+     ปุ่มเล็กสำหรับเข้า /site-admin/ จาก dashboard ระบบคลินิก
+     ============================================================ */
+  .site-admin-bottom-entry {
+    max-width: 760px;
+    margin: 34px auto 22px;
+    padding: 0 10px;
+    text-align: center;
+  }
+
+  .site-admin-bottom-entry__box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 8px;
+    border-radius: 18px;
+    background: rgba(255,255,255,.92);
+    border: 1px solid rgba(0,150,136,.14);
+    box-shadow: 0 4px 12px rgba(0,0,0,.06);
+  }
+
+  .site-admin-bottom-entry a {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 7px 12px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .site-admin-bottom-entry .site-admin-main-link {
+    background: teal;
+    color: #fff;
+  }
+
+  .site-admin-bottom-entry .site-admin-public-link {
+    background: #e0f2f1;
+    color: #00695c;
+  }
+
+  .site-admin-bottom-entry small {
+    display: block;
+    width: 100%;
+    color: #78909c;
+    font-size: 10px;
+    line-height: 1.45;
+    margin-top: 2px;
+  }
+
+  .site-admin-bottom-entry a:hover {
+    opacity: .92;
+  }
+
+  @media (max-width: 768px) {
+    .site-admin-bottom-entry {
+      margin: 26px auto 88px;
+    }
+
+    .site-admin-bottom-entry__box {
+      width: min(100%, 360px);
+      box-sizing: border-box;
+    }
+
+    .site-admin-bottom-entry a {
+      flex: 1 1 auto;
+      font-size: 11px;
+      padding: 7px 10px;
+    }
+
+    .site-admin-bottom-entry small {
+      font-size: 9px;
+    }
+  }
+
 </style>
 </head>
 
@@ -1970,6 +2053,15 @@
 
 
 </script>
+
+
+<section class="site-admin-bottom-entry" aria-label="ทางลัดจัดการหน้าเว็บไซต์">
+  <div class="site-admin-bottom-entry__box">
+    <a class="site-admin-main-link" href="/site-admin/">จัดการหน้าเว็บ</a>
+    <a class="site-admin-public-link" href="/" target="_blank" rel="noopener">ดูหน้าเว็บ</a>
+    <small>บทความ / บริการ / FAQ / รีวิว / เคสจริง</small>
+  </div>
+</section>
 
 {% endblock %}
 {% include "floating_menu.html" %}

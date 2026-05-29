@@ -1,0 +1,235 @@
+{% extends "base_public.html" %}
+
+{% set pt = post.post_type if post.post_type is defined and post.post_type else 'beauty' %}
+
+{% block title %}{{ post.meta_title or post.title }} | Doctor Palmy Clinic{% endblock %}
+{% block meta_description %}{{ post.meta_description or post.excerpt or 'บทความจาก Doctor Palmy Clinic ลำพูน' }}{% endblock %}
+
+{% block head %}
+<script type="application/ld+json">
+{% if pt == 'beauty' %}
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": {{ post.title|tojson }},
+  "description": {{ (post.meta_description or post.excerpt or '')|tojson }},
+  "author": {
+    "@type": "Organization",
+    "name": {{ (post.author or 'Doctor Palmy Clinic')|tojson }}
+  },
+  "reviewedBy": {
+    "@type": "Person",
+    "name": {{ (post.reviewer or 'พญ.ปิยะฎา จินดาหลวง')|tojson }}
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Doctor Palmy Clinic"
+  },
+  "datePublished": {{ (post.published_at or post.created_at or '')|tojson }},
+  "dateModified": {{ (post.updated_at or post.published_at or '')|tojson }},
+  "image": {{ (post.cover_image_url or '')|tojson }},
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": {{ request.url|tojson }}
+  }
+}
+{% else %}
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": {{ post.title|tojson }},
+  "description": {{ (post.meta_description or post.excerpt or '')|tojson }},
+  "publisher": {
+    "@type": "Organization",
+    "name": "Doctor Palmy Clinic"
+  },
+  "datePublished": {{ (post.published_at or post.created_at or '')|tojson }},
+  "dateModified": {{ (post.updated_at or post.published_at or '')|tojson }},
+  "image": {{ (post.cover_image_url or '')|tojson }},
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": {{ request.url|tojson }}
+  }
+}
+{% endif %}
+</script>
+
+{% if faqs and pt == 'beauty' %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {% for f in faqs %}
+    {
+      "@type": "Question",
+      "name": {{ f.question|tojson }},
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": {{ f.answer|tojson }}
+      }
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+{% if is_admin %}
+<div class="admin-bar">
+  <strong>โหมดจัดการบทความ</strong>
+  <a class="btn light" href="/site-admin/posts/{{ post.id }}/edit">แก้ไขบทความนี้</a>
+</div>
+{% endif %}
+
+<article class="article-detail-page {% if pt == 'general' %}article-detail-general{% else %}article-detail-beauty{% endif %}">
+
+  <header class="article-detail-hero">
+    <div class="article-detail-hero-copy">
+      <div class="article-detail-tags">
+        {% if pt == 'general' %}
+          <span class="article-detail-type general">บทความทั่วไป</span>
+        {% else %}
+          <span class="article-detail-type beauty">บทความความงาม</span>
+        {% endif %}
+
+        {% if post.category %}
+          <span class="article-detail-category">{{ post.category }}</span>
+        {% endif %}
+      </div>
+
+      <h1>{{ post.title }}</h1>
+
+      {% if pt == 'beauty' %}
+        <p class="article-detail-meta">
+          โดย {{ post.author or 'Doctor Palmy Clinic' }}
+          {% if post.reviewer %}
+            <span>|</span> ตรวจทานโดย {{ post.reviewer }}
+          {% endif %}
+          {% if post.updated_at %}
+            <span>|</span> อัปเดต {{ post.updated_at[:10] }}
+          {% endif %}
+        </p>
+      {% else %}
+        {% if post.updated_at %}
+          <p class="article-detail-meta">อัปเดต {{ post.updated_at[:10] }}</p>
+        {% endif %}
+      {% endif %}
+
+      {% if post.excerpt %}
+        <div class="article-detail-summary">
+          <span>สรุปสั้น ๆ</span>
+          <p>{{ post.excerpt }}</p>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if post.cover_image_url %}
+      <figure class="article-detail-cover">
+        <img src="{{ post.cover_image_url }}" alt="{{ post.title }}">
+      </figure>
+    {% else %}
+      <div class="article-detail-cover-placeholder">
+        <div>
+          <span class="card-label">Doctor Palmy</span>
+          <strong>Article</strong>
+        </div>
+      </div>
+    {% endif %}
+  </header>
+
+  <section class="article-detail-content-shell">
+    <div class="article-detail-content">
+      {{ body_html|safe }}
+    </div>
+  </section>
+
+  {% if faqs and pt == 'beauty' %}
+    <section class="article-detail-faq">
+      <div class="article-detail-section-head">
+        <span class="section-label">FAQ</span>
+        <h2>คำถามที่พบบ่อย</h2>
+      </div>
+
+      <div class="article-detail-faq-list">
+        {% for f in faqs %}
+          <article class="article-detail-faq-card">
+            <h3>{{ f.question }}</h3>
+            <p>{{ f.answer }}</p>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if pt == 'beauty' %}
+    <section class="article-detail-cta">
+      <div class="article-detail-cta-frame">
+        <div>
+          <span class="card-label">Doctor Palmy Clinic</span>
+          <h2>สอบถามหรือประเมินก่อนรับบริการ</h2>
+          <p>
+            ข้อมูลนี้เป็นข้อมูลทั่วไป ผลลัพธ์ขึ้นอยู่กับแต่ละบุคคล
+            ควรเข้ารับการประเมินก่อนตัดสินใจรับบริการ
+          </p>
+        </div>
+
+        <a class="btn light" href="https://www.facebook.com/100095416443479/" target="_blank" rel="noopener">
+          สอบถามผ่าน Facebook
+        </a>
+      </div>
+    </section>
+  {% endif %}
+
+</article>
+
+{% if related %}
+<section class="article-related-section">
+  <div class="section-head article-related-head">
+    <div>
+      <span class="section-label">Related Articles</span>
+      <h2>บทความที่เกี่ยวข้อง</h2>
+      <p>อ่านต่อเพื่อดูข้อมูลอื่น ๆ ที่น่าสนใจ</p>
+    </div>
+
+    <a class="btn light" href="/articles/">ดูบทความทั้งหมด</a>
+  </div>
+
+  <div class="article-related-grid">
+    {% for r in related %}
+      <article class="article-related-card">
+        {% if r.cover_image_url %}
+          <a class="article-image" href="/articles/{{ r.slug }}/">
+            <img src="{{ r.cover_image_url }}" alt="{{ r.title }}" loading="lazy">
+          </a>
+        {% endif %}
+
+        <div class="card-body">
+          {% if r.category %}
+            <span class="pill">{{ r.category }}</span>
+          {% else %}
+            <span class="pill">Article</span>
+          {% endif %}
+
+          <h3>
+            <a href="/articles/{{ r.slug }}/">{{ r.title }}</a>
+          </h3>
+
+          {% if r.excerpt %}
+            <p>{{ r.excerpt }}</p>
+          {% endif %}
+
+          <div style="margin-top:12px;">
+            <a class="btn light" href="/articles/{{ r.slug }}/">อ่านต่อ</a>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,443 @@
+{% extends "base_public.html" %}
+
+{% block title %}จัดการรีวิว | Doctor Palmy Clinic{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='landingpage/css/editor.css') }}">
+
+<style>
+  .admin-layout {
+    width: min(100% - 28px, 1180px);
+    margin: 24px auto 44px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 390px;
+    gap: 18px;
+    align-items: start;
+  }
+
+  .admin-card {
+    background: rgba(255,255,255,.92);
+    border: 1px solid rgba(23,51,45,.08);
+    border-radius: 30px;
+    padding: 22px;
+    box-shadow: 0 18px 44px rgba(21,55,48,.08);
+  }
+
+  .admin-card h2 {
+    margin: 0 0 14px;
+    color: #17332d;
+    font-size: clamp(24px, 5vw, 34px);
+    line-height: 1.12;
+    letter-spacing: -.04em;
+  }
+
+  .admin-card p {
+    color: rgba(23,51,45,.62);
+    font-size: 13px;
+    line-height: 1.75;
+  }
+
+  .admin-form label {
+    display: block;
+    margin-bottom: 16px;
+    color: #17332d;
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  .admin-form input,
+  .admin-form textarea,
+  .admin-form select {
+    width: 100%;
+    margin-top: 6px;
+    border: 1px solid rgba(23,51,45,.16);
+    border-radius: 16px;
+    padding: 12px 14px;
+    font: inherit;
+    background: #fff;
+    color: #17332d;
+    outline: none;
+  }
+
+  .admin-form textarea {
+    resize: vertical;
+  }
+
+  .admin-form input:focus,
+  .admin-form textarea:focus,
+  .admin-form select:focus {
+    border-color: rgba(15,118,110,.38);
+    box-shadow: 0 0 0 4px rgba(15,118,110,.08);
+  }
+
+  .admin-form small {
+    display: block;
+    margin-top: 5px;
+    color: rgba(23,51,45,.52);
+    font-weight: 400;
+    line-height: 1.55;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .admin-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+
+  .current-image {
+    margin: 12px 0 18px;
+    padding: 14px;
+    border-radius: 20px;
+    background: #f8f4ed;
+    border: 1px solid rgba(23,51,45,.08);
+  }
+
+  .current-image img {
+    width: min(100%, 420px);
+    border-radius: 16px;
+    display: block;
+  }
+
+  .admin-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .admin-list-item {
+    border-radius: 22px;
+    padding: 14px;
+    background:
+      radial-gradient(circle at 12% 0%, rgba(245,222,216,.52), transparent 34%),
+      linear-gradient(145deg, rgba(255,255,255,.96), rgba(248,253,250,.82));
+    border: 1px solid rgba(23,51,45,.08);
+  }
+
+  .admin-list-item h3 {
+    margin: 0;
+    color: #17332d;
+    font-size: 16px;
+    line-height: 1.45;
+  }
+
+  .admin-list-item p {
+    margin: 6px 0 0;
+    font-size: 12px;
+    line-height: 1.65;
+  }
+
+  .admin-list-thumb {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 18px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    background: #eef8f3;
+  }
+
+  .admin-list-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .admin-list-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .admin-list-meta span {
+    display: inline-flex;
+    min-height: 24px;
+    align-items: center;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba(15,118,110,.10);
+    color: #0f766e;
+    font-size: 10px;
+    font-weight: 900;
+  }
+
+  .admin-list-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .admin-list-actions a,
+  .admin-list-actions button {
+    min-height: 36px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(23,51,45,.12);
+    background: #fff;
+    color: #17332d;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .admin-list-actions button.danger {
+    color: #b42318;
+    background: #fff6f4;
+  }
+
+  .admin-empty {
+    border-radius: 24px;
+    padding: 18px;
+    background: #fff;
+    border: 1px dashed rgba(23,51,45,.18);
+  }
+
+  @media (max-width: 960px) {
+    .admin-layout { grid-template-columns: 1fr; }
+    .two-col { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<section class="hero-page">
+  <span class="badge">Admin Reviews</span>
+  <h1>จัดการรีวิว</h1>
+  <p>
+    ใช้เพิ่มรีวิวหรือความประทับใจจากลูกค้า ควรใช้รีวิวที่ได้รับอนุญาตแล้ว
+    และปิดข้อมูลส่วนตัวของลูกค้าให้เหมาะสม
+  </p>
+</section>
+
+<section class="admin-layout">
+  <form id="reviewForm" class="admin-card admin-form" method="post" enctype="multipart/form-data">
+    <h2>{% if review %}แก้ไขรีวิว{% else %}เพิ่มรีวิวใหม่{% endif %}</h2>
+
+    <input type="hidden" name="id" value="{{ review.id if review else '' }}">
+
+    <label>
+      หัวข้อรีวิว
+      <input
+        name="title"
+        value="{{ review.title if review else '' }}"
+        placeholder="เช่น รีวิวหลังเข้ารับบริการ"
+      >
+    </label>
+
+    <label>
+      เนื้อหารีวิว
+      <textarea
+        name="content"
+        rows="7"
+        placeholder="ใส่ข้อความรีวิวหรือความประทับใจจากลูกค้า">{{ review.content if review else '' }}</textarea>
+    </label>
+
+    <div class="two-col">
+      <label>
+        ชื่อลูกค้า / ชื่อย่อ
+        <input
+          name="reviewer_name"
+          value="{{ review.reviewer_name if review else '' }}"
+          placeholder="เช่น คุณ A, ลูกค้าท่านหนึ่ง"
+        >
+      </label>
+
+      <label>
+        คะแนน
+        <select name="rating">
+          {% set rating = review.rating if review and review.rating else '' %}
+          <option value="" {% if rating == '' %}selected{% endif %}>ไม่ระบุ</option>
+          <option value="5" {% if rating == 5 or rating == '5' %}selected{% endif %}>5 / 5</option>
+          <option value="4" {% if rating == 4 or rating == '4' %}selected{% endif %}>4 / 5</option>
+          <option value="3" {% if rating == 3 or rating == '3' %}selected{% endif %}>3 / 5</option>
+          <option value="2" {% if rating == 2 or rating == '2' %}selected{% endif %}>2 / 5</option>
+          <option value="1" {% if rating == 1 or rating == '1' %}selected{% endif %}>1 / 5</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="two-col">
+      <label>
+        ที่มา
+        <input
+          name="source"
+          value="{{ review.source if review else '' }}"
+          placeholder="เช่น Facebook, LINE, Google"
+        >
+      </label>
+
+      <label>
+        ลำดับการแสดงผล
+        <input
+          name="sort_order"
+          type="number"
+          value="{{ review.sort_order if review and review.sort_order is not none else '' }}"
+          placeholder="เช่น 1"
+        >
+      </label>
+    </div>
+
+    <label>
+      รูปรีวิว
+      <input type="file" name="image" accept="image/*">
+      <small>ใช้รูปรีวิวที่ปิดข้อมูลส่วนตัวเรียบร้อยแล้ว</small>
+    </label>
+
+    {% if review and review.image_url %}
+      <div class="current-image">
+        <p><strong>รูปปัจจุบัน</strong></p>
+        <img src="{{ review.image_url }}" alt="{{ review.title or 'รีวิว' }}">
+        <label style="margin-top:12px;">
+          <input type="checkbox" name="remove_image" value="1" style="width:auto;margin-right:6px;">
+          ลบรูปนี้
+        </label>
+      </div>
+    {% endif %}
+
+    <label>
+      สถานะ
+      {% set st = review.status if review and review.status else 'published' %}
+      <select name="status">
+        <option value="published" {% if st == 'published' %}selected{% endif %}>เผยแพร่</option>
+        <option value="draft" {% if st == 'draft' %}selected{% endif %}>ฉบับร่าง</option>
+        <option value="archived" {% if st == 'archived' %}selected{% endif %}>ซ่อน</option>
+      </select>
+    </label>
+
+    <div class="admin-actions">
+      <button class="btn" type="submit">บันทึกรีวิว</button>
+      <a class="btn light" href="/reviews/">ดูหน้ารีวิว</a>
+      <a class="btn light" href="/site-admin/reviews/">ล้างฟอร์ม</a>
+    </div>
+  </form>
+
+  <aside class="admin-card">
+    <h2>รีวิวที่มีอยู่</h2>
+    <p>รายการรีวิวที่บันทึกไว้ สามารถกดแก้ไขหรือลบได้</p>
+
+    <div class="admin-list">
+      {% for r in reviews %}
+        <article class="admin-list-item">
+          {% if r.image_url %}
+            <div class="admin-list-thumb">
+              <img src="{{ r.image_url }}" alt="{{ r.title or 'รีวิว' }}">
+            </div>
+          {% endif %}
+
+          <div class="admin-list-meta">
+            {% if r.rating %}<span>{{ r.rating }} / 5</span>{% endif %}
+            {% if r.source %}<span>{{ r.source }}</span>{% endif %}
+            {% if r.status %}<span>{{ r.status }}</span>{% endif %}
+          </div>
+
+          <h3>{{ r.title or 'รีวิวจากลูกค้า' }}</h3>
+          {% if r.content %}
+            <p>{{ r.content[:140] }}{% if r.content|length > 140 %}...{% endif %}</p>
+          {% endif %}
+
+          <div class="admin-list-actions">
+            <a href="/site-admin/reviews/{{ r.id }}/edit">แก้ไข</a>
+            <button class="danger" type="button" data-delete-review="{{ r.id }}">ลบ</button>
+          </div>
+        </article>
+      {% else %}
+        <div class="admin-empty">
+          <h3>ยังไม่มีรีวิว</h3>
+          <p>เริ่มเพิ่มรีวิวแรกได้จากฟอร์มด้านซ้าย</p>
+        </div>
+      {% endfor %}
+    </div>
+  </aside>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const reviewForm = document.getElementById("reviewForm");
+
+  if (reviewForm) {
+    reviewForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const submitBtn = reviewForm.querySelector('button[type="submit"]');
+      const oldText = submitBtn ? submitBtn.textContent : "";
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "กำลังบันทึก...";
+      }
+
+      try {
+        const fd = new FormData(reviewForm);
+
+        const res = await fetch("/api/site/reviews/save", {
+          method: "POST",
+          body: fd
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "บันทึกรีวิวไม่สำเร็จ");
+        }
+
+        alert("บันทึกรีวิวสำเร็จ");
+        window.location.href = "/site-admin/reviews/";
+      } catch (err) {
+        alert(err.message || "เกิดข้อผิดพลาด");
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = oldText || "บันทึกรีวิว";
+        }
+      }
+    });
+  }
+
+  document.querySelectorAll("[data-delete-review]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.getAttribute("data-delete-review");
+      if (!id) return;
+
+      if (!confirm("ต้องการลบรีวิวนี้ใช่ไหม?")) return;
+
+      btn.disabled = true;
+      const oldText = btn.textContent;
+      btn.textContent = "กำลังลบ...";
+
+      try {
+        const fd = new FormData();
+        fd.append("id", id);
+
+        const res = await fetch("/api/site/reviews/delete", {
+          method: "POST",
+          body: fd
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "ลบรีวิวไม่สำเร็จ");
+        }
+
+        alert("ลบรีวิวสำเร็จ");
+        window.location.reload();
+      } catch (err) {
+        alert(err.message || "เกิดข้อผิดพลาด");
+        btn.disabled = false;
+        btn.textContent = oldText || "ลบ";
+      }
+    });
+  });
+</script>
+{% endblock %}
